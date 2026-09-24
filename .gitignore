@@ -105,4 +105,5 @@ docs/bug_reports/*.mov
 
 # Local-only (never commit): private play ROMs, completion HMAC key
 builds/play/
+# Completion-tracker evidence signing key (per-repo, never committed)
 tools/audit/completion/.evidence_key

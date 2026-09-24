@@ -38,7 +38,30 @@ INES_HEADER_SIZE = 16
 PRG_BANK_SIZE = 0x4000
 
 LEVEL_BLOCK_SIZE = 0x0300
-LEVEL_INFO_SIZE = 0x0100
+# LevelInfo blocks are 252 bytes in ROM, not 256 (2026-08-03, byte-verified).
+#
+# The old 0x100 value drifted 4 bytes per level, so LevelInfoUW<n> was read
+# 4*(n-1) bytes late and every field after the first landed at the wrong
+# offset. Ground truth, Variables.inc: block base LevelInfo_PalettesTransferBuf
+# = $6B7E, LevelInfo_StartRoomId = $6BAD -> in-block offset 47. With base
+# PRG $193FC and stride 252, offset 47 reproduces the live-NES-SRAM
+# StartRoomId for all nine dungeons (73 7d 7c 71 76 79 79 7e 76), and
+# TriforceRoomId@48, SubmenuMapRotation@45 and LevelNumber@51 (= 1..9) all
+# match too. With stride 256 none of them do.
+#
+# The block opens with its transfer-buffer descriptor ($3F00, len $20 — PPU
+# palette RAM), which the 0x100 walk skipped entirely.
+LEVEL_INFO_SIZE = 0x00FC
+
+# ...but the SRAM region the runtime installs is 256 bytes ($6B7E..$6C7D per
+# Variables.inc) and level_info_install.c copies 256 at a 256-byte blob stride.
+# So advance the ROM walk by 252 (the real record size) while emitting 256
+# bytes per block. The trailing 4 bytes are the next record's descriptor
+# header, exactly what a 256-byte copy off contiguous ROM records yields; the
+# last field the game reads is LevelInfo_DeathPaletteSeries ($6C5A = offset
+# 220), so they are never consumed. This keeps the blob layout and the runtime
+# unchanged while fixing the alignment.
+LEVEL_INFO_EMIT = 0x0100
 COMMON_DATA_SIZE = 0x008E
 
 ROOM_LAYOUT_OW_SIZE = 0x0790
@@ -278,12 +301,15 @@ def find_bank6_level_data(prg_data: bytes, z06_blocks: dict) -> dict:
         offset += LEVEL_BLOCK_SIZE
 
     # Z_06.asm: LevelInfoAddrs starts at $8014, common pointer at $8028.
-    # Records start 252 bytes apart; NES still copies 256 bytes from each.
+    # Records sit 252 bytes apart (LEVEL_INFO_SIZE); the runtime installs a
+    # 256-byte copy (LEVEL_INFO_EMIT), exactly what the NES copies from each
+    # pointer. Pointer-based read is layout-independent.
     level_infos = {}
     for level, label in enumerate(LEVEL_INFO_LABELS):
         level_infos[label] = read_bank6_pointer(bank6_data, 0x14 + level * 2,
-                                                LEVEL_INFO_SIZE)
-        print(f"    {label}: pointer entry ${0x8014 + level * 2:04X}, {LEVEL_INFO_SIZE} bytes")
+                                                LEVEL_INFO_EMIT)
+        print(f"    {label}: pointer entry ${0x8014 + level * 2:04X}, "
+              f"record {LEVEL_INFO_SIZE} bytes, emit {LEVEL_INFO_EMIT}")
 
     common_data = read_bank6_pointer(bank6_data, 0x28, COMMON_DATA_SIZE)
     common_data_rom_offset = bank6_offset + int.from_bytes(bank6_data[0x28:0x2A], "little") - 0x8000

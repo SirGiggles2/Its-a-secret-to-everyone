@@ -1,0 +1,172 @@
+Both probes read. Now reviewing systematically.
+Now I have definitive source-level confirmation. Let me cross-reference the hotspot formula before delivering the verdict.
+---
+
+## REVIEW: probe_nes_cave_transition.lua & probe_gen_cave_transition.lua
+
+### 1. BLOCKER: Warp tile row mismatch — Genesis hotspot reads row 10, probe writes row 9
+
+At `probe_gen_cave_transition.lua:126-127`:
+```lua
+force_warp_tile(15, 9, 0x24)      -- writes $24 at (col=15, row=9)
+write_link_xy(15 * 8, 9 * 8 + 0x35)  -- X=120, Y=125
+```
+
+Confirmed hotspot formula from port source (`src/game/combat/collision_dispatch.c:120`):
+```
+row = ((link_y + 0x0B) - HUD_PX) >> 3
+```
+
+| Platform | HUD height | Row formula |
+|----------|-----------|-------------|
+| **NES** | 64 px (8 rows) | `(125 + 11 - 64) >> 3 = 72 >> 3 = **9**` |
+| **Genesis** | 56 px (7 rows) | `(125 + 11 - 56) >> 3 = 80 >> 3 = **10**` |
+
+The NES and Genesis have different HUD heights (64px vs 56px). For **any** Link Y value, the Genesis hotspot row is always 1 higher than NES for the same Y. The single-cell warp at row 9 is **never read** on Genesis — the engine checks row 10. The probe silently captures 130 frames of overworld gameplay, not a cave transition.
+
+**Fix (option a):** Band-force all rows in column 15, matching NES probe's approach (`probe_nes_cave_transition.lua:112-117`):
+```lua
+for row = 0, 0x15 do
+    force_warp_tile(15, row, 0x24)
+end
+```
+And update `clear_warp_tile()` to clear all rows, or invert: force the tile pre-arm, clear post-arm by full-room tile republish.
+
+**Fix (option b):** If single-cell is preferred, write to row 10, and set Y such that y_low & 0x0F == 0x0D (the Z1 gate pass). Y=125 already satisfies y_low=0x0D. Change `force_warp_tile(15, 9, 0x24)` → `force_warp_tile(15, 10, 0x24)`. And update `clear_warp_tile()` accordingly.
+
+**Recommend (a)** — robust against any future HUD changes.
+
+---
+
+### 2. BLOCKER: GEN probe never verifies the arm actually triggered cave entry
+
+`probe_gen_cave_transition.lua:123-132` arms the warp, advances one frame, clears the tile, and returns an anchor. The 130-frame capture loop then runs **unconditionally**. The `saw_cave` boolean on line 201 is logged but never checked — the probe reports "done" even if the cave entry never fired.
+
+If fix #1 isn't applied (or there's any other reason cave_fade didn't trigger), the probe silently produces 130 frames of garbage overworld data. The differ then compares NES cave descent vs Genesis overworld walk — meaningless output, wasted re-drive.
+
+**Fix:** After `arm_descent()`, poll for `read_scene() == SCENE_CAVE` with a timeout (e.g. 30 frames). If the scene never changes, abort:
+```lua
+local anchor = arm_descent()
+for _ = 1, 30 do
+    if read_scene() == SCENE_CAVE then break end
+    emu.frameadvance()
+end
+if read_scene() ~= SCENE_CAVE then
+    LOG("ARM FAIL — cave entry never triggered"); client.exit(); return
+end
+```
+
+---
+
+### 3. MAJOR: NES probe captures PPUCTRL ($FF), GEN captures ObjType[1] ($0350) in same structural position
+
+`probe_nes_capture.lua:159`: writes `CELL_PPUCTRL` as the 12th state byte.
+`probe_gen_capture.lua:175`: writes `N_OBJTYPE_1` as the 12th nes_ram byte.
+
+The per-frame binary layouts are at offset 4+1+11 from header:
+- NES byte 12: PPUCTRL (NES PPU register shadow, determines 8x8 vs 8x16 sprite size)
+- GEN byte 12: ObjType[1] (completely different semantic)
+
+The differ (`cave_transition_diff.py`) expects these in the same slot. If it normalizes by field name, this is OK but fragile. If it compares byte-positionally, this is a silent mismatch.
+
+**Fix:** Either capture PPUCTRL on GEN (it's mirrored at $8000+$FF) for comparability, or explicitly document in both probes and the differ that position 12 differs. If PPUCTRL is truly irrelevant on Genesis, pad with 0x00 and capture ObjType[1] at position 13.
+
+---
+
+### 4. MAJOR: GEN `force_mode_walk()` writes to undocumented state range 0x027A-0x027D
+
+`probe_gen_cave_transition.lua:86`:
+```lua
+local function force_mode_walk() for i = 0x027A, 0x027D do w8(i, 0) end end
+```
+
+Port source confirmed: 0x0274 = `in_gameplay`, 0x0281 = `s_scene`. The 0x027A-0x027D gap is between known cells. What these bytes do is undocumented — they're not in the ground truth table. Writing 0 to a range without knowing its function may:
+- Accidentally clear a persistent flag needed for descent
+- Zero a framecounter, causing timing glitch
+- Have no effect (the intended outcome, unverified)
+
+**Fix:** Either (a) remove the call if cave entry triggers without it, or (b) determine the state semantics from `src/state/` headers and only modify the specific byte(s) that control movement state. Best: remove `force_mode_walk()` entirely — field exploration showed Path A cave gate checks `standing_tile == $24` and `y_low == 0x0D` regardless of movement flags.
+
+---
+
+### 5. MAJOR: Live domain enumeration (RULE V3.1 violation)
+
+Both probes hardcode domain names without calling `memory.getmemorydomainlist()`:
+- **NES**: `"RAM"`, `"OAM"`, `"PALRAM"`, `"VRAM"`, `"CIRAM (nametables)"`
+- **GEN**: `"68K RAM"`, `"VRAM"`, `"CRAM"`
+
+If the wrong emulator core is loaded (e.g. quickerNES instead of NesHawk for NES, or a non-genplus-gx core for GEN), domain names may differ. BizHawk may return 0/garbage for a nonexistent domain name instead of throwing — this silently poisons golden data.
+
+**Fix:** At the top of `main()`, call `memory.getmemorydomainlist()`, iterate and assert each expected domain is present, printing diagnostics. If missing, abort immediately. Example:
+```lua
+local domains = memory.getmemorydomainlist()
+local needed = {"68K RAM", "VRAM", "CRAM"}
+for _, name in ipairs(needed) do
+    if not domains[name] then
+        LOG(string.format("Missing domain: %s", name))
+        client.exit(); return
+    end
+end
+```
+
+---
+
+### 6. MAJOR: NES probe's `CELL_TARGET_MODE` bypasses LevelBlockAttrsB
+
+`probe_nes_cave_transition.lua:121-123`:
+```lua
+local cave_mode = (CAVE_ID >= 0x7B) and 0x0C or 0x0B
+W(CELL_TARGET_MODE, cave_mode)
+```
+
+This hardcodes TargetMode based on CAVE_ID, bypassing the NES `SetTargetMode → LevelBlockAttrsB[RoomId]` table lookup. The NES determines cave mode from the actual level data for OW_ROOM. If the probe's `cave_mode` disagrees with what LevelBlockAttrsB would return (e.g. CAVE_ID is 0x7B but the table maps OW_ROOM to a regular cave), InitModeB/C might misbehave.
+
+**Fix:** Remove the CAVE_ID-based TargetMode override. Let InitMode10 set TargetMode naturally by triggering the real EffectRequest->InitModeB path. The ROOM_ID and UG_ENTRANCE settings are sufficient.
+
+---
+
+### 7. MAJOR: GEN `navigation_to_room` success not verified
+
+`probe_gen_cave_transition.lua:104-117` loops up to 64 iterations with directional presses to navigate the teleport to OW_ROOM. If the teleport overshoots, the room layout differs from expected, or the teleport mode works differently than assumed, the loop can exhaust all iterations without reaching the target. The probe proceeds to arm_descent in the wrong room anyway.
+
+**Fix:** After `navigate_to_room(OW_ROOM)`, verify `read_room() == OW_ROOM`. If not, LOG and abort.
+
+---
+
+### 8. MINOR: ±1 frame capture-phase shift between NES and GEN
+
+NES anchor = frame where GameMode=$10 is first detected. Frame 0 captures state BEFORE InitMode10 runs (descent not yet started). GEN anchor = frame after arm; frame 0 captures state 1 frame into descent. This 1-frame offset is known and the differ tolerates it, but it complicates frame-to-frame comparison of ObjY trajectory and EffectRequest timing.
+
+**Fix:** If possible, delay the NES anchor by 1 frame (advance once before capture(0)), or advance the GEN capture by 1 frame to align. Or document explicitly in the differ that frame N's NES data corresponds to frame N+1's GEN data.
+
+---
+
+### 9. NIT: GEN `clear_warp_tile` hardcodes (15, 9) — breaks if tile target row changes
+
+`probe_gen_cave_transition.lua:82-85`:
+```lua
+local function clear_warp_tile()
+    w8(0x8000 + 0x6530 + 15 * 0x16 + 9, 0x00)
+    w8(0x0285 + 15 * 22 + 9, 0x00)
+end
+```
+
+If someone changes the column/row in `force_warp_tile` (e.g. fixing BLOCKER #1), `clear_warp_tile` must be updated in sync. No coupling — easy to forget.
+
+**Fix:** Make `clear_warp_tile` take col,row parameters, or compute them from the same constants as `force_warp_tile`.
+
+---
+
+### 10. MINOR: NES probe has unused CELL_UG_EXIT_TYPE declaration
+
+`probe_nes_cave_transition.lua:59`: `local CELL_UG_EXIT_TYPE = 0x005A` — declared, never referenced. Confusing to future readers.
+
+---
+
+## VERDICT: **REWORK**
+
+This probe pair cannot produce byte-valid goldens as written. The **highest-priority fix** is **BLOCKER #1**: the Genesis warp tile is written at tile row 9, but the hotspot formula produces row 10 at Y=125 (due to 56px vs 64px HUD height). The descent trigger never fires.
+
+The fix is to band-force column 15 across all rows (matching the NES probe's approach). Without this fix, the probe captures 130 frames of normal overworld gameplay — a total loss of the re-drive.
+
+Apply at minimum fixes #1 (warp row), #2 (verify arm succeeded), and #5 (domain enumeration) before running. #3 (PPUCTRL vs ObjType) and #4 (force_mode_walk) should be resolved before relying on the goldens for a byte-diff verdict.

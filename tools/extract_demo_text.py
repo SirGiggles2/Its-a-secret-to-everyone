@@ -165,16 +165,47 @@ def write_demo_text_c(out_dir, text_field_data, line_addr_data):
 
 
 def write_manifest(out_dir, all_blocks_meta, rom_sha256):
+    """Merge this extractor's blocks into data/text/MANIFEST.json.
+
+    tools/extract_frontend.py writes the same manifest (45 blocks). This
+    script used to clobber it wholesale, so whichever ran last won: a full
+    builder run left 2 blocks instead of 47 and silently dropped every
+    frontend entry. Merging by block name makes the result independent of
+    extractor order, which is the only way `python tools/builder/build.py
+    <rom>` can be correct regardless of how EXTRACTORS is sequenced.
+    """
+    path = os.path.join(out_dir, "MANIFEST.json")
+
+    existing = []
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                prior = json.load(f)
+            if isinstance(prior.get("blocks"), list):
+                existing = prior["blocks"]
+        except (OSError, ValueError) as exc:
+            print(f"  WARN: ignoring unreadable {path}: {exc}")
+
+    def key(block):
+        # (name, file), not name alone: DemoLineTextAddrs is emitted by both
+        # this extractor and extract_frontend.py into different .c files, and
+        # keying on name would silently collapse them into one entry.
+        return (str(block.get("name", "")), str(block.get("file", "")))
+
+    merged = {key(b): b for b in existing}
+    for b in all_blocks_meta:
+        merged[key(b)] = b          # this run's blocks win on name collision
+
     manifest = {
         "schema_version": 1,
         "nes_rom_sha256": rom_sha256,
-        "blocks": all_blocks_meta,
+        "blocks": sorted(merged.values(), key=key),
     }
-    path = os.path.join(out_dir, "MANIFEST.json")
     with open(path, "w", encoding="utf-8", newline="\n") as f:
         json.dump(manifest, f, indent=2)
         f.write("\n")
-    print(f"  Wrote {path}")
+    print(f"  Wrote {path} ({len(manifest['blocks'])} blocks, "
+          f"{len(all_blocks_meta)} from this run)")
 
 
 def main():
@@ -190,7 +221,11 @@ def main():
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
-    rom_path = os.path.join(project_root, "Legend of Zelda, The (USA).nes")
+    rom_path_env = os.environ.get("ZELDA_NES_ROM", "")
+    if rom_path_env and os.path.isfile(rom_path_env):
+        rom_path = rom_path_env
+    else:
+        rom_path = os.path.join(project_root, "Legend of Zelda, The (USA).nes")
 
     if not os.path.exists(rom_path):
         print(f"ERROR: ROM not found: {rom_path}")

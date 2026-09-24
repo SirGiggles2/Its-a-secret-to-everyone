@@ -1,0 +1,39 @@
+Performing one time database migration, may take a few minutes...
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · big-pickle
+[0m
+[0m→ [0mSkill "primedirective"
+[0m→ [0mRead .
+[0m✱ [0mGlob "**/cave_diff_report*"[90m in ..\..\.. · 1 match[0m
+[0m✱ [0mGlob "**/probe_cave_fade*"[90m in ..\..\.. · 2 matches[0m
+[0m✱ [0mGrep "InitModeB_EnterCave|InitMode_WalkCave|UpdateMode10Stairs|HandleWarpOW"[90m in ..\..\..\reference · 16 matches[0m
+[0m→ [0mRead cave_diff_report.txt
+[0m→ [0mRead ..\probe_cave_fade_gen.lua
+[0m→ [0mRead ..\probe_cave_fade_nes.lua
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_05.asm[90m [offset=2308, limit=100][0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_05.asm[90m [offset=6643, limit=100][0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_01.asm[90m [offset=2956, limit=80][0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_05.asm[90m [offset=7313, limit=80][0m
+[0m✱ [0mGrep "StairsTargetY"[90m in ..\..\..\reference\aldonunez · 4 matches[0m
+[0m✱ [0mGrep "Link_EndMoveAndAnimate"[90m in ..\..\..\reference\aldonunez · 35 matches[0m
+[0m✱ [0mGrep "MoveObject"[90m in ..\..\..\reference\aldonunez · 23 matches[0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_05.asm[90m [offset=1400, limit=100][0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_07.asm[90m [offset=3161, limit=40][0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_07.asm[90m [offset=2719, limit=80][0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_07.asm[90m [offset=3201, limit=120][0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_07.asm[90m [offset=2070, limit=50][0m
+[0m✱ [0mGrep "AnimateLinkBase"[90m in ..\..\..\reference · 2 matches[0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_07.asm[90m [offset=5023, limit=80][0m
+[0m✱ [0mGrep "EffectRequest.*08|#\$08.*EffectRequest|stairs.*effect|Stairs.*sound"[90m in ..\..\..\reference\aldonunez · 1 match[0m
+[0m✱ [0mGrep "ObjAnimCounter"[90m in ..\..\..\reference\aldonunez · 38 matches[0m
+[0m✱ [0mGrep "RollOverAnimCounter"[90m in ..\..\..\reference\aldonunez · 3 matches[0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_07.asm[90m [offset=5144, limit=30][0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_07.asm[90m [offset=5103, limit=41][0m
+[0m✱ [0mGrep "UndergroundExitType|InitModeB_WalkCave"[90m in ..\..\..\reference\aldonunez · 13 matches[0m
+[0m✱ [0mGrep "TargetMode.*\$10|TargetMode.*\$0B|SetTargetMode"[90m in ..\..\..\reference\aldonunez · 3 matches[0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_07.asm[90m [offset=1690, limit=50][0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_07.asm[90m [offset=1485, limit=40][0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_07.asm[90m [offset=1738, limit=60][0m
+[0m→ [0mRead ..\..\..\reference\aldonunez\Z_05.asm[90m [offset=1560, limit=60][0m

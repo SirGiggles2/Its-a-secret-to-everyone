@@ -1,0 +1,323 @@
+I'll perform a comprehensive, byte-level code review of both probes against the ground truth. Let me read both files first.
+
+● Read probe_nes_cave_transition.lua
+  │ ~\Documents\GitHub\FINAL
+  │ TRY\tools\parity\cave_golden\probe_nes_cave_transition.lua
+  └ 195 lines read
+
+● Read probe_gen_cave_transition.lua
+  │ ~\Documents\GitHub\FINAL
+  │ TRY\tools\parity\cave_golden\probe_gen_cave_transition.lua
+  └ 208 lines read
+
+Now I'll perform a detailed, systematic review against the ground truth:
+
+---
+
+## COMPREHENSIVE PROBE REVIEW (RULE V2)
+
+### **1. ADDRESS CORRECTNESS** ✓ PASS
+
+**NES probe (`probe_nes_cave_transition.lua`):**
+- All 13 cell offsets match ground truth exactly:
+  - `CELL_GAME_MODE = 0x0012` ✓
+  - `CELL_GAME_SUBMODE = 0x0013` ✓
+  - `CELL_OBJ_Y0 = 0x0084` ✓
+  - `CELL_OBJ_GRIDOFF0 = 0x0394` ✓
+  - `CELL_OBJ_ANIMFRM0 = 0x03E4` ✓
+  - `CELL_OBJ_ANIMCTR0 = 0x03D0` ✓
+  - `CELL_EFFECT_REQ = 0x0603` ✓
+  - `CELL_FADE_CYCLE = 0x051C` ✓
+  - `PLAY_AREA_TILES = 0x6530` ✓
+- Domain readers use correct domains: "RAM", "OAM", "PALRAM", "VRAM", "CIRAM (nametables)" ✓
+
+**Genesis probe (`probe_gen_cave_transition.lua`):**
+- NES mirror reads via `0x8000 + addr` are correct:
+  - `nes_r8(N_GAME_MODE)` → `r8(0x8000 + 0x0012)` ✓
+  - `nes_r8(N_EFFECT_REQ)` → `r8(0x8000 + 0x0603)` ✓
+  - All 12 nes_ram offsets match NES probe exactly ✓
+- Gen-native addresses:
+  - `OFF_LINK_X = 0x1564`, `OFF_LINK_Y = 0x1566` (BE shorts) ✓
+  - `SAT_BASE = 0xF800` (mutation-proven) ✓
+  - `OFF_SCENE = 0x0281` ✓
+  - `OFF_IN_GAMEPLAY = 0x0274` ✓
+- Domains: "68K RAM", "VRAM", "CRAM" ✓
+
+---
+
+### **2. NES BAND-FORCE CORRECTNESS** ⚠️ **MAJOR BUG**
+
+**Ground truth:** PlayAreaTiles is col-major: `col*0x16 + row`, where 0x16 = 22 rows per column. ObjX is in pixels; col = `(ObjX >> 3) & 0x1F`.
+
+**Code line 111–118:**
+```lua
+local col  = (objx >> 3) & 0x1F
+for c = col - 1, col + 1 do
+    if c >= 0 and c <= 0x0F then
+        for row = 0, 0x15 do
+            W(PLAY_AREA_TILES + c * 0x16 + row, 0x24)
+        end
+    end
+end
+```
+
+**CRITICAL ISSUES:**
+
+**Issue 1:** Max column bound is **0x0F (15)**, but OW playfield is **16 columns** (0x00..0x0F). The check `c <= 0x0F` is correct, BUT:
+- When col=15 and we try `col+1=16`, the write is skipped. This is **intentional and correct** (no columns beyond 15). ✓
+
+**Issue 2:** Row iteration uses `0x15 = 21`, which is **one short of the full 22 rows (0x00..0x15 = 22 total)**. The loop should be `for row = 0, 0x15 do` ✓ (this is correct; Lua loop is inclusive).
+
+**Issue 3:** ⚠️ **HOTSPOT MISMATCH BLOCKER**: Ground truth states:
+> "GetCollidableTileStill (Z_07.asm:2110) reads the tile under Link's hotspot from PlayAreaTiles ($6530), col-major (col*0x16+row, 22 rows)."
+
+The probe forces a **3-column band (c-1, c, c+1) across ALL 22 rows (0x00..0x15)**. But:
+- InitMode10 reads **one specific tile at Link's hotspot**, not a full band.
+- Z_07.asm:2110 hotspot for Link = **ObjY - 8** (documented as "ObjY-8 for Link").
+- If ObjY is mid-row (e.g., $90 = 144 px = rows 9–10), the hotspot row = `(ObjY - 8) >> 4` ≈ `(136 >> 4)` ≈ row 8.5.
+
+**The probe ASSUMES the hotspot will land in the forced band by forcing ALL rows.** This works BUT is wasteful and exposes a silent assumption: **if the hotspot row calculation differs, the probe silently misses it.**
+
+**FIX:** The probe should:
+1. Read ObjY.
+2. Compute hotspot row = `(ObjY - 8) >> 4`.
+3. Force ONLY that row in the 3-col band, plus a small margin (±1 row) for safety.
+
+**Verdict:** BLOCKER if the hotspot formula is wrong; if correct, current approach (force all rows) works but is not verified. **Recommend documenting the assumption in a comment and adding a margin check post-capture.**
+
+---
+
+### **3. NES ANCHOR TIMING** ✓ PASS
+
+**Code lines 124–131 (NES):**
+```lua
+W(CELL_GAME_SUBMODE, 0x00)        -- so GameMode $10 runs InitMode10 (sub 0)
+W(CELL_GAME_MODE,    0x10)
+-- Anchor: first frame mode $10 is actually live.
+for _ = 1, 8 do
+    if R(CELL_GAME_MODE) == 0x10 then return emu.framecount() end
+    emu.frameadvance()
+end
+return (R(CELL_GAME_MODE) == 0x10) and emu.framecount() or nil
+```
+
+**Analysis:**
+- Sets GameSubmode=0 (correct: tells dispatcher to run InitMode10 on next frame).
+- Sets GameMode=0x10.
+- Polls for up to 8 frames for mode to become live.
+- On timeout, returns nil (safe: caller exits).
+- **Assumption:** Mode dispatcher runs InitMode10 in submode 0 on the next frame after GameMode is set. ✓ (standard NES dispatcher pattern)
+
+**Verdict:** ✓ Correct. Polling for up to 8 frames is safe; 8-frame timeout is reasonable.
+
+---
+
+### **4. GENESIS ARM-ONCE DISCIPLINE** ✓ PASS
+
+**Code lines 126–131 (Genesis):**
+```lua
+force_warp_tile(15, 9, 0x24)
+write_link_xy(15 * 8, 9 * 8 + 0x35)
+force_mode_walk()
+emu.frameadvance()        -- the single arm frame
+clear_warp_tile()         -- release immediately; never re-force
+return emu.framecount()
+```
+
+**Analysis:**
+- Arms warp tile ($24), Link position, and WALK mode in a single frame.
+- Advances one frame (the arm frame).
+- **Immediately clears the warp tile** (line 130).
+- Returns the anchor framecount (the frame after the arm).
+- **Capture loop (lines 198–202): READS ONLY.** No re-forcing anywhere.
+
+**Critical check:** Line 82–84 (`clear_warp_tile()`):
+```lua
+local function clear_warp_tile()
+    w8(0x8000 + 0x6530 + 15 * 0x16 + 9, 0x00)
+    w8(0x0285 + 15 * 22 + 9, 0x00)
+end
+```
+Clears both nes_ram cache (0x8000+0x6530) and Genesis s_raw_tiles (0x0285). ✓ Correct dual-write.
+
+**Verdict:** ✓ PASS. Arm-once discipline is strict and verifiable. No re-forcing in capture loop confirms it.
+
+---
+
+### **5. FRAME ALIGNMENT** ✓ PASS
+
+**NES:** Anchors on `GameMode=$10` instant → captures 130 frames → timestamp is real `emu.framecount()`.
+
+**Genesis:** Anchors on the frame **after the arm frame** (`return emu.framecount()` on line 131) → captures 130 frames.
+
+**Cadence comparison:**
+- NES GameMode=$10 fires on frame N (the InitMode10 frame).
+- Genesis arm fires on frame M, clears on frame M, captures from frame M+1 onward.
+- Differ tolerates ±1 frame shift (documented line 14).
+
+**Verdict:** ✓ Cadence is comparable within tolerance. Anchors are well-documented. ✓ GameMode mirroring (Gen stays mode $05, not $10) is noted; capture includes it for phase mapping. ✓
+
+---
+
+### **6. RULE V3 COMPLETENESS** ⚠️ **CRITICAL MISSING DATA**
+
+**Ground truth requirements:**
+> "capture ObjY trajectory, sprite Y/X/attr/tile, walk-pose cadence, behind-BG, palette, EffectRequest"
+
+**NES probe captures (per-frame):**
+- State: GameMode, Submode, FrameCounter, ObjX, ObjY, ObjDir, ObjGridOffset, ObjAnimFrame, ObjAnimCounter, EffectRequest, FadeCycle, PPUCTRL ✓
+- OAM 256 bytes ✓ (sprite Y/X/attr/tile via OAM)
+- PALRAM 32 bytes ✓ (palette)
+- **ONE-TIME (frame 32):** CHR 8192 bytes + CIRAM 2048 bytes ✓
+
+**Genesis probe captures (per-frame):**
+- State: Scene, LinkX, LinkY, GameMode (mirror), Submode, FrameCounter, ObjX, ObjY, ObjDir, ObjGridOffset, ObjAnimFrame, ObjAnimCounter, EffectRequest, FadeCycle, ObjType[1] ✓
+- SAT 512 bytes ($F800, 64 sprites) ✓ (sprite Y/X/attr/tile via SAT)
+- CRAM 128 bytes ✓ (palette)
+- NES OAM mirror 256 bytes ✓ (backup OAM source)
+- **ONE-TIME (frame 32):** VRAM 64KB ✓ (full patterns)
+
+**CRITICAL ISSUES:**
+
+**Issue 1: NES probe missing ObjType[0]** ⚠️ **MAJOR**
+- Genesis captures `N_OBJTYPE_1 = 0x0350` (ObjType[1], line 57 & 175).
+- NES probe captures NOTHING from ObjType. 
+- Ground truth doesn't list ObjType as captured, but Genesis captures ObjType[1]; why not ObjType[0]?
+- **Asymmetry risk:** If the differ expects both probes to have ObjType, NES side will fail.
+- **Recommendation:** Add `CELL_OBJ_TYPE0 = 0x034E` to NES probe capture. Check if Genesis should also capture [0].
+
+**Issue 2: Genesis captures full VRAM (64KB) at frame 32**
+- NES captures CHR (8KB) + CIRAM (2KB) = 10KB at frame 32.
+- Genesis captures full VRAM (64KB) at frame 32.
+- **Asymmetry:** Are the genesis planes ($C000/$E000) needed? Do they change during the transition? 
+- **Documentation gap:** Why not capture them per-frame like Genesis SAT?
+- **Likely safe:** Patterns are static; planes may move (scroll). **But per-frame plane capture not justified by the code.**
+- **Recommendation:** Verify with differ that full VRAM once per-frame is sufficient. If planes move, per-frame VRAM is needed.
+
+**Issue 3: Link position (Genesis only)**
+- Genesis captures `LinkX, LinkY` (16-bit each).
+- NES captures `ObjX, ObjY` only (8-bit each, matching NES RAM).
+- **No asymmetry:** NES ObjX/ObjY are the source; Genesis LinkX/LinkY are derived. Capturing both sides' position is intentional.
+- ✓ Correct.
+
+**Verdict:** ⚠️ **MAJOR** — Missing ObjType[0] on NES side. **APPROVE-WITH-CHANGES** pending ObjType clarification.
+
+---
+
+### **7. CRASH/HANG ANALYSIS** ✓ PASS
+
+**NES probe:**
+- Line 75: `io.open(OUT .. "\\dbg.txt", "a")` — file handle checked (`if fh then`); safe ✓
+- Line 145: `io.open(string.format(...), "wb")` — **NO nil check** ⚠️ **MINOR**
+- Line 162: `f:close()` — will crash if `f` is nil.
+- Line 166: `io.open(OUT .. "\\chr_ref.bin", "wb")` — **NO nil check** ⚠️ **MINOR**
+
+**Genesis probe:**
+- Lines 158, 183: Same issue — `io.open` without nil checks.
+
+**Infinite loops:**
+- NES boot loop (line 85): 1800-frame timeout, safe ✓
+- NES anchor poll (line 127): 8-frame timeout, safe ✓
+- Genesis boot loop (line 90): 1500-frame timeout, safe ✓
+- Genesis navigate loop (line 104): 64-iteration timeout, safe ✓
+- Capture loops (line 187/198): Fixed count (130), safe ✓
+
+**Windows `mkdir` command:**
+- Line 38 (NES): `os.execute('if not exist "' .. OUT .. '" mkdir "' .. OUT .. '"')`
+- Line 32 (Genesis): Same pattern.
+- **Correct Windows syntax** ✓ (uses `if not exist` + `mkdir` with quotes).
+
+**Verdict:** ⚠️ **MINOR** — Missing nil checks on file open. Files may crash if disk full or permissions denied. **Recommend wrapping `io.open()` calls in nil checks and error logging.**
+
+---
+
+### **8. CORE ASSUMPTIONS** ✓ PASS
+
+**NES:**
+- Requires **NesHawk** for "VRAM" domain (CHR-RAM).
+- Comment on line 26 **explicitly documents** this requirement.
+- ✓ Dependency clear.
+
+**Genesis:**
+- Trusts **SAT @ $F800** (mutation-proven in `probe_gen_cave_golden.lua` per comment line 43).
+- Comment cites prior proof; no re-verification needed.
+- ✓ Assumption justified.
+
+---
+
+### **9. DOMAIN ENUMERATION SUMMARY**
+
+**NES domains used:**
+- RAM ✓
+- OAM ✓
+- PALRAM ✓
+- VRAM (CHR-RAM) ✓
+- CIRAM (nametables) ✓
+
+**Genesis domains used:**
+- 68K RAM ✓
+- VRAM ✓
+- CRAM ✓
+
+**Completeness:** Both probes capture all required domains. ✓
+
+---
+
+## FINDINGS SUMMARY
+
+| # | Category | Issue | Severity | Location | Fix |
+|---|----------|-------|----------|----------|-----|
+| 1 | Addresses | All offsets correct vs. ground truth | — | Verified | ✓ |
+| 2 | Band-force | Hotspot row calculation not verified; assumes full-row band works | BLOCKER | NES lines 111–118 | Add comment verifying hotspot formula; add margin. Test post-capture. |
+| 3 | Anchor timing | Correct polling + timeout | — | Verified | ✓ |
+| 4 | Arm-once | Correct single-frame arming + immediate release | — | Verified | ✓ |
+| 5 | Frame alignment | Cadence comparable within ±1 frame tolerance | — | Verified | ✓ |
+| 6 | Missing ObjType[0] | NES captures 12 state bytes, missing ObjType[0]; Genesis captures ObjType[1] | MAJOR | NES line 144–163 + Genesis line 57 | Add `CELL_OBJ_TYPE0 = 0x034E` to NES; capture in line 159 after PPUCTRL. Verify Genesis should capture [0] or [1]. |
+| 7 | File handles | io.open() calls lack nil checks; will crash on disk full | MINOR | Lines 145, 166 (NES); 158, 183 (Gen) | Wrap `io.open()` in nil check + error log. |
+| 8 | VRAM capture | Full 64KB per-frame vs. 10KB once; justification unclear | MINOR | Genesis line 185 | Document why per-frame SAT but only once-per-frame VRAM. Verify diff can handle. |
+| 9 | Core assumptions | NesHawk + SAT@$F800 | — | Documented | ✓ |
+
+---
+
+## VERDICT: **APPROVE-WITH-CHANGES**
+
+### **Highest Priority Fix (BLOCKER → MAJOR):**
+
+**Add ObjType[0] to NES probe:**
+
+**NES probe line 62, add:**
+```lua
+local CELL_OBJ_TYPE0     = 0x034E  -- ObjType[0]
+```
+
+**NES probe line 159, replace:**
+```lua
+    f:write(string.char(R(CELL_PPUCTRL)))
+    for i = 0, 255 do f:write(string.char(OAM(i))) end
+```
+with:
+```lua
+    f:write(string.char(R(CELL_PPUCTRL)))
+    f:write(string.char(R(CELL_OBJ_TYPE0)))  -- add ObjType[0] for parity
+    for i = 0, 255 do f:write(string.char(OAM(i))) end
+```
+
+**Update comment line 137 (NES) to reflect 13 state bytes (now 14):**
+```lua
+--   13 state bytes: GameMode,Submode,FrameCounter, ObjX,ObjY,ObjDir,
+--                   ObjGridOffset,ObjAnimFrame,ObjAnimCounter,
+--                   EffectRequest,FadeCycle,ppuctrl,ObjType[0]
+```
+
+### **Secondary (MINOR):**
+
+1. **Add file-handle checks** to both probes.
+2. **Document hotspot row formula** or add assertion post-capture.
+3. **Verify VRAM vs. SAT capture asymmetry** with diff author.
+
+---
+
+**Once ObjType[0] is added to NES and verified symmetric with Genesis capture format, re-run review and APPROVE-TO-RUN.**
+
+
+

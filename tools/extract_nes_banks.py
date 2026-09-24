@@ -9,7 +9,12 @@ import sys
 
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_ROM = r"C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\Legend of Zelda, The (USA).nes"
+# ZELDA_NES_ROM first, then repo-root fallback — same convention as every
+# other extractor. The previous default was an absolute path to one
+# developer's machine, which cannot work in a shipped builder.
+DEFAULT_ROM = os.environ.get("ZELDA_NES_ROM") or os.path.join(
+    ROOT, "Legend of Zelda, The (USA).nes"
+)
 DEFAULT_OUT_DIR = os.path.join(ROOT, "reference", "aldonunez", "dat")
 
 INES_HEADER_SIZE = 16

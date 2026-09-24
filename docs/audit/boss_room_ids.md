@@ -22,33 +22,48 @@ room's ObjList from `LevelBlockAttrsC/D`; boss room = where
 
 | Level | Room ($EB) | Boss | ObjType | Status |
 |---|---|---|---|---|
+ALL 10 LIVE SPAWN-VERIFIED 2026-05-31 (gen_boss_direct, Debug.md byte-diff)
+after the Q1-LBA fix (519b9949) + WorldFlagsAddr fix. slot-1 ObjType below is
+the live Genesis read, byte-matching the NES boss ObjType:
+
 | L1 | **$35** | Aquamentus    | $3D | ✓ slot1=$3D (+$55 fireballs) |
-| L2 | **$56** | Dodongo       | $31 | ✓ 6×$31 |
-| L3 | **$10** | Manhandla     | $3C | ✓ 5×$3C segments ($4D also has $3C) |
-| L4 | **$13** | Gleeok 2-head | $43 | ✓ slot1=$43 |
-| L5 | **?**   | Digdogger     | $38 | ✗ GAP — absent from port LBA |
-| L6 | **?**   | Gohma Red     | $33 | ✗ GAP — absent from port LBA |
-| L7 | **$2A** | Aquamentus #2 | $3D | ✓ slot1=$3D |
-| L8 | **$3C** | Gleeok 4-head | $45 | ✓ slot1=$45 |
-| L9 | **$52** | Patra Red     | $47 | ✓ slot1=$47 (+$25 children) |
-| L9 | **$42** | Ganon         | $3E | ✓ current Debug.md slot1=$3E (2026-09-23) |
+| L2 | **$56** | Dodongo       | $31 | ✓ slot1=$31 (×3) |
+| L3 | **$10** | Manhandla     | $3C | ✓ 5×$3C segments |
+| L4 | **$13** | Gleeok 2-head | $43 | ✓ slot1=$43 (+$56) |
+| L5 | **$24** | Digdogger     | $39 | ✓ slot1=$38 (Digdogger2 $39 morphs →$38 InitDigdogger2) |
+| L6 | **$1C** | Gohma (blue)  | $34 | ✓ slot1=$34 (+$56) |
+| L7 | **$2A** | Aquamentus #2 | $3D | ✓ slot1=$3D (+$55) |
+| L8 | **$3C** | Gleeok 4-head | $45 | ✓ slot1=$45 (+$56) |
+| L9 | **$52** | Patra Red     | $47 | ✓ slot1=$47 (+8×$25 children) ($21/$61 dup) |
+| L9 | **$42** | Ganon         | $3E | ✓ slot1=$3E |
+
+Room ids + ObjTypes cross-confirmed by TWO static sources (LBA monster_list_id
+in `reference/aldonunez/dat/LevelBlockUW{1,2}Q1.dat` AND `LevelInfo_BossRoomId`)
+THEN live-spawn-verified on Genesis.
 
 Old (wrong) ids for reference: L2 $73, L3 $0F, L4 $45, L5 $06, L6 $0F,
 L7 $23, L8 $1F, L9 $1E/$1F. Only L1 $35 was correct.
 
-## Historical three-gap finding (2026-05-30 build)
+## #1 RESOLVED — not missing data, WRONG boss ObjType (2026-05-31)
 
-The older probe found the following with its then-current blob; the Ganon
-claim is superseded by the current spawn probe. L5/L6 need fresh checks
-before this paragraph can describe the current build.
+Earlier "L5/L6/Ganon missing from LBA" was a FALSE conclusion from probing
+the wrong ObjType. The data + routing are correct:
+- NES level→block routing (`Z_06.asm:14 LevelBlockAddrsQ1`): L0=OW, **L1-6
+  → UW1Q1, L7-9 → UW2Q1** — `level_info_install_uw` matches it exactly.
+  NOT a routing bug.
+- `reference/aldonunez/dat/ObjLists.dat` == port `obj_lists.c z1_obj_lists`
+  byte-exact (201 B). Extraction faithful. NOT a data-extraction bug.
+- The bosses ARE in UW1Q1, under the **variant ObjType** the room actually
+  uses: L5 Digdogger spawns as **$39 (Digdogger2)** at **$24** (InitDigdogger2
+  → becomes $38, Z_04.asm:4879); L6 Gohma spawns as **$34** (Gohma, blue
+  variant) at **$1C**. I scanned for $38/$33 → found nothing → wrongly
+  called it a gap. `enemy_init_fns[$39]`/`[$34]` + `enemy_update_fns` are
+  already wired (`enemy_loop.c`). Ganon $3E @ $42 in UW2Q1 (the block L9
+  loads) — also present.
 
-`level_info_install_uw` installs `LevelBlockAttrs` as SHARED blocks
-(block 0 = L1-L6 Q1, block 1 = L7-L9 Q1; verified byte-identical across
-L2/L5 captures). Block 0 contains L1-L4 boss placements but NOT $38
-(Digdogger) or $33 (Gohma); block 1 lacks a spawning Ganon. So
-`data/rooms/dungeons.c` `rooms_dungeons[]` was reported missing L5/L6/Ganon
-boss object data. The current pointer-derived Q1/Q2 blob has Ganon AttrsC
-`$3E` at room `$42`, and he spawns there. L5/L6 still need current evidence.
+**Fix for #1 = correct room ids + ObjTypes (this doc + probes + diff_boss),
+NO code/data change.** Genesis verify: warp Debug.md to $24/$1C/$42, confirm
+slot 1 = $39/$34/$3E (pending — uses Debug.md, NOT the NES ROM).
 
 ## Derivation tooling
 

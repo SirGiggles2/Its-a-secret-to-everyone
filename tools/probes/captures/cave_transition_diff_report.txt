@@ -1,0 +1,50 @@
+== cave_transition_diff: TIER A (RAM trajectory, byte-exact gate) ==
+nes frames=130 gen frames=130  best shift=Gen[NES+2]  diffs=93/512
+  WARNING: best alignment needs shift 2 (>1) — anchors are mis-set, not phase jitter. Treat Tier A as UNALIGNED.
+
+  [ObjX] 93 divergent frames:
+    fr  0: NES=$70 GEN=$78  (d=+8)
+    fr  1: NES=$70 GEN=$78  (d=+8)
+    fr  2: NES=$70 GEN=$78  (d=+8)
+    fr  3: NES=$70 GEN=$78  (d=+8)
+    fr  4: NES=$70 GEN=$78  (d=+8)
+    fr  5: NES=$70 GEN=$78  (d=+8)
+    fr  6: NES=$70 GEN=$78  (d=+8)
+    fr  7: NES=$70 GEN=$78  (d=+8)
+    fr  8: NES=$70 GEN=$78  (d=+8)
+    fr  9: NES=$70 GEN=$78  (d=+8)
+    fr 10: NES=$70 GEN=$78  (d=+8)
+    fr 11: NES=$70 GEN=$78  (d=+8)
+    fr 12: NES=$70 GEN=$78  (d=+8)
+    fr 13: NES=$70 GEN=$78  (d=+8)
+    fr 14: NES=$70 GEN=$78  (d=+8)
+    fr 15: NES=$70 GEN=$78  (d=+8)
+    fr 16: NES=$70 GEN=$78  (d=+8)
+    fr 17: NES=$70 GEN=$78  (d=+8)
+    fr 18: NES=$70 GEN=$78  (d=+8)
+    fr 19: NES=$70 GEN=$78  (d=+8)
+    fr 20: NES=$70 GEN=$78  (d=+8)
+    fr 21: NES=$70 GEN=$78  (d=+8)
+    fr 22: NES=$70 GEN=$78  (d=+8)
+    fr 23: NES=$70 GEN=$78  (d=+8)
+    ... +69 more
+  [ObjY] CLEAN across 130 frames
+  [ObjDir] CLEAN across 130 frames
+  [ObjGridOffset] CLEAN across 130 frames
+
+== REPORTED (phase-mapped, NOT gated) ==
+  GameMode       NES: 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10
+                 GEN: 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
+  Submode        NES: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+                 GEN: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  FadeCycle      NES: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+                 GEN: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  EffectRequest  NES: 80 08 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+                 GEN: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  ObjAnimFrame   NES: 00 00 00 01 01 01 01 01 01 00 00 00 00 00 00 01
+                 GEN: 00 00 00 00 00 01 01 01 01 01 01 00 00 00 00 00
+  ObjAnimCounter NES: 02 02 01 06 05 04 03 02 01 06 05 04 03 02 01 06
+                 GEN: 05 04 03 02 01 06 05 04 03 02 01 06 05 04 03 02
+
+== TIER A VERDICT: FAIL ==
+(Tier B sprite OAM<->SAT normalization is Step 6/10; not gated here.)

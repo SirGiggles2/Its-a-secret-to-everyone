@@ -158,9 +158,17 @@ end
 -- Enter the underworld: the MODE button toggles s_scene OW<->UW
 -- (main.c BUTTON_MODE handler) and seeds UW room $73 (L1 Q1 StartRoomId).
 local function enter_dungeon()
+    -- G4: select the target UW level via debug cell $07F6 before the MODE
+    -- toggle (main.c reads it). Waterbox genplus exposes work RAM as
+    -- "M68K BUS" @ $FF8000+off (NO "68K RAM" domain), so poke there.
+    local L = GEN_LEVEL or 1
+    memory.write_u8(0xFF8000 + 0x07F6, L, "M68K BUS")
     press_for({["P1 Mode"]=true}, 6)
     idle(60)
-    LOG(string.format("after MODE: scene(07E8)=%d room=$%02X", scene_guess(), read_room()))
+    LOG(string.format("after MODE: scene=%d room=$%02X CurLevel$8010=%d echo$87F7=%d",
+        scene_guess(), read_room(),
+        memory.read_u8(0xFF8000 + 0x0010, "M68K BUS"),
+        memory.read_u8(0xFF8000 + 0x07F7, "M68K BUS")))
     return scene_guess() == 1
 end
 

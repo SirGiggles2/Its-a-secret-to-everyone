@@ -1,0 +1,104 @@
+The files don't exist on disk yet — they're in your message. Below is the full adversarial review based on the code you pasted.
+
+---
+
+## Audit checks 1-8
+
+### 1. Refactor preservation — CLEAN
+
+`nes_sprites_with_chr` vs original `nes_sprites`: identical logic. 8x16 pairing (`tile & 0xFE`/`tile & 1`), spr_table from ppuctrl bit3 (used only in 8x8 fallback), subpal math (`attr & 3`), flip order (hflip then vflip) — all preserved. `gen_sprites_with_vram` vs original `gen_sprites`: column-major (`tile + cx*vsize + cy`), chain-walk termination (link==0), cell-position flip via `gcx`/`gcy` — all correct. Wrappers `nes_sprites(nb,lut)` and `gen_sprites(gb,lut)` pass through the right fields. No dropped logic.
+
+### 2. Link-slot isolation — CORRECT
+
+`LINK_OAM_SLOTS = range(0x10, 0x14)` is correct for NES Link in 8x16: OAM $10-$13, each producing 2 8x8 cells → 8 cells total. On Gen side, `gen_sprites_with_vram` returns ALL chain sprites (Link + NPC + bonfires), then `match_link` matches by position AND pixel grid. A bonfire/NPC cell that happens to be at exactly `(nx+dx, ny+dy)` and have identical pixels is astronomically unlikely. **Sound as-is.**
+
+### 3. Offset detection — ROBUST
+
+`detect_offset` votes on all pairwise deltas (NES-Link × Gen-ALL). Per frame: Link-Link gives exactly 8 votes for `(dx,dy)`. Link-NPC and Link-bonfire each give many votes but they spread across different deltas per frame (since Link moves). Summed across frames, Link-Link accumulates 8×F votes for the same `(dx,dy)`, while noise spreads thin. **Bonfires + NPC cannot dominate.** Fallback `(0, -8)` is safe.
+
+### 4. Bundle offsets — CONFIRMED
+
+| Bundle | Field | Offset | Bytes | Verified |
+|--------|-------|--------|-------|----------|
+| NCTB | ppuctrl | 16 | 1 | 4+1+11 = 16 ✓ |
+| NCTB | OAM | 18 | 256 | 4+1+13 = 18 ✓ |
+| NCTB | PALRAM | 274 | 32 | 18+256 = 274 ✓ |
+| GCTB | SAT | 22 | 2048 | 4+1+1+4+12 = 22 ✓ |
+| GCTB | CRAM | 2070 | 128 | 22+2048 = 2070 ✓ |
+| chr_ref | CHR | 4 | 8192 | after "NCHR" ✓ |
+| vram_ref | VRAM | 4 | 65536 | after "GVRM" ✓ |
+
+### 5. SAT window — CORRECT
+
+GCTB stores 2048 bytes from `$F400`. `gen_sprites_with_vram` reads `sat[0]` = `$F400`, walks by 7-bit link (max slot 127). Slot 0-127 = `$F400-$F7FF`. Title SAT at `$F800` is slot 128+ which cannot be reached by a 7-bit link pointer. **No risk.**
+
+### 6. grid_key / px compare — CLEAN
+
+Both sides encode index-0 pixels as `None` (transparent). Non-zero pixels are `int` CRAM words. `tuple(tuple(row) for row in px)` gives a hashable 64-element grid. Two different sprites producing identical grids is mathematically impossible with different tile+palette. **No aliasing.**
+
+### 7. Verdict logic — CORRECT
+
+`PASS iff (tot_px==0 and tot_miss==0 and tot_n > 0)`. Frames where NES Link is off-screen (`not nc`) skip — correct, nothing to compare. `tot_n > 0` prevents false-PASS when every frame is skipped. If NES lacks Link but Gen has him, that frame is silently skipped — see MINOR #3 below.
+
+### 8. Crash analysis — 2 REAL BUGS
+
+---
+
+## BUGS FOUND
+
+### BUG 1 (MAJOR) — `gen_by_pos` dict overwrite
+**File:** `cave_transition_sprite_diff.py` in `match_link()`
+
+```python
+gen_by_pos = {(c.x, c.y): c for c in gen_cells}
+```
+
+If two gen sprite cells share the exact `(x,y)` (e.g. overlapping sprites), the dict silently keeps only the last one. If the NES Link cell matches the *dropped* cell, you get a false MISSING. If it matches the *kept* cell from a different sprite with coincidentally identical pixels, you get a false OK. **Fix:**
+
+```python
+from collections import defaultdict
+gen_by_pos = defaultdict(list)
+for c in gen_cells:
+    gen_by_pos[(c.x, c.y)].append(c)
+```
+
+Then in the match loop iterate candidates and pick best match.
+
+### BUG 2 (MAJOR) — SAT chain walk truncated at slot 64
+**File:** `cave_byte_diff.py` in `gen_sprites_with_vram()`
+
+```python
+while slot not in seen and slot < 64:
+```
+
+VDP sprite slots 0-79 are valid (80 sprites per scanline, 7-bit link = 0-127). SGDK may place sprites above slot 63. Slots 64-79 silently skipped → missing Gen sprites → false MISSING/PX-DIFF for any sprite in that range. **Fix:**
+
+```python
+while slot not in seen and slot < 128:
+```
+
+### MINOR 3 — Silent asymmetric skip
+When `not nc` (NES Link off-screen), the script silently continues even if Gen has nonzero cells. Could mask a frame where Gen renders Link but NES doesn't. **Fix:** Add a warning counter:
+
+```python
+if not nc:
+    if gc:
+        asymmetric += 1
+    continue
+```
+
+and report `asymmetric` count at the end.
+
+### MINOR 4 — No input length validation
+No guards against truncated bundles. Python raises IndexError/ValueError at first bad access — clear enough for a debug tool, but a single `len()` check at load time would give a better message.
+
+### NIT 5 — Variable name `ny` in `detect_offset`
+`ny = sorted({(c.x, c.y) ...})` contains `(x,y)` tuples, not a y-coordinate. Cosmetic.
+
+---
+
+## VERDICT: APPROVE-WITH-CHANGES
+
+**Fix BUG 1 (gen_by_pos → defaultdict(list)) and BUG 2 (slot < 64 → slot < 128) before first run.** Both are real incorrectness bugs; the other items are MINOR/NIT that can wait. BUG 2 is dormant for the small cave-entry scene but will bite as scenes grow.
+
+Priority order: **BUG 2 first** (sprites silently excluded) → **BUG 1** (dict overwrite) → MINOR 3 (asymmetric warning). Then APPROVED.

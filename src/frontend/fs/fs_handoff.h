@@ -14,4 +14,12 @@
  */
 void fs_handoff_to_transpiled(uint8_t slot);
 
+/* Set to 1 when the player commits to a slot; g_fs_handoff_slot carries
+ * which one. The File Select never enters gameplay itself — the host loop
+ * polls these and performs the transition, so src/frontend/ keeps no
+ * dependency on the gameplay runtime. CurSaveSlot ($0016) is seeded by
+ * fs_handoff_to_transpiled before these are set. */
+extern unsigned char g_fs_handoff_requested;
+extern unsigned char g_fs_handoff_slot;
+
 #endif

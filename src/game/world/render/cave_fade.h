@@ -35,7 +35,14 @@ typedef enum {
     CAVE_FADE_LINK_DESCEND = 1,
     CAVE_FADE_SWAP_ENTRY   = 2,
     CAVE_FADE_LINK_ASCEND  = 3,  /* cave exit: Link walks UP, Y-=1 per 4 frames */
-    CAVE_FADE_SWAP_EXIT    = 4
+    CAVE_FADE_SWAP_EXIT    = 4,
+    CAVE_FADE_LINK_EMERGE  = 5,  /* cave ENTRY emerge: Link walks UP from $DD to
+                                  * the cave floor ($D5) via NES MoveObject
+                                  * (InitMode_WalkCave, Z_05.asm:6643). */
+    CAVE_FADE_LOAD_HOLD    = 6   /* between descent-end and emerge: NES holds
+                                  * Link at the descent-end Y while submodes 1-7
+                                  * load the cave (~29 frames) before
+                                  * InitModeB_EnterCave repositions to $DD. */
 } cave_fade_phase_t;
 
 typedef struct {
@@ -44,8 +51,8 @@ typedef struct {
      * adjusts players[0].y += 1 and sets sprite priority. */
     void (*on_descend_step)(unsigned char step_idx);
     /* Called at SWAP_ENTRY. Owner sets scene = SCENE_CAVE +
-     * Link reposition (120, 192 face up) + any other RoomRom-local
-     * state bookkeeping. */
+     * Link reposition (NES $70,$DD = 112,221 face up; Z_01.asm:2965) +
+     * any other RoomRom-local state bookkeeping. */
     void (*on_swap_entry)(cave_id_t cid);
     /* Called once per LINK_ASCEND tick (cave exit). Owner adjusts
      * players[0].y -= 1 + ticks walk-anim. 16 steps total. */
@@ -53,6 +60,22 @@ typedef struct {
     /* Called at SWAP_EXIT. Owner sets scene = SCENE_OW + Link
      * reposition (16 px south of entrance facing down) + HUD reset. */
     void (*on_swap_exit)(void);
+    /* Called once per LINK_EMERGE tick (cave ENTRY emerge). Owner writes
+     * players[0].y = obj_y and mirrors nes_ram ObjY[0]=$84=obj_y,
+     * ObjGridOffset[0]=$394=grid, ObjPosFrac[0]=$3A8=posfrac so the byte-diff
+     * tracks the NES emerge (InitMode_WalkCave). obj_y walks $DD -> $D5
+     * (cave floor). Appended last to keep the positional initializer order
+     * of the existing four callbacks unchanged. */
+    void (*on_emerge_step)(unsigned char obj_y, unsigned char grid,
+                           unsigned char posfrac);
+    /* Called EVERY frame during DESCEND/EMERGE/ASCEND (independent of the
+     * position step) with the NES walk-anim state: counter = ObjAnimCounter
+     * ($3D0, down-counts 6..1 rolling to 6), frame = ObjAnimFrame ($3E4,
+     * toggles 0/1 at each roll — the 6-frame walk-pose cadence,
+     * Z_07.asm:5045 AnimateObjectWalking). Owner sets s_link_frame=frame and
+     * mirrors nes_ram $3D0=counter / $3E4=frame. Appended last to preserve the
+     * existing positional initializer order. */
+    void (*on_anim_tick)(unsigned char counter, unsigned char frame);
 } cave_fade_callbacks_t;
 
 void              cave_fade_set_callbacks(const cave_fade_callbacks_t *cb);

@@ -39,12 +39,22 @@ void fs_phase_step(void) {
             /* Idle — input dispatch in fs_main moves cursor + cycles PLAYERS. */
             break;
         case FS_HANDOFF:
-            /* v6.handoff: A pressed on a slot row. v6.minimal SRAM-less mode
-             * always routes via slot 3 → register-name (CurSaveSlot >= 3 in
-             * transpiled chose-slot path). Real save detection lands when
-             * SRAM is wired into fs_sram_slot_occupied. */
-            fs_handoff_to_transpiled(3u);
-            /* unreachable */
+            /* A pressed on a slot row.
+             *
+             * This used to hardcode slot 3, because the File Select was
+             * written in "v6.minimal SRAM-less mode" before cart SRAM
+             * existed: slot >= 3 meant "go to register-name" in the old
+             * transpiled path. Its own comment said real slot routing
+             * would land "when SRAM is wired". That happened 2026-08-04
+             * (sram_backend.c + save_game.c), so the cursor row is now
+             * the slot, and out-of-range rows fall back to slot 0 rather
+             * than handing the save layer an index it must reject.
+             *
+             * Cursor rows: 0/1/2 = save slots, 3 = COPY, 4 = ERASE. Only
+             * a slot row reaches FS_HANDOFF, but the clamp keeps a future
+             * cursor change from silently producing an invalid slot. */
+            fs_handoff_to_transpiled(
+                (uint8_t)((s_fs_cursor <= 2u) ? s_fs_cursor : 0u));
             break;
         default:
             break;  /* FS_COPY_*, FS_ERASE_*, FS_OPTIONS land in v4+ */

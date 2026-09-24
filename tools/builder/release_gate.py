@@ -142,6 +142,11 @@ def main() -> int:
                     help="user NES Zelda 1 ROM")
     ap.add_argument("--dry-run", action="store_true",
                     help="list gates; verify infra only")
+    ap.add_argument("--override", action="append", default=[],
+                    metavar="SYSTEM/AXIS:REASON:APPROVED_BY",
+                    help="Package despite a RED completion cell. Recorded in "
+                         "the release manifest and counted as an override, "
+                         "never as GREEN. Applies to one run only.")
     args = ap.parse_args()
 
     verdict = {
@@ -158,6 +163,7 @@ def main() -> int:
             "phase_contracts",
             "banned_filename_gate",
             "check_incremental_promotion",
+            "completion_gate",
             "hardware_smoke (DEFERRED — Phase 16.2 external)",
         ):
             print(f"  would run: {label}")
@@ -187,6 +193,24 @@ def main() -> int:
             verdict["verdict"] = f"FAIL: {label}"
             archive_manifest(args.rom, verdict)
             return fail_code
+
+    # Completion gate — re-collects from source; never trusts the tracker
+    # JSON on disk. Runs last so a RED cell blocks packaging only after the
+    # cheaper static gates have had their say.
+    print()
+    print("[gate] completion_gate ...")
+    from completion_gate import check as completion_check, parse_overrides
+
+    overrides = parse_overrides(args.override)
+    ok, message = completion_check(ROOT, overrides=overrides)
+    print(message)
+    verdict["gates"].append({"name": "completion_gate", "rc": 0 if ok else 1})
+    if overrides:
+        verdict["completion_overrides"] = overrides
+    if not ok:
+        verdict["verdict"] = "FAIL: completion_gate"
+        archive_manifest(args.rom, verdict)
+        return 5
 
     # Phase 16.2 hardware smoke is external; flag as DEFERRED not BLOCKING.
     print()

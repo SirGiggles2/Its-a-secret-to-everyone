@@ -1,0 +1,11 @@
+**APPROVE**
+
+| # | Check | Verdict |
+|---|---|---|
+| 1 | `w8(0x1570,0x00); w8(0x1571,0x70)` → big-endian $0070 | **Correct.** hi=lo addr matches 68K BE. |
+| 2 | Written after `idle(30)` post-teleport, before arm frame | **Safe.** Teleport state machine finished. Game tick on arm frame sees x=$70 from frame-start, no physics clobber at walk-in-cave. Gate fires same frame. |
+| 3 | y=$008D → y_low=$D ✓. Gate checks `y & 0x0F == 0x0D` + tile $24 | **Fires.** No X constraint. $70 is NES's descent column. |
+| 4 | No-op write_link_xy($1564) + nes-mirror seed left in | **Harmless.** Dead offset writes to unused RAM; mirror overwritten next frame sync. Zero behavioral effect. |
+| 5 | BUS $FF1570-73 | **16MB domain.** No crash risk. |
+
+One post-run note: verify in capture output that `saw_cave` triggered. If not, the arm frame's physics may have moved y's low nibble off $D — add one more `emu.frameadvance()` (idle frame) between set and arm, or check `force_mode_walk()` doesn't apply velocity.

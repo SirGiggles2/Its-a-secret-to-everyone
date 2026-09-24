@@ -205,8 +205,6 @@
 | `src/oracle/enemies/enemy_flyer_runtime.c` | `enrt_set_flying_state_1` | enemies |
 | `src/oracle/enemies/enemy_flyer_runtime.c` | `enrt_set_up_fairy_object` | enemies |
 | `src/oracle/enemies/enemy_flyer_runtime.c` | `enrt_update_keese` | enemies |
-| `src/oracle/enemies/enemy_ganon_runtime.c` | `blue_wizzrobe_move` | enemies |
-| `src/oracle/enemies/enemy_ganon_runtime.c` | `blue_wizzrobe_turn_sometimes_and_move_and_check_tile` | enemies |
 | `src/oracle/enemies/enemy_ganon_runtime.c` | `enrt_init_ganon` | enemies |
 | `src/oracle/enemies/enemy_ganon_runtime.c` | `enrt_update_ganon` | enemies |
 | `src/oracle/enemies/enemy_ganon_runtime.c` | `ganon_append_palette_row_transfer_record` | enemies |
@@ -322,11 +320,12 @@
 | `src/oracle/enemies/enemy_wizzrobe_runtime.c` | `blue_wizzrobe_align_and_randomize_timer` | enemies |
 | `src/oracle/enemies/enemy_wizzrobe_runtime.c` | `blue_wizzrobe_align_with_nearest_square` | enemies |
 | `src/oracle/enemies/enemy_wizzrobe_runtime.c` | `blue_wizzrobe_choose_teleport_target` | enemies |
-| `src/oracle/enemies/enemy_wizzrobe_runtime.c` | `blue_wizzrobe_move` | enemies |
 | `src/oracle/enemies/enemy_wizzrobe_runtime.c` | `blue_wizzrobe_move_and_check_tile` | enemies |
 | `src/oracle/enemies/enemy_wizzrobe_runtime.c` | `blue_wizzrobe_try_shooting` | enemies |
 | `src/oracle/enemies/enemy_wizzrobe_runtime.c` | `blue_wizzrobe_turn_toward_link` | enemies |
 | `src/oracle/enemies/enemy_wizzrobe_runtime.c` | `blue_wizzrobe_walk_or_teleport` | enemies |
+| `src/oracle/enemies/enemy_wizzrobe_runtime.c` | `enrt_blue_wizzrobe_move` | enemies |
+| `src/oracle/enemies/enemy_wizzrobe_runtime.c` | `enrt_blue_wizzrobe_turn_sometimes_and_move_and_check_tile` | enemies |
 | `src/oracle/enemies/enemy_wizzrobe_runtime.c` | `enrt_update_blue_wizzrobe` | enemies |
 | `src/oracle/enemies/enemy_wizzrobe_runtime.c` | `enrt_update_red_wizzrobe` | enemies |
 | `src/oracle/enemies/enemy_wizzrobe_runtime.c` | `red_wizzrobe_align_and_set_y` | enemies |
@@ -351,11 +350,12 @@
 | `src/game/hud/hud_runtime.c` | `draw_hud_tile_attr` | hud |
 | `src/game/hud/hud_runtime.c` | `draw_hud_tile_b` | hud |
 | `src/game/hud/hud_runtime.c` | `draw_original_dungeon_map` | hud |
-| `src/game/hud/hud_runtime.c` | `draw_original_map_marker` | hud |
 | `src/game/hud/hud_runtime.c` | `draw_status_counts_original` | hud |
 | `src/game/hud/hud_runtime.c` | `draw_status_counts_redux` | hud |
 | `src/game/hud/hud_runtime.c` | `hud_word` | hud |
 | `src/game/hud/hud_runtime.c` | `native_hud_changed` | hud |
+| `src/game/hud/hud_runtime.c` | `original_marker_x` | hud |
+| `src/game/hud/hud_runtime.c` | `original_marker_y` | hud |
 | `src/game/hud/hud_runtime.c` | `roomrom_hud_draw` | hud |
 | `src/game/hud/hud_runtime.c` | `roomrom_hud_refresh_dynamic` | hud |
 | `src/game/hud/hud_runtime.c` | `roomrom_hud_refresh_marker` | hud |

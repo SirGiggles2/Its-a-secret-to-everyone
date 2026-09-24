@@ -41,12 +41,60 @@ static void mark_cell_hi_prio_xy(unsigned char col, unsigned char row)
 #define CAVE_DESCEND_TOTAL_FRAMES \
     (CAVE_DESCEND_PIXELS * CAVE_DESCEND_FRAMES_PER_PX)
 
+/* NES cave ENTRY emerge (InitMode_WalkCave, Z_05.asm:6643 + MoveObject
+ * Z_07.asm:2719). After the cave loads, Link spawns at the cave bottom and
+ * walks UP to the cave floor. Movement is NES MoveObject's quarter-speed
+ * fraction applied 4x/frame: each application does ObjPosFrac -= ObjQSpeedFrac
+ * and, on borrow, ObjY -= 1. Values byte-captured live from Z1 cave $6A
+ * (probe dbg_frac): spawn ObjY=$DD, ObjPosFrac=$00, ObjGridOffset=$30,
+ * ObjQSpeedFrac=$60 (const); Link halts at the floor ObjY=$D5 (collision
+ * clears ObjGridOffset). The captured ObjY walk is $DD,$DB,$DA,$D8,$D7,$D5. */
+#define CAVE_EMERGE_SPAWN_Y   0xDDu
+#define CAVE_EMERGE_FLOOR_Y   0xD5u
+#define CAVE_EMERGE_GRID0     0x30u
+#define CAVE_EMERGE_QSPEED    0x60u
+
 static cave_fade_phase_t     s_phase          = CAVE_FADE_IDLE;
 static unsigned char         s_frame_counter  = 0u;  /* 0..63 for descend */
 static unsigned char         s_step_idx       = 0u;  /* 0..15 px steps emitted */
 static cave_id_t             s_pending_cid    = 0u;
 static unsigned char         s_return_room_id = 0u;
-static cave_fade_callbacks_t s_cb             = { 0, 0, 0 };
+static cave_fade_callbacks_t s_cb             = { 0, 0, 0, 0, 0, 0 };
+/* LINK_EMERGE running state (NES MoveObject accumulator). */
+static unsigned char         s_emerge_y       = 0u;
+static unsigned char         s_emerge_posfrac = 0u;
+static unsigned char         s_emerge_grid    = 0u;
+/* NES walk-anim cadence (ObjAnimCounter $3D0 / ObjAnimFrame $3E4). Counter
+ * down-counts; on roll past 1 it resets to 6 and toggles the frame — a
+ * 6-frame walk-pose period (Z_07.asm:5045 AnimateObjectWalking). */
+#define CAVE_ANIM_PERIOD  6u
+/* Walk-pose ENTRY seed for the descend. The 6-frame cadence is correct, but the
+ * FIRST pose-flip must land where NES's does. NES (cave $6A live capture) flips
+ * ObjAnimFrame 0->1 at descent fr3 and 1->0 at fr9; the position anchor between
+ * the NES (GameMode=$10) and Gen (cave_fade arm) captures is +2 frames (Tier-A
+ * byte-verified). Gen's first flip lands at frame (1 + seed): seed=6 flips at
+ * fr7. The metric is the VISIBLE pose (NES OAM hflip / Gen SAT tile), not the
+ * ObjAnimFrame cell (NES's sprite pose lags that cell ~1 frame). Measured: NES
+ * OAM pose flips at descent fr4; the position anchor between the captures is +2
+ * (Tier-A byte-verified); Gen's SAT pose flips at frame (2 + seed). seed=4 =>
+ * Gen flips at fr6 = NES fr4 + 2 => visible pose byte-aligns with NES at the
+ * same +2 anchor as position. (Real-gameplay entry phase varies +-1 within NES's
+ * own range, so this is the capture-matching choice, not an overfit.) */
+#define CAVE_ANIM_ENTRY_SEED 4u
+/* Emerge re-seed: NES InitMode_WalkCave restarts the walk anim at the emerge
+ * (ObjAnimFrame=0, ObjAnimCounter re-seeded) so Link holds pose 0 through the
+ * short walk-up and flips to pose 1 right as he settles at the $D5 floor.
+ * Without re-seeding, the Gen emerge carries the frozen descent-end frame
+ * (pose 1) and runs 1 pose ahead of NES for the whole emerge walk. */
+#define CAVE_ANIM_EMERGE_SEED 4u
+static unsigned char         s_anim_counter   = CAVE_ANIM_PERIOD;
+static unsigned char         s_anim_frame     = 0u;
+/* Cave-load hold: NES holds Link at the descent-end Y while GameMode $0B
+ * submodes 1-7 (LayoutCave, row transfers, InitCave) run before submode 8
+ * (InitMode_WalkCave) repositions to $DD and emerges. Byte-captured ~29 frames
+ * for cave $6A (NES descent-end fr64 -> emerge-spawn fr93). */
+#define CAVE_LOAD_HOLD_FRAMES 18u
+static unsigned char         s_load_counter   = 0u;
 
 void cave_fade_set_callbacks(const cave_fade_callbacks_t *cb)
 {
@@ -63,6 +111,8 @@ void cave_fade_begin_enter(cave_id_t cid)
     s_pending_cid   = cid;
     s_frame_counter = 0u;
     s_step_idx      = 0u;
+    s_anim_counter  = CAVE_ANIM_ENTRY_SEED;   /* align first pose-flip to NES */
+    s_anim_frame    = 0u;
     s_phase         = CAVE_FADE_LINK_DESCEND;
 }
 
@@ -74,6 +124,8 @@ void cave_fade_begin_exit(unsigned char return_room_id)
     s_return_room_id = return_room_id;
     s_frame_counter  = 0u;
     s_step_idx       = 0u;
+    s_anim_counter   = CAVE_ANIM_PERIOD;
+    s_anim_frame     = 0u;
     s_phase          = CAVE_FADE_LINK_ASCEND;  /* descend-mirror exit anim */
 }
 
@@ -124,6 +176,24 @@ void cave_fade_mark_arch_hi_prio(unsigned char link_tile_col,
 
 void cave_fade_tick(void)
 {
+    /* NES walk-anim runs EVERY frame Link is animating (descend/emerge/ascend),
+     * independent of the position step. Emit the current (counter, frame) then
+     * advance: counter down-counts, rolling 1->6 and toggling the frame — the
+     * 6-frame walk-pose cadence (Z_07.asm:5045). */
+    if (s_phase == CAVE_FADE_LINK_DESCEND ||
+        s_phase == CAVE_FADE_LINK_EMERGE  ||
+        s_phase == CAVE_FADE_LINK_ASCEND) {
+        if (s_cb.on_anim_tick != 0) {
+            s_cb.on_anim_tick(s_anim_counter, s_anim_frame);
+        }
+        if (s_anim_counter <= 1u) {
+            s_anim_counter = CAVE_ANIM_PERIOD;
+            s_anim_frame   = (unsigned char)(s_anim_frame ^ 1u);
+        } else {
+            s_anim_counter = (unsigned char)(s_anim_counter - 1u);
+        }
+    }
+
     switch (s_phase) {
     case CAVE_FADE_LINK_DESCEND: {
         /* NES: every 4th frame INC ObjY. We count frames; when
@@ -136,11 +206,25 @@ void cave_fade_tick(void)
             }
             s_step_idx = (unsigned char)(s_step_idx + 1u);
             if (s_step_idx >= CAVE_DESCEND_PIXELS) {
-                s_phase = CAVE_FADE_SWAP_ENTRY;
+                /* NES holds Link at the descent-end Y for the cave-load
+                 * submodes BEFORE the emerge — replicate the duration. */
+                s_load_counter = CAVE_LOAD_HOLD_FRAMES;
+                s_phase = CAVE_FADE_LOAD_HOLD;
             }
         }
         break;
     }
+
+    case CAVE_FADE_LOAD_HOLD:
+        /* Hold Link at the descent-end position (the descend handler left
+         * nes_ram ObjY there; cave-play is gated off while cave_fade is active)
+         * for the NES cave-load duration, then do the swap + emerge. */
+        if (s_load_counter > 0u) {
+            s_load_counter = (unsigned char)(s_load_counter - 1u);
+        } else {
+            s_phase = CAVE_FADE_SWAP_ENTRY;
+        }
+        break;
 
     case CAVE_FADE_SWAP_ENTRY:
         /* Instant: cave state init + cave plane fill + cave palette
@@ -154,8 +238,53 @@ void cave_fade_tick(void)
         if (s_cb.on_swap_entry != 0) {
             s_cb.on_swap_entry(s_pending_cid);
         }
-        s_phase = CAVE_FADE_IDLE;
+        /* NES: cave-load is followed by InitMode_WalkCave (the emerge), not an
+         * idle. Spawn Link at the cave bottom ($DD) and hand off to the emerge
+         * walk-up. on_swap_entry already placed Link at the spawn; seed the
+         * MoveObject accumulator. */
+        s_emerge_y       = CAVE_EMERGE_SPAWN_Y;
+        s_emerge_posfrac = 0u;
+        s_emerge_grid    = CAVE_EMERGE_GRID0;
+        /* Re-seed the walk anim for the emerge (NES InitMode_WalkCave restarts
+         * it): hold pose 0 through the walk-up, flip to pose 1 at the settle. */
+        s_anim_frame     = 0u;
+        s_anim_counter   = CAVE_ANIM_EMERGE_SEED;
+        s_phase          = CAVE_FADE_LINK_EMERGE;
         break;
+
+    case CAVE_FADE_LINK_EMERGE: {
+        /* NES MoveObject UP, quarter-speed applied 4x/frame
+         * (Z_07.asm:2719-2749). Each application: ObjPosFrac -= ObjQSpeedFrac;
+         * on borrow (underflow), ObjY -= 1. */
+        unsigned char start_y = s_emerge_y;
+        unsigned char i;
+        for (i = 0u; i < 4u; ++i) {
+            unsigned char nf = (unsigned char)(s_emerge_posfrac - CAVE_EMERGE_QSPEED);
+            if (nf > s_emerge_posfrac) {           /* borrow (underflow) */
+                s_emerge_y = (unsigned char)(s_emerge_y - 1u);
+            }
+            s_emerge_posfrac = nf;
+        }
+        /* ObjGridOffset -= pixels moved this frame. */
+        {
+            unsigned char moved = (unsigned char)(start_y - s_emerge_y);
+            s_emerge_grid = (s_emerge_grid > moved)
+                ? (unsigned char)(s_emerge_grid - moved) : 0u;
+        }
+        /* Cave-floor collision: NES halts Link at the floor and clears
+         * ObjGridOffset there (it does not exhaust the full $30 budget). */
+        if (s_emerge_y <= CAVE_EMERGE_FLOOR_Y) {
+            s_emerge_y    = CAVE_EMERGE_FLOOR_Y;
+            s_emerge_grid = 0u;
+        }
+        if (s_cb.on_emerge_step != 0) {
+            s_cb.on_emerge_step(s_emerge_y, s_emerge_grid, s_emerge_posfrac);
+        }
+        if (s_emerge_y <= CAVE_EMERGE_FLOOR_Y) {
+            s_phase = CAVE_FADE_IDLE;
+        }
+        break;
+    }
 
     case CAVE_FADE_LINK_ASCEND: {
         /* Mirror of LINK_DESCEND: Y -= 1 every 4 frames for 16 steps.

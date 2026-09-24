@@ -1,0 +1,2 @@
+SUCCESS: The process with PID 21744 (child process of PID 18988) has been terminated.
+SUCCESS: The process with PID 18988 (child process of PID 2916) has been terminated.

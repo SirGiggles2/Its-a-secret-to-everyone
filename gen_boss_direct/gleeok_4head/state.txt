@@ -1,0 +1,17 @@
+boss=gleeok_4head level=8 room=$3C scene_id=11
+frame=1915
+warp_verified=true (attempt 1; 0=never landed scene1+room)
+boss_kick_fired=true ack 0->1
+boss_chr_vram_nonzero=1298/2048 (base $5260)
+--- mirror (VERIFIED, $FF7200) ---
+mirror_magic=5750 (expect 5750)
+mir.frame=1038 scene=1 room=$3C
+mir.link_x=120 link_y=128 face=0
+mir.uw_level=8 uw_quest=1
+mir.enemy_chr_swap_state=5 active_scene=11 (heavy-mirror)
+--- NES cells (mirror $FF8000+addr) ---
+GameMode $12=$05  Level $10=$08  RoomId $EB=$3C
+BossRoomId $6BBC=$A3  StartRoomId $6BAD=$20  [SRAM: UNVERIFIED]
+Slots 0..15 (s: type x y dir state hp attr) — ObjType nonzero only:
+  s01 t=$45 x=$7C y=$6F dir=$BD st=$00 hp=$A0 attr=$C1
+  s11 t=$56 x=$80 y=$83 dir=$00 st=$00 hp=$00 attr=$00

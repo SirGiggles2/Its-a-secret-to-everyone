@@ -1,0 +1,39 @@
+I'll conduct a systematic adversarial review of both scripts before first run, per RULE V2. Let me analyze the code for silent-fail decode bugs.
+
+✗ create create file · path: "C:\Users\Jake Diggity\.copilot\session-state\3651ee3e-6068-4…"
+  └ "file_text": Required
+
+Let me create the review document:
+
+● Create REVIEW_cave_sprite_decoders.md +302
+  └ ~\.copilot\session-state\3651ee3e-6068-4f32-9d75-548a3fe70ab6\files\REVIEW_c
+    ave_sprite_decoders.md
+
+---
+
+## VERDICT: **REWORK** — 3 BLOCKER bugs found
+
+### Silent-fail decode bugs (before first run):
+
+1. **gen_by_pos dict collision (BLOCKER):** If two Gen cells share a position, dict overwrites silently → false "MISSING". Link + bonfire at same pixel = data loss.
+
+2. **Offset voting dominated by bonfires (BLOCKER):** Votes on ALL gen cells vs nes cells. In caves: Link ≤ 8 cells, but Gen = Link + 2 bonfires + NPC = 10+ cells. Bonfires can dominate vote if they align better than Link → wrong global offset.
+
+3. **NES off-screen skip hides divergence (BLOCKER):** If NES Link off-screen (Y ≥ $EF) but Gen Link on-screen, frame skipped silently. No alert. Parity break undetected.
+
+### Secondary issues:
+
+4. **No bundle size validation** — short NCTB/GCTB crashes on index lookup
+5. **Offset fallback (0, -8)** — may be wrong if all frames skip; no warning
+
+### Fixes (all <20 lines, <5 min):
+- gen_by_pos: detect collision or use `defaultdict(list)`, check multiple cells per position
+- NES off-screen: alert if Gen on-screen (counts as missing/failure)
+- Bundle validation: check `len() >= expected_offset + size` before slicing
+- Offset fallback: log warning when triggered
+- Offset voting: optionally re-vote per-cell or validate result
+
+**Full review:** `/files/REVIEW_cave_sprite_decoders.md` (detailed analysis of all 7 checks + test cases)
+
+**Next:** Apply fixes (minimal, surgical, no refactor), re-test decoding on both paths, then APPROVE.
+

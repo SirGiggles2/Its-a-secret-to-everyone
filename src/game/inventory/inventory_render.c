@@ -703,7 +703,7 @@ static void draw_item_sprites(void)
                 unsigned char tr = uw_map_triforce_room(level);
                 draw_marker_sprite((unsigned short)((short)(((tr & 0x0Fu) << 3) + 0x12u) + status_x_offset),
                                    (unsigned short)(((tr & 0x70u) >> 2) + 0x17u + 175u),
-                                   RENDER_PAL0, DSPR(14));
+                                   RENDER_PAL1, DSPR(14));
             }
             /* Compass ($6A mirrored) at ($2C,$9E); map ($4C narrow) at
              * ($2C,$76) — UW-extracted tiles, NES SPR sub-pal 2 -> PAL3. */
@@ -733,7 +733,23 @@ void inventory_subscreen_enter(void)
 
     /* L4 (Phase 7 v2): swap CRAM to NES subscreen palette before any
      * BG/sprite write so first rendered frame is correctly colored. */
-    inventory_palette_load_subscreen(s_subscreen_uw);
+    inventory_palette_load_subscreen(s_subscreen_uw, nes_ram[0x0010u],
+                                     roomrom_main_current_quest());
+
+    /* G4: load the per-level triforce-marker tint into the otherwise-free
+     * PAL1 index 9 (CRAM 25). NES SPR sub-pal3[1] = installed LevelInfo
+     * offset $20 ($6B9E). ROM-verified 2026-09-24: offset $20 of the nine
+     * bank-6 LevelInfoUW records reproduces the former live-NES capture
+     * table byte-for-byte (as do $2D rot, $2E sbx, $2F start, $30 tri). */
+    if (s_subscreen_uw) {
+        extern unsigned short roomrom_bg_palette_nes_to_cram(unsigned char);
+        unsigned char lvl = nes_ram[0x0010u];
+        unsigned short c = (lvl >= 1u && lvl <= 9u)
+            ? roomrom_bg_palette_nes_to_cram(nes_ram[0x6B9Eu]) : 0u;
+        *((volatile unsigned long *)0xC00004u)  = 0xC0000000UL
+                                                | ((unsigned long)(25u * 2u) << 16);
+        *((volatile unsigned short *)0xC00000u) = c;
+    }
 
     /* Upload the 8 live-extracted subscreen item-icon tiles to free VRAM
      * $A000 (tile DSPR_BASE). These cover icons absent from / wrong in the

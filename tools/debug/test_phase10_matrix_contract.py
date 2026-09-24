@@ -16,6 +16,7 @@ NOT require audio TUs in `build_debug.py`.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 
@@ -104,6 +105,53 @@ def test_adapter_abi_exposes_four_calls() -> None:
         "audio_tick_vblank",
     ):
         need(api, sym, "audio_abi entry")
+
+
+def test_ow_uw_xgm_music_blobs_are_linked() -> None:
+    for p in (
+        "data/audio_music/ow_theme_xgm.c",
+        "data/audio_music/ow_theme_xgm.h",
+        "data/audio_music/uw_theme_xgm.c",
+        "data/audio_music/uw_theme_xgm.h",
+    ):
+        if not (ROOT / p).exists():
+            raise AssertionError(f"XGM music blob missing: {p}")
+
+    build = read("tools/debug/build_debug.py")
+    need(build, "data/audio_music/ow_theme_xgm.c", "Debug build OW XGM link")
+    need(build, "data/audio_music/uw_theme_xgm.c", "Debug build UW XGM link")
+
+
+def test_audio_adapter_routes_ow_and_uw_to_xgm() -> None:
+    adapter = read("src/sgdk_adapter/audio_adapter.c")
+    need(adapter, "SONG_OW_BITMAP  0x01u", "OW song bitmap constant")
+    need(adapter, "SONG_UW_BITMAP  0x40u", "UW song bitmap constant")
+    need(adapter, "ow_theme_xgm", "OW XGM blob reference")
+    need(adapter, "uw_theme_xgm", "UW XGM blob reference")
+    need(adapter, "s_current_xgm_song", "OW/UW restart guard")
+
+
+def test_ow_uw_direct_calls_use_audio_adapter() -> None:
+    debug_main = read("src/debug/a4_probe_main.c")
+    roomrom_main = read("RoomRom/src/main.c")
+    need(debug_main, "audio_music_play(0x40)", "debug enter UW route")
+    need(roomrom_main, "audio_music_play((s_scene == SCENE_UW) ? 0x40 : 0x01)",
+         "RoomRom scene toggle route")
+    if re.search(r"(?<!audio_)music_play\(0x40\)", debug_main):
+        raise AssertionError("debug enter still calls music_play(0x40) directly")
+    if re.search(r"(?<!audio_)music_play\(\(s_scene == SCENE_UW\) \? 0x40 : 0x01\)",
+                 roomrom_main):
+        raise AssertionError("RoomRom scene toggle still calls music_play directly")
+
+
+def test_warp_outcome_switches_ow_uw_xgm_music() -> None:
+    roomrom_main = read("RoomRom/src/main.c")
+    calls = roomrom_main.count("audio_music_play((s_scene == SCENE_UW) ? 0x40 : 0x01)")
+    if calls < 2:
+        raise AssertionError(
+            "RoomRom must dispatch OW/UW XGM music both on debug scene toggle "
+            "and natural warp outcome"
+        )
 
 
 def test_phase10_findings_present() -> None:

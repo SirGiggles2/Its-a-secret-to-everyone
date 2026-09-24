@@ -1,0 +1,297 @@
+I'm reviewing this plan as an adversarial engineer. This is a **REWORK** — multiple critical gaps and ordering hazards that will cause mid-task failure if not fixed now.
+
+---
+
+## BLOCKERS
+
+### (BLOCKER) Probe specification incomplete + domain confusion
+**Problem:** Step 1 says "emit Link slots {y,x,attr,tile}/frame" and "Genesis SAT read at VRAM $F800 (PR-2 DMA target)" but leaves critical domains unspecified:
+- What is the complete set of Genesis domains? OAM RAM (not VRAM) is where SAT lives; is $F800 a shadow copy? Unclear.
+- NES "OAM $10-$15" is ambiguous — is that absolute $0200-$0205, or a 6-byte range from an unspecified base?
+- No enumeration of VRAM ranges, register snapshots, or metadata needed for byte-diff (GameMode/Submode/FrameCounter).
+- RULE V3 violation: probe spec does not "enumerate domains live" or specify full capture ranges.
+
+**Fix:** Replace Step 1 preamble with explicit domain manifest:
+```
+Genesis: OAM RAM [$0000-$007F full], CRAM [$0000-$003F], Plane A [pixel range TBD], 
+  Regs [DMA-flags, VDP status], metadata [GameMode, Submode, FrameCounter, Y-scroll]
+NES: OAM [$0200-$020F], PALRAM [$3F00-$3F1F], RAM [$0080-$00FF], 
+  CHR [$0000-$1FFF pattern tables], PPUCTRL, metadata [FrameCounter, GameMode, Submode]
+Enumerate live: BizHawk/NesHawk domain names first (memory.getmemorydomainlist()), 
+no assumptions of domain existence/address.
+```
+
+---
+
+### (BLOCKER) Step 1 capture must gate Steps 2–7; ordering not enforced
+**Problem:** The plan says "Re-confirm −7px + ascend cadence against clean capture before trusting Steps 2-7" but does NOT make this a hard blocker. Steps 2-7 assume −7px and 48×1fpp are facts. If the re-capture (Step 1) yields −6px or 48×2fpp, Steps 2-7 are wrong and need rework. The plan reads as "do Steps 2-7, then verify Step 1" rather than "block Steps 2-7 until Step 1 gate passes."
+
+Additionally, Step 2 says "Capture NES $84 on exact frame ObjCollidedTile==$24" — this frame alignment depends on old diff's frame numbering. But old diff is "stale/buggy." So Step 2's frame-alignment anchor is unreliable until new probe runs.
+
+**Fix:** Add explicit checkpoint between Step 1 and Step 2:
+```
+STEP 1 GATE (BLOCKER):
+- Verify −7px Y offset from NEW capture (not old diff). If capture shows different offset, REWORK Steps 2-7.
+- Verify 48px×1fpp ascend cadence from NEW capture. If different, REWORK Steps 2-7.
+- Gate MUST PASS before proceeding. Old diff is DISCARDED.
+Proceeding only with confirmed numbers.
+```
+
+---
+
+### (BLOCKER) Stairs-tile exit condition is a placeholder; Step 7 unspecified
+**Problem:** Step 7 says: "when collision_get_collidable_tile_still(0) returns stairs tile **(or captured Y/grid condition)**". The bolded part is a placeholder — the exact NES exit trigger is unknown. The plan defers discovery to Step 7's capture phase ("record frame GameMode flips $0B->$10 + ObjGridOffset/ObjY state to pin exit condition"), but then expects Step 7 to implement based on an unknown condition.
+
+**Fix:** Split Step 7 into 7a and 7b with a hard gate:
+```
+STEP 7a (Capture + gate): 
+  Capture NES exiting cave. Record exact frame where GameMode transitions $0B→$10. 
+  Decode exit trigger: is it (a) tile-type check (stairs tile), (b) Y-position threshold, 
+  (c) GridOffset==0 condition, (d) frame-counter tick? State the EXACT trigger found.
+  GATE: Decoded trigger documented + verified against asm cite (Z_05.asm or Z_01.asm).
+  Proceeding only when gate passes.
+
+STEP 7b (Implement): 
+  Port trigger to Genesis cave_dispatch / SCENE_CAVE collision handler.
+  [Exact implementation deferred until 7a gate passes.]
+```
+
+---
+
+## MAJORS
+
+### (MAJOR) Old diff is broken; new probe must confirm numbers before using them
+**Problem:** Plan states: "Probe stale/buggy — every Genesis OAM Link slot reads 00 across the whole capture; SAT read missing or wrong VRAM address. Diff's sprite conclusions untrustworthy." But the plan then asserts
+
+### (MAJOR) Old diff is broken; new probe must confirm numbers before using them
+**Problem:** Plan states: "Probe stale/buggy — every Genesis OAM Link slot reads 00 across the whole capture; SAT read missing or wrong VRAM address. Diff's sprite conclusions untrustworthy." But the plan then asserts numbers (−7px, 48×1fpp, (112, 221)) as if they come from a trustworthy source. Where do these numbers come from if the diff is untrustworthy?
+
+If these come from the stale diff, they are GUESSES and violate RULE ZERO. If they come from a different source (NES asm read), the plan must cite that source explicitly for EACH number, not wave to the diff.
+
+**Fix:** Trace each asserted number to its source:
+- −7px frame-0 Y: cite NES address ($84) at exact frame (cite asm line that checks entrance-tile collision + frame count). If from diff, reject and re-derive from asm.
+- 48px×1fpp ascend: cite NES asm loop or InitMode_WalkCave cadence. Confirm frame count (48 frames) + per-frame delta (+1px/frame) separately.
+- (112, 221) spawn: Z_01.asm:2956 says $70=$8C (112)✓, $DD=221✓. Keep this. Document it.
+
+---
+
+### (MAJOR) Missing ground truth: HUD row offset & Y-coordinate space normalization
+**Problem:** Step 2 mentions "HUD-row offset (ROOMROOM_ROOM_FIRST_ROW=7)" as a candidate for −7px divergence. But the plan does NOT establish what coordinate system each platform uses:
+- NES ObjY ($84) is in what space? Native PPU pixel Y (0–239)? Playfield-relative (0–255 with scroll)?
+- Genesis Y is in what space? Native VDP Y? Plane A scroll-relative?
+- Are there platform-specific offsets (HUD rows, title-safe zones, scroll wrapping)?
+
+Without this, "fix standing-Y to NES value" in Step 2 is a guess. You could match NES $84=$4D exactly in Genesis RAM and STILL be wrong if you're in the wrong coordinate space.
+
+**Fix:** Before Step 2 starts, document coordinate spaces:
+```
+NES Y coordinate: PPU pixel row 0–239 (byte $84 is raw pixel Y in nametable scroll frame).
+  HUD occupies rows 0–55 (sprites here blend with Status Bar). 
+  Playfield rows 56–239. Standing Link on entrance tile = row [capture value from NES], space [specify].
+
+Genesis Y coordinate: Plane A pixel Y in scroll frame. 
+  HUD occupies rows [specify if separate]. 
+  Playfield rows [specify]. 
+  Matching NES $84 requires offset [document]. 
+
+Step 2 fix: read both platforms' Y values in identical scenes, document the offset formula, 
+apply offset when porting NES value to Genesis.
+```
+
+---
+
+### (MAJOR) Step 5 (walk-pose anim cadence) is vague; per-frame toggle unspecified
+**Problem:** Step 5 says: "NES ticks pose every frame. Genesis toggles s_link_frame once per 4-frame step. Add per-frame anim tick when phase in {DESCEND,ASCEND}." 
+
+But:
+- What is s_link_frame? Is it a boolean (0/1) or a frame index (0–3)? Does toggle mean XOR or increment?
+- "move s_link_frame^=1 into per-frame cave_fade-active block (~1989)" — is this sprite animation or walk cycle?
+- The plan says "Keep position step on 4-frame schedule" — so position moves every 4 frames but animation ticks every frame. But NES animates every frame AND moves every frame per InitMode_WalkCave. Is this a desync?
+
+**Fix:** Rewrite Step 5 with explicit frame model:
+```
+STEP 5 — Walk-pose animation cadence
+NES behavior (cite Z_05.asm:6643 InitMode_WalkCave + tile-swap logic):
+  [INSERT exact asm: does it swap tiles per frame or per-tile? Does it read a LUT? What frame-counter check?]
+Genesis current state:
+  Position steps on (frame % 4 == 0). Animation frame index is s_link_frame.
+  [INSERT: where is animation applied? Link tile/H-flip selector?]
+Requirement:
+  Both platforms must cycle walk pose at same visual cadence (every N frames).
+  If NES cycles every 1 frame, Genesis must also cycle every 1 frame in descent/ascend.
+  Position and animation are INDEPENDENT — position can move every 4 frames 
+  while animation cycles every 1 frame (animation appears to loop more during descent).
+
+Implementation:
+  1. Add per-frame s_link_frame_anim_counter in cave_fade.c (NOT s_link_frame position counter).
+  2. Each cave_fade tick (regardless of position-step gate), increment and toggle link tile.
+  3. Verify against NES OAM tile sequence: which tiles appear frame N, N+1, N+2...? 
+     [Capture NES OAM tile byte ($0214) across full descent window.]
+```
+
+---
+
+### (MAJOR) Step 6 (behind-BG priority) is unverified AND conflates NES mechanism with Genesis mechanism
+**Problem:** Step 6 says: "Confirm cave_fade_mark_arch_hi_prio (BG-side stamp, cave_fade.c:95) matches NES OAM $20." But:
+- NES OAM attr byte $20 is the priority bit in NES's 4-byte sprite slot. It means "behind background."
+- Genesis doesn't have a sprite-priority bit in the same sense; it uses plane ordering (Plane A vs Plane B vs sprites).
+- The plan assumes "BG-side stamp" is equivalent, but never explains what it does or if it actually achieves the same visual effect.
+- Step 6 then says "If transparent (color-0), switch to sprite-side: drop Link SAT priority bit during DESCEND/ASCEND." But Genesis sprites don't have a "priority bit" in the NES sense.
+
+The plan confuses byte-exact (which applies to RAM) with visual-exact. Priority is visual. No byte-diff will catch this unless you're comparing rendered pixels, not register/RAM values.
+
+**Fix:** Clarify what "behind-BG" means operationally and how to verify:
+```
+STEP 6 — Behind-BG priority (VISUAL VERIFICATION ONLY)
+NES mechanism: OAM attr bit $20 places sprite "behind BG" in NES's priority system.
+  Visual effect: where Link sprite overlaps non-transparent BG pixels (arch), 
+  BG pixels show (Link appears to go "behind" the arch).
+
+Genesis mechanism: Plane A/B layer ordering + sprite priority. 
+  To match NES visual, arch must be on Plane B (or sprite plane > Link sprite plane).
+
+Verification:
+  1. Capture NES during descent frame ~32: grab CHR ($0000-$1FFF) + PALRAM ($3F00-$3F1F) + OAM.
+  2. Render NES scene offline with Link tile + arch tile, apply priority rule from OAM $20, 
+     compare pixel output.
+  3. Capture Genesis during descent frame ~32: grab CHR + CRAM + OAM + Plane A/B pixels at Link location.
+  4. Render Genesis scene offline with same rule set.
+  5. If pixels differ, identify root cause (plane order, priority bit, tile), fix, recapture.
+  
+  NOTE: This is pixel/visual verification, not byte-diff. 
+  Acceptance gate: pixel-diff <= X% (define threshold).
+```
+
+---
+
+### (MAJOR) Step 3 (cave-bottom reposition) comment-only; coordinate space unverified
+**Problem:** Step 3 says: "Fix stale (120,192) comment in cave_fade.h:47. Verify Y=221 inside cave-room Plane A render bounds."
+
+But:
+- (120, 192) and (112, 221) are both in pixel coordinates. Which coordinate space?
+- "inside cave-room Plane A render bounds" — what are those bounds? The cave room has a fixed scroll position? Dynamic scroll?
+- If Y=221 is outside render bounds, Link appears off-screen. But NES won't do this. So either Y=221 is wrong or the bounds assumption is wrong.
+
+The plan does NOT specify how to verify "inside bounds." It's left as a visual hand-wave.
+
+**Fix:** Rewrite Step 3 with explicit coordinate verification:
+```
+STEP 3 — Cave-bottom spawn position
+NES values (Z_01.asm:2956): ObjX=$70 (112px), ObjY=$DD (221px), ObjDir=$08 (up).
+  Coordinate space: [cite what Y=221 means — PPU pixel row? Playfield row?]
+  Render zone: [capture NES in cave, identify Y range where Link is on-screen and visible].
+
+Genesis target: match NES spawn exactly.
+  Step: read current cave_fade_swap_entry_handler (~487) X/Y init values.
+  Fix: set (x, y) to (112, 221) and cite this step as the source.
+  Coordinate space: [document how 112, 221 maps to Genesis Plane A pixels + scroll].
+  Verify: capture Genesis at spawn frame, pixel-compare Link position vs NES.
+    If off-screen or wrong row, re-measure NES + recalculate offset.
+```
+
+---
+
+## MINORS
+
+### (MINOR) Step 2: "pin to captured byte, not arithmetic" — captured how?
+**Problem:** Step 2 says: "Capture NES $84 on exact frame ObjCollidedTile==$24 (cross-ref FrameCounter to align frame 0)." But:
+- How do you capture $84 "on exact frame"? You freeze emulation at that frame and read RAM?
+- How do you verify "ObjCollidedTile==$24" without reading another RAM cell? Where does that cell live (cite address)?
+- Old diff is stale; FrameCounter alignment may be off.
+
+The plan assumes a working capture harness but doesn't confirm it. If the capture misses the target frame by 1, −7px becomes −6px.
+
+**Fix:** Add capture methodology:
+```
+STEP 2a (verify capture methodology):
+  NES: pause emulation at frame [cite how you identify "frame 0"]. Read ObjCollidedTile cell [cite address]. 
+       If != $24, advance frame and retry. Once found, read $84 (ObjY). Record in decimal.
+  Genesis: mirror—find frame where Link collides with entrance tile, read Y register, record.
+```
+
+---
+
+### (MINOR) Step 4: "audit shared s_step_idx/s_frame_counter so descend (16x4) unaffected"
+**Problem:** This is a red flag for shared-state bugs. The plan assumes you can add CAVE_ASCEND without breaking descent. But:
+- What if s_step_idx and s_frame_counter are static globals shared between ascend and descend?
+- What if the terminator condition `>= CAVE_DESCEND_PIXELS` is checked in a shared path?
+- If descend is tested as passing and ascend is untested, a shared-state bug in ascend will corrupt descend.
+
+**Fix:** Add explicit test plan:
+```
+STEP 4 VERIFICATION:
+  Before implementing ascend: capture Genesis descend-only (no ascend), verify 16px×4fpp cadence against NES.
+    Record bytewise ObjY sequence across 64 frames.
+  After implementing ascend: re-run descend capture, verify bytewise ObjY still matches (no regression).
+  Then test ascend, verify 48px×1fpp cadence.
+```
+
+---
+
+### (MINOR) Step 9: "zero diff on agreed fields across 64+1+48 window (±1 frame)" — what is ±1 frame tolerance?
+**Problem:** ±1 frame is introduced without justification. Why is 1 frame acceptable?
+- If NES frame N sees ObjY=$50 and Genesis frame N sees $51, is that OK?
+- What if the frame phase is off by 1 and everything else is correct? Should that still pass?
+
+The plan needs to justify the tolerance or tighten it to zero.
+
+**Fix:** Rewrite Step 9 gate:
+```
+STEP 9 FINAL VERIFICATION:
+Acceptance criteria: byte-diff on {ObjX, ObjY, ObjDir, ObjGridOffset, GameMode, Submode} 
+  + SAT {y, x, attr, tile} across 64+48 frames (entrance descent + spawn + exit ascend).
+
+Frame alignment: "±1 frame" is ONLY acceptable if:
+  (a) NES and Genesis are 1 frame out-of-phase due to capture timing (documented), AND
+  (b) all OTHER frames match EXACTLY (0-byte diff).
+  
+If any frame shows 2+ byte differences, rejection — not a phase shift, a bug.
+
+If frame phase cannot be disambiguated (unclear which frame is "0" in old capture), 
+REJECT the tolerance and re-run capture with explicit frame-counter metadata.
+```
+
+---
+
+## NITS
+
+### (NIT) "cellar vs cave distinction" mentioned in intro; never addressed
+The intro lists "cellar vs cave distinction" as a thing NES does. The plan never specifies whether Genesis handles this distinction or treats all caves the same. If NES auto-exits from caves but NOT from cellars (or vice versa), Step 7 could fail.
+
+**Fix:** Add to Step 7 gate clarification:
+```
+  Decode exit trigger by room type: does NES auto-exit from all underground rooms (Mode $0B), 
+  or only from certain types (e.g. caves but not cellars / dungeons)? 
+  If type-specific, extend Genesis check to gate on room type as well.
+```
+
+---
+
+## VERDICT
+
+**REWORK** 
+
+The plan has the right ideas but fails critical gates that would cause mid-execution failure:
+
+1. **Probe spec is incomplete** (Step 1 gate): RULE V3 violation—no enumeration of domains, no specification of full ranges or metadata. Writing Lua without these specs will produce garbage.
+2. **Old diff is unreliable** but numbers are asserted anyway: violates RULE ZERO. Numbers must be re-sourced.
+3. **Stairs-tile exit condition is a placeholder** (Step 7): describes what to capture but not what trigger to implement. Must split 7a (capture + decode) and 7b (implement after gate passes).
+4. **Coordinate space normalization missing** (Step 2): no specification of NES vs Genesis Y coordinate mappings. Matching byte-exact RAM without understanding space is a guess.
+
+---
+
+**SINGLE HIGHEST-PRIORITY FIX:**
+
+**Before writing any code, complete Step 1 probe spec (REWORK):**
+```
+1. Enumerate memory domains live in both emulators (memory.getmemorydomainlist()).
+2. Specify FULL capture ranges for every domain (OAM, CHR, PALRAM, VRAM, CRAM, scroll registers, etc.).
+3. Add metadata fields (GameMode, Submode, FrameCounter, Y-scroll, X-scroll).
+4. Write Lua to spec. Submit both probe_cave_fade_nes.lua and probe_cave_fade_gen.lua to /octo:review.
+5. Fix review feedback. Re-run both probes live against emulators (NES descent entrance, Genesis descent entrance).
+6. Generate NEW byte-diff. Cross-check −7px, 48×1fpp, (112,221) against NEW diff output. If any number changes, document delta and re-evaluate affected steps (2, 4, 7).
+7. ONLY THEN proceed to Steps 2-7.
+```
+
+Gate requirement: "Step 1 complete + all assertions re-verified from new capture before touching cave_fade.c or RoomRom/src/main.c."
+

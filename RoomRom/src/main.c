@@ -468,15 +468,16 @@ static void cave_fade_descend_step_handler(unsigned char step_idx)
 {
     (void)step_idx;
     players[0].y = (short)(players[0].y + 1);
-    /* Mirror new Y to nes_ram $0084 so the gated sync at line 1865 (which
-     * is suppressed during cave_fade) doesn't leave Link's collision/
-     * sprite cells stale at the trigger frame's Y. */
+    /* Mirror Link X+Y to nes_ram ObjX[0]/$0070 + ObjY[0]/$0084 so the byte-diff
+     * (and any collision/sprite reader) tracks the real Link position during the
+     * descent — the gated player->nes_ram sync is suppressed while cave_fade is
+     * active, otherwise nes_ram $70 holds the stale pre-descent (teleport-spawn)
+     * X while players[0].x is already the entrance column. */
+    nes_ram[0x0070u] = (unsigned char)players[0].x;
     nes_ram[0x0084u] = (unsigned char)players[0].y;
 
-    /* NES walk-anim cycle: NES Link_EndMoveAndAnimate ticks pose every
-     * frame; we toggle on every descend step (every 4 frames) so the
-     * legs cycle visibly during the 64-frame descend. */
-    s_link_frame ^= 1u;
+    /* Walk pose is driven by cave_fade_anim_tick_handler on the NES 6-frame
+     * cadence (ObjAnimCounter), NOT toggled here per 4-frame step. */
 
     /* NES also sets sprite priority bit $20 on Link upper-half sprites
      * so the entrance arch tile covers them ("Link sinks into hole"
@@ -518,18 +519,28 @@ static void cave_fade_emerge_step_handler(unsigned char obj_y,
     nes_ram[0x0084u]  = obj_y;
     nes_ram[0x0394u]  = grid;
     nes_ram[0x03A8u]  = posfrac;
-    /* NES ticks the walk pose every frame during the emerge. */
-    s_link_frame ^= 1u;
+    /* Walk pose driven by cave_fade_anim_tick_handler (6-frame cadence). */
 }
 
-/* NES cave-exit Mode 10 mirror: Link walks UP, Y -= 1 every 4 frames
- * for 16 frames. Same walk-anim toggle as descend. */
+/* NES cave-exit Mode 10 mirror: Link walks UP, Y -= 1 every 4 frames. */
 static void cave_fade_ascend_step_handler(unsigned char step_idx)
 {
     (void)step_idx;
     players[0].y = (short)(players[0].y - 1);
     nes_ram[0x0084u] = (unsigned char)players[0].y;
-    s_link_frame ^= 1u;
+}
+
+/* NES walk-anim cadence (Z_07.asm:5045 AnimateObjectWalking): cave_fade.c runs
+ * the 6-frame ObjAnimCounter down-count + frame toggle and hands them here
+ * every frame. Drive the visible Link pose + mirror nes_ram ObjAnimCounter
+ * ($3D0) / ObjAnimFrame ($3E4) so the byte-diff (Tier A) + sprite cadence
+ * (Tier B) match NES. */
+static void cave_fade_anim_tick_handler(unsigned char counter,
+                                        unsigned char frame)
+{
+    s_link_frame      = frame;
+    nes_ram[0x03D0u]  = counter;
+    nes_ram[0x03E4u]  = frame;
 }
 
 static void cave_fade_swap_exit_handler(void)
@@ -551,7 +562,8 @@ static const cave_fade_callbacks_t k_cave_fade_callbacks = {
     cave_fade_swap_entry_handler,
     cave_fade_ascend_step_handler,
     cave_fade_swap_exit_handler,
-    cave_fade_emerge_step_handler
+    cave_fade_emerge_step_handler,
+    cave_fade_anim_tick_handler
 };
 
 static void anchor_active_slot(void)
@@ -966,6 +978,7 @@ void roomrom_main_apply_warp_outcome(const rr_warp_outcome_t *out)
                 s_scene == SCENE_UW ? roomrom_uw_room_render_get_level() : 0u,
                 s_scene == SCENE_UW ? roomrom_uw_room_render_get_quest() : 0u);
     request_boss_chr_if_boss_room();
+    audio_music_play((s_scene == SCENE_UW) ? 0x40 : 0x01);
 
     /* Phase C (2026-05-24) — UET state per NES dispatch (Z_01.asm:2990,
      * Z_05.asm:6717+7493, Z_07.asm:3200).
@@ -1570,6 +1583,26 @@ static void edge_load_or_clamp(void)
     /* Don't re-trigger while a scroll is already running. */
     if (s_scroll_state != SCROLL_NONE) return;
 
+    /* Caves are single-screen: clamp Link to the cave playfield, NEVER
+     * scroll/transition (cave exit is the stairs tile, handled separately).
+     * South floor = $D5 (213) — the NES InitMode_WalkCave emerge rest Y,
+     * byte-verified vs Z1 cave $6A — not the dungeon south edge $D0 (208),
+     * which was pulling the emerged Link 5 px too high. */
+    if (s_scene == SCENE_CAVE) {
+        if (players[0].x < UW_WALK_EDGE_WEST_X)  players[0].x = UW_WALK_EDGE_WEST_X;
+        if (players[0].x > UW_WALK_EDGE_EAST_X)  players[0].x = UW_WALK_EDGE_EAST_X;
+        if (players[0].y < UW_WALK_EDGE_NORTH_Y) players[0].y = UW_WALK_EDGE_NORTH_Y;
+        /* Floor clamp $D5 — but NOT during the cave_fade emerge: LINK_EMERGE
+         * walks players[0].y UP from the $DD spawn to the $D5 floor, and the
+         * spawn ($DD=221) is BELOW $D5 (213), so clamping here teleports the
+         * sprite straight to the floor on emerge frame 0 (the RAM ObjY still
+         * animates via the emerge handler -> Tier-A ObjY passed, but the
+         * on-screen Link never walked up). Let cave_fade own Y until it
+         * releases; clamp only applies to normal in-cave gameplay. */
+        if (!cave_fade_is_active() && players[0].y > 0xD5) players[0].y = 0xD5;
+        return;
+    }
+
     /* Capture pre-edge position before clamping/snapping. */
     short pre_x = players[0].x;
     short pre_y = players[0].y;
@@ -1816,7 +1849,7 @@ void roomrom_debug_enter(void)
      * so seed it here too (0=OW, 1=UW L1). */
     if (s_scene == SCENE_UW) {
         nes_ram[0x0010u] = 1u;  /* CurLevel = 1 (UW L1) */
-        level_info_install_uw(1u, 1u);
+        level_info_install_uw(1u, s_current_quest);  /* X+Y+Z boot -> quest 2 */
     } else {
         nes_ram[0x0010u] = 0u;  /* CurLevel = 0 (OW) */
         level_info_install_ow();
@@ -2232,6 +2265,25 @@ void roomrom_debug_tick(void)
                 nes_ram[0x07FDu] = standing_tile;
                 cave_id_t cid = cave_entrance_check(standing_tile, s_room_id);
                 if (cid != (cave_id_t)0) {
+                    /* NES enters caves ONLY at a $10-aligned column:
+                     * HandleWarpOW/CheckWarps gate on ObjX&$0F==0
+                     * (Z_05.asm:7213), so the descent (Mode $10) and
+                     * InitModeB both run at the 16px-grid column ($70),
+                     * never a mid-grid X. The Gen gate fires at Link's
+                     * exact walk X ($78), so snap to the NES warp grid
+                     * HERE -- before the descent mirror (line ~475), the
+                     * arch hi-prio marking, and the saved exit-return
+                     * column -- so ObjX byte-matches NES ($78 & $F0 = $70)
+                     * across the whole descend/hold/emerge window. */
+                    players[0].x =
+                        (short)((unsigned char)players[0].x & 0xF0u);
+                    /* Mirror the aligned X into nes_ram ObjX[0] NOW: line
+                     * ~2146 already ran this tick with the pre-snap $78, and
+                     * the gated player->nes_ram sync is suppressed once
+                     * cave_fade is active (descend handler owns it) -- so
+                     * without this the mirror holds the stale $78 for the few
+                     * setup frames before the first descend_step. */
+                    nes_ram[0x0070u] = (unsigned char)players[0].x;
                     /* Tier 0 verify sentinel: $07FC = cave-entry fire
                      * counter. Increments each time cave entry triggers
                      * so the smoke probe can confirm entrance path ran
@@ -2255,6 +2307,16 @@ void roomrom_debug_tick(void)
                             (unsigned char)(((unsigned char)players[0].y >> 3) + 7u);
                         cave_fade_mark_arch_hi_prio(tile_col, tile_row);
                     }
+                    /* NES InitMode10 fires the stairs SFX at the cave-entry
+                     * trigger (EffectRequest=$08, Z_05.asm:1408). Play the
+                     * Genesis synth stairs SFX (#8 -> XGM id 71). We do NOT
+                     * mirror the NES EffectRequest cell ($0603): on NES it is a
+                     * transient request the sound engine consumes+clears next
+                     * frame ($80->$08->$00); the SGDK-XGM path has no such cell,
+                     * so a static write would DIVERGE worse than leaving it. SFX
+                     * parity is functional (audio_sfx_play + the $07F0 sentinel);
+                     * EffectRequest is REPORTED, not byte-gated (like GameMode). */
+                    audio_sfx_play(8u);
                     cave_fade_set_callbacks(&k_cave_fade_callbacks);
                     cave_fade_begin_enter(cid);
                     return;
@@ -2525,10 +2587,17 @@ void roomrom_debug_tick(void)
              * (NES Z1 L1 Q1 StartRoomId) so first toggle paints a real
              * room even if the table-install race ever returns zeros. */
             if (s_scene == SCENE_UW) {
-                /* 2026-05-17 — bootstrap default $73 (NES Z1 L1 Q1
-                 * StartRoomId). level_info_install_uw below populates
-                 * the SRAM tables; subsequent toggles can read the
-                 * actual StartRoomId at $6BAD if needed. */
+                /* G4: target UW level from debug cell $07FA (probe-poked via
+                 * M68K BUS $FF8000+$07FA; default L1). $07F6/$07F7 are
+                 * per-frame player-X/Y sentinels (main.c:1893-1894) so they
+                 * get clobbered — use the free $07FA/$07FB pair. Start room
+                 * is re-read from installed LevelInfo_StartRoomId ($6BAD)
+                 * right after level_info_install_uw below; $73 is only the
+                 * pre-install placeholder. */
+                unsigned char uw_lvl = nes_ram[0x07FAu];
+                if (uw_lvl < 1u || uw_lvl > 9u) uw_lvl = 1u;
+                nes_ram[0x0010u] = uw_lvl;          /* CurLevel for the install */
+                nes_ram[0x07FBu] = uw_lvl;          /* echo for probe verify */
                 s_room_id = 0x73u;
                 /* Spawn Link at the south doorway of the entrance room
                  * (NES InitMode3_Sub2 entry: ObjX=$78, ObjY=$DD). */
@@ -2575,8 +2644,12 @@ void roomrom_debug_tick(void)
             /* 2026-05-17 — level_info_install_* RESTORED; mirror writes
              * to $FF867E..$FF8C7D land in SGDK heap free-pool. */
             if (s_scene == SCENE_UW) {
-                nes_ram[0x0010u] = 1u;
-                level_info_install_uw(1u, 1u);
+                /* CurLevel ($0010) was set from cell $07FA in the seed block. */
+                level_info_install_uw(nes_ram[0x0010u], s_current_quest);
+                /* NES InitMode2: start room = LevelInfo_StartRoomId ($6BAD,
+                 * record offset $2F, ROM-verified). Room-flags pointer
+                 * $6BAF/$6BB0 stays as installed from ROM. */
+                s_room_id = nes_ram[0x6BADu];
             } else {
                 nes_ram[0x0010u] = 0u;
                 level_info_install_ow();
@@ -2600,10 +2673,7 @@ void roomrom_debug_tick(void)
              * — music_play is in audio_driver.asm + linked into
              * Debug.md via tools/debug/build_debug.py compile_asm
              * MRI path (commit 6191e911). */
-            {
-                extern void music_play(unsigned char song_bitmap);
-                music_play((s_scene == SCENE_UW) ? 0x40 : 0x01);
-            }
+            audio_music_play((s_scene == SCENE_UW) ? 0x40 : 0x01);
             return;
         }
 
@@ -3017,7 +3087,19 @@ void roomrom_debug_tick(void)
                     }
                     link_nes_move_object(moving_dir);
                 } else {
-                    s_link_frame = 0u;
+                    /* NES AnimateObjectWalking (Z_07.asm:5045) advances
+                     * ObjAnimCounter only while the object is MOVING; on stop it
+                     * FREEZES the walk pose at the current frame — it does NOT
+                     * snap to frame 0 (live-proven: cave emerge settle holds
+                     * ObjAnimCounter=5 / ObjAnimFrame=1 frozen). Match that: hold
+                     * s_link_frame, reset only the sub-frame tick so the next
+                     * walk re-times cleanly. Fixes two things:
+                     *  - cave_fade descent: the anim is owned by
+                     *    cave_fade_anim_tick_handler; the old `s_link_frame = 0`
+                     *    clobbered it every no-input frame (static frame-0 sink).
+                     *  - cave post-emerge settle: NES holds the last emerge walk
+                     *    frame while Link stands; the old reset snapped Gen to
+                     *    frame 0 (the bulk of the emerge sprite diff). */
                     s_link_anim_tick = 0u;
                 }
             }

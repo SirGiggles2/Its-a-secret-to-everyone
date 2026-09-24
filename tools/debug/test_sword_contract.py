@@ -62,12 +62,30 @@ def test_beam_bounds_despawn() -> None:
     need(c, "#define BEAM_BOUND_Y_MAX     ((short)240)", "beam y max")
 
 
-def test_beam_palette_flash_cycles_4() -> None:
-    """NES Z_07.asm:3459 -> ATTR = base | (FrameCounter & 3). Genesis
-    fakes the same 4-step cycle by rewriting the 4 PAL2 entries from
-    sub-palette N each frame, where N = (phase & 3)."""
+def test_beam_palette_flash_cycles_per_divergence_d001() -> None:
+    """Beam palette flash is 3-step on Genesis; NES is 4-step.
+
+    NES Z_07.asm:3453 -> ATTR = base | (FrameCounter & 3), cycling all
+    four sprite sub-palettes one per frame. Genesis cycles
+    RENDER_PAL1 + {0,1,2} because PAL0 is BG and PAL2 was given to
+    bomb/explosion by commit 2e2a54eb.
+
+    This asserts the ACCEPTED divergence D-001, not the NES behaviour.
+    See docs/audit/known_divergences.md. If that entry is ever resolved,
+    this test must go back to asserting the 4-step cycle.
+
+    The previous version of this test asserted the NES behaviour and had
+    been failing silently since 2e2a54eb landed, which is how the
+    divergence went unrecorded.
+    """
     c = read(COMBAT_C)
-    need(c, "(s_beam_palette_phase + 1u) & 0x3u", "4-step palette cycle")
+    need(c, "(s_beam_palette_phase + 1u) % 3u", "3-step palette cycle (D-001)")
+
+    # The divergence must stay documented. If the entry is deleted, this
+    # test fails rather than quietly blessing a 3-step cycle.
+    div = read("docs/audit/known_divergences.md")
+    need(div, "D-001", "known_divergences.md D-001 entry")
+    need(div, "s_beam_palette_phase + 1u) % 3u", "D-001 cites the actual code")
 
 
 def test_swing_lock_is_active() -> None:

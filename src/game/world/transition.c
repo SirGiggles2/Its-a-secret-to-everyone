@@ -244,8 +244,11 @@ static unsigned char detect_warp_ow(unsigned char source_room_id,
         return 0u;
     }
 
-    /* Rule 3: special-case room $22 uses & 0x07; all others use & 0x0F. */
-    if (source_room_id == 0x22u) {
+    /* Rule 3: NES gates ObjX on $10 except for room $22. RoomRom's
+     * projected Level 1 tree ($37) exposes two adjacent $24 warp tiles,
+     * so accept the visible half-tile lane while still requiring the
+     * NES grid/Y/raw-tile gates below. */
+    if (source_room_id == 0x22u || source_room_id == 0x37u) {
         if (((unsigned)link_x & 0x07u) != 0u) {
             return 0u;
         }

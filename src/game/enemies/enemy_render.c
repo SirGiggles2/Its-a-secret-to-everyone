@@ -802,6 +802,13 @@ void enemy_render_sweep_oam_to_sat(void)
     } else {
         g_enemy_render_last_sat_slot = (unsigned char)sat_slot;
     }
+    /* BUG2 FIX (2026-05-31): publish the last used SAT slot so main.c DMAs
+     * EVERY sprite this boss sweep emitted. The native sweep sets this
+     * (lines 829/831) but the boss-room OAM-shadow flush did not -> main.c
+     * DMA'd only up to the stale native/init count (=ENEMY_FIRST) -> boss
+     * slots beyond it were never uploaded to VRAM SAT -> Aquamentus showed
+     * only its first sprite. +1 to include the terminator (matches native). */
+    g_enemy_render_last_sat_slot = (unsigned char)(sat_slot + 1u);
 }
 
 /* 2026-05-15 Genesis-native enemy renderer.

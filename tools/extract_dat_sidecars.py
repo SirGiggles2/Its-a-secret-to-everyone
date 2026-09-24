@@ -251,7 +251,11 @@ def extract_bank1(prg_data, z01_path):
 
 def main():
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    rom_path = os.path.join(project_root, "Legend of Zelda, The (USA).nes")
+    rom_path_env = os.environ.get("ZELDA_NES_ROM", "")
+    if rom_path_env and os.path.isfile(rom_path_env):
+        rom_path = rom_path_env
+    else:
+        rom_path = os.path.join(project_root, "Legend of Zelda, The (USA).nes")
     ref_dir = os.path.join(project_root, "reference", "aldonunez")
     dat_dir = os.path.join(ref_dir, "dat")
 

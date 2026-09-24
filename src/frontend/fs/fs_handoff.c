@@ -7,6 +7,11 @@
 
 extern void fs_to_transpiled_trampoline(void);
 
+/* Set when the player commits to a slot. Polled by the host loop; the
+ * File Select itself never jumps into gameplay. */
+unsigned char g_fs_handoff_requested = 0u;
+unsigned char g_fs_handoff_slot      = 0u;
+
 #ifdef OW_DEBUG_ENTRY
 extern void ow_debug_entry(unsigned char room_id);
 #endif
@@ -70,12 +75,23 @@ void fs_handoff_to_transpiled(uint8_t slot) {
         /* FileAChecksums[0..5] = 0 already (fresh RAM) -> checksum match. */
     }
 
-    /* Trampoline restores V64 + Window 8, sets vblank_mode=1, jumps to
-     * LoopForever. Does not return. */
-#ifdef OW_DEBUG_ENTRY
-    render_display_enable(0);
-    ow_debug_entry(0x77);  /* start room $77; does not return */
-#else
-    fs_to_transpiled_trampoline();
-#endif
+    /* Hand control back to the host instead of jumping away.
+     *
+     * The two original exits do not work in Debug.md:
+     *   fs_to_transpiled_trampoline lives in genesis_shell.asm, which is
+     *   not linked (that whole transpiled path is retired), and
+     *   ow_debug_entry only renders a static room and spins forever —
+     *   it is not a gameplay entry and is also unlinked.
+     *
+     * So this records the request and returns. src/debug/a4_probe_main.c
+     * polls it and performs the actual entry into the gameplay runtime.
+     * Keeping the jump out of here means src/frontend/ stays free of any
+     * dependency on src/game/ or RoomRom/, which is the direction WT-3
+     * cares about.
+     *
+     * CurSaveSlot ($0016) is already seeded above, so whatever the host
+     * starts sees the slot the player chose — and Mode $0D (Save) reads
+     * that same cell when committing. */
+    g_fs_handoff_slot      = slot;
+    g_fs_handoff_requested = 1u;
 }

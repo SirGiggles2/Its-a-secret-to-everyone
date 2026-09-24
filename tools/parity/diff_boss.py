@@ -107,18 +107,24 @@ import sys
 from pathlib import Path
 
 
-# Per docs/audit/boss_room_ids.md
+# Per docs/audit/boss_room_ids.md — re-derived 2026-05-31, cross-confirmed
+# by LBA list_id (reference/aldonunez/dat/LevelBlockUW{1,2}Q1.dat) AND
+# LevelInfo_BossRoomId (two independent static sources agree). The prior
+# table held mode-poke-warp guesses (only L1 was right).
+#   L5 Digdogger spawns as $39 (Digdogger2, morphs->$38 runtime via
+#   InitDigdogger2); L6 Gohma as $34 (blue variant, the type present in
+#   UW1Q1 — the block L1-6 load).
 BOSS_TABLE = [
     {"name": "aquamentus",   "level": 1, "room": 0x35, "obj_type": 0x3D},
-    {"name": "dodongo",      "level": 2, "room": 0x73, "obj_type": 0x31},
-    {"name": "manhandla",    "level": 3, "room": 0x0F, "obj_type": 0x3C},
-    {"name": "gleeok_2head", "level": 4, "room": 0x45, "obj_type": 0x43},
-    {"name": "digdogger",    "level": 5, "room": 0x06, "obj_type": 0x38},
-    {"name": "gohma_red",    "level": 6, "room": 0x0F, "obj_type": 0x33},
-    {"name": "aquamentus_2", "level": 7, "room": 0x23, "obj_type": 0x3D},
-    {"name": "gleeok_4head", "level": 8, "room": 0x1F, "obj_type": 0x45},
-    {"name": "patra_red",    "level": 9, "room": 0x1E, "obj_type": 0x47},
-    {"name": "ganon",        "level": 9, "room": 0x1F, "obj_type": 0x3E},
+    {"name": "dodongo",      "level": 2, "room": 0x56, "obj_type": 0x31},
+    {"name": "manhandla",    "level": 3, "room": 0x10, "obj_type": 0x3C},
+    {"name": "gleeok_2head", "level": 4, "room": 0x13, "obj_type": 0x43},
+    {"name": "digdogger",    "level": 5, "room": 0x24, "obj_type": 0x39},
+    {"name": "gohma",        "level": 6, "room": 0x1C, "obj_type": 0x34},
+    {"name": "aquamentus_2", "level": 7, "room": 0x2A, "obj_type": 0x3D},
+    {"name": "gleeok_4head", "level": 8, "room": 0x3C, "obj_type": 0x45},
+    {"name": "patra",        "level": 9, "room": 0x52, "obj_type": 0x47},
+    {"name": "ganon",        "level": 9, "room": 0x42, "obj_type": 0x3E},
 ]
 
 

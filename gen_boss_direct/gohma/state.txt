@@ -1,0 +1,17 @@
+boss=gohma level=6 room=$1C scene_id=9
+frame=1537
+warp_verified=true (attempt 1; 0=never landed scene1+room)
+boss_kick_fired=true ack 0->1
+boss_chr_vram_nonzero=1334/2048 (base $5260)
+--- mirror (VERIFIED, $FF7200) ---
+mirror_magic=5750 (expect 5750)
+mir.frame=827 scene=1 room=$1C
+mir.link_x=120 link_y=128 face=0
+mir.uw_level=6 uw_quest=1
+mir.enemy_chr_swap_state=5 active_scene=9 (heavy-mirror)
+--- NES cells (mirror $FF8000+addr) ---
+GameMode $12=$05  Level $10=$06  RoomId $EB=$1C
+BossRoomId $6BBC=$FF  StartRoomId $6BAD=$C0  [SRAM: UNVERIFIED]
+Slots 0..15 (s: type x y dir state hp attr) — ObjType nonzero only:
+  s01 t=$34 x=$C2 y=$2E dir=$AD st=$00 hp=$20 attr=$C9
+  s10 t=$56 x=$81 y=$72 dir=$00 st=$10 hp=$00 attr=$00

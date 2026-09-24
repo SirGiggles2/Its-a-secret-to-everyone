@@ -64,6 +64,29 @@ function Resolve-InputPath {
     return (Resolve-Path -LiteralPath $candidate).Path
 }
 
+function Stage-ToTmp {
+    # BizHawk 2.11's System.CommandLine parser chokes on 8.3-short ("PR59D2~1.LUA")
+    # and spaced paths passed to --lua=, orphaning the trailing ROM arg
+    # ("Unrecognized command or argument 'C:\tmp\loz_real.nes'" modal popup). The
+    # only launch form proven to work (cave sweep, 20/20) is a clean, space-free
+    # C:\tmp path. Stage the file there and return that clean absolute path.
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PathValue
+    )
+
+    $full = Resolve-InputPath $PathValue
+    $tmp = "C:\tmp"
+    if (-not (Test-Path -LiteralPath $tmp)) {
+        New-Item -ItemType Directory -Path $tmp | Out-Null
+    }
+    $dest = Join-Path $tmp ([System.IO.Path]::GetFileName($full))
+    if ($full -ne $dest) {
+        Copy-Item -LiteralPath $full -Destination $dest -Force
+    }
+    return $dest
+}
+
 function Get-ShortPath {
     param(
         [Parameter(Mandatory = $true)]
@@ -158,22 +181,25 @@ $env:CODEX_BIZHAWK_ROOT = $Root
 
 $emuLong = Resolve-BizHawkExe
 $emuDirLong = Split-Path -Parent $emuLong
-$romShort = Get-ShortPath $RomPath
+# ROM/Lua/config go through BizHawk's arg parser -> stage to clean C:\tmp paths
+# (the only proven-working form). EmuHawk.exe + workdir are Start-Process
+# -FilePath/-WorkingDirectory (NOT parsed by BizHawk), so 8.3 is harmless there.
+$romClean = Stage-ToTmp $RomPath
 $emuShort = Get-ShortPath $emuLong
 $emuDirShort = Get-ShortPath $emuDirLong
 
 $args = @()
 if (-not [string]::IsNullOrWhiteSpace($Core)) {
     $configOverride = New-BizHawkConfigOverride -CoreName $Core
-    $configShort = Get-ShortPath $configOverride
+    $configClean = Stage-ToTmp $configOverride
     $args += "--config"
-    $args += $configShort
+    $args += $configClean
 }
 if (-not [string]::IsNullOrWhiteSpace($LuaPath)) {
-    $luaShort = Get-ShortPath $LuaPath
-    $args += "--lua=$luaShort"
+    $luaClean = Stage-ToTmp $LuaPath
+    $args += "--lua=$luaClean"
 }
-$args += $romShort
+$args += $romClean
 
 if ($Wait) {
     $p = Start-Process -FilePath $emuShort -ArgumentList $args -WorkingDirectory $emuDirShort -Wait -PassThru

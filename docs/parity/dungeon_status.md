@@ -76,7 +76,79 @@ the install's LevelInfo slot is quest-independent (correct). Verified: Gen
 L1Q2 $63 ObjType=$2D $2D $2C $23 $24 $23 $24 (== Q1, == NES). No per-quest
 LevelInfo needed. ⇒ dungeon enemy DATA byte-exact for BOTH quests.
 
-## Phase 5 boss deep-dive (2026-05-31) — BLOCKED on clean live-NES boss capture
+## ✅ PHASE 5 BOSS FIXED (2026-05-31): Aquamentus renders (BUG1 BG + BUG2 sprites)
+Two fixes, both byte/probe-verified at L1 $5D (a real $3D Aquamentus room):
+- BUG1 (boss room BG black): `find_blob_entry` (uw_render.c) now falls back to a
+  same-block sibling level's capture (UW layouts are per-LevelBlock, shared
+  L1-6 / L7-9), so boss rooms the Phase-B manifest mis-assigned still render
+  their correct layout. Palette switched to the exact-level lookup so a
+  sibling-filled room keeps THIS level's palette. 171/171 BG byte-exact holds
+  (fallback only fires on exact-miss). L1 $5D BG now renders (was black).
+- BUG2 (boss = 1 sprite): the boss-room OAM-shadow->SAT sweep emitted all 6
+  sprites but never published `g_enemy_render_last_sat_slot` -> main.c's SAT
+  DMA used the stale native count -> only ~1 boss slot uploaded. Fix: boss
+  sweep sets `g_enemy_render_last_sat_slot = sat_slot+1` (matches native).
+  Verified L1 $5D SAT slots 12-17 = all 6 Aquamentus tiles
+  ($D2 $CE $C4 $CC $C8 $D0, 2x3); shot shows the dragon.
+- Remaining nuance: boss palette renders pal2 (purple) vs NES green — a
+  sub-palette routing delta ("very close"; follow-up). The root-cause analysis
+  below (manifest mis-assignment) was REAL but is now handled at the render
+  layer by the sibling fallback rather than a full manifest regen.
+
+## (root-cause analysis, now handled by the render-layer fix above) Phase-B per-level UW manifests are WRONG
+L1's manifest room-graph (BFS from start $73 over its `edges`) = the 17 rooms
+{$22 $23 $33 $35 $36 $41-45 $52-54 $63 $72 $73 $74} — which INCLUDES $36 =
+template $3C = MANHANDLA (L3's boss) and contains NO Aquamentus ($3D) room.
+L1's real boss is Aquamentus; rooms with $3D = $07/$5D, and the aggregate tags
+$07->L9 and $5D->L3/L5/L8, never L1. So the Phase-B manifests mis-assign rooms
+across levels: L1 inherited L3's $36 and lost its own Aquamentus room.
+
+Consequences:
+- "171/171 BG byte-exact" still TRUE per room-slot (layouts are shared across
+  levels, so each swept room matched NES) — but the LEVEL MEMBERSHIP is wrong.
+- The UW render data is keyed (level,quest,room); because the manifest-driven
+  capture never visited L1's Aquamentus room UNDER L1, L1 lacks that room ->
+  black BG + no boss when live play reaches it.
+- Manifest boss_room_id=$35 is also wrong ($35 template=$2A=Goriya, not a boss).
+
+FIX (next, substantial): regenerate the 18 per-level UW manifests from
+AUTHORITATIVE NES per-level room membership, then re-capture each level's rooms
+(incl. its boss room) UNDER the correct level and regen uw_room_blob.
+
+ATTEMPT 1 (door-graph BFS) FAILED — do not ship: a naive BFS from start $73
+over non-WALL doors (types: OPEN0/WALL1/FALSE2/FALSE2b3/BOMBABLE4/KEY5/KEY2 6/
+SHUTTER7; only WALL=1 impassable; decode AttrsA N=(>>5)&7 S=(>>2)&7, AttrsB
+W=(>>5)&7 E=(>>2)&7) reached 20 rooms spanning rows 0-7 incl. $05=$43=DODONGO
+(L2's boss) — i.e. it BLED ACROSS level boundaries. The shared UW1 block (L1-6)
+holds door data for ALL slots; levels occupy non-overlapping map regions but the
+block's doors do NOT cleanly partition by level via a simple non-wall BFS (my
+boundary-wall assumption is wrong, or the N/S/E/W neighbor/bit mapping needs
+verification). So per-level membership needs a VERIFIED source: the NES per-
+level room list / LevelInfo bounds, or a live-NES dungeon traversal — NOT a
+hand-rolled door BFS. RULE ZERO: the decode must be byte-verified before use.
+
+## Phase 5 boss — earlier debate notes (2 bugs; bug 1 now subsumed by the above)
+The earlier "blocked" framing was a wrong-room artifact. Debate (Sonnet+Claude
++ a 128-slot template scan; Codex/Gemini CLIs env-failed) resolved it:
+- Room $36 = template $3C = MANHANDLA (L3 boss), mis-attributed to L1 by the
+  shared-UW1-block room-visit aggregate. c_aquamentus_draw is correctly DEAD at
+  $36 ($3C dispatches to enrt_update_manhandla). I was probing the wrong room.
+- L1's real Aquamentus rooms (template $3D) = **$07 and $5D** (128-slot scan).
+- At the CORRECT room ($5D), the boss render path WORKS: c_aquamentus_draw runs
+  and writes all SIX Aquamentus sprites ($CC $C4 $C8 $C2 $C6 $CA) to NES shadow
+  OAM $0200 (2 rows x 3 cols). Render path is sound.
+- **BUG 1 (BG):** boss rooms $07/$5D are NOT in the render blob (nes_uw_aggregate
+  / uw_room_blob) -> black BG. The aggregate room-visit capture missed boss
+  rooms. Fix: extend the UW room capture to include every level's boss room,
+  regen uw_room_blob.
+- **BUG 2 (sprite publish):** the boss-room shadow-OAM->SAT sweep
+  (enemy_render_sweep_oam_to_sat) publishes only ~2 of the 6 boss sprites to the
+  SAT -> Aquamentus invisible. Fix: trace the sweep's slot/link handling.
+- Verification infra still needed: a per-boss savestate (build on G2
+  nes_boot_to_scenario.lua) for clean NES boss-fight byte-diff, captured across
+  the FrameCounter&$10 anim cycle at InvincibilityTimer==0.
+
+## (superseded) earlier blocked note
 Traced L1 Aquamentus end-to-end. Findings (probes: probe_nes_boss.lua,
 probe_gen_boss_live.lua):
 - Boss spawn + the $C0+ -> ROOMROM_BOSS_TILE_BASE tile remap + s_boss_bank_active

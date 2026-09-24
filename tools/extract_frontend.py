@@ -388,16 +388,44 @@ def write_c_file(path, content):
 
 
 def write_manifest(out_dir, all_blocks_meta, rom_sha256):
+    """Merge this extractor's blocks into data/text/MANIFEST.json.
+
+    tools/extract_demo_text.py writes the same manifest. Both used to
+    clobber it wholesale, so whichever ran last won and a full builder run
+    silently dropped the other's entries. Merging by (name, file) makes the
+    result independent of extractor order.
+    """
+    path = os.path.join(out_dir, "MANIFEST.json")
+
+    existing = []
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                prior = json.load(f)
+            if isinstance(prior.get("blocks"), list):
+                existing = prior["blocks"]
+        except (OSError, ValueError) as exc:
+            print(f"  WARN: ignoring unreadable {path}: {exc}")
+
+    def key(block):
+        # (name, file), not name alone: DemoLineTextAddrs is emitted by both
+        # this extractor and extract_demo_text.py into different .c files.
+        return (str(block.get("name", "")), str(block.get("file", "")))
+
+    merged = {key(b): b for b in existing}
+    for b in all_blocks_meta:
+        merged[key(b)] = b          # this run's blocks win on collision
+
     manifest = {
         "schema_version": 1,
         "nes_rom_sha256": rom_sha256,
-        "blocks": all_blocks_meta,
+        "blocks": sorted(merged.values(), key=key),
     }
-    path = os.path.join(out_dir, "MANIFEST.json")
     with open(path, "w", encoding="utf-8", newline="\n") as f:
         json.dump(manifest, f, indent=2)
         f.write("\n")
-    print(f"  Wrote {path}")
+    print(f"  Wrote {path} ({len(manifest['blocks'])} blocks, "
+          f"{len(all_blocks_meta)} from this run)")
 
 
 # ---------------------------------------------------------------------------
@@ -797,7 +825,11 @@ def main():
     z02_path = os.path.join(project_root, "reference", "aldonunez", "Z_02.asm")
     z06_path = os.path.join(project_root, "reference", "aldonunez", "Z_06.asm")
     vars_path = os.path.join(project_root, "reference", "aldonunez", "Variables.inc")
-    rom_path = os.path.join(project_root, "Legend of Zelda, The (USA).nes")
+    rom_path_env = os.environ.get("ZELDA_NES_ROM", "")
+    if rom_path_env and os.path.isfile(rom_path_env):
+        rom_path = rom_path_env
+    else:
+        rom_path = os.path.join(project_root, "Legend of Zelda, The (USA).nes")
 
     for required_path in [z02_path, z06_path, vars_path, rom_path]:
         if not os.path.exists(required_path):

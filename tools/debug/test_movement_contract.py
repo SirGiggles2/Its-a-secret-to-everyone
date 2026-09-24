@@ -63,7 +63,7 @@ def test_typed_player_state_is_used() -> None:
 
 
 def test_roomrom_source_comments_do_not_name_retired_link_globals() -> None:
-    world_transition = read("RoomRom/src/roomrom_world_transition.c")
+    world_transition = read("src/game/world/transition.c")
     reject(world_transition, "s_link_x",
            "world transition comments must use players[0].x")
     reject(world_transition, "s_link_y",

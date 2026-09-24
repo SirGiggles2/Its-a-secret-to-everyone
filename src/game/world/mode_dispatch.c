@@ -18,6 +18,7 @@
 #include "mode_death.h"
 #include "mode_endlevel.h"
 #include "mode_wingame.h"   /* Tier 4 — Mode 0x13 WinGame scaffold */
+#include "mode_save.h"      /* Mode 0x0D Save — native, 2026-08-04 */
 #include "platform_abi.h"
 
 /* NES Variables.inc GameMode := $12. */
@@ -65,7 +66,7 @@ void mode_dispatch_update(void)
     case 0x0A: mode_stub(); break;  /* Mode A Play variant */
     case 0x0B: mode_stub(); break;  /* Mode B Play variant */
     case 0x0C: mode_stub(); break;  /* Mode C Play variant */
-    case 0x0D: mode_stub(); break;  /* Mode D Save — frontend (see comment) */
+    case 0x0D: mode13_save_update(); break;  /* Mode D Save — native */
     case 0x0E: mode_stub(); break;  /* Mode E Register — frontend */
     case 0x0F: mode_stub(); break;  /* Mode F Elimination — frontend */
     case 0x10: mode_stub(); break;  /* Mode 10 Stairs */

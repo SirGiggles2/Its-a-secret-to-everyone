@@ -1,0 +1,158 @@
+Now let me read the cave exit code path to verify the plan's claims about it:
+---
+
+# Adversarial Review: Cave-Entry Plan
+
+## 1. RULE ZERO VIOLATIONS — unbacked claims dressed as facts
+
+### (BLOCKER) Walk-pose anim cadence: *"NES ticks pose every frame"* — WRONG
+
+No asm citation in the plan. I checked `AnimateLinkBase` (Z_07.asm:5023-5058):
+
+```
+5045: DEC ObjAnimCounter, X   ; decrement each frame
+5046: BNE SetUpWalkingSprites  ; if counter not zero, skip anim advance
+5056: LDA #$06                ; ROLLOVER AT 6
+5057: STA $00
+5058: JSR RollOverAnimCounter  ; toggles ObjAnimFrame, resets counter to 6
+```
+
+The walk pose advances **every 6 frames**, not every frame. The `ObjAnimCounter` starts at $06, decrements per frame, and only toggles `ObjAnimFrame` when it hits 0. The plan's Step 5 proposes "per-frame anim tick" — this would produce **6× faster walk animation than NES**. Genesis 4fpp (mentioned as the wrong current behavior) is actually closer than per-frame would be.
+
+**Fix**: Step 5 must use a 6-frame counter matching `ObjAnimCounter` rollover. Cite Z_07.asm:5045-5058, not guess.
+
+### (BLOCKER) Behind-BG: *"OAM attr bit $20 on full Link sprite"* — WRONG
+
+The plan claims the NES sets behind-BG on "full Link sprite." The asm says otherwise (Z_05.asm:2328-2333):
+
+```
+2328: LDA Sprites+74    ; OAM slot 12 (lower-left sprite)
+2329: ORA #$20
+2330: STA Sprites+74
+2331: LDA Sprites+78    ; OAM slot 13 (lower-right sprite)
+2332: ORA #$20
+2333: STA Sprites+78
+```
+
+**Only OAM slots 12 and 13** (the lower half of the 4-sprite Link) get the `$20` bit. OAM slots 10 and 11 (upper half) have NO $20 bit. The existing diff confirms: `OAM[10].2` and `OAM[11].2` are `$02` (palette 2, no priority flags) throughout all frames.
+
+Furthermore, OAM[10].0 / OAM[11].0 = `$F8` (off-screen bottom Y=248). The NES hides Link's **upper body by Y-position** (pushing it off-screen at the bottom), not by sprite priority. The lower body alone is behind-BG via $20. This is a fundamentally different rendering mechanism from what the plan assumes.
+
+**Fix**: Step 6 must replicate the NES split: upper-body sprites Y=$F8 (off-screen), lower-body sprites at Y=$50-$5D with attr $20 behind-BG. This may require Genesis to NOT render the upper Link sprites at all (Y off-screen), not just a priority stamp on BG tiles.
+
+### (BLOCKER) Sound effects entirely missing
+
+Z_05.asm:1407-1408 during entry InitMode10:
+```
+1407: LDA #$08
+1408: STA EffectRequest      ; stairs sound
+```
+
+Z_05.asm:1607-1608 during exit method 1-a:
+```
+1607: LDA #$08
+1608: STA EffectRequest      ; stairs sound
+```
+
+The plan has zero mention of `EffectRequest=$08` at entry or exit. If Genesis doesn't play the stairs sound (APU register compare would detect this), the parity assertion "byte-exact on RAM {Obj..." is incomplete — you need audio register byte equality too.
+
+**Fix**: Add a Step 8b: verify / replicate `EffectRequest=$08` timing at entry (InitMode10) and at exit (Method 1-a).
+
+---
+
+## 2. ORDERING / PROBE HAZARDS
+
+### (BLOCKER) Frame alignment between probes is broken
+
+The existing diff shows:
+- NES frame 0: `GameMode=$10` (stair-fade mode, already in descent)
+- Genesis frame 0: `GameMode=$05` (normal OW play, NOT in cave sequence)
+
+The Genesis sentinel trigger (`$07FC`) fires at a DIFFERENT phase than the NES entrance-tile collision. Every frame in the diff is misaligned — comparing Genesis standing-Y at frame 0 against NES mid-descent-Y at frame 0. The −7px delta might be meaningful or might be an alignment artifact.
+
+**Fix**: Step 1 must add a frame-alignment beacon to BOTH probes. NES uses `GameMode==$10` as the trigger. Genesis must trigger on the same logical event (e.g., first frame where a cave-entrance transition flag is set), not a sentinel that fires before the transition. The probes must share a common frame-offset origin.
+
+### (MAJOR) Step 6 heuristic violates RULE ZERO
+
+Step 6: *"Dump CHR pixel content of Plane A cells above Link at descent frame ~32. If transparent (color-0), switch to sprite-side: drop Link SAT priority bit during DESCEND/ASCEND."*
+
+This is a guess wearing a probe costume. The NES OAM data already tells you exactly what NES does (OAM[12].2 = $20 behind-BG, OAM[10].0 = $F8 off-screen). A CHR-pixel heuristic is unnecessary and may produce a wrong answer (what if Plane A pixels are color-0 but a different mechanism produces the visual effect?).
+
+**Fix**: Replace the heuristic with: "Read NES OAM attrs per frame from clean probe; replicate NES OAM[12].2/$20 and OAM[10].0=$F8 on Genesis SAT directly."
+
+---
+
+## 3. UNDERSPECIFIED / OMITTED
+
+### (MAJOR) Walk-pose H-flip data already captured but ignored
+
+The existing diff shows OAM[12].2 toggling between `$40` (H-flip) and `$20` (no H-flip) in ~6-frame intervals — matching the `ObjAnimCounter` rollover at $06. The plan's Step 5 claims "toggles every 4 frames" for Genesis but the existing diff already tells you the NES cadence is **6 frames**. Use the existing data.
+
+### (MAJOR) SAT vs OAM normalization absent from acceptance criteria
+
+The acceptance criteria says "byte-exact on ... Link SAT {y,x,attr,tile}" but NES OAM and Genesis SAT are different encodings:
+- NES: Y has +1 offset (0=render row 1); Genesis: Y is raw 16-bit
+- NES: attr is packed (palette bits 0-1, priority bit 5, flip bits 6-7); Genesis: tile index and attributes are separate fields in a packed word
+- Genesis uses 16-bit X/Y, NES uses 8-bit
+
+Without a documented normalization function, "byte-exact on SAT" is an ambiguous claim that will pass a wrong implementation.
+
+**Fix**: Add a normalization table mapping NES OAM byte → Genesis SAT field for each slot, verified by a diff script that applies the same transform to both sides.
+
+### (MAJOR) Exit trigger underspecified
+
+Step 7: *"when collision_get_collidable_tile_still(0) returns stairs tile (or captured Y/grid condition), fire cave_fade_begin_exit."*
+
+What tile ID? On the OW it's `$24`. Inside the cave, the nametable uses different tile indices. The plan needs to capture the cave-interior stairs tile ID from NES VRAM before coding. The parenthetical "or captured Y/grid condition" is too vague for a plan that demands precision.
+
+### (MAJOR) 1-frame atomic swap — zero evidence
+
+The plan asserts "atomic single palette swap" in 1 frame between descent and ascend but doesn't cite asm. The existing NES probe captures FadeCycle ($051C) through 24 frames, suggesting the fade/swap may be multi-frame. If the NES does a multi-frame palette transition, implementing an atomic snap would produce a visible flash that isn't in the NES.
+
+**Fix**: The plan should explicitly state: "after probe fix + re-run, confirm that PALRAM transitions in ≤1 frame" before asserting this. Until then, the 1-frame claim is a guess.
+
+### (MINOR) Missing ResetInvObjState
+
+Z_01.asm:2962 — `JSR ResetInvObjState` is called during cave entry init. The plan doesn't mention resetting item/object state. If the Genesis doesn't reset certain state flags on cave entry, downstream gameplay may diverge.
+
+### (MINOR) No cellar/shortcut mode distinction
+
+The plan mentions Mode $0C (shortcut) in passing but doesn't scope whether the implementation handles it, defers it, or validates it. If the entry/exit code runs for all cave types ($0B and $0C), the exit tile and behavior may differ. Scope should be stated.
+
+### (NIT) No scroll-lock mention during OW descent
+
+When Link descends on the OW, the scroll should be locked. The plan doesn't mention scroll state. If Genesis scrolls during descent, the nametable / plane A comparison will fail.
+
+---
+
+## 4. VERIFICATION GAPS
+
+| Gate in plan | What could pass and still be wrong |
+|---|---|
+| RAM {ObjX,ObjY,ObjDir,ObjGridOffset,GameMode,Submode} | These can be byte-identical while the walk ANIMATION is wrong (6-frame vs 1-frame cadence) — exactly the Step 5 bug |
+| Link SAT {y,x,attr,tile} | Without documented normalization, a false match or false mismatch is likely |
+| PALRAM stability | Plan checks stability but not COLOR CORRECTNESS — an all-black stable PALRAM is stable but wrong |
+| ±1 frame alignment tolerance | If probes anchor frame 0 at different events (GameMode $10 vs sentinel $07FC), the tolerance window is consumed by systematic offset, not phase jitter. 1 frame tolerance is fine for phase jitter; it's not fine for event-anchor mismatch |
+
+---
+
+## 5. WHAT THE EXISTING OAM DIFF ALREADY PROVES
+
+The current diff (which the plan dismisses as "stale/buggy") actually shows useful patterns on the NES side:
+
+| Observation | Evidence from diff | Implication |
+|---|---|---|
+| Upper body hidden via Y | OAM[10,11].0=$F8 (off-screen) throughout | Genesis must hide upper Link sprites too |
+| Only lower body behind-BG | OAM[12,13].2=$20 after frame 5; OAM[10,11].2=$02 always | Don't set priority on upper sprites |
+| Walk H-flip toggles at ~6f | OAM[12].2 alternates $40/$20 in ~6f pattern | Anim cadence = 6f, NOT per-frame |
+| Lower body tiles constant | OAM[12,13].3 = $40/$48 unchanged across frames | Walk is H-flip-only, no tile swap |
+
+The NES probe OAM data is trustworthy (OAM shadow $0200-$02FF via System Bus). The plan should use this data, not discard it.
+
+---
+
+## VERDICT: **REWORK**
+
+**Single highest-priority fix**: Step 5 must change from "per-frame anim tick" to **6-frame anim cadence** (match `ObjAnimCounter` rollover at $06, Z_07.asm:5045-5058). The plan's current approach will produce a walk animation 6× faster than NES — and since the acceptance criteria doesn't include `ObjAnimCounter` or `ObjAnimFrame` in the byte-diff list, this bug would PASS the stated verification gate.
+
+**Secondary but critical**: Add sound effects (`EffectRequest=$08` at entry InitMode10 Z_05.asm:1407, at exit Method 1-a Z_05.asm:1607) to scope. A Genesis port that plays no sound on cave entry will never match NES audio register state.

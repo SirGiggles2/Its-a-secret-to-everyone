@@ -3,16 +3,19 @@
 #undef RAM
 #endif
 #include "platform_abi.h"
+#include "audio_abi.h"
 #include "intro_phase.h"
 #include "render_abi.h"
 #include "roomrom_debug_runtime.h"
+#include "roomrom_main_state.h"   /* roomrom_main_set_quest */
 
 #define A4_EXPECTED 0x00FF8000UL
 #define PROBE_BASE ((volatile u8 *) 0x00FF7000UL)
 #define ABS_RAM ((volatile u8 *) 0x00FF8000UL)
 #define VDP_CTRL_WORD (*(volatile u16 *) 0x00C00004UL)
 #define PASS_FRAME_LIMIT 180U
-#define CHORD_DEBUG (BUTTON_A | BUTTON_B | BUTTON_C)
+#define CHORD_DEBUG    (BUTTON_A | BUTTON_B | BUTTON_C)  /* boot quest 1 */
+#define CHORD_DEBUG_Q2 (BUTTON_X | BUTTON_Y | BUTTON_Z)  /* boot quest 2 */
 
 /* 2026-05-19 — MODE button at title enters debug tile-grid scene for
  * atlas byte-diff against the custom NES test ROM. Pattern mirrors
@@ -20,9 +23,24 @@
 #include "../game/debug/debug_tilegrid.h"
 #include "../game/items/debug_unlock_all.h"  /* P6.1 */
 
+/* File Select. Declared here rather than including fs_main.h /
+ * fs_handoff.h: those headers pull in the proof-ROM stdint typedefs,
+ * which collide with SGDK's types.h (conflicting types for u32/s32/s8)
+ * in this TU. The three symbols are stable and plain. */
+extern void fs_enter(void);
+extern void fs_tick(void);
+extern unsigned char g_fs_handoff_requested;
+extern unsigned char g_fs_handoff_slot;
+
+/* Persistent save (src/state/save_game.h). Declared rather than included
+ * for the same reason as the FS symbols above. */
+extern unsigned char save_game_slot_is_valid(unsigned char slot_idx);
+extern unsigned char save_game_read_slot(unsigned char slot_idx);
+
 typedef enum {
     COMBINED_STATE_TITLE = 0,
-    COMBINED_STATE_ROOMROM = 1
+    COMBINED_STATE_ROOMROM = 1,
+    COMBINED_STATE_FS = 2
 } combined_state_t;
 
 extern u32 debug_get_a4(void);
@@ -122,6 +140,8 @@ static void debug_poll_title(void)
     u16 joy;
     u16 was_chord;
     u16 is_chord;
+    u16 was_q2;
+    u16 is_q2;
 
     probe_check(2U);
     SYS_doVBlankProcess();
@@ -133,6 +153,8 @@ static void debug_poll_title(void)
     joy = JOY_readJoypad(JOY_1);
     was_chord = (u16)(s_prev_joy & CHORD_DEBUG);
     is_chord = (u16)(joy & CHORD_DEBUG);
+    was_q2 = (u16)(s_prev_joy & CHORD_DEBUG_Q2);
+    is_q2 = (u16)(joy & CHORD_DEBUG_Q2);
 
     /* C+START chord edge-press -> debug tile-grid scene (never returns).
      * Both buttons are 3-button readable so works in BizHawk default
@@ -151,10 +173,31 @@ static void debug_poll_title(void)
             /* unreachable */
         }
     }
+    /* START alone (edge) -> File Select. Checked AFTER the C+START chord
+     * above so the tile-grid shortcut still wins when C is held; that
+     * chord returns via debug_tilegrid_main() and never reaches here. */
+    {
+        unsigned char start_now  = (joy & BUTTON_START) ? 1u : 0u;
+        unsigned char start_prev = (s_prev_joy & BUTTON_START) ? 1u : 0u;
+        unsigned char c_held     = (joy & BUTTON_C) ? 1u : 0u;
+        if (start_now && !start_prev && !c_held)
+        {
+            s_prev_joy = joy;
+            s_state = COMBINED_STATE_FS;
+            fs_enter();
+            return;
+        }
+    }
+
     s_prev_joy = joy;
 
-    if (is_chord == CHORD_DEBUG && was_chord != CHORD_DEBUG)
     {
+        unsigned char abc_edge = (is_chord == CHORD_DEBUG && was_chord != CHORD_DEBUG) ? 1u : 0u;
+        unsigned char xyz_edge = (is_q2 == CHORD_DEBUG_Q2 && was_q2 != CHORD_DEBUG_Q2) ? 1u : 0u;
+    if (abc_edge || xyz_edge)
+    {
+        /* X+Y+Z (6-button pad) boots into 2nd quest; A+B+C boots 1st. */
+        roomrom_main_set_quest(xyz_edge ? 2u : 1u);
         s_state = COMBINED_STATE_ROOMROM;
         probe_publish();
         roomrom_debug_enter();
@@ -172,12 +215,12 @@ static void debug_poll_title(void)
          * = per-level dungeon song. Boot-room defaults to L1Q1; play
          * the L1Q1 dungeon song. Real per-level dispatch lands when
          * roomrom_debug_enter exposes its level/quest selection. */
-        music_play(0x40);  /* NES Z1 SongRequest bit 6 = dungeon song */
+        audio_music_play(0x40);  /* NES Z1 SongRequest bit 6 = dungeon song */
+    }
     }
 }
 
 extern void audio_vblank_hook_install(void);
-extern void audio_xgm_init(void);
 extern void music_play(unsigned char song_bitmap);
 
 /* 2026-05-15 perf fix: per-frame probe_check(4U) was unconditional,
@@ -217,6 +260,56 @@ int debug_main_after_a4(bool hardReset)
         if (s_state == COMBINED_STATE_TITLE)
         {
             debug_poll_title();
+        }
+        else if (s_state == COMBINED_STATE_FS)
+        {
+            SYS_doVBlankProcess();
+            ++s_frame;
+            fs_tick();
+
+            /* The File Select sets this when the player commits to a
+             * slot; CurSaveSlot ($0016) is already seeded by then. This
+             * is the real New Game / Continue entry, so unlike the A+B+C
+             * debug chord it does NOT unlock every item — the player
+             * starts with whatever the chosen slot actually holds. */
+            if (g_fs_handoff_requested)
+            {
+                g_fs_handoff_requested = 0u;
+
+                /* fs_handoff_to_transpiled tears the screen down for the
+                 * jump it used to make: display off, planes cleared, mode
+                 * forced to V64. The gameplay runtime expects the V32
+                 * layout debug_enter_title establishes, and nothing in
+                 * roomrom_debug_enter re-enables display — so without
+                 * this the handoff produced a black screen with no room
+                 * loaded. Restore the same video state the title path
+                 * hands to gameplay. */
+                render_mode_set_v32();
+                render_window_v_set(0u);
+                render_display_enable(1);
+
+                roomrom_main_set_quest(1u);
+                s_state = COMBINED_STATE_ROOMROM;
+                probe_publish();
+                roomrom_debug_enter();
+
+                /* Continue vs New Game. roomrom_debug_enter seeds the
+                 * default profile, so the restore has to run AFTER it or
+                 * the defaults would overwrite the save — same ordering
+                 * reason debug_unlock_all_items runs after enter on the
+                 * A+B+C path.
+                 *
+                 * save_game_read_slot validates magic + checksum and
+                 * returns 0 without touching live RAM if the slot is
+                 * blank or corrupt, so an empty cart falls through to a
+                 * clean New Game instead of loading garbage. */
+                if (save_game_slot_is_valid(g_fs_handoff_slot))
+                {
+                    (void) save_game_read_slot(g_fs_handoff_slot);
+                }
+
+                audio_music_play(0x01);  /* SONG_OW — FS exits to overworld */
+            }
         }
         else
         {

@@ -117,4 +117,11 @@ void level_info_install_uw(unsigned char level, unsigned char quest)
     copy_to_nes_ram(NES_LEVEL_INFO_BASE,
                     &rooms_dungeons[info_off],
                     NES_LEVEL_INFO_BYTES);
+
+    /* LevelInfo_WorldFlagsAddr ($6BAF/$6BB0) comes from the ROM record
+     * unmodified. ROM-verified 2026-09-24 (pointer-read, 252-byte records):
+     * OW $067F, L1-L6 $06FF, L7-L9 $077F -- three separate live NES flag
+     * regions. The former $067F override + zeroing (a workaround for the
+     * old 256-stride misread that produced $FFFF/$A672) pointed dungeons at
+     * the overworld flags and wiped them on every dungeon entry; removed. */
 }

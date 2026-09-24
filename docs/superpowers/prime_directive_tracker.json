@@ -13,8 +13,8 @@
     "task_title": "",
     "worktree": {
       "path": "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY",
-      "branch": "main",
-      "is_substrate_writer": true
+      "branch": "feat/cave-entry-transition-parity",
+      "is_substrate_writer": false
     },
     "next_concrete_action": "Phase 8 Task 8.1 Boss Framework: scaffold src/game/enemies/bosses/ + src/state/boss_state.h substrate; drain entry: python tools/audit/drain_coverage.py --phase 8"
   },
@@ -1839,5 +1839,76 @@
     "last_refresh_at": "2026-09-24T14:48:44.533996+00:00",
     "stale_reasons": []
   },
-  "blockers": []
+  "blockers": [
+    {
+      "kind": "worktree",
+      "description": "Substrate edit on non-main worktree: data/audio_music/ow_theme_vgm.c (WT-1)",
+      "path": "data/audio_music/ow_theme_vgm.c"
+    },
+    {
+      "kind": "worktree",
+      "description": "Substrate edit on non-main worktree: data/audio_music/ow_theme_vgm.h (WT-1)",
+      "path": "data/audio_music/ow_theme_vgm.h"
+    },
+    {
+      "kind": "worktree",
+      "description": "Substrate edit on non-main worktree: src/sgdk_adapter/audio_adapter.c (WT-1)",
+      "path": "src/sgdk_adapter/audio_adapter.c"
+    },
+    {
+      "kind": "worktree",
+      "description": "Substrate edit on non-main worktree: data/audio_music/lm_zelda_ow.bin (WT-1)",
+      "path": "data/audio_music/lm_zelda_ow.bin"
+    },
+    {
+      "kind": "worktree",
+      "description": "Substrate edit on non-main worktree: data/audio_music/lm_zelda_ow_patched.vgm (WT-1)",
+      "path": "data/audio_music/lm_zelda_ow_patched.vgm"
+    },
+    {
+      "kind": "worktree",
+      "description": "Substrate edit on non-main worktree: data/audio_music/ow_theme.bin (WT-1)",
+      "path": "data/audio_music/ow_theme.bin"
+    },
+    {
+      "kind": "worktree",
+      "description": "Substrate edit on non-main worktree: data/audio_music/ow_theme_pcm.c (WT-1)",
+      "path": "data/audio_music/ow_theme_pcm.c"
+    },
+    {
+      "kind": "worktree",
+      "description": "Substrate edit on non-main worktree: data/audio_music/ow_theme_pcm.h (WT-1)",
+      "path": "data/audio_music/ow_theme_pcm.h"
+    },
+    {
+      "kind": "worktree",
+      "description": "Substrate edit on non-main worktree: data/audio_music/ow_theme_xgm.c (WT-1)",
+      "path": "data/audio_music/ow_theme_xgm.c"
+    },
+    {
+      "kind": "worktree",
+      "description": "Substrate edit on non-main worktree: data/audio_music/ow_theme_xgm.h (WT-1)",
+      "path": "data/audio_music/ow_theme_xgm.h"
+    },
+    {
+      "kind": "worktree",
+      "description": "Substrate edit on non-main worktree: data/audio_music/sonic1.bin (WT-1)",
+      "path": "data/audio_music/sonic1.bin"
+    },
+    {
+      "kind": "worktree",
+      "description": "Substrate edit on non-main worktree: data/audio_music/sonic1.xgm (WT-1)",
+      "path": "data/audio_music/sonic1.xgm"
+    },
+    {
+      "kind": "worktree",
+      "description": "Substrate edit on non-main worktree: data/audio_music/uw_theme_xgm.c (WT-1)",
+      "path": "data/audio_music/uw_theme_xgm.c"
+    },
+    {
+      "kind": "worktree",
+      "description": "Substrate edit on non-main worktree: data/audio_music/uw_theme_xgm.h (WT-1)",
+      "path": "data/audio_music/uw_theme_xgm.h"
+    }
+  ]
 }

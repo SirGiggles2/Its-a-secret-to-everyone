@@ -1,0 +1,17 @@
+=== DEBATE SYNTHESIS (Sonnet + Claude; Codex stalled, Gemini env-blocked) ===
+CONSENSUS:
+1. The $3C/$3D conflict is RESOLVED, no live capture needed: room $36 is an
+   L3 MANHANDLA room ($3C) mis-attributed to L1 by the shared-UW1-block
+   room-visit aggregate. A shared block cannot tell which level owns a slot;
+   only the per-level room-GRAPH does. Find L1's true Aquamentus room offline:
+   scan all 128 slots for LevelBlockAttrsC ObjType==$3D AND reachable in L1's
+   room-graph (manifest edges from start $73). Pure data check, zero emulator.
+2. The boss-draw 'bug' is a WRONG-ROOM artifact: at $36, ObjType $3C dispatches
+   to enrt_update_manhandla, so c_aquamentus_draw is correctly DEAD there. The
+   lone $CA/pal3 SAT sprite = the generic enemy_render path drawing Manhandla.
+   I was probing L3's Manhandla room thinking it was L1 Aquamentus.
+3. Unblock for real boss verification = per-boss SAVESTATE (build on G2
+   nes_boot_to_scenario.lua), captured across the full anim cycle + at
+   InvincibilityTimer==0. Scripted traversal = fragile; forced-spawn = corrupt
+   room context.
+ACTION: scan 128 slots for all boss templates, map to L1-L9 via graph.

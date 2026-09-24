@@ -74,10 +74,12 @@ TITLE_C_SOURCES = [
     ("src/sgdk_adapter/audio_vblank_hook.c", "audio_vblank_hook.o"),
     ("src/sgdk_adapter/audio_adapter.c",    "audio_adapter.o"),
     ("data/audio/sfx_pcm.c",                "sfx_pcm.o"),
-    # Overworld theme: XGC binary (xgmtool output) dispatched via
+    ("data/audio/sfx_pcm_stairs.c",         "sfx_pcm_stairs.o"),
+    # OW/UW themes: XGC binaries (xgmtool output) dispatched via
     # src/sgdk_adapter/audio_adapter.c::audio_music_play(SONG_OW=$01) →
-    # XGM_startPlay(ow_theme_vgm).
-    ("data/audio_music/ow_theme_vgm.c",     "ow_theme_vgm.o"),
+    # XGM_startPlay(*_theme_xgm).
+    ("data/audio_music/ow_theme_xgm.c",     "ow_theme_xgm.o"),
+    ("data/audio_music/uw_theme_xgm.c",     "uw_theme_xgm.o"),
     ("src/frontend/intro/intro_phase.c", "intro_phase.o"),
     ("src/frontend/intro/intro_title.c", "intro_title.o"),
     ("src/frontend/intro/intro_story.c", "intro_story.o"),
@@ -103,6 +105,21 @@ TITLE_C_SOURCES = [
     # Phase 9 Task 9.3 — File Select OPTIONS submenu (compile-only; FS
     # frontend wire-up into Debug.md gameplay path is a follow-up task).
     ("src/frontend/fs/fs_options.c", "fs_options.o"),
+    # File Select: the implementation existed but only the options
+    # submenu was linked, so Debug.md had no FS at all.
+    ("src/frontend/fs/fs_main.c",   "fs_main.o"),
+    ("src/frontend/fs/fs_render.c", "fs_render.o"),
+    ("src/frontend/fs/fs_input.c",  "fs_input.o"),
+    ("src/frontend/fs/fs_phase.c",  "fs_phase.o"),
+    ("src/frontend/fs/fs_handoff.c","fs_handoff.o"),
+    ("data/fs/fs_bg_chr_full.c",    "fs_bg_chr_full.o"),
+    ("data/fs/fs_link_sprite_chr.c","fs_link_sprite_chr.o"),
+    ("data/fs/fs_heart_cursor_chr.c","fs_heart_cursor_chr.o"),
+    ("data/fs/fs_palette.c",        "fs_palette.o"),
+    ("data/fs/fs_static_tilemap.c", "fs_static_tilemap.o"),
+    ("data/fs/fs_static_attr.c",    "fs_static_attr.o"),
+    ("data/fs/fs_font_chr.c",       "fs_font_chr.o"),
+    ("data/fs/fs_border_chr.c",     "fs_border_chr.o"),
     ("src/frontend/fs/fs_options_render.c", "fs_options_render.o"),
     # 2026-05-19 — title-MODE-button debug tile-grid scene for atlas audit.
     ("src/game/debug/debug_tilegrid.c", "debug_tilegrid.o"),
@@ -135,12 +152,25 @@ ROOMROM_C_SOURCES = [
     ("src/game/world/mode_continue_question.c", "world_mode_continue_question.o"),
     ("src/game/world/mode_death.c",             "world_mode_death.o"),
     ("src/game/world/mode_endlevel.c",          "world_mode_endlevel.o"),
+    ("src/game/world/mode_save.c",              "world_mode_save.o"),
     ("src/game/world/mode_dispatch.c",          "world_mode_dispatch.o"),
     # Substrate fix 2026-05-15 — install NES SRAM LBA + LevelInfo at boot.
     ("src/game/world/level_info_install.c",     "level_info_install.o"),
     # Plan v5a Tier-1 bridge 2026-05-16 — sync C-side state into NES RAM
     # mirror cells ($00FA/$00FB input, $066F/$0670 hearts, $008C face).
     ("src/state/nes_ram_sync.c",                "nes_ram_sync.o"),
+    # Persistent save bridge 2026-08-04: save_serializer.c builds slot
+    # images in the A4 mirror ($FFE000); sram_adapter.c moves bytes via a
+    # different mirror ($FF6000). save_game.c owns the copy between them,
+    # which is why save_slot_serialize had no callers before now.
+    ("src/state/save_game.c",                   "save_game.o"),
+    # Cart SRAM backend. sram_adapter.c's _sram_* externs claimed to come
+    # from src/nes_io.asm, which is NOT linked into Debug.md (nor is
+    # genesis_shell.asm, which called _sram_load_save_slots at boot), so
+    # Debug.md had no cart SRAM at all. Implemented on SGDK's SRAM API in
+    # the adapter layer per SGDK-1 rather than linking 142 KB of ASM.
+    ("src/sgdk_adapter/sram_backend.c",         "sram_backend.o"),
+    ("src/sgdk_adapter/sram_adapter.c",         "sram_adapter.o"),
     # Plan v5b Tier-5 T5.5 2026-05-16 — audio dispatcher: gamemode+scene
     # tuple change -> single music_play() per docs/audit/audio_routing.md.
     ("src/game/audio/audio_dispatch.c",         "audio_dispatch.o"),
