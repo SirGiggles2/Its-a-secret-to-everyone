@@ -178,13 +178,18 @@ def hash_file(path: Path) -> str:
 
 
 def expand_paths(patterns: list[str]) -> list[Path]:
-    """Resolve glob patterns under REPO_ROOT to concrete files (sorted)."""
+    """Resolve glob patterns under REPO_ROOT to concrete files (sorted).
+
+    Sort key is the POSIX relative path string, not Path ordering: Windows
+    Path comparison is case-insensitive, so sorted(Path) gave a different
+    order (and sentinel) on Windows than on Linux for mixed-case names.
+    """
     out: list[Path] = []
     for pat in patterns:
         if any(c in pat for c in "*?["):
-            for p in sorted(REPO_ROOT.glob(pat)):
-                if p.is_file():
-                    out.append(p)
+            matches = [p for p in REPO_ROOT.glob(pat) if p.is_file()]
+            matches.sort(key=lambda p: p.relative_to(REPO_ROOT).as_posix())
+            out.extend(matches)
         else:
             out.append(REPO_ROOT / pat)
     return out
