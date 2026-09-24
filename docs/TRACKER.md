@@ -80,7 +80,7 @@ Status: `TODO` · `ACTIVE` · `BLOCKED` · `REVIEW` · `DONE`. Plan ref = task I
 | T-096 | Modes 4/6/7/$10 wrap `transition.c`/`cellar_meta.c` with NES mode values | TODO | | Mode trace byte-diff on scroll, cave, stairs |
 | T-097 | Mode $11 death (CurSaveSlot `$16`, DeathCounts `$630`, visuals) + $08 continue→3/D/0 | TODO | | Death→continue/save/retry RAM trace vs NES |
 | T-098 | Mode $12 end-level exit; Mode $13 ending text/draw/credits/reset | TODO | | Trace + VRAM diff vs NES ending |
-| T-099 | Modes 0–3 load/unfurl; $E/$F register/elimination in custom FS; real slot occupancy | TODO | | FS shows real slots; copy/erase works |
+| T-099 | Modes 0–3 load/unfurl; $E/$F register/elimination in custom FS; real slot occupancy | ACTIVE | Claude | FS shows real slots; copy/erase works |
 | T-100 | Full NES SaveRAM profile per slot (name, inventory, quest, deaths, world flags), versioned | DONE | Claude | Genesis save format = NES format: `nes_ram[$6000–$652F]` persisted byte-for-byte at cart SRAM `$000`; NES CalculateFileAChecksum/FormatFileA/Mode0 Sub1+Sub2/@ChoseSlot/ModeD Sub0+CopyFileBToFileA ported (`save_serializer.c`, `save_game.c`). Old 43-byte format (slot 2 overlapped PlayAreaTiles) retired; fake FS markers removed. **Evidence:** lockstep `save_roundtrip` (same card, same play, Mode $0D on both): NES Battery RAM vs Genesis cart SRAM **0/1328 bytes differ**; codec self-test 5/5; persistence across hard reset 7/7; FS entry 5/5; newgame load: Items/WorldFlags/slot info equal NES at f0. Save → GameMode 0 (NES) still returns to Play → T-097 |
 
 ### S1 — Quest 1 route (the test driver; controller-only; checkpoint with SRAM saves, not savestates)
