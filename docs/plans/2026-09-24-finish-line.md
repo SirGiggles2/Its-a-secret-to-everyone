@@ -1,5 +1,8 @@
 # Finish-line plan — 2026-09-24
 
+> Status of every step here is tracked in `docs/TRACKER.md` (S0 = T-001..T-006). S0 steps 1–3 done 2026-09-24; step 4 (build gates) = T-001.
+
+
 Companion to `2026-09-10-project-completion.md` (task IDs, evidence rules and the live board stay there; this file only sets order and cadence). Written from inspection of: main @ f513b997 + dirty tree, branch `feat/cave-entry-transition-parity`, recovery snapshot, `builds/reports/recovery/`, `builds/play/`.
 
 ## Findings that change the plan

@@ -1,5 +1,8 @@
 # FINAL TRY — Claude operating rules
 
+> **Start every session at `docs/TRACKER.md`** (work queue, claims, handoffs with Astra). Claim before editing; hand off before stopping; commit per task.
+
+
 Zelda NES → Sega Genesis port via SGDK + drained C. You are the primary
 coder. The user directs; you execute, decide, and drive.
 

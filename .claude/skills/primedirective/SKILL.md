@@ -13,6 +13,11 @@ user-invocable: true
 disable-model-invocation: false
 ---
 
+> **AUTHORITY (2026-09-24):** "Next task / what's blocking / active task" answers come from
+> `docs/TRACKER.md`, not from `prime_directive_tracker.json`. The PD tracker's phase ladder and its
+> "Next concrete action" line are historical; still use this skill for the hard rules, worktree safety,
+> drain stance and NES-ground-truth requirements.
+
 # /primedirective — Prime Directive enforcer + master-plan tracker
 
 ## Operating contract (run on every invocation, in this order)

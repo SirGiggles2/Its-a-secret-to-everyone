@@ -1,5 +1,8 @@
 # Zelda Genesis completion plan: implementation and focused BizHawk testing
 
+> **2026-09-24:** The live work board moved to `docs/TRACKER.md`. This file keeps task definitions (P#.# IDs), evidence rules and the execution history below. Do not update the "Live work board" section here.
+
+
 Updated 2026-09-10 to reflect the user's explicit direction: Genesis hardware support is already established; finish the game without repeating broad tests that stall implementation.
 
 **Shipped product:** a drag-and-drop program. The user supplies their own supported NES Zelda ROM; the program validates it, extracts/converts the required assets locally, builds the completed Genesis port, and saves the Genesis ROM on that user's computer. The download contains the builder and distributable implementation/dependencies, not a NES ROM, a prebuilt Genesis game ROM, or extracted source-game assets. Do not download replacement game assets or ROMs to complete the build.
