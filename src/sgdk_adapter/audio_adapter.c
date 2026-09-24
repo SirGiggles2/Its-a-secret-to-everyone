@@ -132,8 +132,8 @@ void audio_sfx_play(unsigned char sfx)
      * sfx id) and $07F1 (call counter). Lets bizhawkScript probes verify
      * the audio_sfx_play path fires without going through dmc_trigger
      * (which only writes dmc_last_idx for NES APU $4015 writes). */
-    nes_ram[0x07F0u] = sfx;
-    nes_ram[0x07F1u] = (unsigned char)(nes_ram[0x07F1u] + 1u);
+    DBG_SENTINEL(0x10u) = sfx;
+    DBG_SENTINEL(0x11u) = (unsigned char)(DBG_SENTINEL(0x11u) + 1u);
 }
 
 void audio_tick_vblank(void)

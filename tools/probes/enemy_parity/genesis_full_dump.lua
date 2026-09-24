@@ -11,6 +11,9 @@
 --   5. Repeat
 
 local function R(o) return memory.read_u8(o, "68K RAM") end
+-- T-109 / T-094: sentinel block and music state are linker symbols now.
+local SENT = tonumber("@SYM:g_debug_sentinel@") - 0xFF0000
+local MUS = tonumber("@SYM:audio_music_state@") - 0xFF0000
 local function W(o,v) memory.write_u8(o, v, "68K RAM") end
 local function idle(n) for _=1,n do emu.frameadvance() end end
 local function press(b, frames)
@@ -71,7 +74,7 @@ local function full_dump(out_dir, label)
 
   -- Audio driver region $FFE000..$FFE0FF (256 bytes)
   local aud_f = io.open(out_dir .. "/audio_driver.bin", "wb")
-  for off = 0xE000, 0xE0FF do aud_f:write(string.char(R(off))) end
+  for off = MUS, MUS + 0x3F do aud_f:write(string.char(R(off))) end  -- audio_music_state (T-094)
   aud_f:close()
 
   -- VRAM (entire 64KB)
@@ -100,7 +103,7 @@ local function full_dump(out_dir, label)
   j:write(string.format('  "cur_level": "$%02X",\n', R(0x8010)))
   j:write(string.format('  "room_id": "$%02X",\n', R(0x80EB)))
   j:write(string.format('  "frame_counter": "$%02X",\n', R(0x8015)))
-  j:write(string.format('  "scene_sentinel": "$%02X",\n', R(0x87E8)))
+  j:write(string.format('  "scene_sentinel": "$%02X",\n', R(SENT + 0x08)))
   j:write(string.format('  "rng_0": "$%02X",\n', R(0x8018)))
   j:write(string.format('  "rng_1": "$%02X",\n', R(0x8019)))
   j:write(string.format('  "rng_2": "$%02X",\n', R(0x801A)))
@@ -108,10 +111,10 @@ local function full_dump(out_dir, label)
   j:write(string.format('  "heart_partial": "$%02X",\n', R(0x8670)))
   j:write(string.format('  "btns_pressed": "$%02X",\n', R(0x80F8)))
   j:write(string.format('  "btns_down": "$%02X",\n', R(0x80FA)))
-  j:write(string.format('  "raw_joy_lo": "$%02X",\n', R(0x87F0)))
-  j:write(string.format('  "raw_joy_hi": "$%02X",\n', R(0x87F1)))
-  j:write(string.format('  "music_song_req": "$%02X",\n', R(0xE001)))
-  j:write(string.format('  "music_song_cur": "$%02X",\n', R(0xE000)))
+  j:write(string.format('  "raw_joy_lo": "$%02X",\n', R(SENT + 0x10)))
+  j:write(string.format('  "raw_joy_hi": "$%02X",\n', R(SENT + 0x11)))
+  j:write(string.format('  "music_song_req": "$%02X",\n', R(MUS + 0x01)))
+  j:write(string.format('  "music_song_cur": "$%02X",\n', R(MUS + 0x00)))
   j:write(string.format('  "xgm_owns_chip": "$%02X",\n', R(0xE02C)))
   j:write(string.format('  "link": {"x":"$%02X","y":"$%02X","dir":"$%02X","face":"$%02X"},\n',
     R(0x8070), R(0x8084), R(0x808C), R(0x8098)))

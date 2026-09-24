@@ -3,24 +3,18 @@
  * NES source: reference/aldonunez/Z_02.asm:2779 UpdateModeDSave, reached
  * from UpdateMode_JumpTable entry 13 (Z_07.asm:1627).
  *
- * NES structure: three submodes. Sub0 formats "file B", copies the $28
- * (40) byte Items block from the live profile into it, stores a checksum
- * and marks it uncommitted; the later submodes commit and transition.
- * That A/B dance exists because the NES writes battery RAM in place and
- * needs a half-written file to be detectable after a power loss.
+ * NES structure: Sub0 formats file B and copies the profile into it
+ * (items, deaths, active, quest, name, world flags; hearts refilled on the
+ * profile), Sub1 validates B and copies it to file A, Sub2 goes to
+ * GameMode 0 submode 1.
  *
- * DIVERGENCE (recorded, deliberate): this port commits in one step.
- * save_game_write_slot() serializes into the mirror, checksums, and hands
- * a complete slot image to sram_save_store(), which refreshes the cart
- * mirror, overwrites only the target slot, and commits. The cart is never
- * left holding a partially written slot, so the A/B protocol has nothing
- * to protect against here. Behaviour visible to the player is identical:
- * the slot either updates or it does not.
+ * T-100: save_game_save_current() runs Sub0 + CopyFileBToFileA collapsed
+ * onto file A (save_serializer.c) and commits the whole NES save block to
+ * cart SRAM. File A bytes and profile side effects match the NES; the
+ * A/B power-loss protocol is replaced by one atomic commit.
  *
- * What IS preserved from the NES: the slot index comes from CurSaveSlot
- * ($16), and the payload is the 40-byte Items block at $657 — the same
- * base and length the NES copies (Variables.inc: Items := $657, and
- * UpdateModeDSave_Sub0 copies $28 bytes).
+ * DIVERGENCE (recorded, T-097): Sub2 returns to Play here, not to GameMode
+ * 0 submode 1 as on the NES; the continue/save flow is rebuilt in T-097.
  */
 
 #include "mode_save.h"
@@ -43,7 +37,8 @@ void mode13_save_update(void)
 {
     unsigned char slot = MODE_SAVE_CUR_SLOT;
 
-    if (save_game_write_slot(slot)) {
+    (void)slot;
+    if (save_game_save_current()) {
         g_mode_save_last_result = 1u;
     } else {
         /* Bad slot index. Do not silently pretend the game was saved:

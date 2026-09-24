@@ -32,10 +32,11 @@ extern void fs_tick(void);
 extern unsigned char g_fs_handoff_requested;
 extern unsigned char g_fs_handoff_slot;
 
-/* Persistent save (src/state/save_game.h). Declared rather than included
- * for the same reason as the FS symbols above. */
-extern unsigned char save_game_slot_is_valid(unsigned char slot_idx);
-extern unsigned char save_game_read_slot(unsigned char slot_idx);
+/* Persistent NES-format saves (T-100). src/state is on the include path. */
+#include "save_game.h"
+
+/* Debug/probe sentinel block (platform_abi.h DBG_SENTINEL, T-109). */
+volatile unsigned char g_debug_sentinel[32];
 
 typedef enum {
     COMBINED_STATE_TITLE = 0,
@@ -128,9 +129,9 @@ static void debug_enter_title(void)
     render_mode_set_v32();
     render_window_v_set(0u);
 
-    RAM(0x07FF) = 0xA1u;
-    RAM(0x07F1) = 0u;
-    RAM(0x07F2) = 0u;
+    DBG_SENTINEL(0x1Fu) = 0xA1u;
+    DBG_SENTINEL(0x11u) = 0u;
+    DBG_SENTINEL(0x12u) = 0u;
     intro_phase_init();
     intro_phase_step();
 }
@@ -147,7 +148,7 @@ static void debug_poll_title(void)
     SYS_doVBlankProcess();
     ++s_frame;
     probe_check(3U);
-    RAM(0x07F1) = (u8) s_frame;
+    DBG_SENTINEL(0x11u) = (u8) s_frame;
     intro_phase_step();
 
     joy = JOY_readJoypad(JOY_1);
@@ -184,6 +185,9 @@ static void debug_poll_title(void)
         {
             s_prev_joy = joy;
             s_state = COMBINED_STATE_FS;
+            /* NES title Start runs UpdateMode0Demo_Sub1/Sub2: validate each
+             * save file A and fill the slot info File Select shows. */
+            save_game_boot();
             fs_enter();
             return;
         }
@@ -288,7 +292,14 @@ int debug_main_after_a4(bool hardReset)
                 render_window_v_set(0u);
                 render_display_enable(1);
 
-                roomrom_main_set_quest(1u);
+                /* NES QuestNumbers: 0 = first quest, 1 = second. Needed
+                 * before entry because level data installs per quest. */
+                {
+                    unsigned char slot = g_fs_handoff_slot;
+                    unsigned char q2 = (save_game_slot_active(slot) &&
+                                        save_game_slot_quest(slot)) ? 1u : 0u;
+                    roomrom_main_set_quest(q2 ? 2u : 1u);
+                }
                 s_state = COMBINED_STATE_ROOMROM;
                 probe_publish();
                 roomrom_debug_enter();
@@ -299,14 +310,12 @@ int debug_main_after_a4(bool hardReset)
                  * reason debug_unlock_all_items runs after enter on the
                  * A+B+C path.
                  *
-                 * save_game_read_slot validates magic + checksum and
-                 * returns 0 without touching live RAM if the slot is
-                 * blank or corrupt, so an empty cart falls through to a
-                 * clean New Game instead of loading garbage. */
-                if (save_game_slot_is_valid(g_fs_handoff_slot))
-                {
-                    (void) save_game_read_slot(g_fs_handoff_slot);
-                }
+                 * The slot info was validated at title Start (NES file A
+                 * markers + checksum); an inactive slot is a New Game.
+                 * CurSaveSlot is set either way so a later save lands in
+                 * the chosen slot. */
+                RAM(0x0016u) = g_fs_handoff_slot;   /* CurSaveSlot */
+                (void) save_game_load_slot(g_fs_handoff_slot);
 
                 audio_music_play(0x01);  /* SONG_OW — FS exits to overworld */
             }

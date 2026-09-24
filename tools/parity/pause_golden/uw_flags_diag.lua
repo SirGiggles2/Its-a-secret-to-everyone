@@ -13,6 +13,9 @@ end
 local function idle(n) for _=1,n do emu.frameadvance() end end
 local NBASE = 0xFF8000
 local function nr(a) return memory.read_u8(NBASE + a, "M68K BUS") end
+-- T-109: $07E0.. sentinels now live in g_debug_sentinel[] (index = addr-$07E0).
+local SENT = tonumber("@SYM:g_debug_sentinel@")
+local function sn(i) return memory.read_u8(SENT + i, "M68K BUS") end
 
 idle(8)
 -- Boot to gameplay (in_gameplay $0274 == 1), A+B+C chord through title/story.
@@ -29,7 +32,7 @@ LOG("booted(in_gameplay)=" .. tostring(booted))
 joypad.set({["P1 Mode"]=true}); emu.frameadvance(); joypad.set({}); idle(120)
 
 LOG(string.format("CurLevel($0010)=%d  scene($07E8)=$%02X  AAsentinel($07E0)=$%02X room($07E1)=$%02X",
-    nr(0x0010), nr(0x07E8), nr(0x07E0), nr(0x07E1)))
+    nr(0x0010), sn(0x08), sn(0x00), sn(0x01)))
 LOG(string.format("AttrsA[$73]=$%02X AttrsB[$73]=$%02X  rot$6BAB=$%02X tri$6BAE=$%02X start$6BAD=$%02X",
     nr(0x687E+0x73), nr(0x68FE+0x73), nr(0x6BAB), nr(0x6BAE), nr(0x6BAD)))
 local ptr = nr(0x6BAF) | (nr(0x6BB0) << 8)

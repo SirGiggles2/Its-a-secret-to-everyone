@@ -1,37 +1,28 @@
-/* Phase 9 Task 9.7 — save slot serialization (substrate, main worktree).
+/* save_serializer.h — NES save file A codec (T-100).
  *
- * Genesis-native save format. Snapshots Link's inventory + meta cells
- * to the NES SRAM shadow region (RAM($6000..)) so they survive across
- * mode transitions and (with the sgdk_adapter SRAM IO layer wired in
- * 9.7 follow-ups) across power cycles.
+ * The Genesis save format IS the NES format: the NES SaveRAM block
+ * $6000..$652F (three "file A" records plus markers, checksums and file B
+ * commit flags) lives in the NES RAM mirror at the same offsets the NES
+ * uses, and save_game.c persists that block byte-for-byte to cart SRAM.
+ * Every function here is a port of the NES routine named beside it.
  *
- * Per-slot layout (43 bytes inside a 682-byte abi-aligned slot):
- *   [0]    magic_lo       0x5A
- *   [1]    magic_hi       0xA5
- *   [2..41] inventory[40] mirror of RAM(0x0657..0x067E) — covers
- *                         LINK_HEARTS, LINK_PARTIAL_HEART, LINK_RUPEES,
- *                         LINK_BOMB_COUNT, keys, master_key, all
- *                         INVENTORY_VALUE entries.
- *   [42]   checksum       XOR of bytes 0..41
- *   [43..681] reserved    headroom for future NES profile expansion
- *                         (deaths, name, quest number, etc.).
+ * NES source: reference/aldonunez/Z_01.asm SaveFileAAddressSets /
+ * FetchFileAAddressSet; Z_02.asm CalculateFileAChecksum, FormatFileA,
+ * UpdateMode0Demo_Sub1/Sub2, UpdateMode1Menu_Sub1 (@ChoseSlot),
+ * UpdateModeDSave_Sub0 + CopyFileBToFileA.
+ * Drained C: frontend_runtime.c frontdemo_update_mode0_demo_sub2 (unlinked;
+ * depends on the unlinked c_shims.asm FormatFileA import). Coverage:
+ * FULL for file A; file B is not materialised (see save_file_a_save).
+ * Stance: REPLACE the Genesis-only 43-byte format, whose slot images sat on
+ * NES $6000+slot*682 (slot 2 overlapped PlayAreaTiles $6530).
  *
- * Slot stride = 682 bytes (SRAM_SAVE_SLOT_BYTES from src/abi/sram_abi.h)
- * so save_persistence can hand one slot to sram_save_load/store without
- * overlap. Slot bases at SRAM(slot*682); slot 0 = $6000..$6299,
- * slot 1 = $629A..$6533, slot 2 = $6534..$67CD. The 8KB cart SRAM
- * ($000..$7FF) holds all three.
- *
- * Magic + checksum bracket the slot so a fresh / corrupt SRAM region
- * is rejected cleanly and the caller can fall through to "new game".
- *
- * GREENFIELD stance per drain coverage scan 2026-05-10: no candidate
- * row in tools/audit/drain_coverage.json. NES InitSaveRam clears
- * $6530..$7FFF on $5A/$A5 mismatch (reference/aldonunez/Z_05.asm:7375);
- * Genesis-native serializer keeps the SAME magic byte values so a
- * shared SRAM-init path can join the two worlds in 9.7 follow-ups.
+ * File A slot s (address sets, 14 bytes each, Z_01.asm):
+ *   name   $6002 + 8*s      (8)       items $601A + $28*s (40)
+ *   flags  $6092 + $180*s   ($180)    active $6512+s, unknown $6515+s,
+ *   deaths $6518+s, quest $651B+s,    markers $651E+s=$5A / $6521+s=$A5,
+ *   checksum $6524+2s = [hi, lo] of the 16-bit sum of all of the above,
+ *   file B committed $652A+s.
  */
-
 #ifndef SAVE_SERIALIZER_H
 #define SAVE_SERIALIZER_H
 
@@ -39,33 +30,61 @@
 extern "C" {
 #endif
 
-#define SAVE_SLOT_COUNT          3u
-/* SAVE_SLOT_PAYLOAD_BYTES = magic(2) + inventory(40) + checksum(1).
- * SAVE_SLOT_STRIDE = abi-aligned per-slot byte stride (= 682, matches
- * SRAM_SAVE_SLOT_BYTES in src/abi/sram_abi.h). */
-#define SAVE_SLOT_PAYLOAD_BYTES 43u
-#define SAVE_SLOT_STRIDE       682u
-#define SAVE_SLOT_BYTE_SIZE    SAVE_SLOT_PAYLOAD_BYTES
-#define SAVE_INVENTORY_BYTES    40u
-#define SAVE_INVENTORY_RAM_BASE 0x0657u
-#define SAVE_MAGIC_LO          0x5Au
-#define SAVE_MAGIC_HI          0xA5u
+#define SAVE_SLOT_COUNT            3u
+#define SAVE_NAME_BYTES            8u
+#define SAVE_ITEMS_BYTES           0x28u
+#define SAVE_WORLD_FLAGS_BYTES     0x180u
 
-/* Returns 1 on success, 0 on bad slot index. Writes magic + 40-byte
- * inventory snapshot + checksum to SRAM(slot * 43 .. slot * 43 + 42). */
-unsigned char save_slot_serialize(unsigned char slot_idx);
+/* Profile (live game) cells, Variables.inc. */
+#define NES_PROFILE_ITEMS          0x0657u
+#define NES_PROFILE_WORLD_FLAGS    0x067Fu
+#define NES_SLOTINFO_NAMES         0x0638u   /* 3 x 8 */
+#define NES_SLOTINFO_ACTIVE        0x0633u
+#define NES_SLOTINFO_QUEST         0x062Du
+#define NES_SLOTINFO_DEATHS        0x0630u
+#define NES_SLOTINFO_HEARTS        0x0650u   /* 3 x (value, partial) */
+#define NES_CUR_SAVE_SLOT          0x0016u
 
-/* Returns 1 if magic + checksum validate AND state was restored;
- * 0 otherwise (live RAM unmodified on failure). */
-unsigned char save_slot_deserialize(unsigned char slot_idx);
+/* NES SaveRAM block persisted to cart. */
+#define NES_SAVE_BLOCK_BASE        0x6000u
+#define NES_SAVE_BLOCK_BYTES       0x0530u
+#define NES_FILEA_NAME(s)          (0x6002u + 8u * (s))
+#define NES_FILEA_ITEMS(s)         (0x601Au + 0x28u * (s))
+#define NES_FILEA_FLAGS(s)         (0x6092u + 0x180u * (s))
+#define NES_FILEA_ACTIVE(s)        (0x6512u + (s))
+#define NES_FILEA_UNKNOWN(s)       (0x6515u + (s))
+#define NES_FILEA_DEATHS(s)        (0x6518u + (s))
+#define NES_FILEA_QUEST(s)         (0x651Bu + (s))
+#define NES_FILEA_OPEN_MARKER(s)   (0x651Eu + (s))
+#define NES_FILEA_CLOSE_MARKER(s)  (0x6521u + (s))
+#define NES_FILEA_CHECKSUM(s)      (0x6524u + 2u * (s))
+#define NES_FILEB_COMMITTED(s)     (0x652Au + (s))
+#define SAVE_MAGIC_OPEN            0x5Au
+#define SAVE_MAGIC_CLOSE           0xA5u
 
-/* Magic + checksum check, no side effects. 1=valid, 0=corrupt/empty. */
-unsigned char save_slot_validate(unsigned char slot_idx);
+/* CalculateFileAChecksum: 16-bit sum of name, items, flags, 4 singles. */
+unsigned short save_file_a_checksum(unsigned char slot);
 
-/* Compute XOR checksum over bytes [0..41] of slot. Used by serialize
- * (write side) and validate (read side). Exposed so probes can corrupt
- * a slot deterministically. */
-unsigned char save_slot_compute_checksum(unsigned char slot_idx);
+/* 1 when markers are $5A/$A5 and the stored checksum matches. */
+unsigned char save_file_a_valid(unsigned char slot);
+
+/* FormatFileA: blank name ($24), zero items/flags/singles, markers,
+ * checksum; resets the slot info (active/quest/deaths) and marks file B
+ * committed. */
+void save_file_a_format(unsigned char slot);
+
+/* UpdateMode0Demo_Sub1 (file A half) then Sub2: validate/format every
+ * file A, then copy active/deaths/quest/hearts/names into the slot info. */
+void save_files_boot_validate(void);
+
+/* UpdateMode1Menu_Sub1 @ChoseSlot: file A items + world flags -> profile,
+ * clear SwordBlocked/ObjState/InvClock, CurLevel/SelectedItemSlot = 0. */
+void save_file_a_load(unsigned char slot);
+
+/* UpdateModeDSave_Sub0 then CopyFileBToFileA, collapsed onto file A:
+ * the resulting file A bytes and profile/slot-info side effects are the
+ * NES's. Returns 0 on a bad slot. */
+unsigned char save_file_a_save(unsigned char slot);
 
 #ifdef __cplusplus
 }

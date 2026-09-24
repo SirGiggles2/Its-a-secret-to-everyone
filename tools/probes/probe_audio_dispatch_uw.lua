@@ -30,8 +30,9 @@ local function r8(addr)
 end
 
 local RAM_GAMEMODE      = 0x8012
-local RAM_M_SONG        = 0xE000
-local RAM_TITLE_PHASE   = 0x87F0   -- $07F0 — probe-state phase counter
+local RAM_M_SONG        = tonumber("@SYM:audio_music_state@") - 0xFF0000  -- T-094
+-- T-109: title phase sentinel moved to g_debug_sentinel[$10] (was NES $07F0).
+local RAM_TITLE_PHASE   = tonumber("@SYM:g_debug_sentinel@") - 0xFF0000 + 0x10
 
 log("audio_dispatch UW probe — plan v5b T5.6")
 

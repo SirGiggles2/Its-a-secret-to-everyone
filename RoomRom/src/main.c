@@ -1974,9 +1974,9 @@ void roomrom_debug_tick(void)
          * BEFORE any per-frame work. If post-Mode values ($78,$DD,$73)
          * are preserved here but reverted by line 1745 sync, the writer
          * lives inside this function. */
-        nes_ram[0x07F5u] = (unsigned char)players[0].x;
-        nes_ram[0x07F6u] = (unsigned char)players[0].y;
-        nes_ram[0x07F7u] = s_room_id;
+        DBG_SENTINEL(0x15u) = (unsigned char)players[0].x;
+        DBG_SENTINEL(0x16u) = (unsigned char)players[0].y;
+        DBG_SENTINEL(0x17u) = s_room_id;
         SYS_doVBlankProcess();
         /* Phase Q v2: roll per-frame DMA byte tally into peak tracker
          * and reset accumulator for next frame. Probes read peak via
@@ -2233,7 +2233,7 @@ void roomrom_debug_tick(void)
             nes_ram[0x0070u] = (unsigned char)players[0].x;
             nes_ram[0x0084u] = (unsigned char)players[0].y;
             /* SENTINEL $07F9 = s_room_id at tick-start sync (each tick) */
-            nes_ram[0x07F9u] = s_room_id;
+            DBG_SENTINEL(0x19u) = s_room_id;
             nes_ram[0x00EBu] = s_room_id;
 
             /* Tier 0 (plan v6) cave-entrance detection. Only fires in
@@ -2269,7 +2269,7 @@ void roomrom_debug_tick(void)
                     collision_get_collidable_tile_still(0u);
                 /* Tier 0 verify sentinel: $07FD = last standing tile
                  * Link was on. Helps debug entrance detection. */
-                nes_ram[0x07FDu] = standing_tile;
+                DBG_SENTINEL(0x1Du) = standing_tile;
                 cave_id_t cid = cave_entrance_check(standing_tile, s_room_id);
                 if (cid != (cave_id_t)0) {
                     /* NES enters caves ONLY at a $10-aligned column:
@@ -2296,8 +2296,8 @@ void roomrom_debug_tick(void)
                      * so the smoke probe can confirm entrance path ran
                      * (separate signal from $0350 which is aliased to
                      * enemy slot 1 type). */
-                    nes_ram[0x07FCu] =
-                        (unsigned char)(nes_ram[0x07FCu] + 1u);
+                    DBG_SENTINEL(0x1Cu) =
+                        (unsigned char)(DBG_SENTINEL(0x1Cu) + 1u);
                     s_cave_return_room = s_room_id;
                     s_cave_return_face = players[0].face;
                     s_cave_return_x    = (unsigned char)players[0].x;
@@ -2427,11 +2427,11 @@ void roomrom_debug_tick(void)
         /* DEBUG SENTINEL — publish raw joy + pressed bits into NES RAM
          * sentinel cells $07F0..$07F3 so probes can verify SGDK polling
          * captures 6-button (Mode/X/Y/Z) bits. Latched (not edge-only). */
-        nes_ram[0x07F0u] = (unsigned char)(joy & 0xFFu);
-        nes_ram[0x07F1u] = (unsigned char)((joy >> 8) & 0xFFu);
+        DBG_SENTINEL(0x10u) = (unsigned char)(joy & 0xFFu);
+        DBG_SENTINEL(0x11u) = (unsigned char)((joy >> 8) & 0xFFu);
         if (pressed) {
-            nes_ram[0x07F2u] = (unsigned char)(pressed & 0xFFu);
-            nes_ram[0x07F3u] = (unsigned char)((pressed >> 8) & 0xFFu);
+            DBG_SENTINEL(0x12u) = (unsigned char)(pressed & 0xFFu);
+            DBG_SENTINEL(0x13u) = (unsigned char)((pressed >> 8) & 0xFFu);
         }
 
         /* Phase 9 Task 9.4 — OPTION_ID_AB_SWAP: swap A and B button bits
@@ -2585,10 +2585,10 @@ void roomrom_debug_tick(void)
          * handled above. */
         if ((pressed & BUTTON_MODE) && !(joy & BUTTON_Z) && !(joy & BUTTON_C)) {
             /* DEBUG SENTINEL — count how many times the Mode handler enters. */
-            nes_ram[0x07F4u] = (unsigned char)(nes_ram[0x07F4u] + 1u);
+            DBG_SENTINEL(0x14u) = (unsigned char)(DBG_SENTINEL(0x14u) + 1u);
             s_scene = (s_scene == SCENE_OW) ? SCENE_UW : SCENE_OW;
             /* SENTINEL $07E8 = s_scene IMMEDIATELY AFTER toggle */
-            nes_ram[0x07E8u] = (unsigned char)s_scene;
+            DBG_SENTINEL(0x08u) = (unsigned char)s_scene;
             /* UW first room from NES LevelInfo_StartRoomId ($6BAD) seeded
              * by level_info_install_uw below. Bootstrap default = $73
              * (NES Z1 L1 Q1 StartRoomId) so first toggle paints a real
@@ -2601,10 +2601,10 @@ void roomrom_debug_tick(void)
                  * is re-read from installed LevelInfo_StartRoomId ($6BAD)
                  * right after level_info_install_uw below; $73 is only the
                  * pre-install placeholder. */
-                unsigned char uw_lvl = nes_ram[0x07FAu];
+                unsigned char uw_lvl = DBG_SENTINEL(0x1Au);
                 if (uw_lvl < 1u || uw_lvl > 9u) uw_lvl = 1u;
                 nes_ram[0x0010u] = uw_lvl;          /* CurLevel for the install */
-                nes_ram[0x07FBu] = uw_lvl;          /* echo for probe verify */
+                DBG_SENTINEL(0x1Bu) = uw_lvl;          /* echo for probe verify */
                 s_room_id = 0x73u;
                 /* Spawn Link at the south doorway of the entrance room
                  * (NES InitMode3_Sub2 entry: ObjX=$78, ObjY=$DD). */
@@ -2612,10 +2612,10 @@ void roomrom_debug_tick(void)
                 players[0].y = 0xDD;
                 players[0].face = LINK_FACE_UP;
                 /* SENTINEL — proves UW first-block executed */
-                nes_ram[0x07E0u] = 0xAAu;
-                nes_ram[0x07E1u] = (unsigned char)s_room_id;
-                nes_ram[0x07E2u] = (unsigned char)players[0].x;
-                nes_ram[0x07E3u] = (unsigned char)players[0].y;
+                DBG_SENTINEL(0x00u) = 0xAAu;
+                DBG_SENTINEL(0x01u) = (unsigned char)s_room_id;
+                DBG_SENTINEL(0x02u) = (unsigned char)players[0].x;
+                DBG_SENTINEL(0x03u) = (unsigned char)players[0].y;
             } else {
                 s_room_id = 0x77;
                 /* T0.1 verify: spawn Link on cave-entry tile $24 at
@@ -2626,15 +2626,15 @@ void roomrom_debug_tick(void)
                 players[0].x = 0x44;
                 players[0].y = 0x50;
                 players[0].face = LINK_FACE_DOWN;
-                nes_ram[0x07E0u] = 0xBBu;
+                DBG_SENTINEL(0x00u) = 0xBBu;
             }
             /* SENTINEL — values RIGHT BEFORE upload_scene_chr */
-            nes_ram[0x07E4u] = (unsigned char)s_room_id;
-            nes_ram[0x07E5u] = (unsigned char)players[0].x;
+            DBG_SENTINEL(0x04u) = (unsigned char)s_room_id;
+            DBG_SENTINEL(0x05u) = (unsigned char)players[0].x;
             upload_scene_chr();
             /* SENTINEL — values AFTER upload_scene_chr */
-            nes_ram[0x07E6u] = (unsigned char)s_room_id;
-            nes_ram[0x07E7u] = (unsigned char)players[0].x;
+            DBG_SENTINEL(0x06u) = (unsigned char)s_room_id;
+            DBG_SENTINEL(0x07u) = (unsigned char)players[0].x;
             /* P5: scene change uses coordinator to re-upload sprite CHR
              * with correct variant. combat redux kept separate. */
             roomrom_scene_load(
@@ -2642,12 +2642,12 @@ void roomrom_debug_tick(void)
                                       : ROOMROM_SCENE_OVERWORLD,
                 current_redux_flag());
             /* SENTINEL after scene_load */
-            nes_ram[0x07EAu] = (unsigned char)s_room_id;
+            DBG_SENTINEL(0x0Au) = (unsigned char)s_room_id;
             roomrom_combat_set_redux(current_redux_flag());
             /* SENTINEL after combat_set_redux */
-            nes_ram[0x07EBu] = (unsigned char)s_room_id;
+            DBG_SENTINEL(0x0Bu) = (unsigned char)s_room_id;
             /* SENTINEL $07E9 = s_scene at second block (should match $07E8) */
-            nes_ram[0x07E9u] = (unsigned char)s_scene;
+            DBG_SENTINEL(0x09u) = (unsigned char)s_scene;
             /* 2026-05-17 — level_info_install_* RESTORED; mirror writes
              * to $FF867E..$FF8C7D land in SGDK heap free-pool. */
             if (s_scene == SCENE_UW) {
@@ -2662,15 +2662,15 @@ void roomrom_debug_tick(void)
                 level_info_install_ow();
             }
             /* SENTINEL DISTINCT values to detect overwrite vs no-write */
-            nes_ram[0x07ECu] = 0xC1u;  /* before load_room marker */
+            DBG_SENTINEL(0x0Cu) = 0xC1u;  /* before load_room marker */
             load_room(s_room_id);
-            nes_ram[0x07EDu] = 0xC2u;  /* after load_room marker */
-            nes_ram[0x07EFu] = (unsigned char)s_room_id;
+            DBG_SENTINEL(0x0Du) = 0xC2u;  /* after load_room marker */
+            DBG_SENTINEL(0x0Fu) = (unsigned char)s_room_id;
             roomrom_combat_set_uw(s_scene == SCENE_UW);
             enemy_loop_room_init(s_room_id, (unsigned char)s_scene,
                 s_scene == SCENE_UW ? roomrom_uw_room_render_get_level() : 0u,
                 s_scene == SCENE_UW ? roomrom_uw_room_render_get_quest() : 0u);
-            nes_ram[0x07EEu] = 0xC3u;  /* after enemy_loop_room_init marker */
+            DBG_SENTINEL(0x0Eu) = 0xC3u;  /* after enemy_loop_room_init marker */
             /* Phase 10.3 audio per-event wiring: scene-toggle entry
              * fires music_play per docs/audit/audio_routing.md table.
              * UW = $40 dungeon song; OW = $01 overworld song

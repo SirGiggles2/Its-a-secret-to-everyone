@@ -14,11 +14,10 @@ NES side (reference/aldonunez):
   New file contents (Z_02.asm UpdateModeERegister): items zero except
   HeartValues(+$18)=$22, HeartPartial(+$19)=$FF, MaxBombs(+$25)=$08.
 
-Genesis side (src/state/save_serializer.*): slot 0 payload 43 bytes =
-  $5A $A5 + 40 Items bytes + XOR of bytes 0..41; cart SRAM logical byte k
-  at BizHawk "SRAM" domain index 2k+1 (probe_save_persistence.lua).
-  Genesis load restores ONLY the Items block (T-100 extends it), so world
-  flags/name/quest are NES-only until then; the differ reports that.
+Genesis side (T-100, src/state/save_game.c): the NES save block
+  $6000..$652F is persisted byte-for-byte at cart SRAM logical $000..$52F;
+  logical byte k is BizHawk "SRAM" domain index 2k+1. The card is the same
+  bytes as the NES file, loaded through each console's File Select.
 
 Spec file (JSON): {"name": "...", "file_name": "LINK", "quest": 0,
   "items": {"InvBombs": 4, ...} (names from Variables.inc, offsets inside
@@ -112,11 +111,12 @@ def build(spec: dict) -> dict:
     for s in range(3):
         nes[FILE_B_COMMITTED + s] = 0xFF
 
-    payload = [0x5A, 0xA5] + items
-    x = 0
-    for b in payload:
-        x ^= b
-    gen = payload + [x]
+    # T-100: Genesis persists the NES save block $6000..$652F at cart SRAM
+    # logical offset (addr - $6000), so the card is the same bytes.
+    gen = [0] * 0x530
+    for a, b in nes.items():
+        gen[a - 0x6000] = b
+    # Slots 1-2 left zero: both consoles format them at title Start.
 
     return {"name": spec["name"], "nes_wram": nes, "gen_slot0": gen,
             "items": items, "script": spec.get("script", []),

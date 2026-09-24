@@ -63,6 +63,15 @@ register volatile unsigned char *nes_ram asm("a4");
 #endif
 #define RAM(off) (nes_ram[(off)])
 
+/* Debug/probe sentinels (T-109). Previously written straight into
+ * nes_ram[$07E0..$07FF], which is NES WorldFlags for levels 7-9
+ * ($077F..$07FE): every frame they overwrote the room flags (items taken,
+ * doors, clears) of L7-9 rooms $61-$7F, and saves carried the damage.
+ * Index i = old NES address - $07E0. Probes locate the array with
+ * @SYM:g_debug_sentinel@ (tools/debug/run_probe.py). */
+extern volatile unsigned char g_debug_sentinel[32];
+#define DBG_SENTINEL(i) (g_debug_sentinel[(i)])
+
 /* Slot-indexed accessor: NES RAM offsets are often base + slot (with
  * slot 0..11 for objects). Same encoding as transpiled `(off,A4,D2.W)`.
  */

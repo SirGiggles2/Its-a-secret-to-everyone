@@ -1,104 +1,154 @@
-/* Phase 9 Task 9.7 — save slot serializer (substrate, GREENFIELD).
- *
- * Backs the contract in save_serializer.h. Per-slot 43 bytes:
- *   [0..1]  magic ($5A $A5, matches NES InitSaveRam sentinel)
- *   [2..41] inventory mirror of RAM($0657..$067E)
- *   [42]    XOR checksum of bytes [0..41]
- *
- * SRAM base = $6000 via NES_SRAM_BASE; SAVE_BYTE(off) macro lives in
- * save_state.h.
- */
+/* save_serializer.c — NES save file A codec. See save_serializer.h. */
 
 #include "save_serializer.h"
-#include "save_state.h"
 #include "platform_abi.h"
 
-static unsigned short slot_base(unsigned char slot_idx)
+#define NES_HEART_VALUES    0x066Fu
+#define NES_HEART_PARTIAL   0x0670u
+#define NES_SWORD_BLOCKED   0x052Eu
+#define NES_OBJ_STATE_LINK  0x00ACu
+#define NES_INV_CLOCK       0x066Cu
+#define NES_CUR_LEVEL       0x0010u
+#define NES_SELECTED_ITEM   0x0656u
+#define NES_TILE_SPACE      0x24u
+
+unsigned short save_file_a_checksum(unsigned char slot)
 {
-    return (unsigned short)((unsigned short)slot_idx * SAVE_SLOT_STRIDE);
+    unsigned short sum = 0u;
+    unsigned short i;
+    for (i = 0u; i < SAVE_NAME_BYTES; ++i)
+        sum = (unsigned short)(sum + nes_ram[NES_FILEA_NAME(slot) + i]);
+    for (i = 0u; i < SAVE_ITEMS_BYTES; ++i)
+        sum = (unsigned short)(sum + nes_ram[NES_FILEA_ITEMS(slot) + i]);
+    for (i = 0u; i < SAVE_WORLD_FLAGS_BYTES; ++i)
+        sum = (unsigned short)(sum + nes_ram[NES_FILEA_FLAGS(slot) + i]);
+    sum = (unsigned short)(sum + nes_ram[NES_FILEA_ACTIVE(slot)]);
+    sum = (unsigned short)(sum + nes_ram[NES_FILEA_UNKNOWN(slot)]);
+    sum = (unsigned short)(sum + nes_ram[NES_FILEA_DEATHS(slot)]);
+    sum = (unsigned short)(sum + nes_ram[NES_FILEA_QUEST(slot)]);
+    return sum;
 }
 
-unsigned char save_slot_compute_checksum(unsigned char slot_idx)
+static void store_markers_and_checksum(unsigned char slot)
 {
-    unsigned short base;
-    unsigned char xor_acc = 0u;
+    unsigned short sum = save_file_a_checksum(slot);
+    nes_ram[NES_FILEB_COMMITTED(slot)] = 0xFFu;
+    nes_ram[NES_FILEA_OPEN_MARKER(slot)] = SAVE_MAGIC_OPEN;
+    nes_ram[NES_FILEA_CLOSE_MARKER(slot)] = SAVE_MAGIC_CLOSE;
+    nes_ram[NES_FILEA_CHECKSUM(slot)] = (unsigned char)(sum >> 8);       /* [$0E] */
+    nes_ram[NES_FILEA_CHECKSUM(slot) + 1u] = (unsigned char)(sum & 0xFFu); /* [$0F] */
+}
+
+unsigned char save_file_a_valid(unsigned char slot)
+{
+    unsigned short sum;
+    if (slot >= SAVE_SLOT_COUNT) return 0u;
+    if (nes_ram[NES_FILEA_OPEN_MARKER(slot)] != SAVE_MAGIC_OPEN) return 0u;
+    if (nes_ram[NES_FILEA_CLOSE_MARKER(slot)] != SAVE_MAGIC_CLOSE) return 0u;
+    sum = save_file_a_checksum(slot);
+    return (nes_ram[NES_FILEA_CHECKSUM(slot)] == (unsigned char)(sum >> 8) &&
+            nes_ram[NES_FILEA_CHECKSUM(slot) + 1u] == (unsigned char)(sum & 0xFFu))
+        ? 1u : 0u;
+}
+
+void save_file_a_format(unsigned char slot)
+{
+    unsigned short i;
+    if (slot >= SAVE_SLOT_COUNT) return;
+    for (i = 0u; i < SAVE_NAME_BYTES; ++i)
+        nes_ram[NES_FILEA_NAME(slot) + i] = NES_TILE_SPACE;
+    for (i = 0u; i < SAVE_ITEMS_BYTES; ++i)
+        nes_ram[NES_FILEA_ITEMS(slot) + i] = 0u;
+    for (i = 0u; i < SAVE_WORLD_FLAGS_BYTES; ++i)
+        nes_ram[NES_FILEA_FLAGS(slot) + i] = 0u;
+    nes_ram[NES_FILEA_ACTIVE(slot)] = 0u;
+    nes_ram[NES_FILEA_UNKNOWN(slot)] = 0u;
+    nes_ram[NES_FILEA_DEATHS(slot)] = 0u;
+    nes_ram[NES_FILEA_QUEST(slot)] = 0u;
+    RAM(NES_SLOTINFO_ACTIVE + slot) = 0u;
+    RAM(NES_SLOTINFO_QUEST + slot) = 0u;
+    RAM(NES_SLOTINFO_DEATHS + slot) = 0u;
+    store_markers_and_checksum(slot);
+}
+
+void save_files_boot_validate(void)
+{
+    unsigned char s;
     unsigned char i;
 
-    if (slot_idx >= SAVE_SLOT_COUNT) {
-        return 0u;
+    /* Sub1, file A half. File B is never left uncommitted by this port
+     * (save_file_a_save commits in one step), so the NES "copy valid
+     * uncommitted B to A" branch has no input to act on. */
+    for (s = 0u; s < SAVE_SLOT_COUNT; ++s) {
+        if (!save_file_a_valid(s)) save_file_a_format(s);
     }
-    base = slot_base(slot_idx);
-    for (i = 0u; i < (SAVE_SLOT_BYTE_SIZE - 1u); ++i) {
-        xor_acc ^= SAVE_BYTE(base + i);
+
+    /* Sub2: slot info. Inactive files are re-formatted (NES does too). */
+    for (s = 0u; s < SAVE_SLOT_COUNT; ++s) {
+        unsigned char active = nes_ram[NES_FILEA_ACTIVE(s)];
+        RAM(NES_SLOTINFO_ACTIVE + s) = active;
+        if (active == 0u) save_file_a_format(s);
+        RAM(NES_SLOTINFO_DEATHS + s) = nes_ram[NES_FILEA_DEATHS(s)];
+        RAM(NES_SLOTINFO_QUEST + s) = nes_ram[NES_FILEA_QUEST(s)];
     }
-    return xor_acc;
+    for (s = 0u; s < SAVE_SLOT_COUNT; ++s) {
+        unsigned char hv = nes_ram[NES_FILEA_ITEMS(s) + 0x18u];   /* HeartValues */
+        unsigned char hi = (unsigned char)(hv & 0xF0u);
+        RAM(NES_SLOTINFO_HEARTS + 2u * s) = (unsigned char)(hi | (hi >> 4));
+        RAM(NES_SLOTINFO_HEARTS + 2u * s + 1u) =
+            nes_ram[NES_FILEA_ITEMS(s) + 0x19u];                   /* HeartPartial */
+    }
+    for (i = 0u; i < 3u * SAVE_NAME_BYTES; ++i)
+        RAM(NES_SLOTINFO_NAMES + i) = nes_ram[NES_FILEA_NAME(0) + i];
 }
 
-unsigned char save_slot_serialize(unsigned char slot_idx)
+void save_file_a_load(unsigned char slot)
 {
-    unsigned short base;
-    unsigned char i;
-    unsigned char xor_acc;
-
-    if (slot_idx >= SAVE_SLOT_COUNT) {
-        return 0u;
-    }
-    base = slot_base(slot_idx);
-
-    SAVE_BYTE(base + 0u) = SAVE_MAGIC_LO;
-    SAVE_BYTE(base + 1u) = SAVE_MAGIC_HI;
-
-    for (i = 0u; i < SAVE_INVENTORY_BYTES; ++i) {
-        SAVE_BYTE(base + 2u + i) =
-            RAM((unsigned short)(SAVE_INVENTORY_RAM_BASE + i));
-    }
-
-    xor_acc = 0u;
-    for (i = 0u; i < (SAVE_SLOT_BYTE_SIZE - 1u); ++i) {
-        xor_acc ^= SAVE_BYTE(base + i);
-    }
-    SAVE_BYTE(base + (SAVE_SLOT_BYTE_SIZE - 1u)) = xor_acc;
-    return 1u;
+    unsigned short i;
+    if (slot >= SAVE_SLOT_COUNT) return;
+    RAM(NES_CUR_SAVE_SLOT) = slot;
+    RAM(NES_CUR_LEVEL) = 0u;
+    RAM(NES_SELECTED_ITEM) = 0u;
+    for (i = 0u; i < SAVE_ITEMS_BYTES; ++i)
+        RAM(NES_PROFILE_ITEMS + i) = nes_ram[NES_FILEA_ITEMS(slot) + i];
+    RAM(NES_SWORD_BLOCKED) = 0u;
+    RAM(NES_OBJ_STATE_LINK) = 0u;
+    RAM(NES_INV_CLOCK) = 0u;
+    for (i = 0u; i < SAVE_WORLD_FLAGS_BYTES; ++i)
+        RAM(NES_PROFILE_WORLD_FLAGS + i) = nes_ram[NES_FILEA_FLAGS(slot) + i];
 }
 
-unsigned char save_slot_validate(unsigned char slot_idx)
+unsigned char save_file_a_save(unsigned char slot)
 {
-    unsigned short base;
-    unsigned char stored_checksum;
-    unsigned char computed_checksum;
+    unsigned short i;
+    unsigned char hi;
+    if (slot >= SAVE_SLOT_COUNT) return 0u;
 
-    if (slot_idx >= SAVE_SLOT_COUNT) {
-        return 0u;
-    }
-    base = slot_base(slot_idx);
+    /* Sub0: Items copied BEFORE the heart refill below (NES order). */
+    for (i = 0u; i < SAVE_ITEMS_BYTES; ++i)
+        nes_ram[NES_FILEA_ITEMS(slot) + i] = RAM(NES_PROFILE_ITEMS + i);
+    nes_ram[NES_FILEA_DEATHS(slot)] = RAM(NES_SLOTINFO_DEATHS + slot);
+    nes_ram[NES_FILEA_ACTIVE(slot)] = 1u;
+    RAM(NES_SLOTINFO_ACTIVE + slot) = 1u;
+    nes_ram[NES_FILEA_QUEST(slot)] = RAM(NES_SLOTINFO_QUEST + slot);
+    nes_ram[NES_FILEA_UNKNOWN(slot)] = 0u;   /* file B [C8] stays formatted 0 */
+    for (i = 0u; i < SAVE_NAME_BYTES; ++i)
+        nes_ram[NES_FILEA_NAME(slot) + i] = RAM(NES_SLOTINFO_NAMES + 8u * slot + i);
 
-    if (SAVE_BYTE(base + 0u) != SAVE_MAGIC_LO) {
-        return 0u;
-    }
-    if (SAVE_BYTE(base + 1u) != SAVE_MAGIC_HI) {
-        return 0u;
-    }
-    stored_checksum = SAVE_BYTE(base + (SAVE_SLOT_BYTE_SIZE - 1u));
-    computed_checksum = save_slot_compute_checksum(slot_idx);
-    if (stored_checksum != computed_checksum) {
-        return 0u;
-    }
-    return 1u;
-}
+    /* Profile side effect: full hearts, then StoreSaveSlotHearts. */
+    hi = (unsigned char)(RAM(NES_HEART_VALUES) & 0xF0u);
+    RAM(NES_HEART_VALUES) = (unsigned char)(hi | (hi >> 4));
+    RAM(NES_HEART_PARTIAL) = 0xFFu;
+    RAM(NES_SLOTINFO_HEARTS + 2u * slot) = RAM(NES_HEART_VALUES);
+    RAM(NES_SLOTINFO_HEARTS + 2u * slot + 1u) = RAM(NES_HEART_PARTIAL);
 
-unsigned char save_slot_deserialize(unsigned char slot_idx)
-{
-    unsigned short base;
-    unsigned char i;
+    for (i = 0u; i < SAVE_WORLD_FLAGS_BYTES; ++i)
+        nes_ram[NES_FILEA_FLAGS(slot) + i] = RAM(NES_PROFILE_WORLD_FLAGS + i);
 
-    if (!save_slot_validate(slot_idx)) {
-        return 0u;
-    }
-    base = slot_base(slot_idx);
-
-    for (i = 0u; i < SAVE_INVENTORY_BYTES; ++i) {
-        RAM((unsigned short)(SAVE_INVENTORY_RAM_BASE + i)) =
-            SAVE_BYTE(base + 2u + i);
-    }
+    /* CopyFileBToFileA tail: slot info from file A, markers, checksum,
+     * file B committed. */
+    RAM(NES_SLOTINFO_QUEST + slot) = nes_ram[NES_FILEA_QUEST(slot)];
+    RAM(NES_SLOTINFO_DEATHS + slot) = nes_ram[NES_FILEA_DEATHS(slot)];
+    store_markers_and_checksum(slot);
     return 1u;
 }

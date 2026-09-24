@@ -49,6 +49,29 @@ void _sram_write_byte(unsigned short offset, unsigned char val)
     SRAM_disable();
 }
 
+/* T-100: the NES save block (nes_ram[$6000..$652F]) at cart SRAM logical
+ * $000.., one byte per logical offset (SGDK maps it to the odd cart
+ * bytes). Options live at $800 and are not touched. */
+void sram_nes_save_block_load(volatile unsigned char *dst, unsigned short bytes)
+{
+    unsigned short i;
+    SRAM_enableRO();
+    for (i = 0u; i < bytes; ++i) {
+        dst[i] = SRAM_readByte((u32)i);
+    }
+    SRAM_disable();
+}
+
+void sram_nes_save_block_store(const volatile unsigned char *src, unsigned short bytes)
+{
+    unsigned short i;
+    SRAM_enable();
+    for (i = 0u; i < bytes; ++i) {
+        SRAM_writeByte((u32)i, src[i]);
+    }
+    SRAM_disable();
+}
+
 /* Cart SRAM -> work-RAM mirror. Called before any read of a slot so the
  * mirror reflects what is actually on the cart. */
 void _sram_load_save_slots(void)

@@ -16,13 +16,13 @@ static unsigned short s_phase_counter;
 static void goto_phase(intro_phase_t next) {
     s_phase = next;
     s_phase_counter = 0;
-    nes_ram[0x07F0] = (unsigned char)next;
+    DBG_SENTINEL(0x10u) = (unsigned char)next;
 }
 
 void intro_phase_init(void) {
     s_phase = PHASE_TITLE_LOAD;
     s_phase_counter = 0;
-    nes_ram[0x07F0] = (unsigned char)PHASE_TITLE_LOAD;
+    DBG_SENTINEL(0x10u) = (unsigned char)PHASE_TITLE_LOAD;
 }
 
 void intro_phase_step(void) {

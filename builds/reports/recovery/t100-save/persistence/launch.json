@@ -1,0 +1,11 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY_claude_marker\\builds\\Debug.md",
+  "rom_sha256": "eb7ebfdd2119302807e4b7ebdbb2c1dd9e266388dc2aecc37c32c9d573f9590e",
+  "script": "tools\\debug\\probes\\probe_save_persistence.lua",
+  "script_sha256": "553edbb79733e88ab0fdf82038597a2d1501dbeebd06db629377168373f047fd",
+  "symbols": {},
+  "exit_code": 0,
+  "collected": [
+    "save_persistence_report.txt"
+  ]
+}

@@ -50,7 +50,7 @@ end
 local function nesram(off) return rd(BUS_BASE + 0x8000 + off, WORK) end
 -- T-109: debug sentinels moved out of NES RAM into g_debug_sentinel[32]
 -- (index = old NES address - $07E0); address from Debug.out via run_probe.
-local SENT = tonumber("@SYM:g_debug_sentinel@")
+local SENT = tonumber("0xFF00CA")
 local function sentinel(i) return rd(BUS_BASE + (SENT - 0xFF0000) + i, WORK) end
 local function fsram(off)  return rd(0xFF0000 + off, WORK) end
 local function hex(v) return v and string.format("$%02X", v) or "<fail>" end

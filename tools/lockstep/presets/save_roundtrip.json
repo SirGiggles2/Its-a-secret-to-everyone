@@ -1,0 +1,10 @@
+{
+  "name": "save_roundtrip",
+  "file_name": "ZELDB",
+  "quest": 0,
+  "items": {"InvBombs": 5, "InvRupees": 42, "InvKeys": 2},
+  "world_flags": {"0x6F1": 128, "0x77F": 16},
+  "script": [[60, ""], [40, "L"], [30, ""], [20, ""]],
+  "stage_at": 130,
+  "stage": "wr(0x12, 0x0D)\nwr(0x13, 0x00)\nlog(string.format('save poke: slot=%02X hearts=%02X/%02X', rd(0x16), rd(0x66F), rd(0x670)))"
+}

@@ -1,27 +1,28 @@
-/* save_game.h — persistent save/load entry points.
+/* save_game.h — persistent NES-format saves (T-100).
  *
- * save_serializer.c builds slot images in the NES RAM mirror; it does NOT
- * persist them. These three functions are the only API that reaches cart
- * SRAM, so a save actually survives power-off.
- *
- * Slot indices are 0..SAVE_SLOT_COUNT-1. Every function returns 0 on a
- * bad slot index and never traps.
+ * The NES SaveRAM block (nes_ram[$6000..$652F], see save_serializer.h) is
+ * persisted byte-for-byte to cart SRAM logical $000..$52F. Options stay at
+ * $800 (sram_abi.h). Slot indices are 0..2; bad indices return 0.
  */
 #ifndef SAVE_GAME_H
 #define SAVE_GAME_H
 
-/* Serialize live inventory RAM into slot_idx and commit it to cart SRAM.
- * Returns 1 on success, 0 on bad slot. */
-unsigned char save_game_write_slot(unsigned char slot_idx);
+/* Power-on / title Start: cart -> NES save block, then the NES file A
+ * validation and slot-info copy (UpdateMode0Demo_Sub1/Sub2). */
+void save_game_boot(void);
 
-/* Load slot_idx from cart SRAM and apply it to live inventory RAM.
- * Returns 1 only if magic + checksum validated; an invalid or blank slot
- * returns 0 and leaves live RAM untouched. */
-unsigned char save_game_read_slot(unsigned char slot_idx);
+/* IsSaveSlotActive[slot] from the slot info (valid after boot). */
+unsigned char save_game_slot_active(unsigned char slot);
 
-/* Returns 1 if cart SRAM holds a valid (magic + checksum) slot_idx.
- * Does not modify live inventory RAM. Intended for File Select, which
- * must show which slots are occupied without loading them. */
-unsigned char save_game_slot_is_valid(unsigned char slot_idx);
+/* NES QuestNumbers[slot]: 0 = first quest, 1 = second quest. */
+unsigned char save_game_slot_quest(unsigned char slot);
+
+/* Continue: @ChoseSlot copy of file A into the live profile. Returns 1 if
+ * the slot is active and was loaded, 0 otherwise (profile untouched). */
+unsigned char save_game_load_slot(unsigned char slot);
+
+/* Mode $0D save of the live profile into CurSaveSlot ($16), then commit
+ * the whole block to cart SRAM. Returns 1 on success. */
+unsigned char save_game_save_current(void);
 
 #endif /* SAVE_GAME_H */

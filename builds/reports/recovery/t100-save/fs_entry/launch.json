@@ -1,0 +1,13 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY_claude_marker\\builds\\Debug.md",
+  "rom_sha256": "eb7ebfdd2119302807e4b7ebdbb2c1dd9e266388dc2aecc37c32c9d573f9590e",
+  "script": "tools\\debug\\probes\\probe_fs_entry.lua",
+  "script_sha256": "9cfb9a764099a166f3ab031a02074073016c4469564c0d32de38a80dc8bdd39a",
+  "symbols": {
+    "g_debug_sentinel": "0xFF00CA"
+  },
+  "exit_code": 0,
+  "collected": [
+    "fs_entry_report.txt"
+  ]
+}
