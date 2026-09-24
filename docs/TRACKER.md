@@ -80,7 +80,7 @@ Status: `TODO` · `ACTIVE` · `BLOCKED` · `REVIEW` · `DONE`. Plan ref = task I
 | T-097 | Mode $11 death (CurSaveSlot `$16`, DeathCounts `$630`, visuals) + $08 continue→3/D/0 | TODO | | Death→continue/save/retry RAM trace vs NES |
 | T-098 | Mode $12 end-level exit; Mode $13 ending text/draw/credits/reset | TODO | | Trace + VRAM diff vs NES ending |
 | T-099 | Modes 0–3 load/unfurl; $E/$F register/elimination in custom FS; real slot occupancy | TODO | | FS shows real slots; copy/erase works |
-| T-100 | Full NES SaveRAM profile per slot (name, inventory, quest, deaths, world flags), versioned | TODO | | SRAM decode vs NES SaveRAM decode after save/reset/continue |
+| T-100 | Full NES SaveRAM profile per slot (name, inventory, quest, deaths, world flags), versioned | ACTIVE | Claude | SRAM decode vs NES SaveRAM decode after save/reset/continue |
 
 ### S1 — Quest 1 route (the test driver; controller-only; checkpoint with SRAM saves, not savestates)
 
