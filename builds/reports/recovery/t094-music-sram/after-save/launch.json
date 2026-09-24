@@ -1,0 +1,11 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\builds\\Debug.md",
+  "rom_sha256": "19b6c0e660248cfb3f9528b54c8a46090e8baff61a99952c1ee26d2242148d97",
+  "script": "tools\\debug\\probes\\probe_save_persistence.lua",
+  "script_sha256": "3be8c33d51b9d1cd5d96b6fd98971e49241777750d4a60383bd15a9da462e2f4",
+  "symbols": {},
+  "exit_code": 0,
+  "collected": [
+    "save_persistence_report.txt"
+  ]
+}

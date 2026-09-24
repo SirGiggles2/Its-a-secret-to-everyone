@@ -1,0 +1,13 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\builds\\Debug.md",
+  "rom_sha256": "19b6c0e660248cfb3f9528b54c8a46090e8baff61a99952c1ee26d2242148d97",
+  "script": "tools\\debug\\probes\\probe_music_sram_overlap.lua",
+  "script_sha256": "97e5283d4a0cbb77b73c59c4d3161f373ebd8d407ab680ce5622e204f702b3c7",
+  "symbols": {
+    "audio_music_state": "0xFF00EC"
+  },
+  "exit_code": 0,
+  "collected": [
+    "music_sram_overlap.txt"
+  ]
+}

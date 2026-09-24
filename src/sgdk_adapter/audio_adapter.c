@@ -23,23 +23,35 @@ extern void music_tick(void);
 
 /* Driver storage is linker-owned; fixed low-RAM addresses collide with C BSS.
  * Native RAM base follows platform_abi (A4 Debug or pointer RoomRom). */
-volatile unsigned char audio_apu_shadow[0x16];
+/* aligned(4): audio_driver.asm clears these with clr.w/clr.l and keeps a
+ * 32-bit script pointer at m_script_ptr (+$08); 68000 word/long access to
+ * an odd address is an address-error exception. */
+volatile unsigned char audio_apu_shadow[0x16] __attribute__((aligned(4)));
 volatile unsigned char *audio_native_ram_base = 0;
+
+/* Legacy 68k music player state (asm MUSIC_BASE, $40 bytes) and DMC
+ * register shadows (asm DMC_BASE, $10 bytes). Previously fixed at
+ * $FFE000/$FFE100, which is nes_ram[$6000]/[$6100] under the $FF8000 A4
+ * base: NES SaveRAM (save image slot 0, WorldFlags0). A Mode $0D save
+ * wrote magic $5A/$A5 into m_song/m_song_req and cleared xgm_owns_chip
+ * (T-094, probe_music_sram_overlap.lua). Linker-owned storage now. */
+volatile unsigned char audio_music_state[0x40] __attribute__((aligned(4)));
+volatile unsigned char audio_dmc_state[0x10] __attribute__((aligned(4)));
 
 static u8 xgm_initialized = 0;
 static u8 s_current_xgm_song = 0;
 static u8 sfx_next_channel = 0;  /* round-robin index 0..2 → CH2..CH4 */
 
 /* XGM-driver song ownership flag, shared with src/audio_driver.asm's
- * music_tick (label `xgm_owns_chip` at MUSIC_BASE+$2C = $FFE02C).
+ * music_tick (label `xgm_owns_chip` at MUSIC_BASE+$2C).
  * Writing this from C is sufficient — the asm gate reads the same byte.
  * When 1, the XGM Z80 driver is playing a VGM/XGM song (currently the
  * OW theme blob) and owns FM ch1-5 + PSG. The legacy 68k FM driver MUST
  * NOT tick while this is set, or its tick_sq1 writes will race the
  * Z80's chip accesses. Cleared when XGM_stopPlay hands ownership back. */
-static volatile u8 * const xgm_owns_chip_ptr = (volatile u8 *)0x00FFE02CUL;
-static volatile u8 * const music_song_ptr = (volatile u8 *)0x00FFE000UL;
-static volatile u8 * const music_song_req_ptr = (volatile u8 *)0x00FFE001UL;
+static volatile u8 * const xgm_owns_chip_ptr = &audio_music_state[0x2C];
+static volatile u8 * const music_song_ptr = &audio_music_state[0x00];
+static volatile u8 * const music_song_req_ptr = &audio_music_state[0x01];
 
 #define SONG_OW_BITMAP  0x01u
 #define SONG_UW_BITMAP  0x40u

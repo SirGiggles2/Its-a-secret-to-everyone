@@ -1,0 +1,44 @@
+domain M68K BUS
+before save (gameplay +90f)
+  $FFE000: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  $FFE010: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  $FFE020: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  $FFE030: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  music@$FF00EC: m_song=$01 m_song_req=$00 xgm_owns_chip=$01 GameMode(nes $12)=$05
+after GameMode=$0D poke +1f
+  $FFE000: 5A A5 03 10 02 01 02 01 01 02 01 01 01 02 01 01
+  $FFE010: 01 02 FF FF FF FF 00 00 FF 63 FF FF FF 00 00 01
+  $FFE020: 01 01 00 00 00 00 00 10 00 00 9D 00 00 00 00 00
+  $FFE030: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  music@$FF00EC: m_song=$01 m_song_req=$00 xgm_owns_chip=$00 GameMode(nes $12)=$0D
+after GameMode=$0D poke +2f
+  $FFE000: 5A A5 03 10 02 01 02 01 01 02 01 01 01 02 01 01
+  $FFE010: 01 02 FF FF FF FF 00 00 FF 63 FF FF FF 00 00 01
+  $FFE020: 01 01 00 00 00 00 00 10 00 00 9D 00 00 00 00 00
+  $FFE030: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  music@$FF00EC: m_song=$01 m_song_req=$00 xgm_owns_chip=$00 GameMode(nes $12)=$0D
+after GameMode=$0D poke +3f
+  $FFE000: 5A A5 03 10 02 01 02 01 01 02 01 01 01 02 01 01
+  $FFE010: 01 02 FF FF FF FF 00 00 FF 63 FF FF FF 00 00 01
+  $FFE020: 01 01 00 00 00 00 00 10 00 00 9D 00 00 00 00 00
+  $FFE030: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  music@$FF00EC: m_song=$01 m_song_req=$00 xgm_owns_chip=$00 GameMode(nes $12)=$0D
+after GameMode=$0D poke +4f
+  $FFE000: 5A A5 03 10 02 01 02 01 01 02 01 01 01 02 01 01
+  $FFE010: 01 02 FF FF FF FF 00 00 FF 63 FF FF FF 00 00 01
+  $FFE020: 01 01 00 00 00 00 00 10 00 00 9D 00 00 00 00 00
+  $FFE030: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  music@$FF00EC: m_song=$01 m_song_req=$00 xgm_owns_chip=$00 GameMode(nes $12)=$0D
+after GameMode=$0D poke +5f
+  $FFE000: 5A A5 03 10 02 01 02 01 01 02 01 01 01 02 01 01
+  $FFE010: 01 02 FF FF FF FF 00 00 FF 63 FF FF FF 00 00 01
+  $FFE020: 01 01 00 00 00 00 00 10 00 00 9D 00 00 00 00 00
+  $FFE030: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  music@$FF00EC: m_song=$01 m_song_req=$00 xgm_owns_chip=$00 GameMode(nes $12)=$0D
+after GameMode=$0D poke +6f
+  $FFE000: 5A A5 03 10 02 01 02 01 01 02 01 01 01 02 01 01
+  $FFE010: 01 02 FF FF FF FF 00 00 FF 63 FF FF FF 00 00 01
+  $FFE020: 01 01 00 00 00 00 00 10 00 00 9D 00 00 00 00 00
+  $FFE030: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  music@$FF00EC: m_song=$01 m_song_req=$00 xgm_owns_chip=$00 GameMode(nes $12)=$0D
+VERDICT: see bytes; overlap present iff music m_song/m_song_req become $5A/$A5 after save

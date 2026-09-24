@@ -60,6 +60,7 @@ Status: `TODO` · `ACTIVE` · `BLOCKED` · `REVIEW` · `DONE`. Plan ref = task I
 | T-090 | Runtime `debug_session` gate: set only by title A+B+C / X+Y+Z chord; all gameplay debug inputs (X/Y/MODE/C/Z+START/B+Z+C/A+B+C+START in `RoomRom/src/main.c`) require it | TODO | | FS New Game: every debug input inert (RAM trace) |
 | T-091 | Boot probes (options/persistence/serializer/warp/roundtrip/metadata) run only when armed; none write SRAM on normal boot | TODO | | SRAM bytes unchanged across normal boot (before/after dump) |
 | T-092 | NES new-game init on FS path: no seeded sword, keys 0, no default B-item, NES start facing; B-item only via pause. **Seen T-001:** FS New Game HUD LIFE empty (NES = 3 hearts), Link not visible at +60f | TODO | | Inventory + Link RAM byte-diff vs NES new-game capture |
+| T-094 | Music driver state at fixed `$FFE000/$FFE100` = `nes_ram[$6000/$6100]` (NES SaveRAM) under A4 `$FF8000`: save wrote `$5A/$A5` into `m_song/m_song_req` | DONE | Claude | `builds/reports/recovery/t094-music-sram/`: before = overlap, after = save image stable + music state at linker symbol `$FF00EC`; save persistence 7/7 |
 | T-093 | Build warnings: macro redefinitions `LINK_X`/`LINK_Y` (world_state.h), `OBJ_STATE` (object/world/combat_state.h), `CUR_LEVEL` (room_load_runtime.c). Prove each pair same address or fix the wrong one | TODO | | 0 redefinition warnings; any address change byte-verified |
 
 ### S0c — Native game-mode spine (finish plan Phase 2)
@@ -115,6 +116,10 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 | T-080 | Builder: clean-staging build from user ROM, no live captures, drag-and-drop shell, reproducibility | P10 | TODO |
 
 ## Handoff log (newest first)
+
+**2026-09-24 · Claude** — T-094 DONE: audio driver RAM moved from fixed `$FFE000/$FFE100` (aliased NES SaveRAM `$6000/$6100`)
+to linker-owned `audio_music_state`/`audio_dmc_state` (aligned 4). Proven live before/after. New `tools/debug/run_probe.py`
+(isolated BizHawk + `@SYM:name@` ELF address substitution) replaces per-folder runners. Next: lockstep differ + presets.
 
 **2026-09-24 · Claude (Windows host)** — T-001 DONE. Merged tree builds (`f3a38e2b…`). Freshness gate failed only because `sorted(Path)`
 is case-insensitive on Windows; fixed with POSIX-relpath sort (`9c6a04a1`). Matrix GREEN 12/12. Ganon→Zelda→Mode13, Aquamentus

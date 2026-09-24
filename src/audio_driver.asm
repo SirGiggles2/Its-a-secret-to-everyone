@@ -354,7 +354,7 @@ audio_init:
     dbra    D0,.clr_music
 
     ;------------------------------------------------------------------
-    ; Clear DMC shadow block ($FFE100, 16 bytes). The remaining state
+    ; Clear DMC shadow block (DMC_BASE, 16 bytes). The remaining state
     ; is just dmc_last_idx (HUD readout) plus the three NES-reg
     ; shadows ($4010/$4012/$4013) used by the lookup in nes_io.asm —
     ; everything else (active flag, ptr, remain, debug scaffolds)
@@ -509,14 +509,14 @@ PATCH_VOICE07:
 ; Music state RAM ($FF0B00-$FF0B3F, 64 bytes)
 ;----------------------------------------------------------------------
 ; ============================================================================
-; MUSIC_BASE must be OUTSIDE the NES RAM mirror range.
-; Real NES mirrors its 2 KB RAM through $0000-$1FFF, so any transpiled access
-; through a pointer in zero-page that lands in $0800-$1FFF on 6502 will on our
-; M68K map hit $FF0800-$FF1FFF directly (transpiler does not wrap mirrors).
-; $FF0B00 got continuously clobbered by such accesses during the intro.
-; $FFE000 is safely past $FF1FFF and well below the stack at $FFFFFE.
+; MUSIC_BASE / DMC_BASE are linker-owned C arrays in audio_adapter.c.
+; The old fixed $FFE000/$FFE100 assumed an A4 base of $FF0000; under the
+; Debug.md base of $FF8000 they are nes_ram[$6000]/[$6100] = NES SaveRAM,
+; and a Mode $0D save overwrote m_song/m_song_req (T-094).
 ; ============================================================================
-MUSIC_BASE          equ $FFE000
+    xref audio_music_state
+    xref audio_dmc_state
+MUSIC_BASE          equ audio_music_state
 MUSIC_STATE_SIZE    equ $40
 
 m_song              equ MUSIC_BASE+$00  ; current song bitmap
@@ -586,7 +586,7 @@ xgm_owns_chip       equ MUSIC_BASE+$2C  ; byte: 1 = XGM Z80 driver owns FM/PSG
 ; recover the 1-based sample index from the NES $4010/$4012 writes
 ; (DMC_SAMPLE_LOOKUP) plus a HUD readout cell.
 ;----------------------------------------------------------------------
-DMC_BASE            equ $FFE100
+DMC_BASE            equ audio_dmc_state
 dmc_last_idx        equ DMC_BASE+$01    ; byte: last triggered sample index (for HUD)
 dmc_rate_sel        equ DMC_BASE+$0C    ; byte: shadow of last $4010 write
 dmc_addr_sel        equ DMC_BASE+$0D    ; byte: shadow of last $4012 write

@@ -1,0 +1,6 @@
+{
+  "rom_sha256": "f3a38e2b1132a5ceaddca0654b2e36b283190816df37c57c6a8149c8516f4f36",
+  "script_sha256": "6cd23cd5fd77dfb87e8e2c3166cda1219de2a0d764b79cea652f8a876337f40d",
+  "source_script": "tools/debug/probes/probe_music_sram_overlap.lua",
+  "exit_code": 0
+}
