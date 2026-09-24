@@ -1,0 +1,22 @@
+{
+ "name": "tektite_jump",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {},
+ "script": [
+  [
+   30,
+   ""
+  ],
+  [
+   170,
+   "L"
+  ],
+  [
+   220,
+   ""
+  ]
+ ],
+ "stage_at": 380,
+ "stage": "local k = nil\nfor s = 1, 11 do local t = rd(0x34F + s); if t == 0x0D or t == 0x0E then k = s; break end end\nif not k then log('no tektite in slots 1-11'); return end\nlog(string.format('slot=%d type=%02X link=%02X,%02X', k, rd(0x34F + k), rd(0x70), rd(0x84)))\nwr(0x70 + k, rd(0x61))\nwr(0x84 + k, rd(0x62) + 0x30)\nlog(string.format('chase target %02X,%02X other=%02X', rd(0x61), rd(0x62), rd(0x60)))\nwr(0xAC + k, 0)\nwr(0x28 + k, 0)\nwr(0xC0 + k, 0)\nwr(0x3D + k, 0)\nwr(0x98 + k, 0)\nwr(0x3A8 + k, 0)\nwr(0x3BC + k, 0)\nwr(0x3D0 + k, 0)\nwr(0x3E4 + k, 0)\nlog(string.format('staged tektite at %02X,%02X', rd(0x70 + k), rd(0x84 + k)))"
+}

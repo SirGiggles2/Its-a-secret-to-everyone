@@ -56,6 +56,11 @@ extern volatile unsigned char *nes_ram;
 register volatile unsigned char *nes_ram asm("a4");
 #endif
 
+/* SGDK memory_base.h defines an object-like RAM (0xE0FF0000). No project
+ * code uses it (T-093 audit); our function-like RAM(off) replaces it. */
+#ifdef RAM
+#undef RAM
+#endif
 #define RAM(off) (nes_ram[(off)])
 
 /* Slot-indexed accessor: NES RAM offsets are often base + slot (with

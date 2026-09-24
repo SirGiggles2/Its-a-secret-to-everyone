@@ -84,7 +84,10 @@ static inline void    world_prev_room_id_set(uint8_t v){ RAM(0x00EC) = v; }
 #define OBJ_POS_FRAC(slot)             OBJ(NES_OBJ_POS_FRAC, (slot))
 #define OBJ_QSPD_FRAC(slot)            OBJ(NES_OBJ_QSPD_FRAC, (slot))
 #define OBJ_STATUS_FLAGS(slot)         OBJ(0x04BF, (slot))
+/* Canonical owner: object_state.h (same cell, NES ObjState $AC+slot). */
+#ifndef OBJ_STATE
 #define OBJ_STATE(slot)                OBJ(0x00AC, (slot))
+#endif
 #define OBJ_ANIM_TIMER(slot)           OBJ(0x03D0, (slot))
 #define OBJ_MOVE_TIMER(slot)           OBJ(0x0028, (slot))
 

@@ -43,7 +43,7 @@ void enrt_init_walker(unsigned int slot) {
     if (ENEMY_DIR(slot) != 0)
         return;
     {
-        unsigned char link_x = LINK_X;
+        unsigned char link_x = CHASE_TARGET_X;
         unsigned char obj_x = ENEMY_X(slot);
         unsigned char diff_x = (unsigned char)(link_x - obj_x);
         unsigned char h_dir = (link_x >= obj_x) ? 2u : 1u;
@@ -52,7 +52,7 @@ void enrt_init_walker(unsigned int slot) {
         ENEMY_DIR(slot) = h_dir;
     }
     {
-        unsigned char link_y = LINK_Y;
+        unsigned char link_y = CHASE_TARGET_Y;
         unsigned char obj_y = ENEMY_Y(slot);
         unsigned char diff_y = (unsigned char)(link_y - obj_y);
         unsigned char v_dir = (link_y >= obj_y) ? 4u : 8u;
@@ -115,17 +115,17 @@ void enrt_update_rope(unsigned int slot) {
         ENEMY_WALK_SPEED(slot) = 0x20;
 
     if (ENEMY_WALK_SPEED(slot) == 0x20 && OBJ(NES_OBJ_GRID_OFFSET, slot) == 0) {
-        unsigned char x_dist = z01_abs((unsigned char)(LINK_X - ENEMY_X(slot)));
+        unsigned char x_dist = z01_abs((unsigned char)(CHASE_TARGET_X - ENEMY_X(slot)));
         if (x_dist < 8) {
             ENEMY_DIR(slot) = 8;
-            if (LINK_Y >= ENEMY_Y(slot))
+            if (CHASE_TARGET_Y >= ENEMY_Y(slot))
                 ENEMY_DIR(slot) >>= 1;
             ENEMY_WALK_SPEED(slot) = 0x60;
         } else {
-            unsigned char y_dist = z01_abs((unsigned char)(LINK_Y - ENEMY_Y(slot)));
+            unsigned char y_dist = z01_abs((unsigned char)(CHASE_TARGET_Y - ENEMY_Y(slot)));
             if (y_dist < 8) {
                 ENEMY_DIR(slot) = 2;
-                if (LINK_X >= ENEMY_X(slot))
+                if (CHASE_TARGET_X >= ENEMY_X(slot))
                     ENEMY_DIR(slot) >>= 1;
                 ENEMY_WALK_SPEED(slot) = 0x60;
             }

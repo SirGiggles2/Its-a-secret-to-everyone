@@ -83,7 +83,9 @@ void roomld_init_link_speed(void) {
 /* ---- Plan F: drained from z_03 (CHR pattern-block transfer) ----------- */
 
 #define PATTERN_BLOCK_INDEX 0x051D
-#define CUR_LEVEL           0x0010
+/* CUR_LEVEL is the level VALUE (progress_state.h: RAM($0010)). A local
+ * redefinition to the ADDRESS $0010 used to follow here, so the later
+ * `level = CUR_LEVEL` reads in the Mode 2 loaders always got 16 (T-093). */
 
 static void roomld_reset_pattern_block_index(void) {
     RAM(PATTERN_BLOCK_INDEX) = 0;
@@ -109,7 +111,7 @@ static void roomld_fetch_pattern_block_info_ow(void) {
 
 static void roomld_fetch_pattern_block_addr_uw_special(void) {
     c_copy_bank_to_window(3);
-    unsigned char idx = RAM(CUR_LEVEL);
+    unsigned char idx = CUR_LEVEL;
     idx <<= 1;
     RAM(0x0000) = LevelPatternBlockSrcAddrs[idx];
     RAM(0x0001) = LevelPatternBlockSrcAddrs[idx + 1];
@@ -117,7 +119,7 @@ static void roomld_fetch_pattern_block_addr_uw_special(void) {
 
 static void roomld_fetch_pattern_block_uw_boss(void) {
     c_copy_bank_to_window(3);
-    unsigned char idx = RAM(CUR_LEVEL);
+    unsigned char idx = CUR_LEVEL;
     idx <<= 1;
     RAM(0x0000) = BossPatternBlockSrcAddrs[idx];
     RAM(0x0001) = BossPatternBlockSrcAddrs[idx + 1];
@@ -190,7 +192,7 @@ void roomld_transfer_level_pattern_blocks(void) {
     c_ppu_read_2();
     roomld_reset_pattern_block_index();
 
-    if (RAM(CUR_LEVEL) != 0) {
+    if (CUR_LEVEL != 0) {
         roomld_transfer_level_pattern_blocks_uw();
         return;
     }

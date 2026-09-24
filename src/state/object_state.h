@@ -16,6 +16,9 @@
 /* Type / state */
 #define OBJ_TYPE(slot)          RAM(NES_OBJ_TYPE_BASE + (slot))
 #define OBJ_FLAG(slot)          RAM(NES_OBJ_FLAG_BASE + (slot))
+#ifdef OBJ_STATE
+#undef OBJ_STATE   /* identical cell from world/combat_state.h; this header owns it */
+#endif
 #define OBJ_STATE(slot)         RAM(NES_OBJ_STATE_BASE + (slot))
 #define OBJ_METASTATE(slot)     RAM(NES_OBJ_METASTATE_BASE + (slot))
 

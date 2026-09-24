@@ -24,6 +24,9 @@ Spec file (JSON): {"name": "...", "file_name": "LINK", "quest": 0,
   "items": {"InvBombs": 4, ...} (names from Variables.inc, offsets inside
   Items $657..$67E), "world_flags": {"0x67F": 1, ...}, "script": [[frames,
   "UDLRABSs"], ...]}  (s = Select/C, S = Start).
+  Optional "stage_at": script frame, "stage": Lua body run on both consoles
+  at that frame with rd(off)/wr(off,v) on NES work-RAM offsets and log(s).
+  Staging is an explicit, disclosed setup, never a route pass.
 """
 from __future__ import annotations
 
@@ -116,7 +119,9 @@ def build(spec: dict) -> dict:
     gen = payload + [x]
 
     return {"name": spec["name"], "nes_wram": nes, "gen_slot0": gen,
-            "items": items, "script": spec.get("script", [])}
+            "items": items, "script": spec.get("script", []),
+            "stage_at": int(spec.get("stage_at", -1)),
+            "stage": spec.get("stage", "")}
 
 
 def to_lua(p: dict) -> str:
@@ -124,8 +129,10 @@ def to_lua(p: dict) -> str:
     gen = ",".join(f"0x{b:02X}" for b in p["gen_slot0"])
     script = ",".join(f'{{{n},"{btn}"}}' for n, btn in p["script"])
     items = ",".join(f"0x{b:02X}" for b in p["items"])
+    stage = p.get("stage", "") or ""
     return (f'PRESET={{name="{p["name"]}",nes_wram={{{nes}}},gen_slot0={{{gen}}},'
-            f'items={{{items}}},script={{{script}}}}}\n')
+            f'items={{{items}}},script={{{script}}},stage_at={p.get("stage_at", -1)}}}\n'
+            f'function PRESET.stage(rd, wr, log)\n{stage}\nend\n')
 
 
 if __name__ == "__main__":

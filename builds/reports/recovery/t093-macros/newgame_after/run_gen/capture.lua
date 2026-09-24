@@ -1,7 +1,7 @@
 -- tools/lockstep/capture.lua — one lockstep capture, NES or Genesis.
 --
--- Runner substitutes: @PRESET@ (absolute path of generated preset .lua),
--- @OUT@ (absolute output prefix, forward slashes), @MAXF@ (frames to
+-- Runner substitutes: C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY_claude_marker/builds/reports/lockstep/newgame/preset.lua (absolute path of generated preset .lua),
+-- C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY_claude_marker/builds/reports/lockstep/newgame/gen (absolute output prefix, forward slashes), 100000 (frames to
 -- record after sync). Genesis runs also get @SYM:...@ tokens resolved.
 --
 -- 1. Enumerate memory domains live (RULE V3). Refuse to guess a name.
@@ -17,9 +17,9 @@
 --    GEN NES RAM = 68K $FF8000 + off (platform_abi.h A4 base).
 -- Output <OUT>.err on any failure; the differ treats missing files as ERROR.
 
-local OUT = "@OUT@"
-local MAXF = tonumber("@MAXF@")
-dofile("@PRESET@")
+local OUT = "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY_claude_marker/builds/reports/lockstep/newgame/gen"
+local MAXF = tonumber("100000")
+dofile("C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY_claude_marker/builds/reports/lockstep/newgame/preset.lua")
 -- Seed alignment (T-101): NES RNG/FrameCounter state at gameplay start
 -- depends on how many frames the NES title/file menus ran; Genesis uses a
 -- deliberately custom title/FS and reseeds at entry. The runner captures
@@ -27,7 +27,7 @@ dofile("@PRESET@")
 -- $18..$24 and StunCycle $26 here; they are written into Genesis at sync.
 -- From then on each console advances them with its own per-frame code.
 SEED = {}
-@SEED@
+SEED[0x15]=0x2C SEED[0x18]=0xCF SEED[0x19]=0x7A SEED[0x1A]=0xE4 SEED[0x1B]=0x11 SEED[0x1C]=0xD9 SEED[0x1D]=0xFA SEED[0x1E]=0x49 SEED[0x1F]=0xBD SEED[0x20]=0x2E SEED[0x21]=0x54 SEED[0x22]=0x08 SEED[0x23]=0xA0 SEED[0x24]=0xB1 SEED[0x26]=0x00
 
 local errf = nil
 local function fail(msg)

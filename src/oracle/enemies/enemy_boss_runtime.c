@@ -56,6 +56,10 @@ static void enrt_jumper_move_y(unsigned char accel, signed char max_speed_hi,
     if (ENEMY_JUMPER_VSPEED_LO(slot) < 0x80)
         return;
     ENEMY_JUMPER_VSPEED_HI(slot) = (unsigned char)max_speed_hi;
+    /* NES Z_04.asm Jumper_MoveY falls through into Jumper_ResetVSpeedFrac.
+     * Without it the kept fraction overflowed next frame: descent went
+     * 3,2,3,2 px instead of NES 2,2,2 (lockstep tektite_jump). */
+    ENEMY_JUMPER_VSPEED_LO(slot) = 0u;
 }
 
 static void enrt_jumper_animate_and_check_collisions(unsigned int slot) {
@@ -253,8 +257,13 @@ void enrt_update_tektite_or_boulder(unsigned int slot) {
     c_turn_towards_player8();
     dir = ENEMY_DIR(slot);
     if ((dir & 0x03) == 0) {
+        /* NES Z_04.asm UpdateTektiteOrBoulder: LDY #$02; LDA ChaseTargetX;
+         * CMP ObjX,X; BCC keep-left; DEY -> right when target >= object.
+         * The drain read ObjX $70 (Link) with the test inverted, so a
+         * Tektite under its target leapt away. Lockstep tektite_jump:
+         * NES dir $01, Genesis was $02. */
         horiz_dir = 2;
-        if (LINK_X < ENEMY_X(slot))
+        if (CHASE_TARGET_X >= ENEMY_X(slot))
             horiz_dir = 1;
         ENEMY_DIR(slot) = (unsigned char)(dir | horiz_dir);
     }

@@ -96,9 +96,9 @@ void enrt_wanderer_target_player(unsigned int slot) {
             goto turn_if_time;
     }
 
-    /* Compute |LINK_X - OBJ_X|. If >= 9, check vertical instead. */
+    /* Compute |CHASE_TARGET_X - OBJ_X|. If >= 9, check vertical instead. */
     {
-        unsigned char x_dist = z01_abs((unsigned char)(LINK_X - ENEMY_X(slot)));
+        unsigned char x_dist = z01_abs((unsigned char)(CHASE_TARGET_X - ENEMY_X(slot)));
         if (x_dist < 9) {
             /* Close horizontally: turn vertically toward Link. */
             goto turn_vertically;
@@ -110,7 +110,7 @@ turn_vertically:
     /* NES @TurnVertically chooses DOWN on equality too: CMP/BCC selects
      * UP only for target Y < object Y, then the BNE jumps unconditionally
      * because the fallback direction is $04. */
-    if (LINK_Y < ENEMY_Y(slot)) {
+    if (CHASE_TARGET_Y < ENEMY_Y(slot)) {
         d3_dir = 8;
     } else {
         d3_dir = 4;
@@ -120,15 +120,15 @@ turn_vertically:
 
 check_vertical_distance:
     {
-        unsigned char y_dist = z01_abs((unsigned char)(LINK_Y - ENEMY_Y(slot)));
+        unsigned char y_dist = z01_abs((unsigned char)(CHASE_TARGET_Y - ENEMY_Y(slot)));
         if (y_dist >= 9)
             goto turn_if_time;
     }
     /* fall through to turn_horizontally */
 
 turn_horizontally:
-    /* D3 = 1 (RIGHT) if LINK_X >= OBJ_X, else 2 (LEFT). */
-    if (LINK_X >= ENEMY_X(slot))
+    /* D3 = 1 (RIGHT) if CHASE_TARGET_X >= OBJ_X, else 2 (LEFT). */
+    if (CHASE_TARGET_X >= ENEMY_X(slot))
         d3_dir = 1;
     else
         d3_dir = 2;
@@ -199,7 +199,7 @@ void enrt_update_goriya(unsigned int slot) {
      * horiz_dir defaults to 1 (RIGHT) — flipped to 2 (LEFT) if Link is left.
      */
     {
-        unsigned char link_y = LINK_Y;
+        unsigned char link_y = CHASE_TARGET_Y;
         unsigned char obj_y  = ENEMY_Y(slot);
         unsigned char vdir   = 4;
         unsigned char a, b;
@@ -213,7 +213,7 @@ void enrt_update_goriya(unsigned int slot) {
         WALLMASTER_MINOR_MAJOR_MIN = (unsigned char)(a - b);  /* |dy| */
     }
     {
-        unsigned char link_x = LINK_X;
+        unsigned char link_x = CHASE_TARGET_X;
         unsigned char obj_x  = ENEMY_X(slot);
         unsigned char hdir   = 1;
         unsigned char a, b;

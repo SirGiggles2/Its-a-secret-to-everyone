@@ -33,7 +33,7 @@
  */
 
 #include "platform_abi.h"               /* RAM, OBJ */
-#include "enemy_state.h"                /* ENEMY_*, LINK_X/Y aliases */
+#include "enemy_state.h"                /* ENEMY_*, CHASE_TARGET_X/Y aliases */
 #include "world/draw_dispatch.h"        /* draw_object_mirrored_with_frame */
 #include "core/core_dispatch.h"         /* core_reset_obj_metastate_and_timer */
 

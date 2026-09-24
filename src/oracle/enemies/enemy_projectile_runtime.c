@@ -124,7 +124,7 @@ void enrt_update_boulder_set(unsigned int slot) {
 
         {
             unsigned char rng = ENEMY_RNG_B(new_slot);
-            if (LINK_X >= 0x80)
+            if (CHASE_TARGET_X >= 0x80)
                 rng |= 0x80;
             else
                 rng &= 0x7F;

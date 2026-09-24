@@ -29,7 +29,7 @@
 /* NES RAM cells — see reference/aldonunez/Variables.inc. */
 #define NES_SPRITES_BASE        0x0200u   /* OAM mirror, 64 sprites x 4 bytes */
 #define NES_ROLLING_SPR_INDEX   0x0341u
-#define NES_OBJ_INV_TIMER_BASE  0x04F0u
+/* NES_OBJ_INV_TIMER_BASE ($04F0) comes from platform_abi.h. */
 #define NES_FRAME_COUNTER       0x0015u
 #define NES_SCRATCH_03          0x0003u   /* sprite attrs byte */
 

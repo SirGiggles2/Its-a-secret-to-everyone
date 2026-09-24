@@ -38,7 +38,10 @@
 #define ROOM_MONSTER_COLLISION_COUNT    RAM(0x034B)
 #define SFX_COMBAT                      RAM(0x0604)
 
+/* Canonical owner: object_state.h (same cell, NES ObjState $AC+slot). */
+#ifndef OBJ_STATE
 #define OBJ_STATE(slot)                 OBJ(0x00AC, (slot))
+#endif
 #define OBJ_DIR(slot)                   OBJ(0x0098, (slot))
 #define OBJ_X(slot)                     OBJ(NES_OBJ_X, (slot))
 #define OBJ_Y(slot)                     OBJ(NES_OBJ_Y, (slot))

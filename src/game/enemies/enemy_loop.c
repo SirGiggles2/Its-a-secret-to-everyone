@@ -354,7 +354,7 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * RedSlowOctorock body: enrt_octorock_common(slot, 32) →
      * enrt_init_walker(slot) — sets WALK_SPEED, MOVE_TIMER=(slot+1)<<4,
      * OBJ_STATE=0, DRAW_FRAME=0, ANIM_TIMER=6, then computes DIR from
-     * LINK_X/LINK_Y vs OBJ_X/OBJ_Y (h_dir or v_dir, whichever has
+     * CHASE_TARGET_X/CHASE_TARGET_Y vs OBJ_X/OBJ_Y (h_dir or v_dir, whichever has
      * larger diff). */
     [0x01] = enrt_init_walker,                 /* BlueLynel */
     [0x02] = enrt_init_walker,                 /* RedLynel */

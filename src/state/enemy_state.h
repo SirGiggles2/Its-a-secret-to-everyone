@@ -58,12 +58,13 @@
 #define ENEMY_BUBBLE_EFFECT             RAM(0x004C)
 #define ENEMY_LEEVER_TIMER              RAM(0x004D)
 #define ENEMY_BUBBLE_STATUS             RAM(0x052E)
-#ifndef LINK_X
-#define LINK_X                          RAM(0x0061)
-#endif
-#ifndef LINK_Y
-#define LINK_Y                          RAM(0x0062)
-#endif
+/* NES ChaseTargetX/Y ($61/$62): where monsters head. Usually Link's
+ * position, but UpdateMode5Play substitutes a decoy point while
+ * ChaseOtherTarget ($60) is set. Previously named LINK_X/LINK_Y behind
+ * #ifndef, so TUs that also included world_state.h (LINK_X = ObjX $70)
+ * silently got the other meaning (T-093). */
+#define CHASE_TARGET_X                  RAM(0x0061)
+#define CHASE_TARGET_Y                  RAM(0x0062)
 /* SAVE_SLOT_INDEX is defined in item_state.h (canonical owner). Pulled
  * in transitively via the include below so existing enemy_*_runtime.c
  * consumers don't need their own #include. */
