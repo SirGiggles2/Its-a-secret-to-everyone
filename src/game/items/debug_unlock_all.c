@@ -6,7 +6,9 @@
 /* NES RAM cell offsets (per reference/aldonunez/Variables.inc:236-267).
  * Mirror inventory_t writes into nes_ram[] so drained gameplay paths that
  * read via OBJ(NES_*) / RAM($65X) see the unlocked state. */
-#define NES_INV_ITEMS         0x0657u
+#define NES_INV_SWORD         0x0657u
+#define NES_INV_RECORDER      0x065Cu
+#define NES_INV_WAND          0x065Fu
 #define NES_INV_BOMBS         0x0658u
 #define NES_INV_ARROW         0x0659u
 #define NES_INV_BOW           0x065Au
@@ -59,7 +61,7 @@ void debug_unlock_all_items(void)
     g_inventory.map_q1           = 0xFFu;
     g_inventory.compass_l9       = 0xFFu;
     g_inventory.map_l9           = 0xFFu;
-    g_inventory.clock            = 1u;
+    g_inventory.clock            = 0u; /* transient pickup, not equipment */
     g_inventory.rupees           = 255u;
     g_inventory.keys             = 99u;
     g_inventory.heart_values     = 0xFFu;    /* hi nibble = max (16), lo = current (16) */
@@ -73,7 +75,10 @@ void debug_unlock_all_items(void)
 
     /* Mirror into nes_ram[] so drained gameplay reads see the same
      * values via NES Variables.inc cells. */
-    nes_ram[NES_INV_ITEMS]        = g_inventory.items;
+    /* NES Items is the sword tier, not the compatibility equipment mask. */
+    nes_ram[NES_INV_SWORD]        = 3u;
+    nes_ram[NES_INV_RECORDER]     = 1u;
+    nes_ram[NES_INV_WAND]         = 1u;
     nes_ram[NES_INV_BOMBS]        = g_inventory.bombs;
     nes_ram[NES_INV_ARROW]        = g_inventory.arrow;
     nes_ram[NES_INV_BOW]          = g_inventory.bow;

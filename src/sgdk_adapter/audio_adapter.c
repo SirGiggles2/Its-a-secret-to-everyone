@@ -19,6 +19,11 @@
 extern void music_play(unsigned char song_bitmap);
 extern void music_tick(void);
 
+/* Driver storage is linker-owned; fixed low-RAM addresses collide with C BSS.
+ * Native RAM base follows platform_abi (A4 Debug or pointer RoomRom). */
+volatile unsigned char audio_apu_shadow[0x16];
+volatile unsigned char *audio_native_ram_base = 0;
+
 static u8 xgm_initialized = 0;
 static u8 sfx_next_channel = 0;  /* round-robin index 0..2 → CH2..CH4 */
 
@@ -35,6 +40,7 @@ static volatile u8 * const xgm_owns_chip_ptr = (volatile u8 *)0x00FFE02CUL;
 
 void audio_xgm_init(void)
 {
+    audio_native_ram_base = nes_ram;
     if (xgm_initialized) return;
     xgm_initialized = 1;
 

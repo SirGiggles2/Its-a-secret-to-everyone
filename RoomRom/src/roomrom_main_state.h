@@ -61,6 +61,10 @@ unsigned char roomrom_main_current_room_id(void);
 short roomrom_main_current_link_x(void);
 short roomrom_main_current_link_y(void);
 
+/* Story scripts that move Link use this typed-state/mirror boundary. */
+void roomrom_main_set_link_story_pose(unsigned char x, unsigned char y,
+                                     unsigned char face);
+
 /* Read Link's grid offset (NES ObjGridOffset). Coordinator gates rule 2. */
 signed char roomrom_main_current_link_grid_offset(void);
 

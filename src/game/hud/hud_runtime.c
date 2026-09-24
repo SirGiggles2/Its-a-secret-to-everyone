@@ -1,6 +1,11 @@
+/* NES source: Z_01.asm:FormatHeartsInTextBuf / FormatStatusBarText.
+ * Drained C: hud_dispatch.c:hud_format_status_bar_text.
+ * Coverage: PARTIAL (Original counters/hearts; map/equipment ownership pending).
+ * Stance: EXTEND. Render native formatting and observe native changes. */
 /* Phase 12.2 SGDK-1 cleanup: route VDP_setTileMapXY/VDP_clearTileMapRect
  * through render_set_window_word / render_clear_window_rect adapter. */
 #include "hud_runtime.h"
+#include "platform_abi.h"
 #include "../world/render/ow_render.h"  /* Phase 12.2 promoted */
 #include "render_abi.h"
 #include "../../../RoomRom/src/roomrom_vram_map.h"
@@ -33,8 +38,10 @@
  *   2. Add ATLAS_ASSERT_SIZE-equivalent BG-tile checks (need a new
  *      ATLAS_ASSERT_BG_TILE macro for tile-map rather than sprite use). */
 #include "atlas/hud_chr.h"
+#include "../room/room_dispatch.h"
 #include "hud_dispatch.h"   /* T2.3: hud_format_status_bar_text mirror */
 #include "heart_container_anim.h"   /* T2.7: 3-frame scale-up on pickup */
+#include "../world/render/sprite_render.h" /* NES $3E position dots */
 
 #define HUD_TILE_SPACE  0x24u
 #define TILE_DASH       0x62u
@@ -206,12 +213,15 @@ static unsigned short hud_word(unsigned char raw_tile, unsigned char pal)
 /* V2.4k (2026-05-26): HUD position mode toggle.
  *   bottom=0 (default): HUD at TOP (NES gameplay layout).
  *     HUD_WIN_ROW_BASE = 0 + VDP_setWindowOnTop(ROOMROM_HUD_ROWS).
- *   bottom=1 (inventory pause): HUD at BOTTOM (NES subscreen layout).
- *     HUD_WIN_ROW_BASE = 28-HUD_ROWS = 21 + VDP_setWindowOnBottom().
+ *   bottom=1 (inventory pause): the 224-line NES capture places the
+ *     visible HUD eight pixels lower than the original seven-row window.
+ *     Expose six rows at the bottom and draw from tile row 22; the seventh
+ *     HUD row is outside the visible 28-row viewport.
  * Toggle via roomrom_hud_set_bottom_mode() — clears old position +
  * redraws at new offset. */
 static unsigned char s_hud_bottom = 0u;
-#define HUD_WIN_ROW_BASE  (s_hud_bottom ? (28u - ROOMROM_HUD_ROWS) : 0u)
+#define HUD_PAUSE_WINDOW_ROWS (ROOMROM_HUD_ROWS - 1u)
+#define HUD_WIN_ROW_BASE  (s_hud_bottom ? (28u - HUD_PAUSE_WINDOW_ROWS) : 0u)
 
 static void draw_hud_tile(unsigned char col, unsigned char row,
                           unsigned char raw_tile, unsigned char pal)
@@ -372,70 +382,20 @@ static void draw_count_cell(unsigned short value, unsigned char col,
 static void draw_hearts_row(unsigned char col, unsigned char row,
                             unsigned char hud_id)
 {
-    unsigned char hv = g_inventory.heart_values;
-    unsigned char hp = g_inventory.heart_partial;
-    unsigned char max_h = heart_values_max(hv);
-    unsigned char cur_h = heart_values_cur(hv);
     unsigned char i;
-
-    if (max_h == 0u) {
-        max_h = 3u;
-        cur_h = 3u;
-    }
-    if (max_h > 16u) max_h = 16u;
-    if (cur_h > max_h) cur_h = max_h;
-
-    /* Bottom row: hearts 1..8 (cols col..col+7). */
-    for (i = 0; i < 8u; i++) {
-        unsigned char tile;
-        if (i >= max_h) {
-            tile = HUD_TILE_SPACE;
-        } else if (i < cur_h) {
-            tile = TILE_FULL_HEART;
-        } else if (i == cur_h && hp > 0u) {
-            tile = TILE_HALF_HEART;
-        } else {
-            tile = TILE_EMPTY_HEART;
-        }
-        /* T2.7: scale-up override for newly-added heart container slot. */
-        tile = hud_heart_container_anim_override_tile(i, tile);
+    /* Shared native tile choice; no transfer-buffer or scratch writes. */
+    for (i = 0u; i < 16u; ++i) {
+        unsigned char top = (i >= 8u);
+        unsigned char x = (unsigned char)(col + (i & 7u));
+        unsigned char y = (unsigned char)(row - top);
+        unsigned char tile = hud_heart_tile(RAM(0x066Fu), RAM(0x0670u), i);
+        if (hud_id == ROOMROM_MAP_REDUX)
+            tile = hud_heart_container_anim_override_tile(i, tile);
         if (hud_id == ROOMROM_MAP_REDUX) {
-            draw_hud_tile_b((unsigned char)(col + i), row,
+            draw_hud_tile_b(x, y, tile == HUD_TILE_SPACE ? HUD_TILE_SPACE :
                             TILE_REDUX_HEART_OUTLINE, 0);
-            draw_hud_tile((unsigned char)(col + i), row, tile, 1);
-        } else {
-            draw_hud_tile((unsigned char)(col + i), row, tile, 1);
         }
-    }
-
-    /* Top row: hearts 9..16 if max > 8. row - 1 = NES NT row 5. */
-    if (row == 0u || max_h <= 8u) {
-        return;
-    }
-    for (i = 0; i < 8u; i++) {
-        unsigned char hi = (unsigned char)(i + 8u);
-        unsigned char tile;
-        if (hi >= max_h) {
-            tile = HUD_TILE_SPACE;
-        } else if (hi < cur_h) {
-            tile = TILE_FULL_HEART;
-        } else if (hi == cur_h && hp > 0u) {
-            tile = TILE_HALF_HEART;
-        } else {
-            tile = TILE_EMPTY_HEART;
-        }
-        /* T2.7: scale-up override for newly-added heart container slot. */
-        tile = hud_heart_container_anim_override_tile(hi, tile);
-        if (hud_id == ROOMROM_MAP_REDUX) {
-            draw_hud_tile_b((unsigned char)(col + i),
-                            (unsigned char)(row - 1u),
-                            TILE_REDUX_HEART_OUTLINE, 0);
-            draw_hud_tile((unsigned char)(col + i),
-                          (unsigned char)(row - 1u), tile, 1);
-        } else {
-            draw_hud_tile((unsigned char)(col + i),
-                          (unsigned char)(row - 1u), tile, 1);
-        }
+        draw_hud_tile(x, y, tile, 1);
     }
 }
 
@@ -455,66 +415,87 @@ static void draw_status_counts_redux(void)
  * the live 3-digit count at cols 12..14, leaving the icon untouched. */
 static void draw_status_counts_original(void)
 {
-    draw_count_cell(g_inventory.rupees,                12u, 2u, 0u);
-    draw_count_cell((unsigned short)g_inventory.keys,  12u, 4u, 0u);
-    draw_count_cell((unsigned short)g_inventory.bombs, 12u, 5u, 0u);
+    draw_count_cell(RAM(0x066Du),                12u, 2u, 0u);
+    if (RAM(0x0664u)) {
+        draw_hud_tile(12u, 4u, TILE_LOW_X, 0u);
+        draw_hud_tile(13u, 4u, 0x0Au, 0u);
+        draw_hud_tile(14u, 4u, HUD_TILE_SPACE, 0u);
+    } else {
+        draw_count_cell((unsigned short)RAM(0x066Eu), 12u, 4u, 0u);
+    }
+    draw_count_cell((unsigned short)RAM(0x0658u), 12u, 5u, 0u);
 }
 
-static void draw_original_map_marker(unsigned char room_id)
+/* NES source: Z_05.asm:InitMode3_Sub6/Sub7; Z_06 LevelNumberTransferBuf.
+ * Drained C: room_init_mode3_sub6 / room_has_map.
+ * Coverage: PARTIAL Original dungeon map background/ownership; Stance: EXTEND.
+ * Room visits belong to the pause sheet. HUD outline requires the map. */
+static unsigned char s_dungeon_map_owned = 0xFFu;
+static void draw_original_dungeon_map(void)
 {
-    unsigned char col = (unsigned char)(2u + ((room_id & 0x0Fu) >> 1));
-    unsigned char row = (unsigned char)(2u + ((room_id >> 4) >> 1));
-    draw_hud_tile(col, row, TILE_ORIGINAL_MAP_MARKER, 2);
+    unsigned char owned = room_has_map() ? 1u : 0u;
+    unsigned char row, col;
+    static const unsigned char label[6] = {0x15u,0x0Eu,0x1Fu,0x0Eu,0x15u,0x62u};
+    if (owned == s_dungeon_map_owned) return;
+    s_dungeon_map_owned = owned;
+    for (row = 2u; row < 6u; ++row)
+        for (col = 2u; col < 10u; ++col)
+            draw_hud_tile(col, row, HUD_TILE_SPACE, 0u);
+    if (owned) apply_transfer_macro(&nes_ram[0x6BCDu]);
+    for (col = 0u; col < 6u; ++col)
+        draw_hud_tile((unsigned char)(2u + col), 1u, label[col], 0u);
+    draw_hud_tile(8u, 1u, RAM(0x6BB1u), 0u);
 }
 
-/* Plan v5c T6.5 — per-tick mini-map marker refresh + palette flash.
- *
- * NES source: reference/aldonunez/Z_01.asm:4095-4146 — marker rendered
- * as sprite tile $3E with palette flash every 16 frames
- * (FrameCounter & $1F vs $10).
- *
- * Genesis port: marker lives as BG tile $51 (TILE_ORIGINAL_MAP_MARKER,
- * uploaded via s_hud_custom_chr middle 32B block). No SAT slot
- * allocated; flash via palette alternation (pal 2 bright / pal 1 dim).
- * Dirty-gate skips redundant VDP writes when room + flash phase stable.
- *
- * UW path uses redux automap (tile bank $30..$4F) and skips this fn. */
-static unsigned char s_last_marker_room  = 0xFFu;
-static unsigned char s_last_marker_phase = 0xFFu;
+/* NES Z_01.asm:UpdatePositionMarker places tile $3E at four-pixel OW and
+ * eight-pixel UW horizontal intervals, four-pixel vertical intervals.
+ * A BG tile cannot distinguish adjacent rooms in this 16x8 grid. */
+static short original_marker_x(unsigned char room, unsigned char is_uw)
+{
+    short x = is_uw ? 0x12 : 0x11;
+    x = (short)(x + (short)(signed char)RAM(0x6BACu));
+    x = (short)(x + (short)((room & 0x0Fu) << (is_uw ? 3u : 2u)));
+    return x;
+}
+
+static short original_marker_y(unsigned char room)
+{
+    /* NES sprite Y is one above its first displayed scanline; Genesis
+     * viewport omits the NES top eight lines: NES Y - 7. */
+    return (short)(((room & 0x70u) >> 2) + 0x17u - 7u);
+}
 
 void roomrom_hud_refresh_marker(unsigned char room_id,
                                 unsigned char is_underworld,
                                 unsigned char frame_counter)
 {
-    unsigned char phase;
-    unsigned char col;
-    unsigned char row;
-    unsigned char pal;
-
     if (s_hud_id_cached == 0xFFu)
         return;
-    if (s_hud_id_cached == ROOMROM_MAP_REDUX)
+    if (s_hud_id_cached == ROOMROM_MAP_REDUX) {
+        roomrom_sprites_hide_hud_marker(0u);
+        roomrom_sprites_hide_hud_marker(1u);
         return;
-    if (is_underworld)
-        return;
-
-    phase = (unsigned char)(((frame_counter & 0x1Fu) < 0x10u) ? 1u : 0u);
-    if (room_id == s_last_marker_room && phase == s_last_marker_phase)
-        return;
-
-    if (s_last_marker_room != 0xFFu && s_last_marker_room != room_id) {
-        unsigned char old_col = (unsigned char)(2u + ((s_last_marker_room & 0x0Fu) >> 1));
-        unsigned char old_row = (unsigned char)(2u + ((s_last_marker_room >> 4) >> 1));
-        draw_hud_tile(old_col, old_row, TILE_GRAY_MAP, 0);
     }
+    roomrom_sprites_set_hud_marker(0u,
+        original_marker_x(room_id, is_underworld),
+        original_marker_y(room_id), 0u);
 
-    col = (unsigned char)(2u + ((room_id & 0x0Fu) >> 1));
-    row = (unsigned char)(2u + ((room_id >> 4) >> 1));
-    pal = (unsigned char)(phase ? 2u : 1u);
-    draw_hud_tile(col, row, TILE_ORIGINAL_MAP_MARKER, pal);
-
-    s_last_marker_room  = room_id;
-    s_last_marker_phase = phase;
+    if (is_underworld && room_has_compass()) {
+        unsigned char level = (unsigned char)RAM(0x0010u);
+        unsigned char target = (unsigned char)RAM(0x6BAEu);
+        unsigned char inactive = 1u;
+        /* NES attr $03 normally; an uncollected L1-L8 piece, or the L9
+         * target (which has no piece bit), flashes to attr $02. */
+        if (((level >= 1u && level <= 8u &&
+              (((unsigned char)RAM(0x0671u) & (1u << (level - 1u))) == 0u)) ||
+             level == 9u) &&
+            (frame_counter & 0x1Fu) < 0x10u) inactive = 0u;
+        roomrom_sprites_set_hud_marker(1u,
+            original_marker_x(target, 1u),
+            original_marker_y(target), inactive);
+    } else {
+        roomrom_sprites_hide_hud_marker(1u);
+    }
 }
 
 /* Phase J.2 (2026-05-18): upload_common_hud_tile / _range / _chr +
@@ -544,13 +525,26 @@ void roomrom_hud_upload_chr(void)
     (void)0;
 }
 
+static unsigned char s_native_hud_snapshot[8];
+static const unsigned short s_native_hud_cells[8] = {0x0658u, 0x066Du, 0x066Eu, 0x066Fu, 0x0670u, 0x0664u, 0x0668u, 0x066Au};
+static unsigned char native_hud_changed(void)
+{
+    unsigned char i;
+    for (i = 0u; i < 8u; ++i)
+        if (s_native_hud_snapshot[i] != RAM(s_native_hud_cells[i])) return 1u;
+    return 0u;
+}
+
 static void draw_hud_dynamic(unsigned char hud_id)
 {
+    unsigned char i;
+    for (i = 0u; i < 8u; ++i) s_native_hud_snapshot[i] = RAM(s_native_hud_cells[i]);
     if (hud_id == ROOMROM_MAP_REDUX) {
         draw_status_counts_redux();
         /* Redux heart row anchored at col 4 of HUD row 5 (top of display). */
         draw_hearts_row(4u, 5u, hud_id);
     } else {
+        if (s_last_is_uw_cached) draw_original_dungeon_map();
         draw_status_counts_original();
         /* Original NES paints hearts at NT row 6 cols 22..24 = HUD row 5. */
         draw_hearts_row(22u, 5u, hud_id);
@@ -568,13 +562,7 @@ void roomrom_hud_draw(unsigned char hud_id, unsigned char room_id,
     clear_hud_window();
     clear_hud_b();
     apply_transfer_macro(macro);
-    if (hud_id != ROOMROM_MAP_REDUX) {
-        draw_original_map_marker(room_id);
-    }
-    /* T6.5: full HUD redraw invalidates marker cache so refresh
-     * repaints with current flash phase next tick. */
-    s_last_marker_room  = 0xFFu;
-    s_last_marker_phase = 0xFFu;
+    s_dungeon_map_owned = 0xFFu;
     s_hud_id_cached = hud_id;
     s_last_room_id_cached = room_id;
     s_last_is_uw_cached = is_underworld;
@@ -592,7 +580,7 @@ void roomrom_hud_set_bottom_mode(unsigned char bottom)
     s_hud_bottom = bottom ? 1u : 0u;
     /* Switch Window plane position */
     if (s_hud_bottom)
-        render_set_window_on_bottom(ROOMROM_HUD_ROWS);
+        render_set_window_on_bottom(HUD_PAUSE_WINDOW_ROWS);
     else
         render_set_window_on_top(ROOMROM_HUD_ROWS);
     /* Redraw HUD at new HUD_WIN_ROW_BASE if previously drawn */
@@ -619,7 +607,7 @@ void roomrom_hud_refresh_dynamic(void)
      * the new tile makes it to VRAM. */
     hud_heart_container_anim_tick();
     unsigned char anim_active = hud_heart_container_anim_active();
-    if (!anim_active && !inventory_hud_consume_dirty()) {
+    if (!anim_active && !native_hud_changed() && !inventory_hud_consume_dirty()) {
         return; /* Inventory unchanged + no anim — skip the VDP traffic. */
     }
     if (anim_active) {
@@ -628,11 +616,5 @@ void roomrom_hud_refresh_dynamic(void)
         (void)inventory_hud_consume_dirty();
     }
     draw_hud_dynamic(s_hud_id_cached);
-    /* T2.3 (6.10.6 Step B): mirror to NES TRANSFER_BUF via
-     * hud_format_status_bar_text. NES source: Z_07 WriteHearts /
-     * Z_01 StatusBarTransferBufTemplate (asm:2804). Drained at
-     * hud_dispatch.c:102. Native VDP path is primary; this mirror
-     * keeps NES-native consumers (transpiled z_01 paths, NES asm
-     * tooling) reading current LINK_HEARTS / LINK_RUPEES / bombs. */
-    hud_format_status_bar_text();
+
 }

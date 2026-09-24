@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-05-30T05:08:12.932585+00:00",
+  "generated_at": "2026-09-24T14:48:44.459090+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -1123,6 +1123,342 @@
       "stance": "PARTIAL",
       "regression_matrix_run": null,
       "recorded_at": "2026-05-30T05:08:13.026773+00:00"
+    },
+    {
+      "target_phase_id": "14",
+      "reason": "Recovery P0: actual selected BizHawk launch with explicit entry-only scope; focused validation per user-approved cadence. Evidence builds/reports/recovery/baseline-accepted.json; no phase closure.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-11T13:00:35.222596+00:00"
+    },
+    {
+      "target_phase_id": "7",
+      "reason": "Recovery P1 diagnosis only: Q2 room blocks wrongly used for Q1. ROM-derived candidate staged and byte-verified at builds/reports/recovery/p1-candidate/verification.json. Protected changes pending unavailable octo reviewer waiver; no phase closure.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-11T18:18:12.255369+00:00"
+    },
+    {
+      "target_phase_id": "7",
+      "reason": "P1 scoped Aquamentus death and heart reward77->88 plus ordinary key0->1 verified in BizHawk; final ROM40a50889. Link/projectile visuals, contact, normal route and persistence remain open. Reduced testing per user.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-12T15:11:40.482253+00:00"
+    },
+    {
+      "target_phase_id": "7",
+      "reason": "P1 dynamic projectile init and empty-slot rendering fixed; BizHawk attrE3, kills0->1 only on boss death, reward77->88; vulnerable fireball harm matches NES half-heart/inv24. Normal handoff, full contact/presentation and persistence remain open.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-12T15:23:05.392394+00:00"
+    },
+    {
+      "target_phase_id": "7",
+      "reason": "Cave halt/exit repaired; room metadata refreshed on scroll; staged doorway six-hit boss death passed on ROM5eadb023. Reward blocked by extracted LevelInfo flags pointer FFFF versus NES06FF; pointer correction next. User playtest PID5492 leave open. Focused tests per user; no phase closure.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-13T01:35:32.966042+00:00"
+    },
+    {
+      "target_phase_id": "7",
+      "reason": "P0.10 pointer-based LevelInfo/common extraction PASS at data/reward-reveal scope; ROM fa6634c7. Full extractor matching output, nine records, L1/L7 fields verified. Pickup remains FAIL pending grid movement. P0.17 owned-process launcher subset checked with mocks. Missing Redux generator inputs recorded. No phase closure.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-13T02:03:46.819580+00:00"
+    },
+    {
+      "target_phase_id": "7",
+      "reason": "P2 collision40/DD and debug UW grid133 fixed; P1.7 fresh staged controller doorway/six-hit death/heart11-to12/exit/reentry PASS, boss absent. Native UW kill-history save wired before scroll and incoming identity before lookup. Same-session only; item-cache/save/HUD/projectile/scenery remain open. Focused BizHawk per user; no phase closure.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-13T15:09:16.713074+00:00"
+    },
+    {
+      "target_phase_id": "7",
+      "reason": "Recovery: native dungeon reward flags and L9 awards; Aquamentus mixed renderer and protected fireball CHR verified in focused BizHawk captures. HUD experiment excluded after presentation failure. Frozen user play ROM4293b6d4; no complete system or save lifecycle acceptance.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-14T12:34:52.172221+00:00"
+    },
+    {
+      "target_phase_id": "7",
+      "reason": "Native HUD staged states and window DMA repair verified with named boss consumer; private all-items play copy opened with live audio output. P7 maps/equipment/lifecycle and connected progression remain open.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-14T19:28:30.441240+00:00"
+    },
+    {
+      "target_phase_id": "7",
+      "reason": "Currency ownership repair: eight GEN state/integration cases and five live NES references pass. Room-entry guard now includes level/quest: three direct-entry cases pass. Controller quest shortcut remains a reproduced failure; normal progression and full game acceptance remain open.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-19T16:06:50.090176+00:00"
+    },
+    {
+      "target_phase_id": "7",
+      "reason": "P7 current-level map/compass ownership: four focused rendered BizHawk cases PASS; inventory readback and blank/HUD evidence retained; music deferred by user, dynamic maps TODO",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-20T02:48:33.842147+00:00"
+    },
+    {
+      "target_phase_id": "7",
+      "reason": "P5/P7 live pause dungeon map: NES 128-cell match, rebuild and controller doorway visits PASS at L1 scope; other layouts/persistence TODO; music last",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-20T03:28:27.603842+00:00"
+    },
+    {
+      "target_phase_id": "7",
+      "reason": "P5/P7 Original HUD outline and level label: focused NES ownership cases and shifted boss-bank consumer PASS; HUD markers TODO, music last",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-20T03:34:22.284959+00:00"
+    },
+    {
+      "target_phase_id": "7",
+      "reason": "P3 enemy recovery: shared room spawn defaults and clock lifetime repaired; natural Stalfos + Aquamentus consumer focused checks PASS; broad enemy audit ACTIVE before music",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-20T19:07:40.140505+00:00"
+    },
+    {
+      "target_phase_id": "7",
+      "reason": "P3.4 UW enemy bank origin fixed: 34 NES tile patterns and three Stalfos SAT pairs PASS; palette/animation/common UW bank and enemy audit remain open before music",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-20T19:13:14.084855+00:00"
+    },
+    {
+      "target_phase_id": "7",
+      "reason": "P3.5 enemy drop graphics corrected from live NES OAM/CHR; staged six-drop and one conversion probe pass; parent remains partial",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-21T02:42:21.425068+00:00"
+    },
+    {
+      "target_phase_id": "7",
+      "reason": "P3 flyer distance and edge bounds corrected; staged Keese and Peahat checks pass at bounded scope; parent remains partial",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-21T02:59:50.150314+00:00"
+    },
+    {
+      "target_phase_id": "P0.13/P3.3",
+      "reason": "Restored NES overworld kill-count save and six-room history ownership for immediate enemy revisit persistence.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-21T20:42:40.006683+00:00"
+    },
+    {
+      "target_phase_id": "P3.3/P3.4",
+      "reason": "Corrected NES airborne Tektite frame selection from ObjState; focused natural-room jump and landing probe passes.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-22T23:59:02.015173+00:00"
+    },
+    {
+      "target_phase_id": "P3.3/P3.4",
+      "reason": "Repair enemy boomerang spark timing and missing state-phase sprite rendering from NES Z_07.asm.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T00:33:33.862290+00:00"
+    },
+    {
+      "target_phase_id": "P3.3/P3.4",
+      "reason": "Fixed boomerang spark counter, missing return animation advancement, and NES palette offset; focused BizHawk probe PASS with build and 12/0/0 regression matrix. Full throw/collision/catch parity remains partial; evidence builds/reports/recovery/boomerang-return-20260922/result.json.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T00:50:01.831844+00:00"
+    },
+    {
+      "target_phase_id": "P3.3/P3.4",
+      "reason": "Corrected NES MoveShot outbound cumulative distance, preserved ObjGridOffset through animation, and verified live Blue Goriya range turn, slow return and catch plus later collision-spark/fast-return phases. Build exit 0, focused BizHawk probe PASS, matrix 12/0/0; paired oracle and Red Goriya variants remain partial. Evidence builds/reports/recovery/boomerang-return-20260922/result.json.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T01:01:24.731701+00:00"
+    },
+    {
+      "target_phase_id": "P3.3/P3.4",
+      "reason": "Live Blue Goriya spawned boomerangs; verified cumulative NES MoveShot range transition, slow-return catch/reset, later collision spark/fast spin, staged sprite/timer behavior, and visible captures. Debug build exit 0; focused BizHawk PASS; regression matrix 12/0/0. NES-paired timing/palette and Red Goriya RNG remain partial. Evidence builds/reports/recovery/boomerang-return-20260922/result.json.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T01:05:07.184564+00:00"
+    },
+    {
+      "target_phase_id": "P3.5",
+      "reason": "Wired source-backed fairy drop setup/flight; BizHawk focus PASS; broader fairy and enemy acceptance remain partial",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T01:17:09.657542+00:00"
+    },
+    {
+      "target_phase_id": "P3.5 dropped-item first-tick parity",
+      "reason": "Source check confirmed NES UpdateMetaObject sets ObjUninitialized= before SetUpDroppedItem; Genesis currently skips that init tick and updates the new fairy one frame early. Focused drop-lifecycle repair and BizHawk verification only.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T01:53:32.418537+00:00"
+    },
+    {
+      "target_phase_id": "P3.5 dropped-item first-tick parity",
+      "reason": "Marked successful drop slots with the existing occupied/uninitialized  sentinel to reproduce NES InitObject-only pass. Debug build and focused BizHawk tests pass: fairy flight state matches through 35 frames, idle-player fairy heal/pickup passes, natural Octorok rock/drop/pickup/departure/re-entry passes. P3.5 remains partial.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T01:59:35.768727+00:00"
+    },
+    {
+      "target_phase_id": "P3.5 dropped-item first-tick parity",
+      "reason": "Debug ROM built and focused BizHawk acceptance passed. NES/Genesis fairy fields align for frames 1-35; baseline and fairy windows each advanced 60/60. Fairiy pickup/heal and natural Octorok projectile, normal drop/pickup and room revisit passed. P3.5 remains partial: natural kill trigger, random wander parity and full timeout open.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T02:00:20.762979+00:00"
+    },
+    {
+      "target_phase_id": "P3.3/P3.4 Goriya boomerang scratch initialization",
+      "reason": "Matched NES caller precondition by clearing zero-page  before target-axis count; Debug build, existing focused BizHawk throw/return/catch probe, and regression matrix pass. Exact stale-scratch reproduction and paired NES oracle remain open.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T04:13:17.900371+00:00"
+    },
+    {
+      "target_phase_id": "P3.3/P3.4 monster-arrow spark timeout",
+      "reason": "Corrected type $5B state $20 lifecycle to use the NES-derived spark/deactivation path; Debug build, focused BizHawk timer/count probe, and regression matrix pass. Natural shield-hit entry and spark visibility remain open.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T04:20:26.817724+00:00"
+    },
+    {
+      "target_phase_id": "P3.3/P3.4 monster-arrow spark timeout",
+      "reason": "Route type $5B state $20 through the NES-derived three-frame spark and counted-deactivation path; build, focused BizHawk state/timer/count probe, and regression matrix pass. Visual spark and natural shield-hit entry remain open.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T04:22:02.630991+00:00"
+    },
+    {
+      "target_phase_id": "P3.3/P3.4  monster-arrow live wall spark + frame",
+      "reason": "Source-backed active arrow wall handling and spark frame correction; focused BizHawk checks pass; NES visual parity, natural shield-hit entry and full movement parity remain open.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T04:35:34.540993+00:00"
+    },
+    {
+      "target_phase_id": "P3.3/P3.4  left-facing spark flip parity",
+      "reason": "NES @PrepareArrow clears horizontal flip; Genesis now does likewise. Paired NES/Genesis spark silhouettes match for both horizontal directions; vertical direction and connected timing remain open.",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T04:58:10.986820+00:00"
+    },
+    {
+      "target_phase_id": "P3.5-P4",
+      "reason": "Weapon pickup source fix; live arrow boomerang sword pass; inactive sword pass; broader item acceptance open",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T05:11:41.485806+00:00"
+    },
+    {
+      "target_phase_id": "P3.5-P4",
+      "reason": "Weapon pickup complete at focused scope; slot-15 cave ownership safeguarded; live BizHawk and regression green",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T05:14:25.993257+00:00"
+    },
+    {
+      "target_phase_id": "P5.4/P7.1",
+      "reason": "Original HUD player and compass sprite markers, adjacent-room and Aquamentus consumer evidence",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T14:43:31.736871+00:00"
+    },
+    {
+      "target_phase_id": "P5.4/P7.1",
+      "reason": "Original HUD marker sprites and corrected Level 9 compass flash; focused BizHawk and regression evidence",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T14:47:51.843709+00:00"
+    },
+    {
+      "target_phase_id": "P5.4/P7.1",
+      "reason": "Native map/compass room awards reach HUD and pause; corrected Level 2 pause status marker offset",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T15:05:48.012682+00:00"
+    },
+    {
+      "target_phase_id": "P7.1a",
+      "reason": "Matched NES and Genesis pause layout, HUD window and nine icon LUT corrections; partial parity evidence",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T15:35:53.842491+00:00"
+    },
+    {
+      "target_phase_id": "P7.1a",
+      "reason": "Matched OW room77 pause status field corrected; NES/Genesis fixture and resume verified; palette/motion remain",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T16:45:17.828019+00:00"
+    },
+    {
+      "target_phase_id": "P7.1a",
+      "reason": "OW pause status field corrected; matched room77 and entry timing verified",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T16:46:22.440723+00:00"
+    },
+    {
+      "target_phase_id": "P7.1a",
+      "reason": "Palette LUT aligned to active NES reference; OW map mismatch disproven after correcting probe setup",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T17:13:15.104635+00:00"
+    },
+    {
+      "target_phase_id": "P7.1a",
+      "reason": "Palette LUT source corrected, OW map reference repaired, matched pixel residual isolated to one-pixel bottom WINDOW offset",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T21:42:14.481150+00:00"
+    },
+    {
+      "target_phase_id": "P3.3",
+      "reason": "NES equal-axis walker branch corrected; build green, live staged probe inconclusive and parity remains ACTIVE",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T21:48:57.885907+00:00"
+    },
+    {
+      "target_phase_id": "8",
+      "reason": "P3.3/P3.4/P6.1 Ganon now shares BlueWizzrobe tile-aware movement; Debug.bat and regression 12/0 pass; live boss route remains TODO",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T22:03:23.918557+00:00"
+    },
+    {
+      "target_phase_id": "8",
+      "reason": "P6.1 Ganon ObjState alias repair: L9Q1 r42 live entry reaches stable phase 2, moves, spawns fireball; Debug.bat and matrix 12/0 pass; vulnerability/death/reward TODO",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T22:12:56.656819+00:00"
+    },
+    {
+      "target_phase_id": "8",
+      "reason": "Linked Ganon bridge collision forwarders; staged sword and arrow/death activation BizHawk probes; P6.1 stays active",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-23T22:35:12.251328+00:00"
+    },
+    {
+      "target_phase_id": "8",
+      "reason": "L9Q1 Ganon captured missing boss room, repaired dark-room reveal and eight-sprite body OAM, native Power Triforce reward/pickup; focused NES and Genesis probes, build and regression GREEN",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-24T14:16:49.067406+00:00"
+    },
+    {
+      "target_phase_id": "8",
+      "reason": "Ganon L9Q1 reward shutter, Zelda room script and rescue handoff; staged BizHawk route enters Mode 13, connected route and ending remain",
+      "stance": "PARTIAL",
+      "regression_matrix_run": null,
+      "recorded_at": "2026-09-24T14:48:44.534016+00:00"
     }
   ],
   "deferrals": [
@@ -1394,26 +1730,113 @@
     },
     "drain_coverage_json": {
       "path": "tools/audit/drain_coverage.json",
-      "sha256": "a94799cb7acf3409a5acb7b7d27a05b4c0fadf9d46245c75415658d672010a88",
+      "sha256": "4ae8377db024ffb72ed0811ddbb1b135cc359e3a554578095b7e927dcaa832c3",
       "ok": true
     },
-    "git_head": "0d1814a484055a0e8d46fdcae60c2c0b9c37766e",
+    "git_head": "f513b997784f92d7de84b203e9274fee83f089aa",
     "dirty_paths_relevant": [
-      "data/audio_music/lm_zelda_ow.bin",
-      "data/audio_music/lm_zelda_ow_patched.vgm",
-      "data/audio_music/ow_theme.bin",
-      "data/audio_music/ow_theme_pcm.c",
-      "data/audio_music/ow_theme_pcm.h",
-      "data/audio_music/sonic1.bin",
-      "data/audio_music/sonic1.xgm",
-      "src/game/inventory/inventory_render.WIP.patch.bak",
-      "tools/parity/pause_golden/",
-      "tools/probes/captures/",
-      "tools/probes/pause_oam_sat_diff.py"
+      "RoomRom/data/regen_sentinels.json",
+      "RoomRom/data/sprite_catalog.json",
+      "RoomRom/data/uw_item_rooms.h",
+      "RoomRom/data/uw_level9_quest1_rooms.json",
+      "RoomRom/src/atlas/boss_chr.c",
+      "RoomRom/src/atlas/boss_chr.h",
+      "RoomRom/src/atlas/hud_chr.c",
+      "RoomRom/src/atlas/items_chr.c",
+      "RoomRom/src/atlas/items_chr_x4.c",
+      "RoomRom/src/atlas/items_chr_x4.h",
+      "RoomRom/src/atlas/level_chr_swap.c",
+      "RoomRom/src/atlas/npc_chr.c",
+      "RoomRom/src/atlas/title_chr.c",
+      "RoomRom/src/bg_sparse_chr.c",
+      "RoomRom/src/bg_sparse_chr.h",
+      "RoomRom/src/main.c",
+      "RoomRom/src/redux_overworld.c",
+      "RoomRom/src/roomrom_main_state.h",
+      "RoomRom/src/roomrom_vram_map.h",
+      "RoomRom/src/uw_collision_data.c",
+      "RoomRom/src/uw_room_blob.c",
+      "RoomRom/tools/gen_atlas.py",
+      "RoomRom/tools/gen_bg_sparse.py",
+      "RoomRom/tools/uw_reachability.py",
+      "RoomRom/tools/verify_vram_budget.py",
+      "data/misc/palettes.c",
+      "data/rooms/dungeons.c",
+      "data/rooms/dungeons_offsets.c",
+      "data/rooms/dungeons_offsets.h",
+      "data/rooms/overworld.c",
+      "src/abi/platform_abi.h",
+      "src/audio_driver.asm",
+      "src/game/cave/cave_dispatch.c",
+      "src/game/dungeon/item_room_meta.c",
+      "src/game/dungeon/item_room_meta.h",
+      "src/game/dungeon/uw_map_builder.c",
+      "src/game/dungeon/uw_map_builder.h",
+      "src/game/dungeon/walk_model.h",
+      "src/game/enemies/bosses/boss_framework.c",
+      "src/game/enemies/bosses/boss_framework.h",
+      "src/game/enemies/enemy_boss_bridge.c",
+      "src/game/enemies/enemy_flyer_bridge.c",
+      "src/game/enemies/enemy_ganon_bridge.c",
+      "src/game/enemies/enemy_jumper_bridge.c",
+      "src/game/enemies/enemy_loop.c",
+      "src/game/enemies/enemy_loop.h",
+      "src/game/enemies/enemy_projectile_bridge.c",
+      "src/game/enemies/enemy_render.c",
+      "src/game/enemies/enemy_walker_bridge.c",
+      "src/game/enemies/obj_lists.c",
+      "src/game/enemies/obj_lists.h",
+      "src/game/hud/hud_dispatch.c",
+      "src/game/hud/hud_dispatch.h",
+      "src/game/hud/hud_runtime.c",
+      "src/game/inventory/inventory_render.c",
+      "src/game/items/arrow.c",
+      "src/game/items/bomb.c",
+      "src/game/items/boomerang.c",
+      "src/game/items/debug_unlock_all.c",
+      "src/game/items/item_object.c",
+      "src/game/room/room_dispatch.c",
+      "src/game/room/room_dispatch.h",
+      "src/game/world/draw_dispatch.c",
+      "src/game/world/draw_dispatch.h",
+      "src/game/world/probes/dungeon_roundtrip_probe.c",
+      "src/game/world/progress_dispatch.c",
+      "src/game/world/render/sprite_render.c",
+      "src/game/world/render/sprite_render.h",
+      "src/game/world/render/sprite_slots.h",
+      "src/oracle/enemies/enemy_boss_runtime.c",
+      "src/oracle/enemies/enemy_flyer_runtime.c",
+      "src/oracle/enemies/enemy_ganon_runtime.c",
+      "src/oracle/enemies/enemy_projectile_runtime.c",
+      "src/oracle/enemies/enemy_runtime_private.h",
+      "src/oracle/enemies/enemy_wanderer_runtime.c",
+      "src/oracle/enemies/enemy_wizzrobe_runtime.c",
+      "src/oracle/enemies/enemy_wizzrobe_runtime.h",
+      "src/sgdk_adapter/audio_adapter.c",
+      "src/sgdk_adapter/render_adapter.c",
+      "src/state/inventory.c",
+      "src/state/inventory.h",
+      "src/state/progress_state.h",
+      "src/state/room_state.h",
+      "tools/audit/drain_coverage.json",
+      "tools/debug/build_debug.py",
+      "tools/dungeon_harness/README.md",
+      "tools/dungeon_harness/manifest.json",
+      "tools/dungeon_harness/run_all.py",
+      "tools/extract_misc.py",
+      "tools/extract_rooms.py",
+      "tools/parity/cave_golden/regen_dungeon_blob_from_sram.py",
+      "tools/parity/cave_golden/run_dungeon_sweep.py",
+      "tools/uw_item_rooms_gen.py",
+      "RoomRom/tools/refresh_drop_item_manifest.py",
+      "tools/audit/completion/",
+      "tools/dungeon_harness/probes/l1_entry.lua",
+      "tools/dungeon_harness/report.lua",
+      "tools/dungeon_harness/test_run_all.py"
     ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-05-30T05:08:13.026753+00:00",
+    "last_refresh_at": "2026-09-24T14:48:44.533996+00:00",
     "stale_reasons": []
   },
   "blockers": []

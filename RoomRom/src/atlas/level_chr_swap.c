@@ -127,11 +127,14 @@ void level_chr_swap_init(void)
 
 void level_chr_swap_request(roomrom_scene_id_t scene)
 {
-    /* Same scene already READY → no-op. */
-    if (s_active == scene && s_state == LEVEL_CHR_SWAP_READY) {
+    /* A resident boss bank overlaps this bank, even in the same level. */
+    if (s_active == scene && s_state == LEVEL_CHR_SWAP_READY &&
+        s_boss_state == LEVEL_CHR_SWAP_IDLE) {
         return;
     }
 
+    s_boss_state = LEVEL_CHR_SWAP_IDLE;
+    s_boss_active = ROOMROM_SCENE_BOOT;
     s_target = scene;
     s_target_contract = contract_for_scene(scene);
     s_state = LEVEL_CHR_SWAP_REQUESTED;
@@ -170,7 +173,9 @@ void level_chr_swap_tick(void)
                 (c->tile_count > s_last_used_tiles)
                     ? c->tile_count
                     : s_last_used_tiles;
-            VDP_fillTileData(0u, c->tile_base, blank_tiles, FALSE);
+            /* VDP fill owns the data port until complete. HUD/room CPU
+             * writes later this frame must not become its fill data. */
+            VDP_fillTileData(0u, c->tile_base, blank_tiles, TRUE);
             s_total_bytes_dma += (unsigned long)blank_tiles * 32ul;
             s_last_used_tiles = c->tile_count;
         }
@@ -239,21 +244,25 @@ unsigned short level_chr_swap_request_count(void)   { return s_request_count; }
  *   L3, L4, L6, L8 -> UWSPBoss3468
  *   L9             -> UWSPBoss9
  * Non-UW scenes return 0 (no boss bank). */
-static const unsigned char *boss_blob_for_scene(roomrom_scene_id_t s)
+static const unsigned char *boss_blob_for_scene(roomrom_scene_id_t s,
+                                                unsigned char subpal3)
 {
     switch (s) {
     case ROOMROM_SCENE_UW_L1:
     case ROOMROM_SCENE_UW_L2:
     case ROOMROM_SCENE_UW_L5:
     case ROOMROM_SCENE_UW_L7:
-        return roomrom_atlas_boss_uwspboss1257;
+        return subpal3 ? roomrom_atlas_boss_uwspboss1257_subpal3
+                       : roomrom_atlas_boss_uwspboss1257;
     case ROOMROM_SCENE_UW_L3:
     case ROOMROM_SCENE_UW_L4:
     case ROOMROM_SCENE_UW_L6:
     case ROOMROM_SCENE_UW_L8:
-        return roomrom_atlas_boss_uwspboss3468;
+        return subpal3 ? roomrom_atlas_boss_uwspboss3468_subpal3
+                       : roomrom_atlas_boss_uwspboss3468;
     case ROOMROM_SCENE_UW_L9:
-        return roomrom_atlas_boss_uwspboss9;
+        return subpal3 ? roomrom_atlas_boss_uwspboss9_subpal3
+                       : roomrom_atlas_boss_uwspboss9;
     default:
         return 0;
     }
@@ -300,6 +309,12 @@ void level_chr_boss_tick(void)
         return;
 
     case LEVEL_CHR_SWAP_REQUESTED: {
+        /* Room load can request both banks before either has uploaded.
+         * Finish the enemy bank first: their VRAM ranges overlap, so
+         * interleaved halves corrupt the boss bank after its first DMA. */
+        if (s_state != LEVEL_CHR_SWAP_IDLE && s_state != LEVEL_CHR_SWAP_READY) {
+            return;
+        }
         if (c == 0 || c->tile_count == 0u || c->blob_bytes == 0u) {
             s_boss_active = s_boss_target;
             s_boss_state = LEVEL_CHR_SWAP_READY;
@@ -319,7 +334,9 @@ void level_chr_boss_tick(void)
                 (c->tile_count > s_boss_last_used_tiles)
                     ? c->tile_count
                     : s_boss_last_used_tiles;
-            VDP_fillTileData(0u, c->tile_base, blank_tiles, FALSE);
+            /* VDP fill owns the data port until complete. HUD/room CPU
+             * writes later this frame must not become its fill data. */
+            VDP_fillTileData(0u, c->tile_base, blank_tiles, TRUE);
             s_boss_total_bytes_dma += (unsigned long)blank_tiles * 32ul;
             s_boss_last_used_tiles = c->tile_count;
         }
@@ -328,13 +345,16 @@ void level_chr_boss_tick(void)
     }
 
     case LEVEL_CHR_SWAP_DMA_SCENE_A: {
-        const unsigned char *blob = boss_blob_for_scene(s_boss_target);
+        const unsigned char *blob = boss_blob_for_scene(s_boss_target, 0u);
+        const unsigned char *subpal3 = boss_blob_for_scene(s_boss_target, 1u);
         if (c != 0 && blob != 0 && c->tile_count > 0u) {
             unsigned short half_a = (unsigned short)(c->tile_count >> 1);
             if (half_a > 0u) {
                 VDP_loadTileData((const u32 *)(blob + c->blob_offset),
                                  c->tile_base, half_a, TRUE);
-                s_boss_total_bytes_dma += (unsigned long)half_a * 32ul;
+                VDP_loadTileData((const u32 *)(subpal3 + c->blob_offset),
+                                 ROOMROM_BOSS_SUBPAL3_TILE_BASE, half_a, TRUE);
+                s_boss_total_bytes_dma += (unsigned long)half_a * 64ul;
             }
         }
         s_boss_state = LEVEL_CHR_SWAP_DMA_SCENE_B;
@@ -342,7 +362,8 @@ void level_chr_boss_tick(void)
     }
 
     case LEVEL_CHR_SWAP_DMA_SCENE_B: {
-        const unsigned char *blob = boss_blob_for_scene(s_boss_target);
+        const unsigned char *blob = boss_blob_for_scene(s_boss_target, 0u);
+        const unsigned char *subpal3 = boss_blob_for_scene(s_boss_target, 1u);
         if (c != 0 && blob != 0 && c->tile_count > 0u) {
             unsigned short half_a = (unsigned short)(c->tile_count >> 1);
             unsigned short half_b = (unsigned short)(c->tile_count - half_a);
@@ -352,7 +373,10 @@ void level_chr_boss_tick(void)
                 VDP_loadTileData((const u32 *)(blob + off),
                                  (unsigned short)(c->tile_base + half_a),
                                  half_b, TRUE);
-                s_boss_total_bytes_dma += (unsigned long)half_b * 32ul;
+                VDP_loadTileData((const u32 *)(subpal3 + off),
+                                 (unsigned short)(ROOMROM_BOSS_SUBPAL3_TILE_BASE + half_a),
+                                 half_b, TRUE);
+                s_boss_total_bytes_dma += (unsigned long)half_b * 64ul;
             }
         }
         s_boss_active = s_boss_target;

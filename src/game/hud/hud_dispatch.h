@@ -15,6 +15,9 @@
 extern "C" {
 #endif
 
+/* Pure native tile choice; index0 is the first heart. */
+unsigned char hud_heart_tile(unsigned char hearts, unsigned char partial, unsigned char index);
+
 /* Format heart icons into the dynamic transfer buf at start_off.
  * Reads RAM($000E)=hearts, RAM($000F)=partial. drain at hud_runtime.c:6-50. */
 void hud_format_hearts_in_text_buf(unsigned char start_off);
@@ -41,6 +44,9 @@ void hud_format_status_bar_text(void);
  * LINK_RUPEES, drain CAVE_DOOR_REPAIR_RUPEE_DELTA into LINK_RUPEES--,
  * play sfx, refresh status bar. drain at hud_runtime.c:95-122. */
 void hud_world_change_rupees(void);
+
+/* Native currency state only; caller owns display scheduling. */
+void hud_tick_native_rupees(unsigned char frame_counter);
 
 #ifdef __cplusplus
 }

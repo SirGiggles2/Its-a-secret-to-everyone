@@ -13,6 +13,7 @@ extern void c_draw_object_mirrored(unsigned int slot);
 extern void c_draw_object_not_mirrored(unsigned int slot);
 extern void c_draw_object_mirrored_with_frame(unsigned int frame, unsigned int slot);
 extern void c_draw_object_not_mirrored_with_frame(unsigned int frame, unsigned int slot);
+extern void c_draw_boomerang(unsigned int slot);
 extern void c_aquamentus_move(unsigned int slot);
 extern void c_aquamentus_shoot(unsigned int slot);
 extern void c_aquamentus_draw(unsigned int slot);
@@ -74,6 +75,7 @@ extern unsigned int c_shoot(unsigned int type);
 
 /* --- ASM shim helpers used by enemy_common_runtime.c (Zol/Gel family) --- */
 extern void          c_move_object(unsigned short slot);
+extern void          c_move_shot(unsigned char direction, unsigned int slot);
 extern void c_change_tile_obj_tiles(unsigned int tile, unsigned int slot);
 extern unsigned char c_get_opposite_dir(unsigned char dir);
 extern void          c_wanderer_target_player(unsigned int slot);

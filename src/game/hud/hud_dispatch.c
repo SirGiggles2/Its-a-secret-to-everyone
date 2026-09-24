@@ -26,15 +26,26 @@ static const unsigned char k_status_bar_template[41] = {
     0xFFu
 };
 
+/* NES source: Z_01.asm:FormatHeartsInTextBuf.
+ * Drained C: hud_format_hearts_in_text_buf below.
+ * Coverage: FULL heart tile choice; Stance: EXTEND (shared pure helper).
+ * HeartValues encodes capacity minus one and whole hearts; the fractional
+ * heart displays full at $80, half below it, empty at zero. */
+unsigned char hud_heart_tile(unsigned char hearts, unsigned char partial,
+                             unsigned char index)
+{
+    unsigned char whole = (unsigned char)(hearts & 15u);
+    if (!hearts || index > (hearts >> 4) || index >= 16u) return 0x24u;
+    if (index < whole) return 0xF2u;
+    if (index > whole || !partial) return 0x66u;
+    return partial >= 0x80u ? 0xF2u : 0x65u;
+}
+
 void hud_format_hearts_in_text_buf(unsigned char start_off)
 {
     /* drain at hud_runtime.c:6-50. NES FormatHeartsInTextBuf. */
     RAM(0x000Du) = start_off;
     const unsigned char hearts = (unsigned char)RAM(0x000Eu);
-    const unsigned char full = (unsigned char)(hearts & 0x0Fu);
-    const unsigned char threshold_empty = (unsigned char)(15u - full);
-    const unsigned char containers = (unsigned char)(hearts >> 4);
-    const unsigned char threshold_space = (unsigned char)(15u - containers);
     RAM(0x000Bu) = (uint8_t)(start_off + 7u);
     unsigned char row_pos = 7u;
     for (unsigned char slot = 0u; slot < 16u; ++slot) {
@@ -43,23 +54,9 @@ void hud_format_hearts_in_text_buf(unsigned char start_off)
             RAM(0x000Bu) = (uint8_t)(RAM(0x000Du) + 0x12u);
             row_pos = 18u;
         }
-        if (hearts == 0u || slot < threshold_space) {
-            tile = 36u;
-        } else if (slot > threshold_empty) {
-            tile = 0xF2u;
-        } else if (slot < threshold_empty) {
-            tile = 102u;
-        } else {
-            const unsigned char partial = (unsigned char)RAM(0x000Fu);
-            if (partial == 0u) {
-                tile = 102u;
-            } else if (partial >= 0x80u) {
-                tile = 0xF2u;
-            } else {
-                ROOM_HISTORY_IDX = 0u;
-                tile = 101u;
-            }
-        }
+        tile = hud_heart_tile(hearts, (unsigned char)RAM(0x000Fu),
+                              (unsigned char)(15u - slot));
+        if (tile == 0x65u) ROOM_HISTORY_IDX = 0u;
         RAM(0x000Cu) = row_pos;
         TRANSFER_BUF_BYTE(RAM(0x000Bu)) = tile;
         RAM(0x000Bu) = (uint8_t)(RAM(0x000Bu) - 1u);
@@ -129,13 +126,23 @@ void hud_world_change_rupees(void)
     if (!(TRANSFER_BUF_BYTE(0) & 0x80u)) {
         return;
     }
+    hud_tick_native_rupees(FRAME_COUNTER);
+    if (!(FRAME_COUNTER & 1u)) hud_format_status_bar_text();
+}
+
+/* NES source: Z_01.asm:World_ChangeRupees.
+ * Drained C: hud_world_change_rupees. Coverage: FULL currency mutation.
+ * Stance: EXTEND; share state logic without NES PPU transfer ownership.
+ * The native renderer owns its own display transfers. */
+void hud_tick_native_rupees(unsigned char frame_counter)
+{
     const unsigned char rupees = (unsigned char)LINK_RUPEES;
     if (rupees == 0u) {
         INVENTORY_VALUE(39) = 0u;
     } else if (rupees == 0xFFu) {
         INVENTORY_VALUE(38) = 0u;
     }
-    if (FRAME_COUNTER & 1u) {
+    if (frame_counter & 1u) {
         return;
     }
     if (RAM(0x067Du) != 0u) {
@@ -144,11 +151,9 @@ void hud_world_change_rupees(void)
         RAM(0x0604u) = 16u;  /* ROOM_SFX_MAIN */
     }
     if (CAVE_DOOR_REPAIR_RUPEE_DELTA == 0) {
-        hud_format_status_bar_text();
         return;
     }
     CAVE_DOOR_REPAIR_RUPEE_DELTA = (int8_t)(CAVE_DOOR_REPAIR_RUPEE_DELTA - 1);
     LINK_RUPEES = (uint8_t)(LINK_RUPEES - 1u);
     RAM(0x0604u) = 16u;  /* ROOM_SFX_MAIN */
-    hud_format_status_bar_text();
 }

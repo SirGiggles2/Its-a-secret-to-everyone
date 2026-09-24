@@ -11,6 +11,7 @@
 #include "../../dungeon/uw_render.h"
 #include "../../../../RoomRom/data/levelinfo_start_rooms.h"
 #include "../../../../RoomRom/src/roomrom_main_state.h"
+#include "platform_abi.h"
 
 /* Canonical OW source latch — Phase F harness routes every dungeon
  * exit back to a single fixed OW position so we can byte-compare
@@ -63,6 +64,9 @@ void dungeon_roundtrip_probe_run(void)
     unsigned char quest;
     unsigned char rows_ok = 0u;
     unsigned char saved_quest = roomrom_main_current_quest();
+    unsigned char saved_level = roomrom_uw_room_render_get_level();
+    unsigned char saved_render_quest = roomrom_uw_room_render_get_quest();
+    unsigned char saved_cur_level = nes_ram[0x0010u];
 
     /* Clear magic so Lua sees "not yet published". */
     block[0] = 0u;
@@ -253,8 +257,18 @@ void dungeon_roundtrip_probe_run(void)
         }
     }
 
-    /* Restore the master quest selector so subsequent boot code (and
-     * the warp coordinator's own tick) sees the canonical value. */
+    /* NES source: Z_06.asm:LoadLevelInfo; active tables are scene state.
+     * Drained C: level_info_install_ow/uw. Coverage: probe isolation.
+     * Stance: EXTEND. The sweep ends at L9Q2, so restore every owner it
+     * mutates before gameplay reads room attributes or enemy lists. */
+    if (saved_cur_level == 0u) {
+        level_info_install_ow();
+    } else {
+        level_info_install_uw(saved_level, saved_render_quest);
+    }
+    nes_ram[0x0010u] = saved_cur_level;
+    roomrom_uw_room_render_set_level(saved_level);
+    roomrom_uw_room_render_set_quest(saved_render_quest);
     roomrom_main_set_quest(saved_quest);
 
     /* Publish header LAST. Lua poll loop waits for magic before

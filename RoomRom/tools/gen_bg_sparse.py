@@ -228,6 +228,11 @@ def main():
     for tid in HUD_FORCE_TILES:
         combined[tid].update([0, 1, 2])  # HUD pal context varies (white/yellow/red)
 
+    # Original dungeon map transfer records use common misc glyphs absent
+    # from room nametables (Z_06 LevelInfo_StatusBarMapTransferBuf).
+    for tid in range(0xFB, 0x100):
+        combined[tid].add(0)
+
     # Force-include redux automap tile range (0x30..0x4F, 32 tiles) for HUD
     # automap rendering. Sub-pals 0,1,2 cover the gray/blue/red room state.
     # Original hud_runtime.c::upload_redux_automap_chr handled this via

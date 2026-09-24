@@ -6,7 +6,8 @@
  * NES sprite tiles, 1x sub-pal (boss CRAM is loaded per-boss via
  * UpdatePalettes; sub-pal index flows through OAM attr).
  *
- * Per-bank Genesis bytes = 64 tiles * 32 = 2048.
+ * Per-bank Genesis bytes = 64 tiles * 32 = 2048. Each bank has
+ * a _subpal3 copy with visible pixels biased by 12 for PAL1.
  *
  * Consumed by RoomRom/src/atlas/level_chr_swap.c via parallel boss
  * DMA state machine; resident at ROOMROM_BOSS_TILE_BASE.
@@ -18,8 +19,11 @@
 #define ROOMROM_ATLAS_BOSS_PER_BANK_BYTES 2048u
 
 extern const unsigned char roomrom_atlas_boss_uwspboss1257[ROOMROM_ATLAS_BOSS_PER_BANK_BYTES];
+extern const unsigned char roomrom_atlas_boss_uwspboss1257_subpal3[ROOMROM_ATLAS_BOSS_PER_BANK_BYTES];
 extern const unsigned char roomrom_atlas_boss_uwspboss3468[ROOMROM_ATLAS_BOSS_PER_BANK_BYTES];
+extern const unsigned char roomrom_atlas_boss_uwspboss3468_subpal3[ROOMROM_ATLAS_BOSS_PER_BANK_BYTES];
 extern const unsigned char roomrom_atlas_boss_uwspboss9[ROOMROM_ATLAS_BOSS_PER_BANK_BYTES];
+extern const unsigned char roomrom_atlas_boss_uwspboss9_subpal3[ROOMROM_ATLAS_BOSS_PER_BANK_BYTES];
 
 #endif /* ROOMROM_ATLAS_BOSS_CHR_H */
 

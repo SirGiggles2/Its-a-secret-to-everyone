@@ -1,6 +1,7 @@
 #include "boomerang.h"
 #include "../world/render/sprite_render.h"
 #include "../../state/inventory.h"
+#include "../../abi/platform_abi.h"
 
 extern void audio_sfx_play(unsigned char sfx);
 
@@ -19,6 +20,7 @@ extern void audio_sfx_play(unsigned char sfx);
 #define BOOMERANG_TOTAL_FRAMES   (BOOMERANG_OUT_FRAMES + BOOMERANG_RETURN_FRAMES)
 #define BOOMERANG_SPEED_PX       3
 #define BOOMERANG_PHASE_FRAMES   2u   /* 2 frames per spin phase */
+#define BOOMERANG_OBJ_SLOT       15u
 
 typedef enum {
     BOOMERANG_IDLE = 0,
@@ -34,8 +36,18 @@ static link_face_t       s_face = LINK_FACE_DOWN;
 static short             s_x = 0;
 static short             s_y = 0;
 
+static void boomerang_publish_object(unsigned char active)
+{
+    OBJ(0x00ACu, BOOMERANG_OBJ_SLOT) = active ? 0x10u : 0u;
+    if (active) {
+        OBJ(0x0070u, BOOMERANG_OBJ_SLOT) = (unsigned char)s_x;
+        OBJ(0x0084u, BOOMERANG_OBJ_SLOT) = (unsigned char)s_y;
+    }
+}
+
 void roomrom_boomerang_init(void)
 {
+    if (s_state != BOOMERANG_IDLE) boomerang_publish_object(0u);
     s_state = BOOMERANG_IDLE;
     s_frame = 0u;
     s_phase_idx = 0u;
@@ -95,6 +107,7 @@ void roomrom_boomerang_update(short link_x, short link_y)
     }
 
     roomrom_sprites_set_boomerang(s_x, s_y, s_phase_idx, ROOMROM_BOOMERANG_SUBPAL);
+    boomerang_publish_object(1u);
     advance_phase();
 
     s_frame++;
@@ -104,6 +117,7 @@ void roomrom_boomerang_update(short link_x, short link_y)
     if (s_frame >= BOOMERANG_TOTAL_FRAMES) {
         s_state = BOOMERANG_IDLE;
         s_frame = 0u;
+        boomerang_publish_object(0u);
         roomrom_sprites_clear_boomerang();
     }
 }

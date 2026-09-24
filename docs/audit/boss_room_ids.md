@@ -1,4 +1,10 @@
-# Phase 0.C — Boss room IDs (CORRECTED 2026-05-30)
+# Phase 0.C — Boss room IDs (updated 2026-09-23)
+
+Current `Debug.md` entry probe resolves L9Q1 room `$42` as Ganon: installed
+AttrsC=`$3E`, BossRoomId=`$42`, and enemy slot 1=`$3E` on the next frame.
+This supersedes the older missing-spawn finding for Ganon. See
+`builds/reports/recovery/ganon-room-entry-20260923/trace.txt`. Other old
+boss-room claims below retain their historical evidence scope.
 
 **Status:** the original table here was WRONG for 8/10 bosses — derived
 from `probe_nes_known_bosses.lua` whose mode-poke warp ($12=$06→$05) lands
@@ -25,21 +31,24 @@ room's ObjList from `LevelBlockAttrsC/D`; boss room = where
 | L7 | **$2A** | Aquamentus #2 | $3D | ✓ slot1=$3D |
 | L8 | **$3C** | Gleeok 4-head | $45 | ✓ slot1=$45 |
 | L9 | **$52** | Patra Red     | $47 | ✓ slot1=$47 (+$25 children) |
-| L9 | **?**   | Ganon         | $3E | ✗ $42 (LBA $3E) did not spawn |
+| L9 | **$42** | Ganon         | $3E | ✓ current Debug.md slot1=$3E (2026-09-23) |
 
 Old (wrong) ids for reference: L2 $73, L3 $0F, L4 $45, L5 $06, L6 $0F,
 L7 $23, L8 $1F, L9 $1E/$1F. Only L1 $35 was correct.
 
-## The 3 gaps — port data, not logic
+## Historical three-gap finding (2026-05-30 build)
+
+The older probe found the following with its then-current blob; the Ganon
+claim is superseded by the current spawn probe. L5/L6 need fresh checks
+before this paragraph can describe the current build.
 
 `level_info_install_uw` installs `LevelBlockAttrs` as SHARED blocks
 (block 0 = L1-L6 Q1, block 1 = L7-L9 Q1; verified byte-identical across
 L2/L5 captures). Block 0 contains L1-L4 boss placements but NOT $38
 (Digdogger) or $33 (Gohma); block 1 lacks a spawning Ganon. So
-`data/rooms/dungeons.c` `rooms_dungeons[]` is **missing L5/L6/Ganon boss
-object data** — re-extract those levels' LevelBlockAttrs C/D from the NES
-ROM (`reference/aldonunez/dat/`), then the engine spawns them like the
-other 7.
+`data/rooms/dungeons.c` `rooms_dungeons[]` was reported missing L5/L6/Ganon
+boss object data. The current pointer-derived Q1/Q2 blob has Ganon AttrsC
+`$3E` at room `$42`, and he spawns there. L5/L6 still need current evidence.
 
 ## Derivation tooling
 

@@ -6,7 +6,7 @@
   "save_state_dir": "tools/dungeon_harness/save_states/",
   "probe_dir": "tools/dungeon_harness/probes/",
   "rows": [
-    { "level": 1, "quest": 1, "label": "L1Q1 Eagle",     "save_state": "L1Q1.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_1_q1.lua", "boss": "Aquamentus",  "reward": "TriforcePiece(1)" },
+    { "level": 1, "quest": 1, "label": "L1Q1 Eagle", "entry_probe": "l1_entry.lua", "entry_room": "73", "save_state": "L1Q1.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_1_q1.lua", "boss": "Aquamentus", "reward": "TriforcePiece(1)" },
     { "level": 2, "quest": 1, "label": "L2Q1 Moon",      "save_state": "L2Q1.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_2_q1.lua", "boss": "Dodongo",     "reward": "TriforcePiece(2)" },
     { "level": 3, "quest": 1, "label": "L3Q1 Manji",     "save_state": "L3Q1.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_3_q1.lua", "boss": "Manhandla",   "reward": "TriforcePiece(3)" },
     { "level": 4, "quest": 1, "label": "L4Q1 Snake",     "save_state": "L4Q1.State", "save_state_sha256": null, "rng_seed": null, "probe": "dungeon_4_q1.lua", "boss": "Gleeok 1",    "reward": "TriforcePiece(4)" },

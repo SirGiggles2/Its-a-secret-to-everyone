@@ -37,6 +37,11 @@ void roomrom_sprites_upload_items_chr(void);
 void roomrom_sprites_load_palette(void);  /* call after every load_room() */
 void roomrom_sprites_invalidate_cache(void);
 void roomrom_sprites_spawn_link(short x, short y);
+/* Original gameplay status-map dots; coordinates are Genesis screen pixels.
+ * The compass marker's inactive palette uses the biased $3E icon. */
+void roomrom_sprites_set_hud_marker(unsigned char compass, short x, short y,
+                                    unsigned char inactive_palette);
+void roomrom_sprites_hide_hud_marker(unsigned char compass);
 void roomrom_sprites_set_link_pos(short x, short y);
 void roomrom_sprites_set_link_pose(short x, short y,
                                    link_face_t face, unsigned char frame);

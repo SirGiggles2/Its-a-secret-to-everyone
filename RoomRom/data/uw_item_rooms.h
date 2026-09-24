@@ -32,14 +32,14 @@ extern const unsigned short uw_item_rooms_count;
 extern const unsigned short uw_item_room_lookup[10][3][128];
 
 /* NES item ids relevant to slice-1. */
-#define UW_ITEM_ID_COMPASS    0x10u
-#define UW_ITEM_ID_MAP        0x11u
+#define UW_ITEM_ID_COMPASS    0x16u
+#define UW_ITEM_ID_MAP        0x17u
 #define UW_ITEM_ID_TRIFORCE   0x1Bu
 
 /* Inventory slots (NES Variables.inc + state/item_state.h). Bytes
  * stored at INVENTORY_VALUE(slot) = nes_ram[$0657 + slot]. */
 #define UW_INV_SLOT_COMPASS   16u
 #define UW_INV_SLOT_MAP       17u
-#define UW_INV_SLOT_TRIFORCE  19u   /* InvTriforce per Z1 convention */
+#define UW_INV_SLOT_TRIFORCE  26u   /* NES InvTriforce at $0671 */
 
 #endif /* ROOMROM_UW_ITEM_ROOMS_H */

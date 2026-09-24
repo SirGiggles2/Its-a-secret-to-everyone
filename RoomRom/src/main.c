@@ -1,3 +1,4 @@
+#include "../../src/game/room/room_dispatch.h"
 #include <genesis.h>
 #include "roomrom_debug_runtime.h"
 #include "../../src/game/world/render/ow_render.h"  /* Phase 12.2 promoted */
@@ -198,7 +199,7 @@ static void roomrom_hud_b_item_update(void)
     unsigned short sword_vram = (unsigned short)(ROOMROM_SPR_TILE_BASE + 0x20u);
     unsigned short sword_attr = RENDER_TILE_ATTR_FULL(RENDER_PAL3, 1, 0, 1, sword_vram);
     VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_HUD_B_ITEM_R, (s16)0x98, (s16)(0x1Fu - 7u),
-        RENDER_SPRITE_SIZE(1, 2), sword_attr, ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
+        RENDER_SPRITE_SIZE(1, 2), sword_attr, ROOMROM_SPRITE_SLOT_HUD_PLAYER);
     /* Phase 8 W0c safeguard: invalidate sprite cache so beam / weapon slots
      * downstream of HUD always re-write fresh SAT next frame (prevents
      * cache-stale direction reverts after HUD overlay activates). */
@@ -533,16 +534,16 @@ static void cave_fade_ascend_step_handler(unsigned char step_idx)
 
 static void cave_fade_swap_exit_handler(void)
 {
-    s_scene = SCENE_OW;
-    /* Restore Link 16 px south of the cave entrance so the entrance
-     * tile is not re-triggered on the next frame. Matches the
-     * existing-instant-exit logic that lived inline at main.c:2050. */
-    players[0].x    = s_cave_return_x;
-    players[0].y    = (u8)(s_cave_return_y + 16u);
-    players[0].face = LINK_FACE_DOWN;
-    /* HUD underlay must be re-asserted after cave_fade restores the OW
-     * plane (cave_exit does not re-enter load_room). */
-    clear_hud_underlay_for_row_base(s_active_row_base);
+    rr_warp_outcome_t out = {0};
+    /* Use the same handoff as other scene exits: restore room data,
+     * collision, CHR, enemies and the underground-exit latch together. */
+    out.dest_scene = SCENE_OW;
+    out.dest_room_id = s_cave_return_room;
+    out.dest_link_x = s_cave_return_x;
+    out.dest_link_y = (u8)(s_cave_return_y + 16u);
+    out.dest_link_face = LINK_FACE_DOWN;
+    out.dest_redux_flag = roomrom_main_current_redux_flag();
+    roomrom_main_apply_warp_outcome(&out);
 }
 
 static const cave_fade_callbacks_t k_cave_fade_callbacks = {
@@ -582,6 +583,30 @@ static void render_room_into_slot(u8 room_id, u8 slot_x, u8 row_base)
                 plane_col_for_slot(c, slot_x), row_base);
         }
     }
+}
+
+/* NES Z_04.asm:Ganon_ScenePhase0 -> UpdateCandle finishes the room
+ * brightening at CandleState $02 / FadeCycle low nibble $04. The native
+ * dark-room renderer blanked Plane A on entry; the palette transfer alone
+ * cannot reveal tiles that are no longer there. Restore the current room
+ * in place, keeping the live boss, Link and door state intact. */
+static void reveal_ganon_room_after_fade(void)
+{
+    u8 dir;
+    u8 opened;
+    if (s_scene != SCENE_UW || !s_cur_room_is_dark ||
+        roomrom_uw_room_lit(s_room_id) ||
+        nes_ram[0x0350u] != 0x3Eu ||
+        nes_ram[0x051Fu] != 0x02u ||
+        (nes_ram[0x051Cu] & 0x0Fu) != 0x04u) return;
+
+    roomrom_uw_room_set_lit(s_room_id);
+    render_room_into_slot(s_room_id, s_active_slot_x, s_active_row_base);
+    opened = uw_door_state_get_opened();
+    for (dir = 0u; dir < DOOR_DIR_COUNT; ++dir) {
+        if (opened & DOOR_DIR_BIT(dir)) uw_door_state_patch_open_tiles(dir);
+    }
+    uw_door_state_apply_walkability();
 }
 u8                 s_link_frame = 0u;      /* non-static: forward-declared at top of file for cave_fade descend handler */
 static u8          s_link_anim_tick = 0u;
@@ -678,8 +703,45 @@ static void init_video(void)
     VDP_setVerticalScroll(BG_B, 0);
 }
 
+/* NES source: Z_05.asm:InitMode_EnterRoom; Z_01.asm:TryTakeRoomItem.
+ * Drained C: enemy_loop.c:enemy_loop_room_init (native room entry).
+ * Coverage: PARTIAL (manifest-backed room properties/items).
+ * Stance: EXTEND. Refresh on both direct load and scrolling entry. */
+static void refresh_room_metadata(u8 room_id)
+{
+    if (s_scene == SCENE_UW) {
+        u8 lvl = roomrom_uw_room_render_get_level();
+        u8 q = roomrom_uw_room_render_get_quest();
+        s_cur_room_is_dark   = roomrom_uw_room_is_dark(lvl, q, room_id);
+        s_cur_room_is_cellar = roomrom_uw_room_is_cellar(lvl, q, room_id);
+        s_cur_room_has_item  = roomrom_uw_item_for_room(
+                                   lvl, q, room_id, &s_cur_room_item_meta);
+        /* Task 5.9.1: spawn room-item sprite if active + not taken. */
+        if (s_cur_room_has_item &&
+            s_cur_room_item_meta.active_at_spawn &&
+            !roomrom_uw_item_taken(room_id)) {
+            short ix = (short)s_cur_room_item_meta.item_x;
+            short iy = (short)s_cur_room_item_meta.item_y;
+            roomrom_sprites_set_room_item(ix, iy,
+                                          s_cur_room_item_meta.item_id, 0u);
+        } else {
+            roomrom_sprites_clear_room_item();
+        }
+    } else {
+        s_cur_room_is_dark = 0u;
+        s_cur_room_is_cellar = 0u;
+        s_cur_room_has_item = 0u;
+        roomrom_sprites_clear_room_item();
+    }
+}
+
 static void load_room(u8 room_id)
 {
+    /* NES Z_05.asm:InitMode_EnterRoom installs OW/UW object bounds from
+     * CurLevel. Do this on every full scene load after its level identity
+     * has been installed, including direct dungeon warps. The old boot-
+     * only call left UW enemies using the OW limits after a warp. */
+    roomld_setup_obj_room_bounds();
     /* PR-2c: BG_A/B share one table, so these clears are intentionally
      * idempotent when issued through either plane handle. */
     clear_tile_rect_on_plane(0u, 0u, ROOMROM_ROOM_FIRST_ROW,
@@ -725,39 +787,17 @@ static void load_room(u8 room_id)
     roomrom_sprites_load_palette();   /* PAL1 - reload after BG palette write */
     /* Phase 2.6.5: reset toggle table on room load (empty at Phase 2). */
     roomrom_palette_tick_init((const unsigned char *)0);
+    refresh_room_metadata(room_id);
     /* Ph5.3: init door state after room render (needs filled plane + attr cache). */
     if (s_scene == SCENE_UW) {
         u8 lvl = roomrom_uw_room_render_get_level();
         u8 q   = roomrom_uw_room_render_get_quest();
         uw_door_state_room_init(lvl, q, room_id);
-        /* Task 5.8/5.9 perf: refresh per-room caches ONCE on room
-         * change (linear-scan cost amortized to load_room only). */
-        s_cur_room_is_dark   = roomrom_uw_room_is_dark(lvl, q, room_id);
-        s_cur_room_is_cellar = roomrom_uw_room_is_cellar(lvl, q, room_id);
-        s_cur_room_has_item  = roomrom_uw_item_for_room(
-                                   lvl, q, room_id, &s_cur_room_item_meta);
         roomrom_pushblock_room_load(lvl, q, room_id);
         /* Task 5.8: dark-room render override. */
         if (s_cur_room_is_dark && !roomrom_uw_room_lit(room_id)) {
             roomrom_uw_room_render_fill_plane_a_dark();
         }
-        /* Task 5.9.1: spawn room-item sprite if active + not taken. */
-        if (s_cur_room_has_item &&
-            s_cur_room_item_meta.active_at_spawn &&
-            !roomrom_uw_item_taken(room_id)) {
-            short ix = (short)s_cur_room_item_meta.item_x;
-            short iy = (short)((short)s_cur_room_item_meta.item_y +
-                                ROOMROM_PLAYFIELD_TOP_PX);
-            roomrom_sprites_set_room_item(ix, iy,
-                                          s_cur_room_item_meta.item_id, 0u);
-        } else {
-            roomrom_sprites_clear_room_item();
-        }
-    } else {
-        s_cur_room_is_dark = 0u;
-        s_cur_room_is_cellar = 0u;
-        s_cur_room_has_item = 0u;
-        roomrom_sprites_clear_room_item();
     }
     /* NES Z_01.asm:3967 UsedCandle clears on room transition — blue candle
      * regains its 1-shot per new room. Red candle ignores the flag. */
@@ -775,19 +815,24 @@ static void load_room(u8 room_id)
 static void request_boss_chr_if_boss_room(void)
 {
     unsigned char s;
+    unsigned char lv;
     if (s_scene != SCENE_UW) return;
+    lv = roomrom_uw_room_render_get_level();
+    if (lv == 0u || lv > 9u) lv = 1u;
     for (s = 1u; s <= 11u; ++s) {
         unsigned char t = nes_ram[0x034Fu + s];
-        if ((t >= 0x31u && t <= 0x34u) ||
+        if ((t >= 0x31u && t <= 0x34u) || t == 0x37u ||
             (t >= 0x38u && t <= 0x3Eu) ||
             (t >= 0x41u && t <= 0x48u)) {
-            unsigned char lv = roomrom_uw_room_render_get_level();
-            if (lv == 0u || lv > 9u) lv = 1u;
             level_chr_boss_request(
                 (roomrom_scene_id_t)(ROOMROM_SCENE_UW_L1 + (lv - 1u)));
             return;
         }
     }
+    /* Normal doorway exits stay in the same level. Restore the enemy
+     * bank after a boss room; its old READY flag no longer means resident. */
+    level_chr_swap_request(
+        (roomrom_scene_id_t)(ROOMROM_SCENE_UW_L1 + (lv - 1u)));
 }
 
 /* Phase 1: pick the live-NES item-atlas variant for the current scene+map.
@@ -873,6 +918,8 @@ void roomrom_main_apply_warp_outcome(const rr_warp_outcome_t *out)
          * room -> fill_one_col_at drew no tiles -> black playfield. */
         roomrom_uw_room_render_set_quest(
             (out->dest_quest == 0u) ? 1u : out->dest_quest);
+        /* One quest identity for rendering, room data and return routes. */
+        roomrom_main_set_quest(roomrom_uw_room_render_get_quest());
         nes_ram[0x0010u] = out->dest_level;
         /* Plan v5 D4: install LevelBlockAttrs + LevelInfo into NES SRAM
          * BEFORE enemy_loop_room_init reads LBA_C/D + FoeCounts. Without
@@ -915,7 +962,9 @@ void roomrom_main_apply_warp_outcome(const rr_warp_outcome_t *out)
     /* Phase 7 Task 7.2 step 2: clear enemy slots + (Task 7.7) dispatch
      * per-room ObjList init. Stub returns NULL until 7.7 lands the
      * template_id table; force-spawn hook fires from probe Lua. */
-    enemy_loop_room_init(s_room_id, (unsigned char)s_scene);
+    enemy_loop_room_init(s_room_id, (unsigned char)s_scene,
+                s_scene == SCENE_UW ? roomrom_uw_room_render_get_level() : 0u,
+                s_scene == SCENE_UW ? roomrom_uw_room_render_get_quest() : 0u);
     request_boss_chr_if_boss_room();
 
     /* Phase C (2026-05-24) — UET state per NES dispatch (Z_01.asm:2990,
@@ -961,6 +1010,23 @@ short roomrom_main_current_link_x(void)
 short roomrom_main_current_link_y(void)
 {
     return players[0].y;
+}
+
+/* NES Zelda rescue repositions Link. Keep the typed owner and NES mirror
+ * coherent before any later gameplay consumer reads the object cells. */
+void roomrom_main_set_link_story_pose(unsigned char x, unsigned char y,
+                                     unsigned char face)
+{
+    players[0].x = (short)x;
+    players[0].y = (short)y;
+    players[0].face = (link_face_t)face;
+    nes_ram[0x0070u] = x;
+    nes_ram[0x0084u] = y;
+    nes_ram[0x0098u] = (face == ROOMROM_MAIN_LINK_FACE_LEFT) ? 0x02u :
+                       (face == ROOMROM_MAIN_LINK_FACE_RIGHT) ? 0x01u :
+                       (face == ROOMROM_MAIN_LINK_FACE_UP) ? 0x08u : 0x04u;
+    s_link_grid_offset = 0;
+    s_link_dir = LINK_DIR_NONE;
 }
 
 signed char roomrom_main_current_link_grid_offset(void)
@@ -1486,6 +1552,17 @@ static unsigned char link_walkable_at(short x, short y, link_dir_t dir)
  * in the new room. */
 static void edge_load_or_clamp(void)
 {
+    /* NES CheckCaveEdge -> CheckScreenEdge: walking south to Y=$DD
+     * leaves the cave. Caves must not use the overworld room-grid scroll
+     * or the dungeon's Y=208 clamp. Test direction to avoid exiting at
+     * the initial cave-bottom spawn while Link faces into the room. */
+    if (s_scene == SCENE_CAVE) {
+        if (players[0].y >= 0xDD && (s_joy_prev & BUTTON_DOWN)) {
+            cave_fade_set_callbacks(&k_cave_fade_callbacks);
+            cave_fade_begin_exit(s_cave_return_room);
+        }
+        return;
+    }
     u8 col = s_room_id & 0x0Fu;
     u8 row = (u8)(s_room_id >> 4);
     scroll_state_t want = SCROLL_NONE;
@@ -1550,6 +1627,14 @@ static void edge_load_or_clamp(void)
     }
 
     if (want != SCROLL_NONE) {
+        /* NES source: reference/aldonunez/Z_05.asm:SaveKillCountOW and
+         * SaveKillCountUW. Drained C: src/oracle/room/room_runtime.c:
+         * roomrt_save_kill_count_ow; native UW counterpart lives in
+         * room_dispatch.c. Coverage: PARTIAL (native edge departure).
+         * Stance: EXTEND. Save before enemy_loop_room_init clears the
+         * source room's $034F kill total during scroll completion. */
+        if (s_scene == SCENE_UW) room_save_kill_count_uw();
+        else if (s_scene == SCENE_OW) room_save_kill_count_ow(s_room_id);
         s_transition_target = (u8)((row << 4) | col);
         s_transition_link_x = players[0].x;
         s_transition_link_y = players[0].y;
@@ -1755,29 +1840,14 @@ void roomrom_debug_enter(void)
     roomrom_candle_fire_init();            /* Task 5.8.1: candle fire slot 8 */
     roomrom_magic_shot_init();             /* magic rod shot slot 9 */
     enemy_render_reset_oam();              /* Phase 7: clear NES OAM mirror */
-    /* Phase 7 substrate fix 2026-05-15 — install ROOM_BOUNDS (NES
-     * $0346..$0349) so BoundFlyer / collision_get_collidable_tile have
-     * valid playfield limits. Otherwise enemies walk off-screen
-     * unblocked. Drained body at src/oracle/room/room_load_runtime.c. */
-    roomld_setup_obj_room_bounds();
-    enemy_loop_room_init(s_room_id, (unsigned char)s_scene);  /* Phase 7 Task 7.2 */
+    enemy_loop_room_init(s_room_id, (unsigned char)s_scene,
+                s_scene == SCENE_UW ? roomrom_uw_room_render_get_level() : 0u,
+                s_scene == SCENE_UW ? roomrom_uw_room_render_get_quest() : 0u);  /* Phase 7 Task 7.2 */
     roomrom_probe_metadata_run();          /* Task 5.4 Gate D: in-ROM probe */
 
-    /* debate 006 D2 native cave smoke: prove cave_init / cave_tick /
-     * cave_exit link cleanly into RoomRom + execute without crash.
-     * No visible effect yet (cave_tick is a stub); future commits add
-     * SCENE_CAVE dispatch + render. cave_id 0x6A = first valid cave
-     * room type per NES Z_01.asm:80.
-     *
-     * Phase 7 Task 7.2 step 4 ordering rule (root-cause fix 2026-05-09):
-     * NES aliases CaveRoomType and ObjType+1 at $0350 — see
-     * src/state/cave_state.h:83 + src/abi/platform_abi.h:80. cave_exit()
-     * writes $0350=0, so any explicitly armed enemy-loop probe must run
-     * after the cave smoke. */
-    cave_init((cave_id_t)0x6A);
-    cave_tick();
-    cave_exit();
-
+    /* Cave diagnostics must not enter/exit a cave during gameplay boot:
+     * those calls overwrite object slots, text state and Link's halt state.
+     * Exercise cave entry/exit through the explicit harness instead. */
     if (enemy_loop_probe_is_armed()) {
         enemy_loop_probe_run();            /* Heavy 11-slot in-ROM stress probe. */
     }
@@ -1933,9 +2003,8 @@ void roomrom_debug_tick(void)
         /* PR-4a: advance scene-bank DMA state machine. Runs after
          * SYS_doVBlankProcess so the SGDK DMA queue is drained before
          * we issue our own ops. PR-5: boss state machine ticks in
-         * parallel; the two share SCENE_OBJ slot but are naturally
-         * serialized by request ordering (boss requested only on
-         * boss-room entry, after enemy DMA has reached READY). */
+         * sequence; the boss machine waits for pending enemy DMA because
+         * both requests can originate in the same room-load frame. */
         /* PR-5 probe trigger: probe pokes a scene_id (1 byte) into
          * $FF73FE; we enqueue a boss request and clear the cell. The
          * matching ack byte at $FF73FF tracks how many requests we have
@@ -2014,6 +2083,7 @@ void roomrom_debug_tick(void)
                     roomrom_ow_room_render_publish_play_area_tiles();
                 }
                 roomrom_sprites_load_palette();
+                refresh_room_metadata(s_room_id);
                 clear_hud_underlay_for_row_base(s_active_row_base);
                 if (was_v_scroll) {
                     set_room_render_target_plane(s_active_plane);
@@ -2028,7 +2098,9 @@ void roomrom_debug_tick(void)
                  * OW/UW rooms populate enemy slots when Link scrolls in.
                  * Without this, ObjType[1..count] stays zero across
                  * room transitions and the world appears empty. */
-                enemy_loop_room_init(s_room_id, (unsigned char)s_scene);
+                enemy_loop_room_init(s_room_id, (unsigned char)s_scene,
+                s_scene == SCENE_UW ? roomrom_uw_room_render_get_level() : 0u,
+                s_scene == SCENE_UW ? roomrom_uw_room_render_get_quest() : 0u);
                 request_boss_chr_if_boss_room();
                 s_scroll_state = SCROLL_NONE;
             } else {
@@ -2194,7 +2266,7 @@ void roomrom_debug_tick(void)
              * goes stale on any C-side face change; AI chase targets
              * read this cell every frame. Hearts mirror inventory so
              * any future NES HUD-readout consumer sees live values. */
-            nes_ram_sync_inventory_hearts();
+            inventory_sync_from_native();
             nes_ram_sync_link_face();
             nes_ram_sync_sword();
 
@@ -2240,6 +2312,7 @@ void roomrom_debug_tick(void)
              * branch, never resolves to gameplay song. */
             audio_dispatch_tick((unsigned char)s_scene, s_room_id);
             mode_dispatch_update();
+            reveal_ganon_room_after_fade();
             /* 2026-05-15 perf: switched from enemy_render_sweep_oam_to_sat
              * (iterated 64 NES OAM entries → up to ~50 SAT writes/frame,
              * costing ~30% frame budget) to enemy_render_native_sweep
@@ -2514,7 +2587,9 @@ void roomrom_debug_tick(void)
             nes_ram[0x07EDu] = 0xC2u;  /* after load_room marker */
             nes_ram[0x07EFu] = (unsigned char)s_room_id;
             roomrom_combat_set_uw(s_scene == SCENE_UW);
-            enemy_loop_room_init(s_room_id, (unsigned char)s_scene);
+            enemy_loop_room_init(s_room_id, (unsigned char)s_scene,
+                s_scene == SCENE_UW ? roomrom_uw_room_render_get_level() : 0u,
+                s_scene == SCENE_UW ? roomrom_uw_room_render_get_quest() : 0u);
             nes_ram[0x07EEu] = 0xC3u;  /* after enemy_loop_room_init marker */
             /* Phase 10.3 audio per-event wiring: scene-toggle entry
              * fires music_play per docs/audit/audio_routing.md table.
@@ -2638,8 +2713,21 @@ void roomrom_debug_tick(void)
             u8 q = roomrom_uw_room_render_get_quest();
             q = (q == ROOMROM_UW_QUEST_MIN) ? ROOMROM_UW_QUEST_MAX
                                              : ROOMROM_UW_QUEST_MIN;
-            roomrom_uw_room_render_set_quest(q);
-            load_room(s_room_id);
+            /* NES source: Z_05.asm:InitMode2Load / InitMode_EnterRoom.
+             * Drained C: roomrom_main_apply_warp_outcome.
+             * Coverage: PARTIAL debug quest entry; Stance: EXTEND.
+             * Reinstall tables, transient state, graphics and enemies through
+             * the same handoff as other entries, not a renderer-only change. */
+            rr_warp_outcome_t out;
+            out.dest_scene = SCENE_UW;
+            out.dest_level = roomrom_uw_room_render_get_level();
+            out.dest_quest = q;
+            out.dest_room_id = s_room_id;
+            out.dest_link_x = players[0].x;
+            out.dest_link_y = players[0].y;
+            out.dest_link_face = (unsigned char)players[0].face;
+            out.dest_redux_flag = current_redux_flag();
+            roomrom_main_apply_warp_outcome(&out);
             return;
         }
 
@@ -2709,7 +2797,7 @@ void roomrom_debug_tick(void)
         /* S7: while sword is mid-swing, swallow D-pad so Link freezes on
          * his swing pose. Combat module ticks below + clears sword on
          * retract, returning control. */
-        if (roomrom_combat_link_locked()) {
+        if (roomrom_combat_link_locked() || nes_ram[0x00ACu] == 0x40u) {
             joy = (u16)(joy & ~(BUTTON_LEFT|BUTTON_RIGHT|BUTTON_UP|BUTTON_DOWN));
         }
 
@@ -2727,7 +2815,9 @@ void roomrom_debug_tick(void)
             /* 2026-05-17 — teleport now spawns enemies for the destination
              * room (mirrors scroll path at line ~1727). Without this, jumping
              * rooms via debug teleport leaves ObjType[] empty. */
-            enemy_loop_room_init(s_room_id, (unsigned char)s_scene);
+            enemy_loop_room_init(s_room_id, (unsigned char)s_scene,
+                s_scene == SCENE_UW ? roomrom_uw_room_render_get_level() : 0u,
+                s_scene == SCENE_UW ? roomrom_uw_room_render_get_quest() : 0u);
         } else if (s_move_style == MOVE_STYLE_ALTTP) {
             /* ALTTP-style 8-direction movement, ported from
              * github.com/snesrev/zelda3 src/player.c Link_HandleVelocity
@@ -2914,13 +3004,8 @@ void roomrom_debug_tick(void)
                         c_obj_shove(0u);
                         players[0].x = (short)nes_ram[0x0070u];
                         players[0].y = (short)nes_ram[0x0084u];
-                        /* Suppress player input movement while shoved. */
-                        moving_dir = LINK_DIR_NONE;
-                    } else if (nes_ram[0x04F0u] != 0u) {
-                        /* Stun timer non-zero but shove finished: keep
-                         * Link locked out from movement for the rest of
-                         * the invincibility window (NES Z_01.asm:5708
-                         * LINK_STUN_TIMER gates Link_Move). */
+                        /* NES Walker_Move uses Obj_Shove instead of input
+                         * while shove direction is nonzero. */
                         moving_dir = LINK_DIR_NONE;
                     }
                 }
@@ -2968,21 +3053,22 @@ void roomrom_debug_tick(void)
          * via the room-change reset). Internally guards on UW + WALK. */
         roomrom_pushblock_tick();
 
-        /* Task 5.9: item pickup. Reads cached per-room meta (refreshed
-         * in load_room) — no per-tick 969-row scan. */
+        /* NES source: Z_04.asm:Ganon_Dying; Z_01.asm:TryTakeRoomItem.
+         * Drained C: cave_dispatch.c:cave_try_take_room_item.
+         * Coverage: PARTIAL native room reward rendering/pickup.
+         * Stance: EXTEND. Slot 19 owns live state/position; Ganon moves
+         * the Power Triforce to his ashes after room entry. */
         if (s_scene == SCENE_UW && s_cur_room_has_item &&
-            s_cur_room_item_meta.active_at_spawn &&
+            (nes_ram[0x00BFu] & 0x80u) == 0u &&
             !roomrom_uw_item_taken(s_room_id)) {
-            short ix = (short)s_cur_room_item_meta.item_x;
-            short iy = (short)((short)s_cur_room_item_meta.item_y +
-                                ROOMROM_PLAYFIELD_TOP_PX);
-            short fx = players[0].x;
-            short fy = (short)(players[0].y + 0x0B);
-            if (fx >= ix - 8 && fx <= ix + 16 &&
-                fy >= iy && fy <= iy + 16) {
-                roomrom_uw_item_pickup(
+            short ix = (short)nes_ram[0x0083u]; /* ObjX + 19 */
+            short iy = (short)nes_ram[0x0097u]; /* ObjY + 19 */
+            roomrom_sprites_set_room_item(ix, iy,
+                                          nes_ram[0x00ABu], 0u);
+            if (roomrom_uw_item_try_pickup(
                     roomrom_uw_room_render_get_level(),
-                    s_room_id, s_cur_room_item_meta.item_id);
+                    s_room_id, (unsigned char)players[0].x,
+                    (unsigned char)players[0].y)) {
                 roomrom_sprites_clear_room_item();
             }
         }
@@ -3029,7 +3115,8 @@ void roomrom_debug_tick(void)
                     out.dest_quest      = ctrl[5];
                     out.dest_room_id    = ctrl[6];
                     out.dest_link_x     = 120;
-                    out.dest_link_y     = 128;
+                    /* Match the normal UW warp grid (transition.c: spawn Y133). */
+                    out.dest_link_y     = (ctrl[3] == SCENE_UW) ? 133 : 128;
                     out.dest_link_face  = ROOMROM_MAIN_LINK_FACE_DOWN;
                     out.dest_redux_flag = 0u;
                     roomrom_main_apply_warp_outcome(&out);

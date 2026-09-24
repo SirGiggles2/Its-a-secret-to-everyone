@@ -89,9 +89,9 @@
  * no longer applies; SUBPAL_COUNT=1 reflects sparse layout.
  * BG_TILE_COUNT_PER_PAL retained as 256 for any consumer querying the
  * NES tile ID domain (not VRAM bank size). */
-#define ROOMROM_BG_TILE_COUNT_PER_PAL   632u    /* MUST equal BG_SPARSE_TILE_COUNT (bg_sparse_chr.h). 632 after adding UW dungeon-map glyphs $E2-$F1 + $F5 + level-map $FD/$FE to gen_bg_sparse.py (was 614). Re-bump on any atlas regen. */
+#define ROOMROM_BG_TILE_COUNT_PER_PAL   637u    /* MUST equal BG_SPARSE_TILE_COUNT (bg_sparse_chr.h). 637 including Original HUD map glyphs $FB-$FF. Re-bump on atlas regen. */
 #define ROOMROM_BG_SUBPAL_COUNT         1u      /* sparse: no per-sub-pal copies */
-#define ROOMROM_SPR_TILE_BASE           633u    /* 1 + ROOMROM_BG_TILE_COUNT_PER_PAL (632). Was 615 (=1+614) pre-UW-map-glyphs. All SPR/ITEM/SCENE_OBJ bases derive from this -> ripple consistently. */
+#define ROOMROM_SPR_TILE_BASE           638u    /* 1 + ROOMROM_BG_TILE_COUNT_PER_PAL (637). All SPR/ITEM/SCENE_OBJ bases derive from this -> ripple consistently. */
 #define ROOMROM_SPR_TILE_COUNT_PER_PAL  287u    /* common(238)+walk(32)+attack(16)=286 used, 1 slack. Reduced from 312 (-25 tiles) to make ITEM bank fit at 56 tiles/sub-pal x4 = 224 tiles after 8x16 mode parity work (bomb +1 tile, explosion +6 tiles for 16x16 mirrored). Post-Phase-B (2026-05-18): ITEM bank shrank to 70 tiles single-copy, leaving 140 headroom tiles (1382..1521) for future SPR expansion without VDP table relocation. */
 #define ROOMROM_SPR_SUBPAL_COUNT        1u      /* SPR bank stays 1x (sub-pal 0 only) physically. Phase D unblock (2026-05-18): future sprites needing sub-pal 1/2 can use this bank at 1x VRAM cost — Genesis OAM pal field selects PAL2/PAL3 (loaded with NES SPR sub-pal 1/2 colors by roomrom_bg_palette_load_palram_full per src/game/world/bg_palette.h CRAM target). Helper: ROOMROM_SUBPAL_PAL(s) in sprite_render.c maps sub_pal 0/1/2 -> PAL1/PAL2/PAL3 for any sprite renderer. No new tile copies required. */
 
@@ -154,8 +154,27 @@
  *   UWSPBoss3468 -> L3, L4, L6, L8   (Manhandla / Gleeok / Digdogger / Gohma-style)
  *   UWSPBoss9    -> L9               (Ganon)
  */
+/* Common fireball art ($44/$45) must survive the scene/boss overlay.
+ * 1300..1305 are the existing cloud bank; 1306..1307 are reserved here. */
+#define ROOMROM_CLOUD_TILE_BASE 1300u
+#define ROOMROM_CLOUD_TILE_COUNT 6u
+#define ROOMROM_FIREBALL_TILE_BASE 1306u
+#define ROOMROM_FIREBALL_TILE_COUNT 2u
+#define ROOMROM_SPARK_TILE_BASE 1308u
+#define ROOMROM_SPARK_TILE_COUNT 4u
+/* The pause inventory owns 1280..1295. Its ROM-derived marker pair
+ * (indices 14/15) is also uploaded at gameplay boot for the Original HUD. */
+#define ROOMROM_SUBSCREEN_SPRITE_TILE_BASE 1280u
+#define ROOMROM_SUBSCREEN_SPRITE_TILE_COUNT 16u
+#define ROOMROM_HUD_COMPASS_MARKER_TILE 1294u
+
 #define ROOMROM_BOSS_TILE_BASE          (ROOMROM_SPR_TILE_BASE + 44u)
 #define ROOMROM_BOSS_TILE_COUNT         64u
 #define ROOMROM_BOSS_SUBPAL_COUNT       1u
+
+/* Palette 3 boss sprites use PAL1[12..15]. A biased copy preserves
+ * all four NES palettes without changing palettes used by Link/FX. */
+#define ROOMROM_BOSS_SUBPAL3_TILE_BASE  (ROOMROM_ITEM_TILE_BASE + ROOMROM_ITEM_TILE_COUNT_PER_PAL * ROOMROM_ITEM_SUBPAL_COUNT)
+#define ROOMROM_BOSS_SUBPAL3_TILE_COUNT 64u
 
 #endif

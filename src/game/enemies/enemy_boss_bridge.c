@@ -247,7 +247,7 @@ void c_aquamentus_draw(unsigned int slot)
      * is constant 3 (palette row 7 = level palette); when temporarily
      * invincible it cycles palette rows for a hit-flash. */
     const unsigned char attr = (unsigned char)(
-        ((unsigned char)ENEMY_INVINCIBILITY(slot) & 0x03u) ^ 0x03u);
+        ((unsigned char)ENEMY_HIT_REACTION(slot) & 0x03u) ^ 0x03u);
 
     /* Loop sprite_idx = 5..0 inclusive. */
     signed char sprite_idx;

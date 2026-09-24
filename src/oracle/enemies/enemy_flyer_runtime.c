@@ -200,6 +200,12 @@ void enrt_move_flyer(unsigned int slot) {
         ENEMY_Y(slot)--;
         ENEMY_FLYER_Y_FINE(slot)--;
     }
+
+    /* NES Z_04.asm:MoveFlyer @End runs only after the fractional speed
+     * carries into a whole-pixel move. $0437 drives Keese/Peahat frames;
+     * BoundFlyer reverses movement at the room edge. */
+    ENEMY_FLAP_PHASE(slot)++;
+    enrt_bound_flyer(slot);
 }
 
 void enrt_bound_flyer(unsigned int slot) {

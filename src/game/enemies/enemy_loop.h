@@ -46,7 +46,8 @@ extern const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX];
 /* Called on room load and on scroll-finalize. Decodes the room's
  * ObjList template into ObjType+slot for slots 1..11, clears scratch
  * state, and dispatches enemy_init_fns[ENEMY_TYPE(slot)] when set. */
-void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id);
+void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id,
+                          unsigned char level, unsigned char quest);
 
 /* Empty-clear every enemy slot (1..11) WITHOUT respawning. Used by
  * cave_init so caves start on a NES-fresh object page (no surviving OW

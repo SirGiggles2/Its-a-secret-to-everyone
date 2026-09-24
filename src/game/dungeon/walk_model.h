@@ -22,7 +22,9 @@
 #define UW_WALK_DOOR_N 3u
 
 #define UW_WALK_VISUAL_X_BIAS_PX 0
-#define UW_WALK_NES_PLAYFIELD_TOP_PX 0x38
+/* GetCollidableTile subtracts NES HUD height $40. The Genesis
+ * display crop is not part of the gameplay/tile-cache coordinate space. */
+#define UW_WALK_NES_PLAYFIELD_TOP_PX 0x40
 #define UW_WALK_DOORWAY_H_Y 0x85
 #define UW_WALK_DOORWAY_V_X (0x78 + UW_WALK_VISUAL_X_BIAS_PX)
 #define UW_WALK_DOORWAY_W_MIN (0x00 + UW_WALK_VISUAL_X_BIAS_PX)
@@ -33,7 +35,7 @@
 #define UW_WALK_DOORWAY_N_MAX 0x56
 #define UW_WALK_DOORWAY_S_MIN 0xB5
 #define UW_WALK_DOORWAY_S_MAX 0xD6
-#define UW_WALK_DOWN_ASIS_Y 0xD5
+#define UW_WALK_DOWN_ASIS_Y 0xDD
 
 #define UW_WALK_EDGE_WEST_X 0
 #define UW_WALK_EDGE_EAST_X 240

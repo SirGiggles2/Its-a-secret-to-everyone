@@ -3,7 +3,9 @@
 Per Rule D1 (drain-first, NES-secondary). Each in-scope type has 4-line
 header citing NES source, drained C, coverage, stance.
 
-## Walker (19)
+## Walker (20 records; Octorok coverage is partial)
+
+[07-0A Octoroks](walker/07_0A_octoroks.md) ·
 
 [01 BlueLynel](walker/01_blue_lynel.md) ·
 [02 RedLynel](walker/02_red_lynel.md) ·
@@ -41,7 +43,9 @@ header citing NES source, drained C, coverage, stance.
 [22 FlyingGhini](flyer/22_flying_ghini.md) ·
 [46 GleeokHead](flyer/46_gleeok_head.md)
 
-## Jumper (4)
+## Jumper (5 records; Tektite coverage is partial)
+
+[0D-0E Tektites](jumper/0D_0E_tektites.md) ·
 
 [0F BlueLeever](jumper/0F_blue_leever.md) ·
 [10 RedLeever](jumper/10_red_leever.md) ·
@@ -84,11 +88,17 @@ header citing NES source, drained C, coverage, stance.
 [5E FluteSecret](npc/5E_flute_secret.md) ·
 [60 DroppedItem](npc/60_dropped_item.md)
 
-## Out of scope (excluded per user)
+## Scope note
 
-Octoroks $07/$08/$09/$0A, Tektites $0D/$0E. Baseline at
-`build/probes/baseline_outofscope_gen.txt`. Octorok inline fix
-landed (commit b760610d) but no per-type doc.
+These families were excluded from the original audit scope, but are now
+included in the user's whole-game enemy recovery audit. The old baseline
+remains useful historical/regression evidence; it is not a reason to exclude
+them from acceptance.
+
+Octoroks and Tektites were excluded from the original audit, but are now
+included in the user's whole-game enemy recovery scope. Their rows above link
+to the current partial evidence. The old baseline remains useful historical
+regression evidence; it is not a reason to exclude them from acceptance.
 
 ## Related
 

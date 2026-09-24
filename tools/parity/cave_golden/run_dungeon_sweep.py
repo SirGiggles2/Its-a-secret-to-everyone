@@ -16,7 +16,7 @@ Usage:
   python run_dungeon_sweep.py 1 1 --only-diff
   python run_dungeon_sweep.py 1 1 --rooms 0x73,0x63
 """
-import subprocess, sys, time, json, pathlib, argparse, re
+import subprocess, sys, time, json, pathlib, argparse, re, tempfile, shutil
 
 ROOT     = pathlib.Path(__file__).resolve().parents[3]
 BIZHAWK  = r"C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms\BizHawk-2.11-win-x64"
@@ -30,26 +30,46 @@ GEN_PROBE = r"C:\Users\Jake Diggity\Documents\GitHub\FINAL TRY\tools\parity\cave
 DIFF      = ROOT / "tools" / "parity" / "cave_golden" / "cave_byte_diff.py"
 
 
-def emuhawk_running():
-    out = subprocess.run(["tasklist"], capture_output=True, text=True).stdout.lower()
-    return "emuhawk" in out
-
-
 def launch(prelude_path, rom, timeout=600):
-    subprocess.run([
-        "powershell", "-Command",
-        f"Start-Process -FilePath '{EMUHAWK}' "
-        f"-ArgumentList '--lua={prelude_path}','{rom}' "
-        f"-WorkingDirectory '{BIZHAWK}'"
-    ])
-    time.sleep(4)
-    waited = 0
-    while emuhawk_running() and waited < timeout:
-        time.sleep(3); waited += 3
-    if emuhawk_running():
-        subprocess.run(["taskkill", "/F", "/IM", "EmuHawk.exe"], capture_output=True)
-        return False
-    return True
+    # Never inspect/kill unrelated emulator processes or write their profile.
+    sys.path.insert(0, str(ROOT / "tools"))
+    from dungeon_harness.run_all import short_path
+    with tempfile.TemporaryDirectory(prefix="zelda-sweep-") as staging:
+        stage = pathlib.Path(staging)
+        settings = json.loads((pathlib.Path(BIZHAWK) / "config.ini").read_text(encoding="utf-8-sig"))
+        settings.update(SingleInstanceMode=False, SoundEnabled=False,
+                        RunInBackground=True, AcceptBackgroundInput=False)
+        def disable_autoload(value):
+            if isinstance(value, dict):
+                for key, child in value.items():
+                    if key == "AutoLoad": value[key] = False
+                    else: disable_autoload(child)
+            elif isinstance(value, list):
+                for child in value: disable_autoload(child)
+        disable_autoload(settings)
+        for entry in settings.get("PathEntries", {}).get("Paths", []):
+            if entry["Type"] == "Firmware":
+                entry["Path"] = str(pathlib.Path(BIZHAWK) / "Firmware")
+            elif entry["Type"] in {"Base", "Save RAM", "Savestates", "Screenshots", "Cheats"}:
+                dest = stage / entry["System"] / entry["Type"]
+                dest.mkdir(parents=True, exist_ok=True)
+                entry["Path"] = str(dest)
+        config = stage / "config.ini"
+        config.write_text(json.dumps(settings), encoding="utf-8")
+        startup = subprocess.STARTUPINFO()
+        startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        startup.wShowWindow = 0
+        command = [short_path(pathlib.Path(EMUHAWK)), "--gdi",
+                   "--config=" + short_path(config),
+                   "--lua=" + short_path(pathlib.Path(prelude_path)),
+                   short_path(pathlib.Path(rom))]
+        proc = subprocess.Popen(command, cwd=BIZHAWK, startupinfo=startup)
+        try:
+            return proc.wait(timeout=timeout) == 0
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
+            return False
 
 
 def manifest_rooms(level, quest):
@@ -91,18 +111,23 @@ def run_platform(level, quest, rooms, which):
         return launch(prelude, GEN_ROM)
 
 
-def diff_room(level, quest, room):
+def diff_room(level, quest, room, capture_started=None):
     nes = f"{OUT_DIR}\\nes_L{level}Q{quest}_R{room:02X}"
     gen = f"{OUT_DIR}\\gen_L{level}Q{quest}_R{room:02X}"
     if not pathlib.Path(nes, "f120.bin").exists():
         return ("NO-NES", -1)
     if not pathlib.Path(gen, "f120.bin").exists():
         return ("NO-GEN", -1)
+    if capture_started is not None and any(
+        pathlib.Path(folder, "f120.bin").stat().st_mtime < capture_started
+        for folder in (nes, gen)
+    ):
+        return ("STALE", -1)
     r = subprocess.run([sys.executable, str(DIFF), "--nes", nes, "--gen", gen],
                        capture_output=True, text=True)
     m = re.search(r"GATE DIVERGENCES.*?:\s*(\d+)", r.stdout)
     n = int(m.group(1)) if m else -1
-    verdict = "PASS" if "GATE PASS" in r.stdout else ("FAIL" if "GATE FAIL" in r.stdout else "?")
+    verdict = "PASS" if r.returncode == 0 and "GATE PASS" in r.stdout else ("FAIL" if "GATE FAIL" in r.stdout else "?")
     return (verdict, n)
 
 
@@ -116,25 +141,36 @@ def main():
 
     rooms = ([int(x, 16) for x in a.rooms.split(",")] if a.rooms
              else manifest_rooms(a.level, a.quest))
+    if not rooms:
+        print("ERROR: no rooms selected")
+        return 2
+    capture_started = time.time() if not a.only_diff else None
     print(f"L{a.level}Q{a.quest}: {len(rooms)} rooms = "
           + " ".join(f"${r:02X}" for r in rooms), flush=True)
 
     if not a.only_diff:
         # stage Debug.md fresh
         if GEN_SRC.exists():
-            subprocess.run(["cp", str(GEN_SRC), GEN_ROM])
+            shutil.copy2(GEN_SRC, GEN_ROM)
+        else:
+            print("ERROR: current Genesis build missing")
+            return 2
         print("  capturing NES golden (one launch, level loaded once)…", flush=True)
         ok_n = run_platform(a.level, a.quest, rooms, "nes")
         print(f"  NES launch: {'EXIT' if ok_n else 'TIMEOUT'}", flush=True)
+        if not ok_n:
+            return 2
         print("  capturing Gen golden (one launch, probe-warp per room)…", flush=True)
         ok_g = run_platform(a.level, a.quest, rooms, "gen")
         print(f"  Gen launch: {'EXIT' if ok_g else 'TIMEOUT'}", flush=True)
+        if not ok_g:
+            return 2
 
     print(f"\n{'room':6} {'verdict':8} {'BG-div':7}")
     print("-" * 24)
     npass = 0
     for r in rooms:
-        verdict, n = diff_room(a.level, a.quest, r)
+        verdict, n = diff_room(a.level, a.quest, r, capture_started)
         if verdict == "PASS":
             npass += 1
         print(f"${r:02X}    {verdict:8} {n if n>=0 else '-':>7}", flush=True)

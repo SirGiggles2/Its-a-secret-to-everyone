@@ -21,6 +21,23 @@
 #include "world/progress_dispatch.h"      /* progress_get_room_flag_uw_item_state */
 #include "platform_abi.h"
 
+/* NES source: Z_05.asm:CheckUnderworldSecrets / CheckSecretTriggerAllDead.
+ * Drained C: src/game/room/room_dispatch.c:room_check_has_living_monsters.
+ * Coverage: PARTIAL (foes-for-item activation after the living-monster scan).
+ * Stance: EXTEND.
+ */
+void boss_framework_check_item_secret(unsigned char room_id)
+{
+    if (BOSS_CUR_LEVEL != 0u && RAM(0x034Du) != 0u &&
+        (DUNGEON_LBA_F(room_id) & BOSS_LBA_F_SECRET_MASK) ==
+            BOSS_SECRET_TRIGGER_FOES_ITEM &&
+        BOSS_ROOM_ITEM_STATE != 0u &&
+        progress_get_room_flag_uw_item_state() == 0u) {
+        BOSS_ROOM_ITEM_STATE = 0u;
+        RAM(0x0602u) = 2u; /* Tune1Request: item appears. */
+    }
+}
+
 void boss_framework_room_init(unsigned char room_id)
 {
     unsigned char attrs_e;

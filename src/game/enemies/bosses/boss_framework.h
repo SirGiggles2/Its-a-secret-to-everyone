@@ -20,5 +20,6 @@
  */
 
 void boss_framework_room_init(unsigned char room_id);
+void boss_framework_check_item_secret(unsigned char room_id);
 
 #endif /* GAME_ENEMIES_BOSSES_BOSS_FRAMEWORK_H */

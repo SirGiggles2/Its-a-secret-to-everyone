@@ -2,21 +2,13 @@
 #include "uw_map_builder.h"
 #include "../../abi/platform_abi.h"          /* nes_ram, NES_SRAM_BASE,
                                                 NES_SRAM_ROOM_FLAGS_PTR_LO/HI */
-#include "../../../data/rooms/dungeons_offsets.h"  /* FoeCounts offsets */
-
-extern const unsigned char rooms_dungeons[];
-
-/* rooms_dungeons[] layout (data/rooms/dungeons_offsets.h). */
-#define LI_BASE        0x0C00u   /* LevelInfoUW1 */
-#define LI_STRIDE      0x0100u   /* 256 bytes / level */
-
-/* Field offsets RELATIVE to the per-level FoeCounts anchor ($6BA2):
- *   rotation  $6BAB - $6BA2 = 0x09
- *   triforce  $6BAE - $6BA2 = 0x0C
- *   map mask  $6BBD - $6BA2 = 0x1B  (16 bytes) */
-#define LI_ROT_REL     0x09u
-#define LI_TRI_REL     0x0Cu
-#define LI_MASK_REL    0x1Bu
+/* NES source: Z_05.asm:Submenu_WriteSheetMapRowTransferRecord.
+ * Drained C: uw_map_build / room_mark_room_visited.
+ * Coverage: PARTIAL live pause map and configuration; Stance: EXTEND.
+ * Use installed LevelInfo, shared with gameplay and selected quest. */
+#define LI_ROTATION 0x6BABu
+#define LI_TRIFORCE 0x6BAEu
+#define LI_MASK     0x6BBDu
 
 /* Installed LevelBlock attr tables in nes_ram (byte-aligned install). */
 #define LBA_A_BASE     0x687Eu
@@ -28,24 +20,16 @@ extern const unsigned char rooms_dungeons[];
 /* CalcOpenDoorwayMask LevelMasks (dir index 0..3 -> single bit). */
 static const unsigned char k_dir_masks[4] = { 0x01u, 0x02u, 0x04u, 0x08u };
 
-/* Blob index of the current level's FoeCounts anchor. */
-static unsigned short uw_foe_anchor(unsigned char level)
-{
-    return (unsigned short)(LI_BASE
-        + (unsigned short)(level - 1u) * LI_STRIDE
-        + ROOMROM_UW_LEVELINFO_FOE_COUNTS_OFFSET[level - 1u]);
-}
-
 unsigned char uw_map_rotation(unsigned char level)
 {
     if (level < 1u || level > 9u) return 0u;
-    return (unsigned char)(rooms_dungeons[uw_foe_anchor(level) + LI_ROT_REL] & 0x0Fu);
+    return (unsigned char)(nes_ram[LI_ROTATION] & 0x0Fu);
 }
 
 unsigned char uw_map_triforce_room(unsigned char level)
 {
     if (level < 1u || level > 9u) return 0u;
-    return rooms_dungeons[uw_foe_anchor(level) + LI_TRI_REL];
+    return nes_ram[LI_TRIFORCE];
 }
 
 /* NES FindDoorAttrByDoorBit (Z_05.asm:4520) collapsed to the 4 cardinal
@@ -133,13 +117,11 @@ void uw_map_build(unsigned char level, unsigned char out[8][16])
     }
 
     /* 3. Mask: blank cols where SubmenuMapMask[col] & MapRowMasks[row]==0
-     *    (Z_05.asm @MaskRooms). Mask read FoeCounts-anchored from the blob. */
+     *    (Z_05.asm @MaskRooms). Mask read from the installed level/quest configuration. */
     {
-        const unsigned char *mask16 =
-            &rooms_dungeons[uw_foe_anchor(level) + LI_MASK_REL];
         for (row = 0u; row < 8u; ++row)
             for (col = 0u; col < 16u; ++col)
-                if ((mask16[col] & MAP_ROW_MASK(row)) == 0u)
+                if ((nes_ram[LI_MASK + col] & MAP_ROW_MASK(row)) == 0u)
                     out[row][col] = 0xF5u;
     }
 }

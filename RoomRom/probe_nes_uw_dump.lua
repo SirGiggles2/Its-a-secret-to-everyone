@@ -339,6 +339,14 @@ local function hash_state(nt_rows, attr)
 end
 
 local function settle_and_capture(target)
+    -- NES source: Z_04.asm:Ganon_ScenePhase0/2. The L9Q1 chamber is
+    -- deliberately black during the entrance; a stable NT at Mode 5 is
+    -- too early to capture its actual playable graphics. Wait until the
+    -- scene enters combat before accepting the stable-window predicate.
+    local wait_for_ganon = target == 0x42
+        and os.getenv("CODEX_UW_LEVEL") == "9"
+        and os.getenv("CODEX_UW_QUEST") == "1"
+        and os.getenv("CODEX_UW_MAP_ID") == "orig"
     local stable = 0
     local prev_hash = nil
     local last_nt, last_attr, last_pal = nil, nil, nil
@@ -355,6 +363,7 @@ local function settle_and_capture(target)
         local rid  = u8(ROOM_ID)
         last_mode, last_sub, last_upd, last_mask, last_rid = mode, sub, upd, mask, rid
         if mode == 0x05 and sub == 0x00 and upd == 0x01
+           and (not wait_for_ganon or u8(0x0445) == 0x02)
            and (mask % 0x20) >= 0x18 and rid == target then
             local bg_spr = 0
             if bit32 and bit32.band then bg_spr = bit32.band(mask, 0x18)

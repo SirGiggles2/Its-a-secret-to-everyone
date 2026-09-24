@@ -15,8 +15,8 @@ verify together.
 | $47/$48 Patra (B) | $25/$26 PatraChild × 8 (B) | INIT (slots 2..9) | `Z_04.asm:9552` InitPatra            |
 | $41 Moldorm (B) | $5D DeadDummy (NPC)    | Tail segment death   | `Z_04.asm:4907` UpdateMoldorm        |
 | $1E Armos (W)   | $5D DeadDummy (NPC)    | Death                | `Z_04.asm:3302` UpdateArmos          |
-| $07-$0A Octorok | $53/$54 MonsterShot (P) | Shoot timer         | `Z_04.asm:1992` UpdateOctorock (OUT OF SCOPE) |
-| $0D/$0E Tektite | none                   | —                    | (OUT OF SCOPE)                       |
+| $07-$0A Octorok | $53/$54 MonsterShot (P) | Shoot timer         | `Z_04.asm:1992` UpdateOctorock (partial evidence: `walker/07_0A_octoroks.md`) |
+| $0D/$0E Tektite | none                   | —                    | partial evidence: `jumper/0D_0E_tektites.md` |
 | $20 Boulder (P) | none (kill-on-touch)   | —                    | `Z_04.asm:2168`                      |
 | $1F BoulderSet (P) | $20 Boulder × N (P) | Cycle                | `Z_04.asm:2168` UpdateBoulderSet     |
 | $0F BlueLeever (J) | none                | —                    | `Z_04.asm:2599`                      |
@@ -58,12 +58,16 @@ Per-family loop must include cross-family children. For each family:
 6. **NPC** — $5D DeadDummy is universal; verify it ticks correctly
    across all parent deaths.
 
-## Out-of-scope spawn risk
+## Historical exclusion baseline
+
+Octoroks and Tektites are included in the current whole-game recovery scope.
+This historical baseline still detects changes to their existing spawn path,
+but it no longer means these types are excluded from acceptance.
 
 Octoroks ($07-$0A) spawn $53/$54 MonsterShot. If Phase B5 (projectile)
 fixes MonsterShot behavior, octorok shoot output changes. The change
 is *intended* (octorok shots become NES-correct). Verify
-out-of-scope baseline (A3) catches this expected shift — it is a
+historical baseline (A3) catches this expected shift — it is a
 "behavior more like NES" change, accepted per user direction.
 
 Tektites ($0D/$0E) share `enrt_update_tektite_or_boulder` with $20

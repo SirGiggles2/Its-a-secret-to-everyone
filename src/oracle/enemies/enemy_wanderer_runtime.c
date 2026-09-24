@@ -107,20 +107,16 @@ void enrt_wanderer_target_player(unsigned int slot) {
     goto check_vertical_distance;
 
 turn_vertically:
-    /* Pick D3 = 8 (UP) if LINK_Y < OBJ_Y, 4 (DOWN) if LINK_Y > OBJ_Y;
-     * if equal, fall through to check_vertical_distance.
-     */
+    /* NES @TurnVertically chooses DOWN on equality too: CMP/BCC selects
+     * UP only for target Y < object Y, then the BNE jumps unconditionally
+     * because the fallback direction is $04. */
     if (LINK_Y < ENEMY_Y(slot)) {
         d3_dir = 8;
-        set_dir = 1;
-        goto set_dir_toward_target;
-    }
-    if (LINK_Y > ENEMY_Y(slot)) {
+    } else {
         d3_dir = 4;
-        set_dir = 1;
-        goto set_dir_toward_target;
     }
-    /* equal: fall through */
+    set_dir = 1;
+    goto set_dir_toward_target;
 
 check_vertical_distance:
     {

@@ -20,14 +20,10 @@
 #include "inventory_uw_tilemap.h"
 #include "inventory_sprite_chr.h"
 #include "../../../RoomRom/src/roomrom_main_state.h"  /* roomrom_main_current_scene */
+#include "../room/room_dispatch.h" /* native per-level map/compass ownership */
 #include "../dungeon/uw_render.h"  /* roomrom_uw_room_render_get_level */
-/* NOTE: src/game/dungeon/uw_map_builder.{c,h} holds a complete NES-faithful
- * dynamic dungeon-map glyph builder (Submenu_WriteSheetMapRowTransferRecord),
- * NOT wired here: it is blocked on a substrate data bug — the regenerated
- * data/rooms/dungeons.c (commit 5931e024) LevelBlockAttrsA/B door tables
- * diverge from live NES SRAM (full NES AttrsA(128) absent from the blob;
- * AttrsA[$73] blob $06 vs NES $A2). Re-extract those tables, then wire the
- * builder + replace the hardcoded k_uw_* tables with its uw_map_*() reads. */
+#include "../dungeon/uw_map_builder.h"
+static unsigned char s_dungeon_map[8][16];
 
 /* Scene captured on subscreen enter: 0 = OW (triforce), 1 = UW (dungeon
  * map). Selects the tilemap/sub-pal source in write_inventory_row. */
@@ -110,7 +106,7 @@ static void sat_write(unsigned char slot, unsigned short y,
  * 1280) on enter — holds the live subscreen tiles absent from / wrong in
  * the items atlas: idx 0/1 recorder $24, 2/3 candle $26, 4/5 raft $6C,
  * 6/7 ladder $76 (inventory_sprite_chr.c). */
-#define DSPR_BASE 1280u
+#define DSPR_BASE ROOMROM_SUBSCREEN_SPRITE_TILE_BASE
 #define DSPR(idx) (unsigned short)(DSPR_BASE + (idx))
 /* V3.0 (2026-05-30): byte-exact remap. The SUBSCREEN tile for each item
  * slot is Anim_ItemFrameTiles[Anim_ItemFrameOffsets[slot]] (Z_01.asm:5194-
@@ -120,24 +116,26 @@ static void sat_write(unsigned char slot, unsigned short y,
  * what matters is the byte content. Derived from pause_byte_diff active
  * capture (tiles + sub-pals) + the NES Anim tables. Three subscreen icons
  * ($24 recorder, $26 candle, $6C raft) are NOT in the items atlas yet and
- * are extracted in inventory_subscreen_chr (see below). */
+ * are extracted in inventory_subscreen_chr (see below). The later atlas
+ * offsets were rechecked against live NES pause CHR and Genesis VRAM: the
+ * previous lookup pointed two tiles early for several icons. */
 static const unsigned short k_inv_slot_to_vram_tile[INV_SLOT_COUNT] = {
     INV_ITEM(6),    /* 0  boomerang  NES $36 -> atlas idx 6  (BOOMERANG) */
     INV_ITEM(20),   /* 1  bombs      NES $34 -> atlas idx 20 (bytes $34) */
     INV_ITEM(14),   /* 2  arrow      NES $28 -> atlas idx 14 (bytes $28) */
-    INV_ITEM(74),   /* 3  bow        NES $2A -> atlas idx 74 (bytes $2A) */
+    INV_ITEM(76),   /* 3  bow        NES $2A -> atlas idx 76 (bytes $2A) */
     DSPR(2),        /* 4  candle    NES $26 -> dedicated CHR (live extract) */
     DSPR(0),        /* 5  recorder  NES $24 -> dedicated CHR (live extract) */
-    INV_ITEM(76),   /* 6  food       NES $22 -> atlas idx 76 (bytes $22) */
-    INV_ITEM(78),   /* 7  potion     NES $40 -> atlas idx 78 (bytes $40) */
-    INV_ITEM(80),   /* 8  wand       NES $4A -> atlas idx 80 (bytes $4A) */
+    INV_ITEM(78),   /* 6  food       NES $22 -> atlas idx 78 (bytes $22) */
+    INV_ITEM(80),   /* 7  potion     NES $40 -> atlas idx 80 (bytes $40) */
+    INV_ITEM(82),   /* 8  wand       NES $4A -> atlas idx 82 (bytes $4A) */
     DSPR(4),        /* 9  raft      NES $6C -> dedicated CHR (live extract) */
-    INV_ITEM(64),   /* A  book       NES $42 -> atlas idx 64 (bytes $42) */
-    INV_ITEM(62),   /* B  ring       NES $46 -> atlas idx 62 (bytes $46) */
+    INV_ITEM(66),   /* A  book       NES $42 -> atlas idx 66 (bytes $42) */
+    INV_ITEM(64),   /* B  ring       NES $46 -> atlas idx 64 (bytes $46) */
     DSPR(6),        /* C  ladder     NES $76 -> dedicated CHR (live; atlas $76 wrong) */
-    INV_ITEM(66),   /* D  magic_key  NES $2C -> atlas idx 66 (bytes $2C) */
-    INV_ITEM(70),   /* E  bracelet   NES $4E -> atlas idx 70 (bytes $4E) */
-    INV_ITEM(72),   /* F  letter     NES $4C -> atlas idx 72 (bytes $4C) */
+    INV_ITEM(68),   /* D  magic_key  NES $2C -> atlas idx 68 (bytes $2C) */
+    INV_ITEM(72),   /* E  bracelet   NES $4E -> atlas idx 72 (bytes $4E) */
+    INV_ITEM(74),   /* F  letter     NES $4C -> atlas idx 74 (bytes $4C) */
     INV_ITEM(54),   /* 10 compass    NES $2E -> atlas idx 54 (COMPASS) */
     INV_ITEM(56),   /* 11 map        NES $32 -> atlas idx 56 (MAP) */
 };
@@ -200,7 +198,8 @@ static unsigned char tile_is_narrow(unsigned char nes_tile)
 }
 
 #define PLANE_A_BASE      0xC000u
-#define BLANK_TILE        1000u
+/* Shared VRAM contract: tile zero is blank; tile1000 is item art. */
+#define BLANK_TILE        ROOMROM_BLANK_TILE
 #define SUBSCREEN_SUBPAL  0u  /* PAL0 for BG */
 
 static unsigned char s_active = 0u;
@@ -405,14 +404,15 @@ static unsigned char tile_subpal(unsigned short nes_row, unsigned char tid)
     return 0u;
 }
 
-/* NES VScroll offset for subscreen ACTIVE state. */
-#define NES_VSCROLL_NES_ROW_OFFSET  8u
+/* BizHawk's visible NES frame omits the first eight scanlines. The active
+ * subscreen starts at NT row 9 in the 224-line Genesis viewport. */
+#define NES_VSCROLL_NES_ROW_OFFSET  9u
 
 static void write_inventory_row(unsigned short gen_row)
 {
     unsigned short cells[32];
     unsigned short i;
-    /* Gen row 0 = NES NT row 8 (VScroll=$41 offset). */
+    /* Gen row 0 = NES NT row 9 after the visible-frame crop. */
     unsigned short nes_row = (unsigned short)(gen_row + NES_VSCROLL_NES_ROW_OFFSET);
     if (nes_row >= 30u) {
         unsigned short blank_attr = RENDER_TILE_ATTR_FULL(0u, 0, 0, 0, BLANK_TILE);
@@ -421,23 +421,15 @@ static void write_inventory_row(unsigned short gen_row)
         return;
     }
     for (i = 0; i < 32u; ++i) {
-        /* Per-cell tile + sub-pal from the captured NES NT2 (OW triforce or
-         * UW dungeon). L1 map region is the byte-exact captured state.
-         *
-         * G4 dynamic glyph builder (uw_map_build) is BLOCKED: the Gen
-         * rooms_dungeons[] LevelBlockAttrsA/B door data diverges from live
-         * NES SRAM (AttrsA[$73]: blob $06 vs NES $A2; full NES AttrsA(128)
-         * absent from the blob; only 16/128 rooms match) — a substrate
-         * data-extraction bug (commit 5931e024 "regen from live NES SRAM")
-         * separate from this subscreen. Driving the glyphs from that data
-         * would corrupt the byte-exact L1 map, so the override is disabled
-         * until dungeons.c door tables are re-extracted to match NES. The
-         * per-level LevelInfo config (rotation/mask/triforce) IS correct and
-         * still drives the markers below via uw_map_*(). */
+        /* Captured frame; live visited-room glyphs replace the map sheet. */
         unsigned char tid = s_subscreen_uw ? k_inventory_uw_tilemap[nes_row][i]
                                            : k_inventory_tilemap[nes_row][i];
         unsigned char sp  = s_subscreen_uw ? k_inventory_uw_subpal[nes_row][i]
                                            : k_inventory_subpal[nes_row][i];
+        /* NES sheet transfers target NT2 rows21..28, columns12..27. */
+        if (s_subscreen_uw && nes_row >= 21u && nes_row < 29u &&
+            i >= 12u && i < 28u)
+            tid = s_dungeon_map[nes_row - 21u][i - 12u];
         unsigned short vram = tile_for(tid, sp);
         cells[i] = RENDER_TILE_ATTR_FULL(0u, 0, 0, 0, vram);
     }
@@ -452,16 +444,17 @@ static void write_inventory_row(unsigned short gen_row)
  *   slot $10 (compass) -> X=$2C Y=$9E
  *   slot $11 (map)     -> X=$2C Y=$76
  *
- * Genesis SAT offset: NES OAM Y -> SAT Y = OAM_Y + 0x81 (Y+1 NES quirk +
- * Genesis +128). X = OAM_X + 0x80.
+ * Genesis SAT offset: NES OAM Y -> SAT Y = OAM_Y + 0x79 (Y+1 NES quirk,
+ * Genesis +128, visible NES frame cropped by eight lines). X = OAM_X + 0x80.
  */
+#define SUBSCREEN_SAT_Y_OFFSET 0x79u
 static const unsigned char k_submenu_item_xs[16] = {
     0x80u, 0x98u, 0xACu, 0xB4u, 0xC8u,  /* slots 0..4 */
     0x80u, 0x98u, 0xB0u, 0xC8u,         /* slots 5..8 */
     0x80u, 0x94u, 0xA0u, 0xB0u, 0xC0u, 0xCCu, 0xB0u   /* slots 9..$0F */
 };
 
-/* Slot Y per range. Returns NES OAM Y; caller adds 0x81 for SAT. */
+/* Slot Y per range. Returns NES OAM Y; caller applies the viewport offset. */
 static unsigned char slot_to_nes_y(unsigned char slot)
 {
     if (slot < 5u)  return 0x36u;
@@ -531,6 +524,9 @@ static unsigned char slot_to_item(unsigned char slot, unsigned char *tile_out)
 
 /* Check if NES inventory slot N is owned by player. Reads g_inventory
  * fields aligned with NES Items[] array layout (Variables.inc:236+). */
+/* NES source: Z_05.asm:HasCompass/HasMap.
+ * Drained C: room_dispatch.c:room_has_compass/room_has_map.
+ * Coverage: PARTIAL pause ownership and target visibility. Stance: EXTEND. */
 static unsigned char slot_owned(unsigned char slot)
 {
     switch (slot) {
@@ -550,8 +546,8 @@ static unsigned char slot_owned(unsigned char slot)
         case 0x0D: return g_inventory.magic_key;
         case 0x0E: return g_inventory.bracelet;
         case 0x0F: return g_inventory.letter;
-        case 0x10: return (g_inventory.compass_q1 || g_inventory.compass_l9) ? 1u : 0u;
-        case 0x11: return (g_inventory.map_q1 || g_inventory.map_l9) ? 1u : 0u;
+        case 0x10: return room_has_compass() ? 1u : 0u;
+        case 0x11: return room_has_map() ? 1u : 0u;
         default:   return 0u;
     }
 }
@@ -568,7 +564,7 @@ static const unsigned char k_inv_slot_to_nes_tile[INV_SLOT_COUNT] = {
  *   $F3 or [$20,$62) -> @Narrow   : single 8x16 sprite, +4 X centering.
  *   [$62,$6C)        -> @Slim/Wide : left tile + (tile+2) right, 8px apart.
  *   >= $6C           -> @Mirrored  : left tile + same tile h-flipped right.
- * Genesis SAT: X+128, Y+0x81 (NES +1 quirk + Gen +128). */
+ * Genesis SAT: X+128, Y+SUBSCREEN_SAT_Y_OFFSET. */
 static void draw_inv_slot(unsigned char slot, unsigned short nes_x, unsigned char nes_y)
 {
     if (slot >= INV_SLOT_COUNT) return;
@@ -577,7 +573,7 @@ static void draw_inv_slot(unsigned char slot, unsigned short nes_x, unsigned cha
 
     unsigned char  nes_tile = k_inv_slot_to_nes_tile[slot];
     unsigned char  pal      = k_inv_slot_to_pal[slot];
-    unsigned short sat_y    = (unsigned short)(nes_y + 0x81u);
+    unsigned short sat_y    = (unsigned short)(nes_y + SUBSCREEN_SAT_Y_OFFSET);
     unsigned char  wide     = (nes_tile != 0xF3u && nes_tile >= 0x62u);
 
     if (!wide) {
@@ -617,7 +613,7 @@ static void draw_marker_sprite(unsigned short nes_x, unsigned short nes_y,
 {
     unsigned short attr = RENDER_TILE_ATTR_FULL(pal, 0, 0, 0, tile);
     unsigned char  link = (unsigned char)(s_next_sat_slot + 1u);
-    sat_write(s_next_sat_slot, (unsigned short)(nes_y + 0x81u),
+    sat_write(s_next_sat_slot, (unsigned short)(nes_y + SUBSCREEN_SAT_Y_OFFSET),
               RENDER_SPRITE_SIZE(1, 2), link, attr, (unsigned short)(nes_x + 0x80u));
     ++s_next_sat_slot;
 }
@@ -627,7 +623,7 @@ static void draw_marker_sprite(unsigned short nes_x, unsigned short nes_y,
 static void draw_uw_item(unsigned short vram, unsigned short nes_x,
                          unsigned short nes_y, unsigned char pal, unsigned char wide)
 {
-    unsigned short sat_y = (unsigned short)(nes_y + 0x81u);
+    unsigned short sat_y = (unsigned short)(nes_y + SUBSCREEN_SAT_Y_OFFSET);
     if (!wide) {
         unsigned char lk = (unsigned char)(s_next_sat_slot + 1u);
         sat_write(s_next_sat_slot, sat_y, RENDER_SPRITE_SIZE(1, 2), lk,
@@ -675,10 +671,13 @@ static void draw_item_sprites(void)
      * in OW. Gate on CurLevel ($10) so OW matches NES (no compass/map). */
     {
         unsigned char room = nes_ram[0x00EBu];
+        /* Z_05.asm:UpdateMenuCommon1 reuses Z_01.asm:UpdatePositionMarker,
+         * which adds the installed LevelInfo offset to both status markers. */
+        short status_x_offset = (short)(signed char)nes_ram[0x6BACu];
         if (!s_subscreen_uw) {
             /* OW status-bar map marker: X=(room&$0F)*4+$11, Y=(room&$70)>>2
              * +$17, scrolled 175 px with the menu (Z_01.asm:4083). */
-            draw_marker_sprite((unsigned short)(((room & 0x0Fu) << 2) + 0x11u),
+            draw_marker_sprite((unsigned short)((short)(((room & 0x0Fu) << 2) + 0x11u) + status_x_offset),
                                (unsigned short)(((room & 0x70u) >> 2) + 0x17u + 175u),
                                RENDER_PAL1, DSPR(8));
         } else {
@@ -686,14 +685,7 @@ static void draw_item_sprites(void)
             /* CurLevel ($0010) is set reliably on the MODE toggle (s_uw_level
              * is not), so index the per-level map config by it. */
             unsigned char  level = nes_ram[0x0010u];
-            /* Per-level map rotation. The hardcoded k_uw_map_rotation table
-             * (L1 verified byte-exact vs NES) is the trusted source: the
-             * rooms_dungeons[] LevelInfo regen (commit 5931e024) reads back
-             * inconsistently at runtime (L1 came out rot=9, not $04), so the
-             * blob path (uw_map_rotation) is NOT used until that data is
-             * re-extracted + verified. L2-L9 entries pending those captures. */
-            unsigned char  rot   = (level >= 1u && level <= 9u)
-                                 ? (unsigned char)(k_uw_map_rotation[level] & 0x0Fu) : 0u;
+            unsigned char rot = uw_map_rotation(level);
             unsigned short rx  = (rot < 8u)
                 ? (unsigned short)(rot << 3)
                 : (unsigned short)(0u - (unsigned short)((16u - rot) << 3));
@@ -702,15 +694,14 @@ static void draw_item_sprites(void)
                                (unsigned short)(((room & 0xF0u) >> 1) + 0x69u),
                                RENDER_PAL1, DSPR(8));
             /* Status-bar map marker (UW cols *8 + $12; Y scrolled). */
-            draw_marker_sprite((unsigned short)(((room & 0x0Fu) << 3) + 0x12u),
+            draw_marker_sprite((unsigned short)((short)(((room & 0x0Fu) << 3) + 0x12u) + status_x_offset),
                                (unsigned short)(((room & 0x70u) >> 2) + 0x17u + 175u),
                                RENDER_PAL1, DSPR(8));
             /* Triforce/compass map marker: status-bar formula on
              * TriforceRoomId (NES sub-pal 3 -> PAL3). */
-            {
-                unsigned char tr = (level >= 1u && level <= 9u)
-                                 ? k_uw_triforce_room[level] : 0u;
-                draw_marker_sprite((unsigned short)(((tr & 0x0Fu) << 3) + 0x12u),
+            if (room_has_compass()) {
+                unsigned char tr = uw_map_triforce_room(level);
+                draw_marker_sprite((unsigned short)((short)(((tr & 0x0Fu) << 3) + 0x12u) + status_x_offset),
                                    (unsigned short)(((tr & 0x70u) >> 2) + 0x17u + 175u),
                                    RENDER_PAL0, DSPR(14));
             }
@@ -732,9 +723,13 @@ static void draw_item_sprites(void)
 
 void inventory_subscreen_enter(void)
 {
+    /* Native pickup/count ownership must be visible on the entry frame. */
+    inventory_sync_from_native();
     /* Capture scene: UW (dungeon) renders the map subscreen, OW the
      * triforce subscreen. Latched here so the whole open uses one source. */
     s_subscreen_uw = (roomrom_main_current_scene() == ROOMROM_MAIN_SCENE_UW) ? 1u : 0u;
+
+    if (s_subscreen_uw) uw_map_build(nes_ram[0x0010u], s_dungeon_map);
 
     /* L4 (Phase 7 v2): swap CRAM to NES subscreen palette before any
      * BG/sprite write so first rendered frame is correctly colored. */
@@ -885,7 +880,7 @@ static void draw_cursor(void)
 {
     /* Cursor Y: B-item row 1 = $36 (slot<5), row 2 = $46. */
     unsigned char  nes_y = (s_cursor_slot < 5u) ? 0x36u : 0x46u;
-    unsigned short sat_y = (unsigned short)(nes_y + 0x81u);
+    unsigned short sat_y = (unsigned short)(nes_y + SUBSCREEN_SAT_Y_OFFSET);
     unsigned char  nes_x = k_submenu_cursor_xs[s_cursor_slot % 9u];
     unsigned short lx    = (unsigned short)(nes_x + 0x80u);
 
@@ -937,11 +932,12 @@ void inventory_subscreen_tick(unsigned char joy_state)
 
     /* Phase B scroll state machine — real VSRAM ramp, 3 px/frame (NES rate). */
     if (s_scroll_state == SCROLL_IN) {
-        /* Menu slides DOWN from the top: VSRAM 174 -> 0 (both planes). */
+        /* NES active VScroll is $41: the eight-line viewport crop is in
+         * the tile-row origin above; Genesis VSRAM +1 aligns its pixel phase. */
         s_vscroll -= SCROLL_VSCROLL_STEP;
         if (s_vscroll <= 0) {
-            s_vscroll = 0;
-            set_subscreen_vscroll(0);
+            s_vscroll = 1;
+            set_subscreen_vscroll(1);
             s_scroll_state = SCROLL_ACTIVE;
             draw_item_sprites();  /* sprites appear once menu is settled */
         } else {
@@ -951,7 +947,7 @@ void inventory_subscreen_tick(unsigned char joy_state)
     }
 
     if (s_scroll_state == SCROLL_OUT) {
-        /* Menu slides back UP off the top: VSRAM 0 -> 174 (both planes). */
+        /* Menu slides back UP off the top: VSRAM 1 -> 174. */
         s_vscroll += SCROLL_VSCROLL_STEP;
         if (s_vscroll >= SCROLL_VSCROLL_TOP) {
             /* Reset scroll to 0 before main.c's load_room repaints the room.

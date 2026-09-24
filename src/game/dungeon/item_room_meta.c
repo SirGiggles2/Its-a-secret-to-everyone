@@ -1,27 +1,20 @@
-/* Task 5.9: UW item-room manifest + slice-1 pickup wrapper.
- *
- * Stance per Rule D1:
- *   ADOPT  — INVENTORY_VALUE storage layout (item_state.h:26)
- *   EXTEND — RoomRom-local pickup wrapper (G3: externs for
- *            item_take_item not linked yet).
- *   STUB   — Triforce wrapper bypasses GAME_MODE=18 transition (G5).
+/* Underworld room-item metadata and pickup bridge.
+ * NES source: Z_01.asm:TakeItem; Z_05.asm:CreateRoomObjects.
+ * Drained C: src/game/items/item_dispatch.c:item_take_item.
+ * Coverage: PARTIAL (native awards and room flags; cart save wiring pending).
+ * Stance: EXTEND.
  */
 
 #include "item_room_meta.h"
 #include "../../state/inventory.h"
+#include "../items/item_dispatch.h"
+#include "../cave/cave_dispatch.h"
 #include "../../../RoomRom/data/uw_item_rooms.h"
 
-/* INVENTORY_VALUE() lives in src/state/item_state.h, but pulling that
- * header drags ABI plumbing. Slice-1 reproduces the macro contract
- * locally — same byte address space. */
-#include "../../src/state/item_state.h"
+/* Canonical inventory storage in the NES RAM mirror. */
+#include "../../state/item_state.h"
+#include "../../state/save_state.h"
 
-/* LevelMasks per Z_07.asm:747-748. */
-static const unsigned char LEVEL_MASKS[8] = {
-    0x01u, 0x02u, 0x04u, 0x08u, 0x10u, 0x20u, 0x40u, 0x80u
-};
-
-static unsigned char s_item_taken[256];
 static unsigned char s_triforce_pickup_active;
 
 unsigned char roomrom_uw_item_for_room(unsigned char level,
@@ -38,57 +31,58 @@ unsigned char roomrom_uw_item_for_room(unsigned char level,
     return 1u;
 }
 
+/* NES Z_01.asm:GetRoomFlagUWItemState uses the installed LevelInfo
+ * pointer. The two UW tables belong to native progress, not a room-only
+ * cache. Ignore an uninstalled/overworld pointer during frontend setup. */
+static unsigned short item_flags_base(void)
+{
+    unsigned short ptr = (unsigned short)(SAVE_ROOM_FLAGS_PTR_LO |
+        ((unsigned short)SAVE_ROOM_FLAGS_PTR_HI << 8));
+    return (ptr == 0x06FFu || ptr == 0x077Fu) ? ptr : 0u;
+}
+
 unsigned char roomrom_uw_item_taken(unsigned char room_id)
 {
-    return s_item_taken[room_id];
+    unsigned short ptr = item_flags_base();
+    return (ptr && room_id < 128u && (RAM(ptr + room_id) & 0x10u)) ? 1u : 0u;
 }
 
 void roomrom_uw_item_set_taken(unsigned char room_id)
 {
-    s_item_taken[room_id] = 1u;
+    unsigned short ptr = item_flags_base();
+    if (ptr && room_id < 128u) RAM(ptr + room_id) |= 0x10u;
 }
 
 void roomrom_uw_item_clear_taken(void)
 {
     unsigned short i;
-    for (i = 0u; i < 256u; i++) s_item_taken[i] = 0u;
+    for (i = 0x06FFu; i < 0x07FFu; ++i) RAM(i) &= 0xEFu;
     s_triforce_pickup_active = 0u;
 }
 
-unsigned char roomrom_uw_item_pickup(unsigned char level,
-                                     unsigned char room_id,
-                                     unsigned char item_id)
+/* NES source: Z_01.asm:TryTakeRoomItem/TryTakeItem.
+ * Drained C: cave_dispatch.c:cave_try_take_room_item.
+ * Coverage: PARTIAL (native room-item position, collision and award).
+ * Stance: EXTEND the existing pickup path; slot 19 owns live reward state. */
+unsigned char roomrom_uw_item_try_pickup(unsigned char level,
+                                         unsigned char room_id,
+                                         unsigned char link_x,
+                                         unsigned char link_y)
 {
-    unsigned char mask;
-    if (level < 1u || level > 8u) return 0u;
-    mask = LEVEL_MASKS[level - 1u];
-    switch (item_id) {
-    case UW_ITEM_ID_COMPASS:
-        INVENTORY_VALUE(UW_INV_SLOT_COMPASS) |= mask;
-        break;
-    case UW_ITEM_ID_MAP:
-        INVENTORY_VALUE(UW_INV_SLOT_MAP) |= mask;
-        break;
-    case UW_ITEM_ID_TRIFORCE:
-        /* Plan v5c T6.3 — proper triforce pickup.
-         * UW_INV_SLOT_TRIFORCE=19 in uw_item_rooms.h maps to slot
-         * $0657+19=$066A (map_l9) which is wrong; InvTriforce
-         * actually lives at NES $0671. Write directly to that cell
-         * + g_inventory.triforce mirror, then trigger Mode 12
-         * EndLevel (mode_dispatch.c:61 dispatches it). */
-        RAM(0x0671u) |= mask;
-        g_inventory.triforce |= mask;
+    unsigned char item_id = RAM(0x00ABu);
+    if (level < 1u || level > 9u || room_id >= 128u || !item_flags_base()) return 0u;
+    if (roomrom_uw_item_taken(room_id)) return 0u;
+    /* Publish the settled native player position at the pickup boundary.
+     * The drained routine checks halt/lifetime, uses slot 19's live X/Y,
+     * deactivates it, and marks the room before awarding the item. */
+    RAM(0x0070u) = link_x;
+    RAM(0x0084u) = link_y;
+    cave_try_take_room_item();
+    if (!roomrom_uw_item_taken(room_id)) return 0u;
+    if (item_id == UW_ITEM_ID_TRIFORCE) {
         s_triforce_pickup_active = 1u;
-        GAME_MODE                = 0x12u;
-        RAM(0x0013u)             = 0x00u;   /* Sub0 entry */
-        break;
-    default:
-        /* Other item ids: slice-1 records pickup but does not write
-         * inventory bits (full bridge to drained item_take_item is
-         * deferred — G3). */
-        break;
+        g_inventory.triforce = RAM(0x0671u);
     }
-    s_item_taken[room_id] = 1u;
     inventory_hud_mark_dirty();
     return 1u;
 }
@@ -100,20 +94,17 @@ unsigned char roomrom_uw_triforce_pickup_active(void)
 
 unsigned char roomrom_uw_item_inv_compass(void)
 {
-    return (unsigned char)INVENTORY_VALUE(UW_INV_SLOT_COMPASS);
+    return (unsigned char)INVENTORY_VALUE(UW_INV_SLOT_COMPASS + (ITEM_LEVEL_RAW == 9u ? 2u : 0u));
 }
 
 unsigned char roomrom_uw_item_inv_map(void)
 {
-    return (unsigned char)INVENTORY_VALUE(UW_INV_SLOT_MAP);
+    return (unsigned char)INVENTORY_VALUE(UW_INV_SLOT_MAP + (ITEM_LEVEL_RAW == 9u ? 2u : 0u));
 }
 
 unsigned char roomrom_uw_item_inv_triforce(void)
 {
-    /* Slice-1: triforce inventory bit not yet written to nes_ram
-     * (G3 deferral); s_triforce_pickup_active is the canonical
-     * pickup signal. Return the stub flag for mirror parity. */
-    return s_triforce_pickup_active;
+    return (unsigned char)INVENTORY_VALUE(UW_INV_SLOT_TRIFORCE);
 }
 
 void roomrom_uw_item_publish_persist(void)
@@ -121,5 +112,5 @@ void roomrom_uw_item_publish_persist(void)
     volatile unsigned char *dst =
         (volatile unsigned char *)ROOMROM_DEBUG_ITEM_TAKEN_BASE;
     unsigned short i;
-    for (i = 0u; i < 256u; i++) dst[i] = s_item_taken[i];
+    for (i = 0u; i < 256u; i++) dst[i] = roomrom_uw_item_taken((unsigned char)i);
 }

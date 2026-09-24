@@ -125,7 +125,7 @@ register volatile unsigned char *nes_ram asm("a4");
 /* Room / progress cells */
 #define NES_ROOM_LAYOUT_SCRATCH  0x051A
 #define NES_ROOM_ID_ALT          0x0526
-#define NES_ROOM_HISTORY_IDX     0x0529
+#define NES_ROOM_HISTORY_IDX     0x0620
 #define NES_ROOM_HISTORY_BASE    0x0621
 #define NES_CONTINUE_COUNT_BASE  0x0630
 #define NES_ITEMS_BY_LEVEL_BASE  0x0657

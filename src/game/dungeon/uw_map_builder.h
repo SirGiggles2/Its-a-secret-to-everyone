@@ -14,14 +14,9 @@
  *   - each row rotated right by LevelInfo_SubmenuMapRotation
  *   - cols blanked where LevelInfo_SubmenuMapMask[col] & MapRowMasks[row]==0
  *
- * Data sources (verified — see commit msg):
- *   door attrs : installed LevelBlockAttrsA/B in nes_ram ($687E/$68FE)
- *                (the LevelBlock install IS byte-aligned)
- *   visited    : live world flags via the savefile room-flags pointer
- *                ($6BAF/$6BB0), the same path gameplay uses
- *   rotation / : rooms_dungeons[] blob, FoeCounts-anchored (the flat
- *   mask /       LevelInfo install is misaligned by 4 so we never read
- *   triforce     nes_ram $6BAB/$6BBD/$6BAE here)
+ * Data sources: installed LevelBlockAttrsA/B ($687E/$68FE), room flags
+ * through $6BAF/$6BB0, and installed LevelInfo rotation/mask/Triforce.
+ * Entry installs these for the current level and quest before menu use.
  */
 #ifndef UW_MAP_BUILDER_H
 #define UW_MAP_BUILDER_H
@@ -31,9 +26,7 @@
  * post-mask). Levels out of range -> all-blank ($F5). */
 void uw_map_build(unsigned char level, unsigned char out[8][16]);
 
-/* Per-level LevelInfo fields, read FoeCounts-anchored from the shipped
- * rooms_dungeons[] blob (single source of truth; replaces the old
- * hand-captured L1-only tables). level 1..9; out-of-range -> 0. */
+/* Current installed LevelInfo fields; level 1..9, otherwise zero. */
 unsigned char uw_map_rotation(unsigned char level);       /* low nibble */
 unsigned char uw_map_triforce_room(unsigned char level);  /* $6BAE */
 

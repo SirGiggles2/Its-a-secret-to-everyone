@@ -2,13 +2,14 @@
 
 Bridge primitives consumed by multiple families. When a fix touches a
 primitive in this list, every consumer across families must be
-re-probed to catch cross-family regression — including out-of-scope
-types ($07-$0A Octorok, $0D-$0E Tektite).
+re-probed to catch cross-family regression — including Octoroks
+($07-$0A) and Tektites ($0D-$0E), which were part of the original
+historical baseline and are now in recovery scope.
 
 ## enemy_loop_tick prefix (universal)
 
 Runs once per slot per frame for ALL enemy types. Changes here affect
-every wired type including out-of-scope.
+every wired type including Octoroks and Tektites.
 
 | Symbol / site                                  | Touches                          |
 |---                                             |---                               |
@@ -24,7 +25,7 @@ A3 baseline (Octorok + Tektite) BEFORE commit lands.
 ## Walker-family primitives (enemy_walker_bridge.c)
 
 Consumers: $01-$06, $0B-$0C, $0F-$10, $12-$17, $1E, $21, $27, $28,
-$2A-$2D, $30, $3F, $40 — AND out-of-scope $07-$0A.
+$2A-$2D, $30, $3F, $40 — AND $07-$0A.
 
 | Symbol                                         | Consumers (families)                  |
 |---                                             |---                                    |
@@ -35,9 +36,9 @@ $2A-$2D, $30, $3F, $40 — AND out-of-scope $07-$0A.
 | `z07_anim_advance_and_fetch`                   | walker + jumper + flyer + boss        |
 | `z01_anim_set_sprite_desc_attrs`               | universal sprite draw                 |
 | `z07_anim_set_obj_hflip`                       | walker + projectile                   |
-| `enrt_octorock_common`                         | $07-$0A (OUT) + indirectly $21 Ghini  |
+| `enrt_octorock_common`                         | $07-$0A  + indirectly $21 Ghini  |
 | `enrt_init_walker`                             | $01-$06, $12, $13, $14, $2A, $30      |
-| `enrt_init_slow_octorock_or_ghini`             | $07, $09 (OUT), $21 Ghini             |
+| `enrt_init_slow_octorock_or_ghini`             | $07, $09 , $21 Ghini             |
 | `enrt_init_armos_or_flying_ghini`              | $1E + $22                             |
 | `armos_draw_and_check_collisions`              | $1E Armos                             |
 | `enrt_update_armos`                            | $1E                                   |
@@ -84,7 +85,7 @@ boss-family consumers (Patra/Moldorm head/GleeokHead/Manhandla).
 |---                                      |---                              |
 | `c_update_burrower`                     | Zora ($11), BlueLeever ($0F)    |
 | `c_bound_flyer`                         | Peahat ($1A) + Moldorm head     |
-| `c_bound_direction_horizontally`        | Boulder ($20), Octorok shots (OUT) |
+| `c_bound_direction_horizontally`        | Boulder ($20), Octorok shots  |
 | `c_bound_direction_vertically`          | Boulder ($20), shot family      |
 | `c_reverse_obj_dir8`                    | Gohma ($33/$34) + jumper        |
 | `enrt_update_blue_leever`               | $0F                             |

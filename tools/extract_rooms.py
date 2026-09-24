@@ -227,6 +227,17 @@ def find_unique_pattern(data: bytes, pattern: bytes, description: str) -> int:
     return pos
 
 
+def read_bank6_pointer(bank: bytes, pointer_offset: int, size: int) -> bytes:
+    """Z_06 LevelInfoAddrs/CommonDataBlockAddr; copy size is independent of spacing."""
+    if pointer_offset < 0 or pointer_offset + 2 > len(bank) or size <= 0:
+        raise ValueError("Invalid bank-6 pointer entry or copy size")
+    address = int.from_bytes(bank[pointer_offset:pointer_offset + 2], "little")
+    start = address - 0x8000
+    if start < 0 or start + size > len(bank):
+        raise ValueError(f"Bank-6 pointer ${address:04X} exceeds record bounds")
+    return bank[start:start + size]
+
+
 def find_bank6_level_data(prg_data: bytes, z06_blocks: dict) -> dict:
     bank6_offset = 6 * PRG_BANK_SIZE
     bank6_data = prg_data[bank6_offset : bank6_offset + PRG_BANK_SIZE]
@@ -266,17 +277,16 @@ def find_bank6_level_data(prg_data: bytes, z06_blocks: dict) -> dict:
         print(f"    {label}: ROM ${rom_offset:05X}, {LEVEL_BLOCK_SIZE} bytes")
         offset += LEVEL_BLOCK_SIZE
 
+    # Z_06.asm: LevelInfoAddrs starts at $8014, common pointer at $8028.
+    # Records start 252 bytes apart; NES still copies 256 bytes from each.
     level_infos = {}
-    for label in LEVEL_INFO_LABELS:
-        rom_offset = bank6_offset + offset
-        level_infos[label] = prg_data[rom_offset : rom_offset + LEVEL_INFO_SIZE]
-        print(f"    {label}: ROM ${rom_offset:05X}, {LEVEL_INFO_SIZE} bytes")
-        offset += LEVEL_INFO_SIZE
+    for level, label in enumerate(LEVEL_INFO_LABELS):
+        level_infos[label] = read_bank6_pointer(bank6_data, 0x14 + level * 2,
+                                                LEVEL_INFO_SIZE)
+        print(f"    {label}: pointer entry ${0x8014 + level * 2:04X}, {LEVEL_INFO_SIZE} bytes")
 
-    common_data_rom_offset = bank6_offset + offset
-    common_data = prg_data[
-        common_data_rom_offset : common_data_rom_offset + COMMON_DATA_SIZE
-    ]
+    common_data = read_bank6_pointer(bank6_data, 0x28, COMMON_DATA_SIZE)
+    common_data_rom_offset = bank6_offset + int.from_bytes(bank6_data[0x28:0x2A], "little") - 0x8000
     print(
         f"    CommonDataBlock_Bank6: ROM ${common_data_rom_offset:05X}, "
         f"{COMMON_DATA_SIZE} bytes"

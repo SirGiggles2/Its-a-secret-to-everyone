@@ -13,6 +13,7 @@
  * P4a: atlas headers for ATLAS_ASSERT_SIZE and named dispatch constants. */
 #include "../../../../RoomRom/src/atlas/items_chr_x4.h"
 #include "../../../../RoomRom/src/atlas/items_chr.h"
+#include "../../inventory/inventory_sprite_chr.h"
 #include "../../../../RoomRom/src/atlas/atlas_dispatch.h"
 
 /* Phase AA (2026-05-18 cleanup org): sub-pal routing moved to the
@@ -276,6 +277,13 @@ void roomrom_sprites_upload_persistent_chr(void)
         }
     }
 
+    /* NES compass marker attr $03 uses sprite sub-pal 3, which the
+     * subscreen renders with the ROM-derived pixel-9 biased $3E pair
+     * on PAL0. Keep that pair resident in its existing inventory VRAM
+     * reservation so the gameplay HUD can use it before opening pause. */
+    render_chr_upload((unsigned short)(ROOMROM_HUD_COMPASS_MARKER_TILE * 32u),
+                      &k_inventory_sprite_chr[14][0], 64u);
+
 }
 
 void roomrom_sprites_upload_items_chr(void)
@@ -427,9 +435,48 @@ void roomrom_sprites_spawn_link(short x, short y)
                       (signed short)-32,
                       RENDER_SPRITE_SIZE(1, 2),
                       RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 0, 1, 0),
+                      ROOMROM_SPRITE_SLOT_HUD_PLAYER);
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_HUD_PLAYER,
+                      (signed short)-32, (signed short)-32,
+                      RENDER_SPRITE_SIZE(1, 2),
+                      RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 0, 0,
+                          (unsigned short)(ROOMROM_SPR_TILE_BASE + 0x3Eu)),
+                      ROOMROM_SPRITE_SLOT_HUD_COMPASS);
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_HUD_COMPASS,
+                      (signed short)-32, (signed short)-32,
+                      RENDER_SPRITE_SIZE(1, 2),
+                      RENDER_TILE_ATTR_FULL(RENDER_PAL0, 1, 0, 0,
+                          ROOMROM_HUD_COMPASS_MARKER_TILE),
                       ROOMROM_SPRITE_SLOT_ENEMY_FIRST);
     roomrom_sprites_set_link_pose(x, y, LINK_FACE_DOWN, 0u);
     render_update_sprites(ROOMROM_SPRITE_UPLOAD_COUNT_H32);
+}
+
+/* NES Z_01.asm:UpdatePositionMarker uses tile $3E (8x16), with sub-pal
+ * 0 for Link and sub-pal 2/3 for the flashing compass target. The common
+ * persistent sprite block already contains tile $3E/$3F; attr-3 uses the
+ * pre-existing biased inventory pair at 1294/1295. */
+void roomrom_sprites_set_hud_marker(unsigned char compass, short x, short y,
+                                    unsigned char inactive_palette)
+{
+    unsigned short slot = compass ? ROOMROM_SPRITE_SLOT_HUD_COMPASS
+                                  : ROOMROM_SPRITE_SLOT_HUD_PLAYER;
+    unsigned short next = compass ? ROOMROM_SPRITE_SLOT_ENEMY_FIRST
+                                  : ROOMROM_SPRITE_SLOT_HUD_COMPASS;
+    unsigned short tile = compass && inactive_palette
+        ? ROOMROM_HUD_COMPASS_MARKER_TILE
+        : (unsigned short)(ROOMROM_SPR_TILE_BASE + 0x3Eu);
+    unsigned char pal = compass
+        ? (inactive_palette ? RENDER_PAL0 : RENDER_PAL3)
+        : RENDER_PAL1;
+    VDP_setSpriteFull(slot, (signed short)x, (signed short)y,
+                      RENDER_SPRITE_SIZE(1, 2),
+                      RENDER_TILE_ATTR_FULL(pal, 1, 0, 0, tile), next);
+}
+
+void roomrom_sprites_hide_hud_marker(unsigned char compass)
+{
+    roomrom_sprites_set_hud_marker(compass, -32, -32, 1u);
 }
 
 void roomrom_sprites_set_link_pos(short x, short y)
@@ -633,6 +680,26 @@ void roomrom_sprites_set_room_item(short x, short y,
                                    unsigned char item_id,
                                    unsigned char sub_pal)
 {
+    /* NES source: Z_01.asm:ItemIdToSlot, Anim_ItemFrameOffsets/Tiles,
+     *             Anim_WriteSpecificItemSprites; Z_03.asm:FetchPatternBlockUWBoss.
+     * Drained C: src/oracle/items/item_runtime.c:item_take_item;
+     *            native room-item sprite dispatch here.
+     * Coverage: PARTIAL (L9 Power Triforce presentation; connected pickup pending).
+     * Stance: EXTEND the ROM-derived boss bank already resident in L9. */
+    /* Item ID $0E maps to slot $1B (Power Triforce), whose NES frame tile
+     * is $F2. The L9 boss bank holds $C0..$FF; $F2/$F3 and $F4/$F5
+     * form the two 8x16 OAM columns in NES sprite palette 2. */
+    if (item_id == 0x0Eu) {
+        unsigned short tile = (unsigned short)(ROOMROM_BOSS_TILE_BASE + 0x32u);
+        VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_ROOM_ITEM,
+                          (signed short)x,
+                          (signed short)y,
+                          RENDER_SPRITE_SIZE(2, 2),
+                          RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(2u),
+                                                1, 0, 0, tile),
+                          8);
+        return;
+    }
     /* UW_ITEM_ID_TRIFORCE = 0x1B per RoomRom/data/uw_item_rooms.h.
      * Triforce piece renders as 2x2 (wide_16x16_pair: 4 tiles
      * LT/LB/RT/RB in column-major), sub-pal 2 (gold/yellow). */
@@ -682,14 +749,16 @@ void roomrom_sprites_set_room_item(short x, short y,
     {
         unsigned short tile_offset = 0xFFFFu;  /* sentinel = use placeholder */
         switch (item_id) {
-        case 0x14u: tile_offset = ROOMROM_ITEM_TILE_HEART_CONTAINER; break;
+        /* RoomItemId is a pickup ID, not an inventory/animation slot.
+         * NES Z_01.asm:ItemIdToSlot maps $1A to heart slot $18. */
+        case 0x1Au: tile_offset = ROOMROM_ITEM_TILE_HEART_CONTAINER; break;
         case 0x18u: tile_offset = ROOMROM_ITEM_TILE_BIG_KEY;         break;
         case 0x0Bu: tile_offset = ROOMROM_ITEM_TILE_BOOK_OF_MAGIC;   break;
         case 0x0Au: tile_offset = ROOMROM_ITEM_TILE_RAFT;            break;
         case 0x0Du: tile_offset = ROOMROM_ITEM_TILE_LADDER;          break;
         /* Phase K continuation #3 (2026-05-18): full UW pickup set. */
         case 0x0Cu: tile_offset = ROOMROM_ITEM_TILE_RING;            break;
-        case 0x0Eu: tile_offset = ROOMROM_ITEM_TILE_MAGIC_KEY;       break;
+        case 0x1Cu: tile_offset = ROOMROM_ITEM_TILE_MAGIC_KEY;       break;
         case 0x0Fu: tile_offset = ROOMROM_ITEM_TILE_BRACELET;        break;
         case 0x04u: tile_offset = ROOMROM_ITEM_TILE_BOW;             break;
         case 0x06u: tile_offset = ROOMROM_ITEM_TILE_RECORDER;        break;
@@ -698,13 +767,14 @@ void roomrom_sprites_set_room_item(short x, short y,
         default:    tile_offset = 0xFFFFu;                            break;
         }
         if (tile_offset != 0xFFFFu) {
-            unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(0u)
+            unsigned char pal = (item_id == 0x1Au) ? 2u : 0u;
+            unsigned short tile = (unsigned short)(ROOMROM_ITEM_TILE_BASE_PAL(pal)
                                                     + tile_offset);
             VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_ROOM_ITEM,
                               (signed short)x,
                               (signed short)y,
-                              RENDER_SPRITE_SIZE(1, 2),
-                              RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(0u),
+                              RENDER_SPRITE_SIZE((item_id == 0x1Au) ? 2 : 1, 2),
+                              RENDER_TILE_ATTR_FULL(ROOMROM_SUBPAL_PAL(pal),
                                                     1, 0, 0, tile),
                               8);
             return;

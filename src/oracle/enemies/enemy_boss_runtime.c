@@ -63,7 +63,12 @@ static void enrt_jumper_animate_and_check_collisions(unsigned int slot) {
 
     z07_anim_fetch_obj_pos(slot);
     if (ENEMY_TYPE(slot) != 0x20) {
-        frame = 0;
+        /* Drain Rule D1: NES Z_04.asm:2482 leaves A holding ObjState
+         * when BNE enters @DrawTektite.  State 1 therefore draws image 1;
+         * the prior C initialization to zero made every airborne Tektite
+         * use its grounded image.  State 0 still selects image 0 until the
+         * long idle timer permits the normal animation-counter path. */
+        frame = ENEMY_STATE_TIMER(slot);
         if (ENEMY_STATE_TIMER(slot) != 0 || ENEMY_MOVE_TIMER(slot) < 0x21) {
             c_draw_object_mirrored_with_frame(frame, slot);
             c_check_monster_collisions(slot);

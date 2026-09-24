@@ -27,7 +27,10 @@
 #define ROOM_TILE_OBJ_2                RAM(0x052D)
 #define PLAYER_MARKER_DISABLE          RAM(0x0522)
 #define POWER_TRIFORCE_FANFARE_FLAG    RAM(0x0509)
-#define HUD_DIRTY_FLAG                 RAM(0x0672)
+/* NES Variables.inc:LastBossDefeated. The old drain called this HUD_DIRTY_FLAG;
+ * keep that alias for oracle compatibility, but gameplay uses this name. */
+#define LAST_BOSS_DEFEATED             RAM(0x0672)
+#define HUD_DIRTY_FLAG                 LAST_BOSS_DEFEATED
 #define CURTAIN_LEFT_COL               RAM(0x007C)
 #define CURTAIN_RIGHT_COL              RAM(0x007D)
 #define CURTAIN_TIMER                  RAM(0x0028)

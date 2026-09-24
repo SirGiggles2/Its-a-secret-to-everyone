@@ -102,3 +102,7 @@ reference/external/
 docs/bug_reports/*.avi
 docs/bug_reports/*.mp4
 docs/bug_reports/*.mov
+
+# Local-only (never commit): private play ROMs, completion HMAC key
+builds/play/
+tools/audit/completion/.evidence_key

@@ -9,13 +9,18 @@
 #include "combat/collision_dispatch.h"      /* collision_get_colliding_tile_moving */
 #include "combat/link_collision_dispatch.h" /* link_collision_check_link_collision */
 #include "combat/targeting_dispatch.h"      /* targeting_* */
-#include "world/draw_dispatch.h"            /* draw_object_not_mirrored, draw_arrow, draw_sword_shot_or_magic_shot */
-#include "world/object_dispatch.h"          /* object_bound_by_room, object_move_object */
+#include "world/draw_dispatch.h"            /* draw_object_not_mirrored, draw_arrow, draw_boomerang, draw_sword_shot_or_magic_shot */
+#include "world/object_dispatch.h"          /* object_bound_by_room, object_move_object, object_move_shot */
 #include "world/sprite_dispatch.h"          /* sprite_anim_fetch_obj_pos */
 
 void c_move_object(unsigned short slot)
 {
     object_move_object(slot);
+}
+
+void c_move_shot(unsigned char direction, unsigned int slot)
+{
+    object_move_shot(direction, slot);
 }
 
 void c_draw_object_not_mirrored(unsigned int slot)
@@ -31,6 +36,11 @@ void c_draw_arrow(unsigned int slot)
     /* Step 13: native drain in src/game/world/draw_dispatch.c
      * (NES Z_07.asm:3908). */
     draw_arrow(slot);
+}
+
+void c_draw_boomerang(unsigned int slot)
+{
+    draw_boomerang(slot);
 }
 
 void c_draw_sword_shot_or_magic_shot(unsigned int slot)

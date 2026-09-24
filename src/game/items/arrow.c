@@ -1,10 +1,14 @@
 #include "arrow.h"
+#include "../../abi/platform_abi.h"
 #include "../world/render/sprite_render.h"
 #include "../../state/inventory.h"
 
 extern void audio_sfx_play(unsigned char sfx);
 
-/* NES Z_05.asm:2945 WieldArrow / Z_07.asm UpdateRodOrArrow: refuse if
+/* NES source: Z_05.asm:WieldArrow.
+ * Drained C: arrow.c:roomrom_arrow_fire; Coverage: PARTIAL eligibility/cost.
+ * Stance: EXTEND; native inventory cells own eligibility.
+ * NES Z_05.asm:2945 WieldArrow / Z_07.asm UpdateRodOrArrow: refuse if
  * `Bow == 0` (InvBow ownership) OR if `InvArrow == 0` (no arrow tier
  * picked up) OR if `InvRupees == 0` (each shot costs 1 rupee — NES Z1
  * checks `LDA InvRupees / BEQ` before spawn).
@@ -22,6 +26,7 @@ extern void audio_sfx_play(unsigned char sfx);
 #define ARROW_BOUND_X_MAX     ((short)272)
 #define ARROW_BOUND_Y_MIN     ((short)(-16))
 #define ARROW_BOUND_Y_MAX     ((short)240)
+#define ARROW_OBJ_SLOT        18u
 
 typedef enum { ARROW_IDLE = 0, ARROW_FLYING } arrow_state_t;
 
@@ -30,8 +35,18 @@ static link_face_t   s_face  = LINK_FACE_DOWN;
 static short         s_x     = 0;
 static short         s_y     = 0;
 
+static void arrow_publish_object(unsigned char active)
+{
+    OBJ(0x00ACu, ARROW_OBJ_SLOT) = active ? 0x10u : 0u;
+    if (active) {
+        OBJ(0x0070u, ARROW_OBJ_SLOT) = (unsigned char)s_x;
+        OBJ(0x0084u, ARROW_OBJ_SLOT) = (unsigned char)s_y;
+    }
+}
+
 void roomrom_arrow_init(void)
 {
+    if (s_state != ARROW_IDLE) arrow_publish_object(0u);
     s_state = ARROW_IDLE;
     roomrom_sprites_clear_arrow();
 }
@@ -39,9 +54,9 @@ void roomrom_arrow_init(void)
 void roomrom_arrow_fire(link_face_t face, short link_x, short link_y)
 {
     if (s_state != ARROW_IDLE) return;
-    if (g_inventory.bow == 0u) return;
-    if (g_inventory.arrow == INV_ARROW_NONE) return;
-    if (g_inventory.rupees == 0u) return;
+    if (nes_ram[0x065Au] == 0u) return;
+    if (nes_ram[0x0659u] == INV_ARROW_NONE) return;
+    if (nes_ram[0x066Du] == 0u) return;
     inventory_rupee_debit(1u);   /* NES: 1-rupee cost per arrow */
     /* NES Z_05.asm:2964-2965 LDA #$02 / JSR PlayEffect = arrow/boomerang
      * (bit 1 in NES bitmap; DMC sample 2 in our 1-based mapping). */
@@ -78,8 +93,10 @@ void roomrom_arrow_update(void)
     if (s_x < ARROW_BOUND_X_MIN || s_x > ARROW_BOUND_X_MAX
         || s_y < ARROW_BOUND_Y_MIN || s_y > ARROW_BOUND_Y_MAX) {
         s_state = ARROW_IDLE;
+        arrow_publish_object(0u);
         roomrom_sprites_clear_arrow();
         return;
     }
+    arrow_publish_object(1u);
     roomrom_sprites_set_arrow(s_x, s_y, s_face, ROOMROM_ARROW_SUBPAL);
 }

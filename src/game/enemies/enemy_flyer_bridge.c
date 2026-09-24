@@ -41,6 +41,8 @@
 extern void enrt_move_flyer(unsigned int slot);
 extern void enrt_flyer_speed_up(unsigned int slot);
 extern void enrt_flyer_slow_down(unsigned int slot);
+extern void enrt_flyer_fairy_decide_state(unsigned int slot);
+extern void enrt_flyer_do_nothing(void);
 extern void enrt_flyer_keese_decide_state(unsigned int slot);
 extern void enrt_flyer_peahat_decide_state(unsigned int slot);   /* step 6 */
 extern void enrt_flyer_ghini_decide_state(unsigned int slot);    /* 7.4 step 6a */
@@ -53,6 +55,7 @@ extern void c_obj_shove(unsigned int slot);
 extern void c_check_link_collision(unsigned int slot);
 extern void c_check_monster_collisions(unsigned int slot);
 extern unsigned char z07_anim_fetch_obj_pos(unsigned int slot);
+static void flyer_wander(unsigned int slot);
 
 /* z04_* / z07_*: c_shims.asm xrefs that forward to transpiled NES bodies.
  * Debug.md does not link the transpiled bank, so these symbols must
@@ -80,6 +83,30 @@ void c_move_flyer(unsigned int slot)
      * the oracle TU's enrt_-named drain so dispatch rows can pull
      * either name without symbol churn. */
     enrt_move_flyer(slot);
+}
+
+/* ControlFairyFlight (NES Z_04.asm:11521). Fairy drops use the same
+ * speed-up and wander leaves as the ordinary flyer state machine, but
+ * their state-1 decision is fixed to six random wander turns. */
+void c_control_fairy_flight(unsigned int slot)
+{
+    unsigned char state = (unsigned char)ENEMY_AI_STATE(slot);
+    switch (state) {
+    case 0u:
+        enrt_flyer_speed_up(slot);
+        break;
+    case 1u:
+        enrt_flyer_fairy_decide_state(slot);
+        break;
+    case 2u:
+        enrt_flyer_do_nothing();
+        break;
+    case 3u:
+        flyer_wander(slot);
+        break;
+    default:
+        break;
+    }
 }
 
 /* NES Z_04.asm:11579 Flyer_SetFlyingState. One-line drain mirroring
@@ -417,12 +444,9 @@ void c_control_peahat_flight(unsigned int slot)
  *   - InvClock == ENEMY_PAUSE_FLAG ($066C). NES drains use this name.
  *   - ObjStunTimer == ENEMY_STUN_TIMER ($003D).
  *   - Flyer_ObjDistTraveled lives at $0437 in NES; this codebase aliases
- *     the same cell as ENEMY_FLAP_PHASE. Frame selection reads bit 0 to
- *     match NES "every other frame" animation. Note: drained
- *     enrt_move_flyer (flyer_runtime.c:175) does NOT increment $0437,
- *     so frame currently latches to 0. Same gap exists for keese; full
- *     fix is a future drain of NES MoveFlyer's @End block (INC
- *     Flyer_ObjDistTraveled + JSR BoundFlyer). Out of step 6 scope. */
+ *     the same cell as ENEMY_FLAP_PHASE. Shared enrt_move_flyer now
+ *     increments it after a whole-pixel move and calls BoundFlyer,
+ *     matching the NES @End block. */
 void enrt_update_peahat(unsigned int slot)
 {
     if ((unsigned char)ENEMY_OBJ_SHOVE_DIR(slot) != 0u) {

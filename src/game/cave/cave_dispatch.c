@@ -227,6 +227,7 @@ void cave_exit(void)
      * inventory) are left as-is — NES code does not zero them on exit. */
     cave_room_type_set(0u);
     CAVE_PERSON_STATE = 0u;
+    core_unhalt_link();
     cave_flags_set(0u);
     g_active_cave = 0u;
 

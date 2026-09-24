@@ -74,7 +74,6 @@ TITLE_C_SOURCES = [
     ("src/sgdk_adapter/audio_vblank_hook.c", "audio_vblank_hook.o"),
     ("src/sgdk_adapter/audio_adapter.c",    "audio_adapter.o"),
     ("data/audio/sfx_pcm.c",                "sfx_pcm.o"),
-    ("data/audio/sfx_pcm_stairs.c",         "sfx_pcm_stairs.o"),
     # Overworld theme: XGC binary (xgmtool output) dispatched via
     # src/sgdk_adapter/audio_adapter.c::audio_music_play(SONG_OW=$01) →
     # XGM_startPlay(ow_theme_vgm).
@@ -164,9 +163,7 @@ ROOMROM_C_SOURCES = [
     # Plan v5b T2.7 2026-05-16 — heart-container 3-frame scale-up anim.
     ("src/game/hud/heart_container_anim.c", "heart_container_anim.o"),
     ("src/game/dungeon/uw_render.c", "dungeon_uw_render.o"),  # Phase 12.2 promoted
-    # uw_map_builder.c NOT built: complete NES-faithful dynamic dungeon-map
-    # glyph builder, blocked on the dungeons.c LevelBlockAttrs regen bug
-    # (door tables diverge from live NES SRAM). Wire once data is re-extracted.
+    ("src/game/dungeon/uw_map_builder.c", "dungeon_uw_map_builder.o"),
     ("RoomRom/src/uw_room_blob.c", "uw_room_blob.o"),
     ("RoomRom/src/uw_collision_data.c", "uw_collision_data.o"),
     # Phase 12.2 family 7: dungeon meta promoted to src/game/dungeon/.

@@ -52,3 +52,14 @@ fails with `source 'main'` (memory: `feedback_bizhawk_lua_env.md`).
 None. Both cores and the palette are deterministic given the locked BizHawk
 distribution and the unmodified `config.ini`. Parity probes verify against
 this exact configuration.
+
+## Recovery capture update — 2026-09-23
+
+The active BizHawk 2.11 installation used by the P7 recovery probes is at
+`<sibling>/VDP rebirth tools and asms/BizHawk-2.11-win-x64/`. Its current
+`PreferredCores.NES` setting is `NesHawk`, and the 64-entry RGB list in the
+NesHawk `Palette` setting matches the live NES pause screenshots (for example,
+color `$16` is RGB `181,50,32` and `$27` is `235,159,35`). The earlier S0
+QuickNES/core-path description above is historical and must not be used to
+interpret these newer captures. The 192-byte NesHawk RGB table is frozen in
+`tools/extract_misc.py` so the user-ROM builder does not depend on BizHawk.

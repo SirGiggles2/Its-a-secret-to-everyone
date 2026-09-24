@@ -11,8 +11,8 @@ Hard gates (exit non-zero on mismatch):
   - L1Q1 rooms set must be exactly:
         {0x22,0x23,0x33,0x35,0x36,0x41,0x42,0x43,0x44,0x45,
          0x52,0x53,0x54,0x63,0x72,0x73,0x74}   (17 rooms)
-  - L9Q1 rooms set must be the union of LevelBlockUW2Q1 reachability,
-    not the sum across source blocks.
+  - L9Q1 rooms use LevelBlockUW2Q1 reachability plus its NES-confirmed
+    Ganon and Zelda chambers, which the doorway-only BFS does not reach.
 
 Door encoding (per Z_05.asm:4515-4560 FindDoorAttrByDoorBit):
   Plane A holds N/S doors per room. Plane B holds W/E doors per room.
@@ -295,6 +295,16 @@ def extract(level: int, quest: int) -> dict:
         )
 
     rooms_set, edges = bfs(block, start_room)
+
+    # L9Q1's boss and Zelda chambers follow the final passage sequence,
+    # outside this extractor's doorway-only BFS. LevelInfo names both;
+    # live NES captures confirm their populated nametables. Include them
+    # in the room-capture set so the connected ending has real graphics.
+    if level == 9 and quest == 1:
+        if boss_room != 0xFF:
+            rooms_set.add(boss_room)
+        if triforce_room != 0xFF:
+            rooms_set.add(triforce_room)
 
     # Cellars are special stair-linked destinations. They are NOT door-BFS
     # reachable so the canonical 17-room L1Q1 set excludes them. Track

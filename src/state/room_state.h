@@ -42,7 +42,7 @@
 #define ROOM_BLOCK_SECRET_FLAG         RAM(0x04CF)
 #define ROOM_SHUTTER_TOUCH_MASK        RAM(0x0519)
 #define ROOM_PALETTE_ATTR(slot)        RAM(0x0530 + (slot))
-#define ROOM_BOSS_SECRET_FLAG          HUD_DIRTY_FLAG
+#define ROOM_BOSS_SECRET_FLAG          LAST_BOSS_DEFEATED
 #define ROOM_SFX_MAIN                  RAM(0x0604)
 #define ROOM_SFX_AUX                   RAM(0x0603)
 #define ROOM_OAM_BYTE(off)             RAM(0x0200 + (off))

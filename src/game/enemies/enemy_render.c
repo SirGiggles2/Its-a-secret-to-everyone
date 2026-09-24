@@ -5,8 +5,11 @@
  *   Z_01.asm:4958 SpriteOffsets (41-entry sprite slot table)
  *   Z_01.asm:3088 CycleCurSpriteIndex (RollingSpriteIndex advance)
  *
- * Coverage:  FULL for Anim_WriteSprite body (per-line port).
- * Stance:    GREENFIELD per Drain Rule D1 (no prior drain).
+ * NES source: reference/aldonunez/Z_01.asm:Anim_WriteSprite,
+ *             Anim_WriteSpecificItemSprites, ItemIdToSlot/Anim_ItemFrameTiles.
+ * Drained C:  NONE (no enemy_render_runtime.c candidate).
+ * Coverage:   PARTIAL (item/enemy routing and spark art; unresolved item rows remain).
+ * Stance:     EXTEND.
  *
  * Phase 7 substrate fix 2026-05-15. Replaces c_anim_write_sprite no-op
  * stub at enemy_lamnola_bridge.c:33. Enemy logic ticks correctly now
@@ -186,11 +189,8 @@ void enemy_render_publish_pair_left(unsigned char tile,
  * spark table, and overwrites the slot's cache entry so the native
  * sweep emits a SAT entry at the meta sprite's coordinates.
  *
- * Tile tables: 4-frame cycles from NES Z1 sprite CHR. Cloud uses the
- * bomb-cloud item tiles ($60..$66, even-only since 8x16 mode pairs);
- * spark uses death-sparkle tiles ($66..$6C). Approximate vs the NES
- * Anim_WriteItemSprites indirection — the cache path doesn't go
- * through item-slot resolution yet. Phase 8/F+G can refine.
+ * Cloud uses the bomb-cloud item frames $70/$72/$74. Spark uses
+ * item-slot $24 frames $62/$64 from CommonSpritePatterns.
  *
  * attrs: NES DrawCloud writes [04]/[05] = 1 (palette 1, blue). Use
  * sub-pal 1 = bits 1..0 of attrs = 0x01.
@@ -198,7 +198,6 @@ void enemy_render_publish_pair_left(unsigned char tile,
  * Position: ENEMY_X(slot) / ENEMY_Y(slot) (the slot's last logical
  * position, suitable until the slot recycles). */
 #define ENEMY_RENDER_META_CLOUD_TILE_BASE 0x60u
-#define ENEMY_RENDER_META_SPARK_TILE_BASE 0x66u
 /* NES DrawCloud (Z_07.asm:4912) routes through Anim_WriteItemSprites
  * with item slot $01 (Bomb). Anim_ItemFrameOffsets[$01]=$03, so the
  * frame tiles read k_anim_item_frame_tiles[$03..$06] = $34, $70, $72, $74.
@@ -210,9 +209,6 @@ void enemy_render_publish_pair_left(unsigned char tile,
  * NES DrawSpark uses item slot $24, Anim_ItemFrameOffsets[$24]=$2E,
  * tiles k_anim_item_frame_tiles[$2E..$2F] = $64, $62. Spark alternates
  * frame 0=$64 / frame 1=$62 (low bit toggled per metastate). */
-static const unsigned char k_meta_cloud_tiles[4] = { 0x34u, 0x70u, 0x72u, 0x74u };
-static const unsigned char k_meta_spark_tiles[4] = { 0x64u, 0x62u, 0x64u, 0x62u };
-#define ENEMY_RENDER_META_ATTRS  0x01u  /* sub-pal 1, no flip, no priority */
 
 /* Sub-pal 1 biased cloud CHR for spawn anim. NES PT0 cloud tiles
  * $70-$75 (6 tiles, 96 NES 2bpp bytes -> 192 Genesis 4bpp bytes)
@@ -235,7 +231,7 @@ static const unsigned char k_meta_spark_tiles[4] = { 0x64u, 0x62u, 0x64u, 0x62u 
  * Routed via META_ATTR_MARKER bit (NES attr bit 4 is unused) so
  * translate_tile can detect meta entries and emit raw Genesis tile
  * index instead of going through common-bank translation. */
-#define ENEMY_RENDER_META_VRAM_TILE 1300u
+#define ENEMY_RENDER_META_VRAM_TILE ROOMROM_CLOUD_TILE_BASE
 #define META_ATTR_MARKER            0x10u
 
 /* ITEM_ATTR_MARKER (NES OAM attr bit 3, unused). Set by anim_write_
@@ -252,19 +248,31 @@ static const unsigned char k_meta_spark_tiles[4] = { 0x64u, 0x62u, 0x64u, 0x62u 
  * extraction order; see comment in draw_arrow path. */
 static const unsigned char k_nes_item_tile_to_atlas_idx[256] = {
     [0x20]=0,  [0x21]=1,  [0x22]=70, [0x23]=71, [0x28]=14, [0x29]=15,
-    [0x2A]=68, [0x2B]=69, [0x2C]=60, [0x2D]=61, [0x2E]=48, [0x2F]=49,
-    [0x32]=50, [0x33]=51, [0x34]=20, [0x35]=21, [0x36]=6,  [0x37]=7,
+    [0x2A]=68, [0x2B]=69, [0x2C]=60, [0x2D]=61,
+    [0x2E]=ROOMROM_ITEM_TILE_COMPASS, [0x2F]=ROOMROM_ITEM_TILE_COMPASS+1,
+    [0x32]=ROOMROM_ITEM_TILE_MAP, [0x33]=ROOMROM_ITEM_TILE_MAP+1,
+    [0x34]=20, [0x35]=21, [0x36]=6,  [0x37]=7,
     [0x38]=8,  [0x39]=9,  [0x3A]=10, [0x3B]=11, [0x3C]=12, [0x3D]=13,
     [0x40]=72, [0x41]=73, [0x42]=58, [0x43]=59, [0x44]=40, [0x45]=41,
     [0x46]=56, [0x47]=57, [0x48]=28, [0x49]=29, [0x4A]=74, [0x4B]=75,
-    [0x4C]=66, [0x4D]=67, [0x4E]=64, [0x4F]=65, [0x50]=52, [0x51]=53,
-    [0x5C]=32, [0x5D]=33, [0x5E]=34, [0x5F]=35, [0x68]=54, [0x69]=55,
+    [0x4C]=66, [0x4D]=67, [0x4E]=64, [0x4F]=65,
+    [0x50]=ROOMROM_ITEM_TILE_FAIRY_SPARK_F0,
+    [0x51]=ROOMROM_ITEM_TILE_FAIRY_SPARK_F0+1,
+    [0x52]=ROOMROM_ITEM_TILE_FAIRY_SPARK_F1,
+    [0x53]=ROOMROM_ITEM_TILE_FAIRY_SPARK_F1+1,
+    [0x5C]=32, [0x5D]=33, [0x5E]=34, [0x5F]=35,
+    [0x66]=ROOMROM_ITEM_TILE_DROP_CLOCK,
+    [0x67]=ROOMROM_ITEM_TILE_DROP_CLOCK+1,
+    [0x68]=ROOMROM_ITEM_TILE_HEART_CONTAINER,
+    [0x69]=ROOMROM_ITEM_TILE_HEART_CONTAINER+1,
     [0x6E]=76, [0x6F]=77, [0x70]=78, [0x71]=79, [0x72]=24, [0x73]=25,
     [0x74]=26, [0x75]=27, [0x76]=62, [0x77]=63, [0x7A]=80, [0x7B]=81,
     [0x7C]=82, [0x7D]=83, [0x7E]=84, [0x7F]=85, [0x82]=2,  [0x83]=3,
     [0x84]=4,  [0x85]=5,  [0x86]=16, [0x87]=17, [0x88]=18, [0x89]=19,
     [0x9E]=36, [0x9F]=37, [0xA0]=38, [0xA1]=39, [0xCE]=44, [0xCF]=45,
-    [0xD0]=46, [0xD1]=47, [0xF0]=86, [0xF1]=87, [0xF2]=88, [0xF3]=89,
+    [0xD0]=46, [0xD1]=47, [0xF0]=86, [0xF1]=87, [0xF2]=88,
+    /* NES $F3 is an odd 8x16 OAM tile: it selects PT1 $F2/$F3. */
+    [0xF3]=ROOMROM_ITEM_TILE_DROP_HEART,
     /* All other entries default 0 — caller must check ITEM_ATTR_MARKER first. */
 };
 static const unsigned char k_cloud_chr_subpal1[6 * 32] = {
@@ -300,6 +308,21 @@ static const unsigned char k_cloud_chr_subpal1[6 * 32] = {
     0x00u, 0x00u, 0x00u, 0x07u, 0x00u, 0x00u, 0x07u, 0x70u,
 };
 static unsigned char s_cloud_chr_uploaded = 0u;
+static unsigned char s_spark_chr_uploaded = 0u;
+extern const unsigned char common_chr[];
+
+/* NES DrawSpark selects item-slot $24 frames $62/$64. The ROM-derived
+ * common_chr contains both 8x16 pairs at $62..$65, but the transient
+ * enemy bank overwrites their usual VRAM addresses. Copy them into a
+ * stable slot. The spark's NES sub-pal 1 routes directly to PAL2. */
+static void spark_chr_ensure_uploaded(void)
+{
+    if (s_spark_chr_uploaded) return;
+    render_chr_upload((unsigned short)(ROOMROM_SPARK_TILE_BASE * 32u),
+                      common_chr + 0x62u * 32u,
+                      ROOMROM_SPARK_TILE_COUNT * 32u);
+    s_spark_chr_uploaded = 1u;
+}
 
 static void cloud_chr_ensure_uploaded(void)
 {
@@ -316,9 +339,6 @@ void enemy_render_publish_meta(unsigned int slot)
     unsigned char ms = (unsigned char)ENEMY_METASTATE(slot);
     if (ms == 0u) return;
 
-    /* Ensure sub-pal 1 biased cloud CHR is in VRAM. Idempotent. */
-    cloud_chr_ensure_uploaded();
-
     /* Map metastate -> Genesis VRAM tile offset within biased cloud bank.
      * Cloud frame 1 (ms=$01) = NES OAM tile $70 = stacked PT0 $70+$71
      * = Genesis VRAM 1300+1301 = offset 0 (Genesis SIZE(1,2) fetches
@@ -327,12 +347,14 @@ void enemy_render_publish_meta(unsigned int slot)
      * Cloud frame 3 (ms=$03) = $74+$75 = Genesis 1304+1305 = offset 4. */
     unsigned char gen_tile_offset;
     if (ms >= 0x10u) {
-        /* Death-spark — TODO: needs separate sub-pal 1 biased CHR for
-         * NES item slot $24 (death-spark tiles $62/$64). For now reuse
-         * cloud frame 3 ($74) so spark renders with cloud-puff colors.
-         * Wrong tile pattern but right palette - cosmetic vs invisible. */
-        gen_tile_offset = 4u;
+        /* $10 is blank; $11/$13 use frame 1 ($62), $12 uses frame 0
+         * ($64). The right side mirrors the same 8x16 tile. */
+        if (ms == 0x10u) return;
+        spark_chr_ensure_uploaded();
+        gen_tile_offset = (unsigned char)(ROOMROM_SPARK_TILE_BASE
+                         - ENEMY_RENDER_META_VRAM_TILE + ((ms & 1u) ? 0u : 2u));
     } else {
+        cloud_chr_ensure_uploaded();
         unsigned char frame = (unsigned char)(ms & 0x03u);
         if (frame == 0u || frame == 1u) gen_tile_offset = 0u;  /* $70 */
         else if (frame == 2u)           gen_tile_offset = 2u;  /* $72 */
@@ -348,14 +370,14 @@ void enemy_render_publish_meta(unsigned int slot)
 
     enemy_render_entry_t *eL = &s_enemy_entries[slot][0];
     eL->tile  = gen_tile_offset;
-    eL->attrs = META_ATTR_MARKER;                       /* sub-pal 0 -> PAL1, marker */
+    eL->attrs = (unsigned char)(META_ATTR_MARKER | ((ms >= 0x10u) ? 1u : 0u));
     eL->x     = x;
     eL->y     = y;
 
     enemy_render_entry_t *eR = &s_enemy_entries[slot][1];
     eR->tile  = gen_tile_offset;                        /* same tile (mirrored) */
-    eR->attrs = (unsigned char)(META_ATTR_MARKER | 0x40u);  /* + h-flip */
-    eR->x     = (unsigned char)(x + 8u);
+    eR->attrs = (unsigned char)(eL->attrs | 0x40u);  /* + h-flip */
+    eR->x     = (unsigned char)(x + ((ms >= 0x10u) ? 7u : 8u));
     eR->y     = y;
 
     s_enemy_count[slot] = 2u;
@@ -363,11 +385,16 @@ void enemy_render_publish_meta(unsigned int slot)
 
 void enemy_render_reset_oam(void)
 {
-    /* 2026-05-15 perf: 256-byte OAM clear is no longer required for
-     * rendering — the native sweep reads the side-channel cache, not
-     * NES OAM mirror. Only RollingSpriteIndex needs reset so the
-     * SpriteOffsets table starts fresh each frame.
-     * Saves ~2000 cycles per frame. */
+    unsigned int i;
+    /* Both render paths consume only this frame's writes. Boss rooms
+     * read OAM; ordinary rooms read the native cache. Clearing only at
+     * the end of the native sweep preserved old entries in boss rooms.
+     * NES hides unused sprites by Y=$F0; only the 40 enemy Y cells need
+     * clearing, not the complete 256-byte OAM mirror. */
+    enemy_render_native_reset();
+    for (i = 24u; i < 64u; ++i) {
+        RAM(NES_SPRITES_BASE + i * 4u) = 0xF0u;
+    }
     RAM(NES_ROLLING_SPR_INDEX) = 0u;
 }
 
@@ -490,6 +517,19 @@ void enemy_render_reset_oam(void)
  * those to ROOMROM_BOSS_TILE_BASE when this is set. */
 static unsigned char s_boss_bank_active = 0u;
 
+/* CommonSpritePatterns is already extracted from the supplied ROM.
+ * Its $44/$45 bytes match live NES boss CHR (bank 2 offset $04BF).
+ * Keep these tiles outside the bank overlay at SPR_BASE+44. */
+static unsigned char s_fireball_chr_uploaded;
+static void ensure_fireball_chr(void)
+{
+    if (s_fireball_chr_uploaded) return;
+    render_chr_upload((unsigned short)(ROOMROM_FIREBALL_TILE_BASE * 32u),
+                      common_chr + 0x44u * 32u,
+                      ROOMROM_FIREBALL_TILE_COUNT * 32u);
+    s_fireball_chr_uploaded = 1u;
+}
+
 static inline unsigned short translate_tile(unsigned char nes_tile,
                                             unsigned char nes_attrs)
 {
@@ -508,12 +548,20 @@ static inline unsigned short translate_tile(unsigned char nes_tile,
         return (unsigned short)(ROOMROM_ITEM_TILE_BASE +
                                 (unsigned short)atlas_idx);
     }
+    if (nes_tile == 0x44u || nes_tile == 0x45u) {
+        ensure_fireball_chr();
+        return (unsigned short)(ROOMROM_FIREBALL_TILE_BASE + nes_tile - 0x44u);
+    }
     if (nes_tile >= NES_FIRE_TILE_FIRST && nes_tile <= NES_FIRE_TILE_LAST) {
         /* Fire flame -> ITEM atlas (clobber-safe). See block comment above. */
         return (unsigned short)(ROOMROM_ITEM_TILE_BASE + ITEM_ATLAS_FLAME_IDX +
                                 (unsigned short)(nes_tile - NES_FIRE_TILE_FIRST));
     }
     if (s_boss_bank_active && nes_tile >= 0xC0u) {
+        if ((nes_attrs & 0x03u) == 3u) {
+            return (unsigned short)(ROOMROM_BOSS_SUBPAL3_TILE_BASE +
+                                    (unsigned short)(nes_tile - 0xC0u));
+        }
         /* Boss CHR bank resident at ROOMROM_BOSS_TILE_BASE = NES PPU $0C00
          * (tile $C0) per z_03.asm:91 FetchPatternBlockUWBoss. Boss draw
          * routines (e.g. c_aquamentus_draw) emit raw NES tiles $C0+; the
@@ -522,11 +570,16 @@ static inline unsigned short translate_tile(unsigned char nes_tile,
         return (unsigned short)(ROOMROM_BOSS_TILE_BASE +
                                 (unsigned short)(nes_tile - 0xC0u));
     }
-    if (nes_tile < NES_OWSP_BANK_FIRST) {
+    /* NES source: Z_03.asm:PatternBlockPpuAddrs/PatternBlockPpuAddrsExtra.
+     * Drained C: translate_tile + level_chr_swap enemy bank upload.
+     * Coverage: PARTIAL scene enemy tiles; Stance: EXTEND.
+     * OW starts at $08E0; per-level UWSP starts at $09E0. */
+    const unsigned char bank_first = nes_ram[0x0010u] ? 0x9Eu : NES_OWSP_BANK_FIRST;
+    if (nes_tile < bank_first) {
         /* Common sprite pattern block at SPR_BASE 1:1. */
         return (unsigned short)(ROOMROM_SPR_TILE_BASE + (unsigned short)nes_tile);
     }
-    /* Per-room transient bank: NES tile $8E+k -> SCENE_OBJ tile k.
+    /* Per-room transient bank: OW $8E+k / UW $9E+k -> scene tile k.
      *
      * Phase F (2026-05-18): UWSP banks collapsed from 4 sub-pal copies to
      * 1 sub-pal-0 copy. Both OW (OWSP) and UW (UWSP127/358/469) now use
@@ -534,7 +587,7 @@ static inline unsigned short translate_tile(unsigned char nes_tile,
      * pal selection routes via Genesis OAM pal field in translate_attrs
      * (PAL1/PAL2/PAL3 = NES SPR sub-pals 0/1/2 per
      * src/game/world/bg_palette.h CRAM target). */
-    unsigned char bank_tile = (unsigned char)(nes_tile - NES_OWSP_BANK_FIRST);
+    unsigned char bank_tile = (unsigned char)(nes_tile - bank_first);
     (void)nes_attrs;  /* sub_pal no longer needed for tile resolution */
     return (unsigned short)(ROOMROM_SCENE_OBJ_TILE_BASE + bank_tile);
 }
@@ -567,6 +620,10 @@ static inline unsigned short translate_attrs(unsigned char nes_attrs,
      * src/game/world/render/subpal_routing.h. */
     unsigned char sub_pal  = (unsigned char)(nes_attrs & 0x03u);
     unsigned short pal_bank = (unsigned short)roomrom_spr_subpal_to_pal(sub_pal);
+    if (tile_id >= ROOMROM_BOSS_SUBPAL3_TILE_BASE &&
+        tile_id < ROOMROM_BOSS_SUBPAL3_TILE_BASE + ROOMROM_BOSS_SUBPAL3_TILE_COUNT) {
+        pal_bank = RENDER_PAL1;
+    }
 
     unsigned short sat = (unsigned short)(tile_id & 0x07FFu);
     sat |= (unsigned short)(pal_bank << 13);
@@ -576,11 +633,89 @@ static inline unsigned short translate_attrs(unsigned char nes_attrs,
     return sat;
 }
 
+/* NES source: Z_01.asm:Anim_WriteSprite / Z_04.asm:WriteBossSprite.
+ * Drained C: enemy_render_native_sweep and draw_write_boss_sprite.
+ * Coverage: PARTIAL (shared submission of existing per-frame producers).
+ * Stance: EXTEND. Boss OAM and native projectile/item caches are disjoint;
+ * both must feed the same bounded SAT chain in a mixed boss scene. */
+static unsigned int emit_native_entries(unsigned int sat_slot)
+{
+    unsigned int slot;
+    for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
+        unsigned char n = s_enemy_count[slot];
+        unsigned char ei;
+        if (ENEMY_TYPE(slot) == 0u) continue;
+        if (n == 0u) continue;
+        if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
+
+        /* Phase C live hit-flash: compute once per slot since flash
+         * affects all latched entries equally. Sub-pal bits 1..0 of
+         * attrs override with FrameCounter & 0x03 if ObjInvincibility
+         * Timer ($04F0+slot) is non-zero. NES Z_01.asm:5367-5371 logic,
+         * applied at sweep-time instead of latch-time so the palette
+         * cycles every frame regardless of when the enemy last drew. */
+        unsigned char inv_active = (ENEMY_RENDER_INV_TIMER(slot) != 0u);
+        unsigned char fc_pal = (unsigned char)(RAM(NES_FRAME_COUNTER) & 0x03u);
+
+        for (ei = 0u; ei < n; ++ei) {
+            enemy_render_entry_t *e = &s_enemy_entries[slot][ei];
+            unsigned char y = e->y;
+            if (y == 0xF0u) continue;
+            if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
+
+            unsigned char render_attrs = e->attrs;
+            if (inv_active) {
+                render_attrs = (unsigned char)((render_attrs & 0xFCu) | fc_pal);
+            }
+            unsigned short tile_id   = translate_tile(e->tile, render_attrs);
+            unsigned short sat_attrs = translate_attrs(render_attrs, tile_id);
+            /* Phase E: each cache entry = one NES OAM (8x16). Render
+             * as Genesis SIZE(1,2) for exact 1:1 mapping. Per-tile
+             * h_flip preserved because each entry's attrs byte was
+             * captured separately. Wide enemies (Aquamentus 24x16)
+             * render as N entries (3 OAM = 3 SIZE(1,2) at successive
+             * x positions), no special-case needed. */
+            unsigned short size = RENDER_SPRITE_SIZE(1, 2);
+
+            unsigned char link = (sat_slot < ENEMY_RENDER_SLOT_LAST)
+                                     ? (unsigned char)(sat_slot + 1u) : 0u;
+            render_set_sprite_inline((unsigned short)sat_slot,
+                                     (signed short)e->x, (signed short)y,
+                                     size, sat_attrs, link);
+            ++sat_slot;
+        }
+    }
+
+    /* Phase G 2026-05-15 — Gleeok sub-cache emission. Body / heads /
+     * segments published via enemy_render_publish_gleeok land here.
+     * Drained in flat order (body first, then heads, then segments
+     * per the NES draw call ordering). Skip if no Gleeok entries.
+     * Cap honored by publisher (drops over 20). */
+    {
+        unsigned char gi;
+        for (gi = 0u; gi < s_gleeok_count; ++gi) {
+            if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
+            enemy_render_entry_t *e = &s_gleeok_entries[gi];
+            if (e->y == 0xF0u) continue;
+
+            unsigned short tile_id   = translate_tile(e->tile, e->attrs);
+            unsigned short sat_attrs = translate_attrs(e->attrs, tile_id);
+            unsigned short size      = RENDER_SPRITE_SIZE(1, 2);
+            unsigned char  link      = (sat_slot < ENEMY_RENDER_SLOT_LAST)
+                                          ? (unsigned char)(sat_slot + 1u) : 0u;
+            render_set_sprite_inline((unsigned short)sat_slot,
+                                     (signed short)e->x, (signed short)e->y,
+                                     size, sat_attrs, link);
+            ++sat_slot;
+        }
+    }
+
+    return sat_slot;
+}
+
 void enemy_render_sweep_oam_to_sat(void)
 {
-    /* Phase 1 diagnostic: increment sentinel at NES $07FE per frame
-     * so probe can verify this fn fires. */
-    nes_ram[0x07FEu] = (unsigned char)(nes_ram[0x07FEu] + 1u);
+    /* $07FE belongs to native UW progress; rendering must not mutate it. */
 
     /* Phase 8: detect boss-room (boss CHR bank loaded) by scanning slots
      * 1..11 for a boss ObjType. Boss types $31-34/$38-3E/$41-48 (Z_07
@@ -648,6 +783,8 @@ void enemy_render_sweep_oam_to_sat(void)
         if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
     }
 
+    sat_slot = emit_native_entries(sat_slot);
+
     /* 2026-05-15 perf fix: drop the up-to-54-slot pad loop. Write a
      * single terminator at the next slot with link=0, hiding it off-
      * screen. Genesis VDP sprite processing walks the link chain from
@@ -659,6 +796,11 @@ void enemy_render_sweep_oam_to_sat(void)
         render_set_sprite_inline((unsigned short)sat_slot,
                                  (signed short)-32, (signed short)-32,
                                  RENDER_SPRITE_SIZE(1, 1), 0u, 0u);
+        /* The boss OAM path shares the bounded SAT upload with the native
+         * path. Include every emitted part and the chain terminator. */
+        g_enemy_render_last_sat_slot = (unsigned char)(sat_slot + 1u);
+    } else {
+        g_enemy_render_last_sat_slot = (unsigned char)sat_slot;
     }
 }
 
@@ -713,12 +855,21 @@ extern unsigned char roomrom_is_scrolling(void);
 
 void enemy_render_native_sweep(void)
 {
-    unsigned int slot;
+    s_boss_bank_active = 0u;
+    /* Zelda uses NES boss tile $F6 while sharing the chamber with guard
+     * fires, which stay on the native per-object submission path. */
+    {
+        unsigned int s;
+        for (s = 1u; s <= 11u; ++s) {
+            if ((unsigned char)ENEMY_TYPE(s) == 0x37u) {
+                s_boss_bank_active = 1u;
+                break;
+            }
+        }
+    }
     unsigned int sat_slot = ROOMROM_SPRITE_SLOT_ENEMY_FIRST;
 
-    /* Phase 1 diagnostic: increment sentinel at NES $07FE per frame
-     * so probe can verify this fn fires. */
-    nes_ram[0x07FEu] = (unsigned char)(nes_ram[0x07FEu] + 1u);
+    /* $07FE belongs to native UW progress; rendering must not mutate it. */
 
     /* 2026-05-22 — hide enemies during room scroll transition.
      * Without this, scroll-completion fires enemy_loop_room_init
@@ -735,73 +886,7 @@ void enemy_render_native_sweep(void)
     }
 
 
-    for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
-        unsigned char n = s_enemy_count[slot];
-        unsigned char ei;
-        if (n == 0u) continue;
-        if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
-
-        /* Phase C live hit-flash: compute once per slot since flash
-         * affects all latched entries equally. Sub-pal bits 1..0 of
-         * attrs override with FrameCounter & 0x03 if ObjInvincibility
-         * Timer ($04F0+slot) is non-zero. NES Z_01.asm:5367-5371 logic,
-         * applied at sweep-time instead of latch-time so the palette
-         * cycles every frame regardless of when the enemy last drew. */
-        unsigned char inv_active = (ENEMY_RENDER_INV_TIMER(slot) != 0u);
-        unsigned char fc_pal = (unsigned char)(RAM(NES_FRAME_COUNTER) & 0x03u);
-
-        for (ei = 0u; ei < n; ++ei) {
-            enemy_render_entry_t *e = &s_enemy_entries[slot][ei];
-            unsigned char y = e->y;
-            if (y == 0xF0u) continue;
-            if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
-
-            unsigned char render_attrs = e->attrs;
-            if (inv_active) {
-                render_attrs = (unsigned char)((render_attrs & 0xFCu) | fc_pal);
-            }
-            unsigned short tile_id   = translate_tile(e->tile, render_attrs);
-            unsigned short sat_attrs = translate_attrs(render_attrs, tile_id);
-            /* Phase E: each cache entry = one NES OAM (8x16). Render
-             * as Genesis SIZE(1,2) for exact 1:1 mapping. Per-tile
-             * h_flip preserved because each entry's attrs byte was
-             * captured separately. Wide enemies (Aquamentus 24x16)
-             * render as N entries (3 OAM = 3 SIZE(1,2) at successive
-             * x positions), no special-case needed. */
-            unsigned short size = RENDER_SPRITE_SIZE(1, 2);
-
-            unsigned char link = (sat_slot < ENEMY_RENDER_SLOT_LAST)
-                                     ? (unsigned char)(sat_slot + 1u) : 0u;
-            render_set_sprite_inline((unsigned short)sat_slot,
-                                     (signed short)e->x, (signed short)y,
-                                     size, sat_attrs, link);
-            ++sat_slot;
-        }
-    }
-
-    /* Phase G 2026-05-15 — Gleeok sub-cache emission. Body / heads /
-     * segments published via enemy_render_publish_gleeok land here.
-     * Drained in flat order (body first, then heads, then segments
-     * per the NES draw call ordering). Skip if no Gleeok entries.
-     * Cap honored by publisher (drops over 20). */
-    {
-        unsigned char gi;
-        for (gi = 0u; gi < s_gleeok_count; ++gi) {
-            if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
-            enemy_render_entry_t *e = &s_gleeok_entries[gi];
-            if (e->y == 0xF0u) continue;
-
-            unsigned short tile_id   = translate_tile(e->tile, e->attrs);
-            unsigned short sat_attrs = translate_attrs(e->attrs, tile_id);
-            unsigned short size      = RENDER_SPRITE_SIZE(1, 2);
-            unsigned char  link      = (sat_slot < ENEMY_RENDER_SLOT_LAST)
-                                          ? (unsigned char)(sat_slot + 1u) : 0u;
-            render_set_sprite_inline((unsigned short)sat_slot,
-                                     (signed short)e->x, (signed short)e->y,
-                                     size, sat_attrs, link);
-            ++sat_slot;
-        }
-    }
+    sat_slot = emit_native_entries(sat_slot);
 
     /* Terminator: hide remaining SAT slots via chain break (link=0). */
     if (sat_slot <= ENEMY_RENDER_SLOT_LAST) {

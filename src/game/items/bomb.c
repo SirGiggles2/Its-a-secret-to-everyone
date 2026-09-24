@@ -1,4 +1,5 @@
 #include "bomb.h"
+#include "../../abi/platform_abi.h"
 #include "../world/render/sprite_render.h"
 #include "../../state/inventory.h"
 
@@ -33,11 +34,14 @@ void roomrom_bomb_init(void)
 void roomrom_bomb_place(link_face_t face, short link_x, short link_y)
 {
     if (s_state != BOMB_IDLE) return;
-    /* NES Z_07.asm WieldBomb: refuse if InvBombs == 0; decrement on
-     * spawn (one bomb per slot, NES uses two slots — RoomRom v6 single
-     * slot only). */
-    if (g_inventory.bombs == 0u) return;
-    g_inventory.bombs--;
+    /* NES source: Z_01.asm:WieldBomb.
+     * Drained C: roomrom_bomb_place; Coverage: PARTIAL count/eligibility.
+     * Stance: EXTEND. Native InvBombs owns awards and spending; update
+     * the compatibility mirror after accepted placement.
+     * The existing single-projectile-slot limitation remains. */
+    if (nes_ram[0x0658u] == 0u) return;
+    nes_ram[0x0658u]--;
+    g_inventory.bombs = nes_ram[0x0658u];
     inventory_hud_mark_dirty();
     s_state = BOMB_FUSE;
     s_timer = BOMB_FUSE_FRAMES;

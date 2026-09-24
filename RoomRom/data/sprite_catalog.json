@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
   "generated_by": "tools/atlas/gen_sprite_catalog.py",
-  "verifier_output": "verify_vram_budget: OK  BG=tiles 1..632  SPR=tiles 633..919  ITEM=tiles 920..1017  BOSS=SCENE_OBJ-shared (NES parity)  HUD_BACKDROP=retired (+8 tiles freed)  headroom=518 tiles before VDP tables\n  hscroll_table_unused=1020 bytes (HSCROLL_PLANE mode uses 4 B of 1 KB allocated; available as SAT-extension scratch only)",
+  "verifier_output": "verify_vram_budget: OK  BG=tiles 1..637  SPR=tiles 638..924  ITEM=tiles 925..1028  BOSS=SCENE_OBJ-shared (NES parity)  BOSS_PAL3=tiles 1029..1092  CLOUD=tiles 1300..1305  FIREBALL=tiles 1306..1307  SPARK=tiles 1308..1311  SUBSCREEN_SPRITE=tiles 1280..1295  contiguous_tail_headroom=224 tiles before VDP tables\n  hscroll_table_unused=1020 bytes (HSCROLL_PLANE mode uses 4 B of 1 KB allocated; available as SAT-extension scratch only)",
   "vram_map": {
     "BG_TILE_BASE": 1,
-    "BG_TILE_COUNT_PER_PAL": 632,
+    "BG_TILE_COUNT_PER_PAL": 637,
     "BG_SUBPAL_COUNT": 1,
-    "SPR_TILE_BASE": 633,
+    "SPR_TILE_BASE": 638,
     "SPR_TILE_COUNT_PER_PAL": 287,
     "SPR_SUBPAL_COUNT": 1,
     "ITEM_SUBPAL_COUNT": 1,
@@ -17,47 +17,47 @@
   "banks": {
     "BG": {
       "tile_base": 1,
-      "tiles_resident": 632,
+      "tiles_resident": 637,
       "tile_range": [
         1,
-        632
+        637
       ],
       "subpal_count": 1,
-      "bytes_resident": 20224,
+      "bytes_resident": 20384,
       "source": "data/chr/overworld_bg.c + data/chr/underworld_bg.c (via RoomRom/tools/expand_bg_chr.py)",
       "replication": "4x pixel-bias (Phase J selective dedup planned)"
     },
     "SPR": {
-      "tile_base": 633,
+      "tile_base": 638,
       "tiles_resident": 287,
       "tile_range": [
-        633,
-        919
+        638,
+        924
       ],
       "subpal_count": 1,
       "bytes_resident": 9184,
       "source": "data/chr/common.c (Link / sword / common sprites)",
       "replication": "1x (sub-pal 0); future sub-pal 1+ via OAM pal field",
       "scene_obj_slot": {
-        "tile_base": 677,
+        "tile_base": 682,
         "slot_size": 136,
         "occupants": "UWSP (34), OWSP (114), BOSS (64) \u2014 one at a time"
       }
     },
     "ITEM": {
-      "tile_base": 920,
-      "tiles_resident": 98,
+      "tile_base": 925,
+      "tiles_resident": 104,
       "tile_range": [
-        920,
-        1017
+        925,
+        1028
       ],
       "subpal_count": 1,
-      "bytes_resident": 1045,
+      "bytes_resident": 1109,
       "source": "RoomRom/data/item_chr_manifest.json + RoomRom/tools/gen_atlas.py",
       "replication": "1x (Phase B collapsed from 3x on 2026-05-18)"
     },
     "BOSS": {
-      "tile_base": 677,
+      "tile_base": 682,
       "tile_count": 64,
       "subpal_count": 1,
       "residence": "transient (SCENE_OBJ slot, shared with UWSP/OWSP)",
@@ -325,16 +325,16 @@
       "name": "heart_container",
       "item": "heart_container",
       "direction_class": "static",
-      "nes_frame_tile": "0x50",
+      "nes_frame_tile": "0x68",
       "tile_ids": [
-        "0x50",
-        "0x51"
+        "0x68",
+        "0x69"
       ],
       "sprite_size": [
-        1,
+        2,
         2
       ],
-      "draw_rule": "narrow_8x16"
+      "draw_rule": "wide_16x16_mirrored_8x16_slim"
     },
     {
       "name": "big_key",
@@ -573,6 +573,36 @@
       "tile_ids": [
         "0xF2",
         "0xF3"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ],
+      "draw_rule": "narrow_8x16"
+    },
+    {
+      "name": "drop_heart",
+      "item": "heart",
+      "direction_class": "static",
+      "nes_frame_tile": "0xF3",
+      "tile_ids": [
+        "0xE0",
+        "0xE1"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ],
+      "draw_rule": "narrow_8x16"
+    },
+    {
+      "name": "drop_clock",
+      "item": "clock",
+      "direction_class": "static",
+      "nes_frame_tile": "0x66",
+      "tile_ids": [
+        "0x66",
+        "0x67"
       ],
       "sprite_size": [
         1,

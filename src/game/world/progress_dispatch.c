@@ -11,7 +11,7 @@
 #include "progress_dispatch.h"
 #include "platform_abi.h"      /* RAM, nes_ram[], NES_SRAM_*, OBJ */
 #include "save_state.h"        /* SAVE_ROOM_FLAGS_PTR_LO/HI */
-#include "progress_state.h"    /* SAVEFILE_PTR_LO/HI, SAVEFILE_MASK_LO/HI, ROOM_TILE_OBJ_*, CUR_INV_TILE, POWER_TRIFORCE_FANFARE_FLAG, CURTAIN_TIMER, HUD_DIRTY_FLAG */
+#include "progress_state.h"    /* SAVEFILE_PTR_LO/HI, SAVEFILE_MASK_LO/HI, ROOM_TILE_OBJ_*, CUR_INV_TILE, POWER_TRIFORCE_FANFARE_FLAG, CURTAIN_TIMER, LAST_BOSS_DEFEATED */
 #include "world_state.h"       /* CUR_ROOM_ID, TRANSFER_BUF_BYTE/POS, OBJ_MOVE_TIMER */
 #include "combat_state.h"      /* MON_TYPE, COMBAT_PART_INDEX, LINK_ACTION_TIMER */
 #include "object_state.h"      /* OBJ_STATE */
@@ -273,7 +273,9 @@ void progress_check_power_triforce_fanfare(void)
     if (!CURTAIN_TIMER) {
         progress_replace_ashes_palette_row();
         ITEM_SFX_SECONDARY = 32u;
-        HUD_DIRTY_FLAG = 1u;
+        /* NES Z_01.asm:CheckPowerTriforceFanfare/@EndFanfare sets
+         * LastBossDefeated, which unlocks secret-trigger-3 shutters. */
+        LAST_BOSS_DEFEATED = 1u;
         LINK_ACTION_TIMER = 0u;
         POWER_TRIFORCE_FANFARE_FLAG = 0u;
         return;

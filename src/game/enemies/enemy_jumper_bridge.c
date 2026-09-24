@@ -17,9 +17,8 @@
  *   c_bound_direction_vertically  — NATIVE drain of NES Z_01.asm:3382
  *                                   BoundDirectionVertically.
  *   c_reverse_obj_dir8            — NATIVE drain of NES Z_04.asm:11664
- *                                   ReverseObjDir8 (skips moldorm
- *                                   $41 deferred-bounce branch — boulder
- *                                   $20 / tektite never hit it).
+ *                                   ReverseObjDir8, including Moldorm's
+ *                                   deferred bounce for head slots 5/10.
  *   z07_find_empty_monster_slot   — NATIVE body (slots 11..1 scan, return
  *                                   first ObjType==0 slot, else 0).
  *                                   Mirrors enemy_boss_bridge.c:79
@@ -43,6 +42,7 @@
 
 /* Drained twin in src/oracle/enemies/enemy_flyer_runtime.c:205. */
 extern void enrt_bound_flyer(unsigned int slot);
+extern void enrt_defer_bounce(unsigned int slot, unsigned int dir_idx);
 
 /* NES Z_04.asm:11540 Directions8 — already drained in flyer_bridge as
  * `const unsigned char Directions8[8]`. Reuse via extern. */
@@ -205,18 +205,17 @@ static unsigned char jumper_get_obj_dir8_index(unsigned int slot)
  *   if ObjType[slot] != $41 (moldorm) then
  *       ObjDir[slot] := Directions8[idx]
  *
- * Boulder $20 / tektite never hit the moldorm $41 deferred-bounce
- * branch, so we omit it (drain trims to actually-reachable code per
- * Rule D1). Add the branch here if/when moldorm wires through. */
+ * Moldorm heads defer the opposite direction until their movement
+ * chain consumes it; NES DeferBounce only stores for slots 5/10. */
 void c_reverse_obj_dir8(unsigned int slot)
 {
     unsigned int idx = (unsigned int)jumper_get_obj_dir8_index(slot);
     idx = (idx + 4u) & 7u;
     if ((unsigned char)ENEMY_TYPE(slot) != 0x41u) {
         ENEMY_DIR(slot) = Directions8[idx];
+    } else {
+        enrt_defer_bounce(slot, idx);
     }
-    /* moldorm $41 branch (DeferBounce) intentionally omitted — wire when
-     * needed for moldorm dispatch. */
 }
 
 /* ----------------------------------------------------------------- *

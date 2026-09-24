@@ -1,95 +1,80 @@
-# Dungeon Harness (Phase 14.0)
+# Dungeon scenario runner
 
-Deterministic per-dungeon save-state-injection harness for proving
-NES Zelda 1 end-to-end completion on Debug.md.
+Runs selected probes in a separate BizHawk process and records a fresh result
+under builds/reports/dungeon_harness/L<level>Q<quest>-<run-id>/.
 
-## Layout
+## Current verified scope
 
-```
-tools/dungeon_harness/
-  README.md                 — this file
-  manifest.json             — 18-row pinned save-state + RNG + probe map
-  run_all.py                — orchestrator (filters by --level / --quest)
-  save_states/              — BizHawk save states (1 per row)
-    L1Q1.State              — checked in once captured + hashed
-    L2Q1.State
-    …
-    L9Q2.State
-  probes/
-    dungeon_template.lua    — copy-this template for per-row probes
-    dungeon_1_q1.lua        — L1Q1 critical-path input replay
-    dungeon_2_q1.lua
-    …
-    dungeon_9_q2.lua
-```
+L1Q1 supports an **ENTRY_ONLY** scenario: boot, debug chord, synthetic room
+warp, verify room/level/quest and an advancing gameplay counter, screenshot,
+and savestate. This does not prove ordinary dungeon entry, combat, reward
+collection, or quest completion.
 
-## How a row gets populated
-
-1. **Capture save state**: load Debug.md in BizHawk, play (or
-   inject) up to the dungeon entry. Save state. Drop in
-   `save_states/L<level>Q<quest>.State`.
-2. **Hash + seed**: compute SHA256, paste into `manifest.json` row.
-   Note BizHawk RNG seed if applicable.
-3. **Author probe**: copy `dungeon_template.lua` →
-   `dungeon_<level>_q<n>.lua`. Fill in `SAVE_STATE_PATH`,
-   `INPUT_SEQUENCE` (frame-keyed `joypad.set(...)` events for the
-   minimal critical path from entry to boss kill).
-4. **Dry-run**: `python tools/dungeon_harness/run_all.py --dry-run
-   --level 1 --quest 1` — verifies files + hash match manifest.
-5. **Live run**: launch BizHawk with the probe; verify it emits
-   `builds/reports/dungeon_harness/<label>.json` with verdict
-   GREEN.
+Legacy dungeon probes are still load-only scaffolds. Completion mode refuses
+them until their state is pinned to the current ROM and their probe explicitly
+implements the completion contract. Other rows are populated as needed.
 
 ## Run
 
-```
-python tools/dungeon_harness/run_all.py             # all 18 rows
-python tools/dungeon_harness/run_all.py --quest 1   # 9 Q1 rows
-python tools/dungeon_harness/run_all.py --level 1   # both quests, L1
-python tools/dungeon_harness/run_all.py --dry-run   # checks only
-```
+PowerShell, from the repository root:
 
-Exit codes:
-- 0 — all selected rows GREEN (or dry-run sane)
-- 1 — at least one row RED
-- 2 — manifest schema or file-missing error
+~~~powershell
+$env:BIZHAWK_EXE = 'C:\path\to\BizHawk\EmuHawk.exe'
+python tools/dungeon_harness/run_all.py --level 1 --quest 1 --entry-only
+python tools/dungeon_harness/run_all.py --level 1 --quest 1 --dry-run
+~~~
 
-## Why save-state injection (not movies)
+Use --rom to choose a local output, --emuhawk instead of the environment
+variable, and --timeout to set a positive per-scenario wall-clock limit
+(default 120 seconds).
 
-Per debate-driven approach (Sonnet + Opus + Gemini), movies desync
-without seeded preconditions. CLIs can't realistically replay a
-4-hour 1-quest playthrough. Per-dungeon save-state injection
-guarantees deterministic preconditions (inventory + flags + RAM all
-pinned at entry) so the probe's critical-path input replays
-identically every run.
+The second command checks completion inputs only. Missing/unpinned states are
+ERROR, including with --dry-run. DRY_OK never means gameplay passed.
 
-## Schema
+Exit codes: 0 = selected scope succeeded (ENTRY_ONLY, PASS or DRY_OK);
+1 = scenario FAIL; 2 = setup/report ERROR. Read the named scope, not just exit 0.
 
-Each row emits `<label>.json` under `builds/reports/dungeon_harness/`
-with:
+## Result contract
 
-```json
-{
-  "label": "L1Q1 Eagle",
-  "level": 1, "quest": 1,
-  "entry": { "frame": ..., "room": ..., "level": ...,
-             "hearts": ..., "keys": ..., "bombs": ... },
-  "kill":  { "frame": ..., "room": ..., "kill_count": ...,
-             "boss_clear_frame": ..., "room_item_state": ... },
-  "verdict": "GREEN" | "RED"
-}
-```
+The runner provides HARNESS to Lua and loads report.lua. A probe calls
+HARNESS.finish(verdict, fields). The envelope binds run_id, ROM SHA256, level,
+quest and scope; result.json includes accepted data and a scope note.
 
-`boss_clear_frame > 0` AND `room_item_state == 0x00` (active item
-visible) = GREEN. Otherwise RED.
+- entry requires ENTRY_ONLY and matching room/level/quest plus positive frame_delta.
+- completion requires PASS and explicit entered, boss_killed and reward_collected
+  events. The implementing probe must observe these events from actual gameplay;
+  injecting completion flags is not evidence.
+- FAIL and ERROR remain unsuccessful.
+- Missing/old reports, mismatched identity/scope and unfinished legacy results
+  cannot satisfy a run.
 
-## Phase 14.0 status
+Completion rows require save_state_sha256, state_rom_sha256 and
+probe_scope: completion. A current-ROM entry snapshot is a useful setup asset,
+not a completed dungeon. Never transplant an old-build Genesis savestate into
+changed code without validating/recreating it.
 
-Scaffold shipped this commit:
-- `manifest.json` — schema + 18-row skeleton with all save-state
-  hashes + RNG seeds NULL pending live capture.
-- `run_all.py` — orchestrator + manifest validator + dry-run mode.
-- `probes/dungeon_template.lua` — per-row probe template.
+## Isolation and diagnostics
 
-Save states + per-row probes land as Phase 14.0 implementation PRs.
-Tracked as deferral `phase14_dungeon_harness_population`.
+The runner copies the installation's working config into private temporary
+staging, disables auto-loading and audio output, isolates SRAM/state/screenshot
+paths, and starts a hidden owned process. It uses GDI and full Windows short
+paths for CLI arguments. Install BizHawk/ROM in a space-free path if 8.3 paths
+are unavailable. It never kills all emulator processes.
+
+context.json, launch.json, emuhawk.log, probe.json and result.json describe the
+run. Successful entry captures include entry.png, title.png and entry.State.
+Temporary staging is retained for failure diagnosis; its path is in launch.json
+after normal exit. Missing reports/timeouts are errors, not automatic retries.
+
+The config and Lua CLI switches are documented in the
+[upstream argument parser](https://github.com/TASEmulators/BizHawk/blob/master/src/BizHawk.Client.Common/ArgParser.cs).
+This runner was exercised with BizHawk 2.11 / GPGX.
+
+## Focused contract checks
+
+~~~powershell
+python -m unittest discover -s tools/dungeon_harness -p test_run_all.py -v
+~~~
+
+These check stale identity, missing state, entry/completion separation, and
+required completion events. Do not run all dungeon probes for a local fix.

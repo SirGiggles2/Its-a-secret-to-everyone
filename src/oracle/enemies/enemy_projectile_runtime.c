@@ -146,6 +146,10 @@ void enrt_draw_shot(unsigned int slot) {
         c_draw_arrow(slot);
         return;
     }
+    if (type == 0x5C) {
+        c_draw_boomerang(slot);
+        return;
+    }
     if (type >= 0x57 && type < 0x5A) {
         c_draw_sword_shot_or_magic_shot(slot);
         return;
@@ -231,16 +235,8 @@ void enrt_check_shot_link_collision(unsigned int slot) {
  *   1. ObjQSpeedFrac = $80 (2 px/frame).
  *   2. If ObjTimer != 0: draw + check shooter alive (shooter gone →
  *      reset timer so arrow flies next frame). NES @CheckShooter path.
- *   3. Else: dispatch through state machine. State $1x/$2x → delegate
- *      to enrt_update_monster_shot which moves + Link-collides + draws.
- *      enrt_check_shot_link_collision (called inside) sets state $30 +
- *      bounce dir on shield hit. State $30 → enrt_bounce_shot ticks
- *      bounce counter + destroys at $20.
- *   4. Arrow state $20 spark deactivation handled via NES @Deactivate
- *      path — not yet drained; arrows transitioning to $20 would
- *      bounce-handle until counter saturates instead of destroying
- *      immediately. Visible diff: spark frame missing, destruction
- *      via bounce-counter saturation instead of anim-countdown.
+ *   3. State $20 uses UpdateArrowOrBoomerang's three-frame spark and
+ *      counted destruction. Other states keep the shot/bounce path.
  */
 void enrt_update_monster_arrow(unsigned int slot) {
     ENEMY_WALK_SPEED(slot) = 0x80u;
@@ -257,6 +253,28 @@ void enrt_update_monster_arrow(unsigned int slot) {
         return;
     }
 
+    /* NES Z_04.asm:2112-2143 sends both flying and sparking arrows through
+     * UpdateArrowOrBoomerang. The generic shot mover misses MoveShot's wall
+     * response and treats every non-$10 state as a shield bounce. */
+    {
+        unsigned char state_hi = (unsigned char)ENEMY_STATE_TIMER(slot) & 0xF0u;
+        if (state_hi == 0x10u || state_hi == 0x20u) {
+        enrt_update_arrow_or_boomerang(slot);
+        if (state_hi == 0x10u &&
+            (((unsigned char)ENEMY_STATE_TIMER(slot) & 0xF0u) == 0x10u)) {
+            /* NES CheckShotLinkCollision runs only while still flying.
+             * A shield collision enters $30; a harmful hit sets $06 and
+             * destroys the counted arrow. */
+            enrt_check_shot_link_collision(slot);
+            if (COMBAT_HARM_FLAG != 0u) {
+                ENEMY_STATE_TIMER(slot) = 0u;
+                enrt_destroy_counted_monster_shot(slot);
+            }
+        }
+        return;
+        }
+    }
+
     enrt_update_monster_shot(slot);
 }
 
@@ -269,10 +287,66 @@ static const unsigned char k_boomerang_qspeed_y[9] = {
     0x00, 0x20, 0x36, 0x4C, 0x60, 0x68, 0x70, 0x78, 0x80
 };
 
+/* NES Z_07.asm:4202 AnimateBoomerangAndCheckCollision through
+ * CalcBoomerangFrame. State $3x/$4x/$5x advances its minor frame every
+ * two frames, tests Link collision, then renders the matching phase. */
+static void enrt_boomerang_animate(unsigned int slot)
+{
+    /* NES DEC is byte-wrapping: a zero counter becomes $FF and does not
+     * advance the animation until the next complete countdown. */
+    ENEMY_ANIM_TIMER(slot) = (unsigned char)(ENEMY_ANIM_TIMER(slot) - 1u);
+    if (ENEMY_ANIM_TIMER(slot) == 0u) {
+        ENEMY_ANIM_TIMER(slot) = 2u;
+        ENEMY_STATE_TIMER(slot) =
+            (unsigned char)((ENEMY_STATE_TIMER(slot) + 1u) & 0x77u);
+    }
+}
+
+static void enrt_boomerang_animate_draw(unsigned int slot)
+{
+    enrt_boomerang_animate(slot);
+    if (slot < 0x0Du) {
+        ENEMY_COLLISION_FLAG = 0u;
+        z01_check_link_collision(slot);
+        if (ENEMY_COLLISION_FLAG != 0u) {
+            ENEMY_ANIM_TIMER(slot) = 3u;
+            ENEMY_STATE_TIMER(slot) = 0x20u;
+        }
+    }
+    c_draw_boomerang(slot);
+}
+
+/* NES UpdateArrowOrBoomerang uses MoveShot for the outbound leg. Unlike
+ * UpdateMonsterShot/MoveObject, this preserves cumulative ObjGridOffset
+ * across horizontal + vertical components and reports wall/boundary hits
+ * through ShotCollisionFlag ($0E). That distance is the boomerang's
+ * ObjMovingLimit trigger, so the generic mover cannot stand in here. */
+static unsigned char enrt_boomerang_move_outbound(unsigned int slot)
+{
+    const unsigned char dir = (unsigned char)ENEMY_DIR(slot);
+    unsigned char blocked = 0u;
+
+    RAM(0x000Eu) = 0u;
+    if ((dir & 0x03u) != 0u) {
+        RAM(NES_OBJ_DIR) = dir;
+        c_move_shot(dir, slot);
+        if (((unsigned char)RAM(0x000Eu) & 0x80u) != 0u)
+            blocked = 1u;
+        RAM(0x000Eu) = (unsigned char)(RAM(0x000Eu) + 1u);
+    }
+    if (blocked == 0u && (dir & 0x0Cu) != 0u) {
+        RAM(NES_OBJ_DIR) = dir;
+        c_move_shot(dir, slot);
+        if (((unsigned char)RAM(0x000Eu) & 0x80u) != 0u)
+            blocked = 1u;
+    }
+    return blocked;
+}
+
 /* UpdateArrowOrBoomerang (NES Z_07.asm:3813) — full state-machine
  * drain for $5C goriya boomerang. State byte high nibble encodes:
  *   $00 = inactive (return without doing anything)
- *   $10 = flying out from thrower (use enrt_update_monster_shot tick)
+ *   $10 = flying out from thrower (collision-aware NES MoveShot)
  *   $20 = sparking (on collision/block) — decrement timer, then $40
  *   $30 = slowing down (qspeed=$40, count ObjMovingLimit, then $40)
  *   $40 = returning slow toward thrower
@@ -284,8 +358,8 @@ static const unsigned char k_boomerang_qspeed_y[9] = {
  * destroys itself + resets thrower state (NES @CatchBoomerang gives
  * thrower a $30/$50/$70 idle timer based on Random).
  *
- * Tile collision / boundary handling: delegated to
- * enrt_update_monster_shot path. State entry done here. */
+ * Tile collision / boundary handling: delegated to drained MoveShot.
+ * State entry and cumulative range use NES ObjGridOffset/ObjMovingLimit. */
 void enrt_update_arrow_or_boomerang(unsigned int slot) {
     unsigned char state    = (unsigned char)ENEMY_STATE_TIMER(slot);
     unsigned char state_hi = (unsigned char)(state & 0xF0u);
@@ -293,27 +367,48 @@ void enrt_update_arrow_or_boomerang(unsigned int slot) {
     /* @State == 0 → inactive. NES BEQ L1F49F_Exit. */
     if (state == 0u) return;
 
-    /* State $10 → fly out. Move via enrt_update_monster_shot then
-     * check boomerang range limit. NES Z_07.asm:3881-3905 reads
-     * |ObjGridOffset| and compares to ObjMovingLimit; on reach,
-     * transitions state $20 + sets ObjMovingLimit=$10 + anim=3
-     * (HandleArrowOrBoomerangBlocked path advances to $30). */
+    /* NES Z_07.asm:3818-3823 clears $00 before any state-specific work.
+     * GetDirectionsAndDistancesToTarget uses $00 as an output count, so
+     * leaving it dirty can make a later boomerang appear to have reached
+     * its thrower before either axis is actually within catch range. */
+    RAM(0x0000u) = 0u;
+
+    /* State $10 → fly out through NES MoveShot once per active axis,
+     * retaining cumulative ObjGridOffset. Z_07.asm:3881-3905 compares
+     * its absolute value to ObjMovingLimit; on range/block, the shared
+     * HandleArrowOrBoomerangBlocked path enters state $30. */
     if (state_hi == 0x10u) {
-        enrt_update_monster_shot(slot);
-        /* If destroyed (type cleared), bail. */
-        if ((unsigned char)ENEMY_TYPE(slot) != 0x5Cu) return;
-        /* Range check. |GridOffset| >= ObjMovingLimit → blocked path. */
+        unsigned char blocked = enrt_boomerang_move_outbound(slot);
+        if ((unsigned char)ENEMY_TYPE(slot) == 0x5Bu) {
+            /* NES HandleArrowOrBoomerangBlocked gives monster arrows a
+             * three-frame spark ($20). Arrows do not use boomerang range. */
+            if (blocked != 0u) {
+                ENEMY_ANIM_TIMER(slot) = 3u;
+                ENEMY_STATE_TIMER(slot) = 0x20u;
+            }
+            enrt_draw_shot(slot);
+            return;
+        }
+        /* MoveShot reports a collision/boundary block; NES jumps directly
+         * to HandleArrowOrBoomerangBlocked and enters slow state $30. */
+        /* Range check. |ObjGridOffset| >= ObjMovingLimit has the same
+         * blocked transition after the cumulative outbound movement. */
         {
             unsigned char grid = OBJ(NES_OBJ_GRID_OFFSET, slot);
             unsigned char abs_grid = (grid & 0x80u) ? (unsigned char)(0u - grid) : grid;
             unsigned char limit = OBJ(0x0380u, slot);
-            if (abs_grid >= limit) {
-                /* NES HandleArrowOrBoomerangBlocked: anim_counter=3,
-                 * state += $10 → $30. ObjMovingLimit reset to $10. */
-                OBJ(0x0380u, slot)      = 0x10u;
-                ENEMY_DRAW_FRAME(slot)  = 3u;
-                ENEMY_STATE_TIMER(slot) = 0x30u;
-            }
+            if (abs_grid >= limit) blocked = 1u;
+        }
+        if (blocked != 0u) {
+            /* NES HandleArrowOrBoomerangBlocked: arm the slow phase and
+             * advance $10 -> $20 -> $30 before its first draw. */
+            OBJ(0x0380u, slot) = 0x10u;
+            ENEMY_ANIM_TIMER(slot) = 3u;
+            ENEMY_STATE_TIMER(slot) = 0x30u;
+            enrt_boomerang_animate_draw(slot);
+        } else {
+            /* NES continues to animate and test Link while flying out. */
+            enrt_boomerang_animate_draw(slot);
         }
         return;
     }
@@ -321,18 +416,25 @@ void enrt_update_arrow_or_boomerang(unsigned int slot) {
     /* State $20 → spark. Decrement anim counter; on 0 advance state
      * (to $40 for boomerang, deactivate for arrow). NES Z_07.asm:3958. */
     if (state_hi == 0x20u) {
-        /* Set sub-state $28 (preserve animation flag). */
+        /* Set sub-state $28 and decrement NES ObjAnimCounter ($03D0).
+         * The old path changed ObjAnimFrame ($03E4), corrupting art
+         * state instead of honoring the three-frame spark. */
         ENEMY_STATE_TIMER(slot) = 0x28u;
-        if (ENEMY_DRAW_FRAME(slot) != 0u) {
-            ENEMY_DRAW_FRAME(slot) =
-                (unsigned char)(ENEMY_DRAW_FRAME(slot) - 1u);
-        } else {
-            /* Anim counter hit 0 → transition state $40 + handle blocked. */
-            ENEMY_STATE_TIMER(slot) = 0x40u;
-            ENEMY_DRAW_FRAME(slot)  = 3u;       /* NES @HandleBlocked sets to 3 */
-            ENEMY_STATE_TIMER(slot) =
-                (unsigned char)(ENEMY_STATE_TIMER(slot) + 0x10u);  /* → $50 */
+        ENEMY_ANIM_TIMER(slot) =
+            (unsigned char)(ENEMY_ANIM_TIMER(slot) - 1u);
+        if (ENEMY_ANIM_TIMER(slot) == 0u) {
+            if ((unsigned char)ENEMY_TYPE(slot) == 0x5Bu) {
+                /* NES @Deactivate + DestroyCountedMonsterShot. */
+                ENEMY_STATE_TIMER(slot) = 0u;
+                enrt_destroy_counted_monster_shot(slot);
+                return;
+            }
+            /* NES sets $40, then @HandleBlocked arms three frames and
+             * advances this enemy boomerang to fast return state $50. */
+            ENEMY_ANIM_TIMER(slot) = 3u;
+            ENEMY_STATE_TIMER(slot) = 0x50u;
         }
+        enrt_draw_shot(slot);
         return;
     }
 
@@ -345,6 +447,7 @@ void enrt_update_arrow_or_boomerang(unsigned int slot) {
             && (unsigned char)ENEMY_X(slot) < 0x02u) {
             ENEMY_STATE_TIMER(slot) = 0x40u;
             OBJ(0x0380u, slot) = 0x20u;        /* ObjMovingLimit reset */
+            enrt_boomerang_animate_draw(slot);
             return;
         }
         RAM(NES_OBJ_DIR) = (unsigned char)ENEMY_DIR(slot);
@@ -359,6 +462,7 @@ void enrt_update_arrow_or_boomerang(unsigned int slot) {
                 OBJ(0x0380u, slot)      = 0x20u;
             }
         }
+        enrt_boomerang_animate_draw(slot);
         return;
     }
 
@@ -406,12 +510,17 @@ void enrt_update_arrow_or_boomerang(unsigned int slot) {
             c_move_object((unsigned short)slot);
         }
 
-        /* Check Link collision on returning boomerang (NES line 4235). */
+        /* NES AnimateBoomerangAndCheckCollision advances the visible
+         * spin phase during both slow and fast return, before checking
+         * Link collision. Keep this separate from the collision helper,
+         * which also owns the blocked-shot bounce bookkeeping. */
+        enrt_boomerang_animate(slot);
         enrt_check_shot_link_collision(slot);
         if (ENEMY_COLLISION_FLAG != 0u) {
-            ENEMY_DRAW_FRAME(slot) = 3u;
+            ENEMY_ANIM_TIMER(slot) = 3u;
             ENEMY_STATE_TIMER(slot) = 0x20u;     /* spark on hit */
         }
+        c_draw_boomerang(slot);
     }
 }
 

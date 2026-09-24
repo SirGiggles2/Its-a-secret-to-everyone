@@ -250,7 +250,16 @@ static void anim_write_sprite_pair_not_flashing(void)
     unsigned char off = (unsigned char)DRAW_LEFT_SPRITE_OFFSET;
     unsigned char d3  = 0u;     /* loop counter (left=0, right=1) */
     const unsigned char obj_idx_initial = (unsigned char)DRAW_OBJ_INDEX;
-    const unsigned char write_oam = (obj_idx_initial == 0u);
+    /* NES source: Z_04.asm:Ganon_DrawBody -> DrawObjectNotMirroredWithFrame.
+     * Drained C: enemy_ganon_runtime.c:ganon_draw_body.
+     * Coverage: PARTIAL (Ganon's eight 8x16 body sprites; death variants
+     * still need live comparison). Stance: EXTEND the existing OAM sweep.
+     * Ganon draws four sprite pairs through this generic writer, while the
+     * boss-room renderer consumes OAM. The native cache has room for only
+     * four entries, so omitting OAM made his 32x32 body disappear. */
+    const unsigned char write_oam =
+        (obj_idx_initial == 0u ||
+         (obj_idx_initial <= 11u && OBJ_TYPE(obj_idx_initial) == 0x3Eu));
 
     do {
         const unsigned char tile =
@@ -448,16 +457,10 @@ void draw_object_mirrored(unsigned char frame, unsigned int slot)
 void draw_object_not_mirrored(unsigned char frame, unsigned int slot)
 {
     DRAW_MIRRORED = 0u;
-    /* "Not mirrored" = no horizontal flip. DRAW_FLIP_H ($0F) is a shared
-     * zero-page temp that the draw_object_with_anim chain never re-derives
-     * from facing, so it holds whatever the LAST draw left (e.g. a swung
-     * sword / magic shot sets it at draw_dispatch.c:779/798). A stale
-     * non-zero FLIP_H makes anim_write_horizontally_flippable_sprite_pair
-     * SWAP the left/right tiles -- byte-proven on the cave bonfire: NES
-     * draws $5C(left)+$5E(right), but Gen published $5E(left)+$5C(right)
-     * (SAT $3AE@x72 / $3AC@x80, the halves mirrored). Clear it so an
-     * asymmetric not-mirrored object (the flame) keeps NES tile order. */
-    DRAW_FLIP_H = 0u;
+    /* NES DrawObjectNotMirrored deliberately preserves $0F: callers such
+     * as UpdateOctorock set it immediately before this call to face right.
+     * Clearing it here made right-moving Octoroks render left-facing and
+     * appear to walk backward. Static callers must clear their own flag. */
     const unsigned char anim_idx = (unsigned char)OBJ_TYPE(slot);
     draw_object_with_type(frame, slot, anim_idx);
 }
@@ -748,6 +751,37 @@ static const unsigned char k_r_dir_to_offsets_y[4] = {
     0x00u, 0x00u, 0x03u, 0x03u
 };
 
+/* NES Z_07.asm:3779/3783 BoomerangFrameCycle and
+ * BoomerangBaseSpriteAttrCycle. State $28 uses the ninth spark entry. */
+static const unsigned char k_boomerang_frame_cycle[9] = {
+    0x00u, 0x01u, 0x02u, 0x01u, 0x00u, 0x01u, 0x02u, 0x01u, 0x03u
+};
+static const unsigned char k_boomerang_base_attr_cycle[9] = {
+    0x00u, 0x00u, 0x00u, 0x40u, 0x40u, 0xC0u, 0x80u, 0x80u, 0x01u
+};
+
+void draw_boomerang(unsigned int slot)
+{
+    const unsigned char state = (unsigned char)OBJ_STATE(slot);
+    const unsigned char phase = (unsigned char)(state & 0x0Fu);
+    unsigned char attr = k_boomerang_base_attr_cycle[phase];
+
+    DRAW_X = (uint8_t)(unsigned char)OBJ_X(slot);
+    DRAW_Y = (uint8_t)(unsigned char)OBJ_Y(slot);
+    DRAW_MIRRORED = k_boomerang_frame_cycle[phase];
+    /* NES CalcBoomerangFrame adds palette base $02, then
+     * InvMagicBoomerang (Z_07.asm:4271-4291). Without the base offset,
+     * return frames selected palette row 0 and disappeared against the
+     * playfield in Genesis captures. */
+    attr = (unsigned char)(attr + 2u + (unsigned char)RAM(0x0675u));
+    DRAW_LEFT_ATTR = attr;
+    DRAW_RIGHT_ATTR = attr;
+    if ((state & 0xF0u) == 0x20u) {
+        (void)core_anim_set_sprite_desc_attrs(1u);
+    }
+    anim_write_item_sprites(slot, 0x1Du);
+}
+
 void draw_sword_shot_or_magic_shot(unsigned int slot)
 {
     /* drain Z_07.asm:3437. */
@@ -841,6 +875,10 @@ void draw_arrow(unsigned int slot)
     const unsigned char state_hi =
         (unsigned char)((unsigned char)OBJ_STATE(slot) & 0xF0u);
     if (state_hi == 0x20u) {
+        /* NES DrawArrowOrBoomerangAndCheckCollisions sets frame $02
+         * and clears $0F horizontal flip before SetAttrAndDrawArrow. */
+        DRAW_MIRRORED = 0x02u;
+        DRAW_FLIP_H = 0u;
         (void)core_anim_set_sprite_desc_attrs(1u);
     }
 

@@ -82,7 +82,13 @@ def parse_constants():
                  "ROOMROM_BG_SUBPAL_COUNT",
                  "ROOMROM_SPR_TILE_BASE",
                  "ROOMROM_SPR_TILE_COUNT_PER_PAL",
-                 "ROOMROM_SPR_SUBPAL_COUNT"):
+                 "ROOMROM_SPR_SUBPAL_COUNT",
+                 "ROOMROM_BOSS_SUBPAL3_TILE_COUNT",
+                 "ROOMROM_CLOUD_TILE_BASE", "ROOMROM_CLOUD_TILE_COUNT",
+                 "ROOMROM_FIREBALL_TILE_BASE", "ROOMROM_FIREBALL_TILE_COUNT",
+                 "ROOMROM_SPARK_TILE_BASE", "ROOMROM_SPARK_TILE_COUNT",
+                 "ROOMROM_SUBSCREEN_SPRITE_TILE_BASE",
+                 "ROOMROM_SUBSCREEN_SPRITE_TILE_COUNT"):
         m = re.search(rf"#define\s+{name}\s+(\d+)u?", text_map)
         if not m:
             fail(f"missing {name} in {VRAM_MAP_H}")
@@ -204,7 +210,20 @@ def main():
     # freed headroom in the success summary below.
 
     # --- Success summary ---
-    headroom_tiles = TILE_DATA_LIMIT_TILES - item_end_tile
+    boss_subpal3_end = item_end_tile + c["ROOMROM_BOSS_SUBPAL3_TILE_COUNT"]
+    if boss_subpal3_end > TILE_DATA_LIMIT_TILES:
+        fail(f"Boss palette-3 bank ends at {boss_subpal3_end}, beyond VDP tables")
+    banks = {"BG": bg_range, "SPR": spr_range, "ITEM": item_range,
+             "BOSS_PAL3": tile_range_bytes(item_end_tile, c["ROOMROM_BOSS_SUBPAL3_TILE_COUNT"])}
+    for name in ("SUBSCREEN_SPRITE", "CLOUD", "FIREBALL", "SPARK"):
+        region = tile_range_bytes(c[f"ROOMROM_{name}_TILE_BASE"], c[f"ROOMROM_{name}_TILE_COUNT"])
+        if region[1] > TILE_DATA_LIMIT_BYTES:
+            fail(f"{name} extends into VDP tables: {region}")
+        for other, occupied in banks.items():
+            if overlaps(region, occupied):
+                fail(f"{name} overlaps {other}")
+        banks[name] = region
+    headroom_tiles = TILE_DATA_LIMIT_TILES - max(end for _, end in banks.values()) // 32
     # Phase J.2 (2026-05-18 doc-only): BG bank reserves 1024 tiles for
     # legacy 4x layout (still used by redux UW per uw_render.c branch)
     # but Phase J sparse atlas only fills ~532 tiles. Slots
@@ -229,8 +248,12 @@ def main():
         f"SPR=tiles {spr_base}..{spr_base + spr_count - 1}  "
         f"ITEM=tiles {item_base}..{item_end_tile - 1}  "
         f"BOSS=SCENE_OBJ-shared (NES parity)  "
-        f"HUD_BACKDROP=retired (+8 tiles freed)  "
-        f"headroom={headroom_tiles} tiles before VDP tables"
+        f"BOSS_PAL3=tiles {item_end_tile}..{boss_subpal3_end - 1}  "
+        f"CLOUD=tiles {c['ROOMROM_CLOUD_TILE_BASE']}..{c['ROOMROM_CLOUD_TILE_BASE'] + c['ROOMROM_CLOUD_TILE_COUNT'] - 1}  "
+        f"FIREBALL=tiles {c['ROOMROM_FIREBALL_TILE_BASE']}..{c['ROOMROM_FIREBALL_TILE_BASE'] + c['ROOMROM_FIREBALL_TILE_COUNT'] - 1}  "
+        f"SPARK=tiles {c['ROOMROM_SPARK_TILE_BASE']}..{c['ROOMROM_SPARK_TILE_BASE'] + c['ROOMROM_SPARK_TILE_COUNT'] - 1}  "
+        f"SUBSCREEN_SPRITE=tiles {c['ROOMROM_SUBSCREEN_SPRITE_TILE_BASE']}..{c['ROOMROM_SUBSCREEN_SPRITE_TILE_BASE'] + c['ROOMROM_SUBSCREEN_SPRITE_TILE_COUNT'] - 1}  "
+        f"contiguous_tail_headroom={headroom_tiles} tiles before VDP tables"
         f"{free_zone_suffix}"
     )
     # Phase L (2026-05-19): surface HScroll table unused-byte count

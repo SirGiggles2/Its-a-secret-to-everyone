@@ -6,5 +6,5 @@
 - **Stance**:     ADOPT
 
 Behavior: rolling rock projectile (Death Mountain). Shares state
-machine with Tektite ($0D/$0E out-of-scope) — type-keyed branches at
+machine with Tektite ($0D/$0E, now included in recovery scope) — type-keyed branches at
 enemy_boss_runtime.c:218 (Boulder skips reversal-timer randomization).

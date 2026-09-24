@@ -12,9 +12,8 @@
  * run without per-frame wrap.
  *
  * NES anchor table (reference/aldonunez/Variables.inc:236-267):
- *   Items            $657  bitfield: bit0=bow, bit1=wand, bit2=boomerang,
- *                                    bit3=flute, bit4=bait, bit5=letter,
- *                                    bit6=potion-tier1, bit7=potion-tier2
+ *   Items            $657  native sword tier (not the compatibility bitmask)
+ *   items bitmask below is derived from individual native ownership cells.
  *   InvBombs         $658  current bomb count (0..MaxBombs)
  *   InvArrow         $659  arrow type ($00 none, $01 wood, $02 silver)
  *   Bow              $65A  bow ownership ($01 = owned)
@@ -64,7 +63,7 @@
  *   6.11.x — HeartValues / HeartPartial damage subtract
  * ------------------------------------------------------------------------ */
 
-/* ---- Items bitfield bits (NES $657) ---- */
+/* ---- Derived compatibility bits; NOT NES $657 (sword tier) ---- */
 #define ITEMS_BIT_BOW         0x01u
 #define ITEMS_BIT_WAND        0x02u
 #define ITEMS_BIT_BOOMERANG   0x04u
@@ -104,7 +103,7 @@
 /* `inventory_t` — Genesis-native shape mirroring NES Variables.inc cells.
  * Plain C primitives only (avoids stdint/SGDK types.h clash; same widths). */
 typedef struct inventory_t {
-    /* Items bitfield (NES $657). */
+    /* Derived compatibility equipment bitfield. */
     unsigned char items;
 
     /* Active counts. */
@@ -176,13 +175,13 @@ static inline unsigned char heart_values_pack(unsigned char max_h, unsigned char
  * boot path. */
 extern inventory_t g_inventory;
 void inventory_hud_mark_dirty(void);
+/* Pull native ownership/counts for legacy readers; preserve selection/layout. */
+void inventory_sync_from_native(void);
 unsigned char inventory_hud_consume_dirty(void);
 
-/* Task 6.10.10 RupeesToAdd/Sub tick — NES Z_01.asm:2812 World_ChangeRupees.
- * Every 2 frames: -1 RupeesToAdd → +1 rupees (tune $10 played in NES,
- * deferred until status-bar transfer buffer + tune dispatch land). Same
- * pattern for RupeesToSubtract. Caps at INV_RUPEE_CAP. */
-#define INV_RUPEE_CAP 999u
+/* Native NES currency owns count/queues; this tick synchronizes the
+ * compatibility mirror. Two-frame cadence, 255 cap, native tune request. */
+#define INV_RUPEE_CAP 255u
 
 void inventory_rupee_tick(unsigned char frame_counter);
 

@@ -28,11 +28,15 @@ YM_DATA2        equ $A04003     ; YM2612 Part II data
 PSG_PORT        equ $C00011     ; SN76489 PSG data
 
 ;----------------------------------------------------------------------
-; Shadow APU registers ($FF0A00–$FF0A15)
-; Clear of NES RAM ($FF0000-$FF07FF), PPU/MMC1 ($FF0800-$FF083F),
-; H-int queue ($FF0816-$FF081F), forensics ($FF0900-$FF0943).
+; NES source: Z_07.asm:DriveAudio / Tune request cells.
+; Drained owner: audio_adapter.c + music_tick bridge.
+; Coverage: PARTIAL native request/storage addressing; stance EXTEND.
+; Linker-owned shadow storage cannot alias the current C globals.
+; Native RAM pointer is installed by audio_xgm_init for the active ABI.
 ;----------------------------------------------------------------------
-APU_SH_BASE     equ $FF0A00
+    xref audio_apu_shadow
+    xref audio_native_ram_base
+APU_SH_BASE     equ audio_apu_shadow
 APU_SH_4000     equ APU_SH_BASE+$00    ; Pulse 1 duty/volume
 APU_SH_4001     equ APU_SH_BASE+$01    ; Pulse 1 sweep (unused)
 APU_SH_4002     equ APU_SH_BASE+$02    ; Pulse 1 period low
@@ -672,25 +676,28 @@ music_tick:
     ; the silence-request bit 7 and route it into native music_silence.
     ; Also clear $0605/$0607 (current-tune shadows) so the game's own
     ; "nothing playing" markers stay coherent with our silenced state.
-    ; SongRequest bridge: game writes D0 -> $FF0600 (NES RAM SongRequest) at
+    ; SongRequest bridge: game writes native RAM $0600 (SongRequest) at
     ; every song change (title/gameplay/dungeon/etc.). Forward to m_song_req
     ; and clear the game-side byte so the game's own driver-absent check
     ; ("did my song change get consumed?") stays coherent.
-    move.b  ($FF0600).l,D0
+    movea.l (audio_native_ram_base).l,A0
+    cmpa.l  #0,A0
+    beq.s   .no_silence_req
+    move.b  $0600(A0),D0
     beq.s   .no_song_req_bridge
-    clr.b   ($FF0600).l
+    clr.b   $0600(A0)
     move.b  D0,(m_song_req).l
 .no_song_req_bridge:
-    move.b  ($FF0604).l,D0          ; Tune 0 request (SilenceAllSound)
+    move.b  $0604(A0),D0          ; Tune 0 request (SilenceAllSound)
     bmi.s   .do_silence
-    move.b  ($FF0602).l,D0          ; Tune 1 request (silence-then-play)
+    move.b  $0602(A0),D0          ; Tune 1 request (silence-then-play)
     bpl.s   .no_silence_req
 .do_silence:
-    clr.b   ($FF0602).l
-    clr.b   ($FF0603).l
-    clr.b   ($FF0604).l
-    clr.b   ($FF0605).l
-    clr.b   ($FF0607).l
+    clr.b   $0602(A0)
+    clr.b   $0603(A0)
+    clr.b   $0604(A0)
+    clr.b   $0605(A0)
+    clr.b   $0607(A0)
     bsr     music_silence
     bra.s   .done
 .no_silence_req:
@@ -1224,11 +1231,21 @@ key_off_trg:
 ;   - Index 0 is treated as a rest: volume goes to mute but the noise control
 ;     latch is untouched so pending decays on adjacent channels are preserved.
 ;==============================================================================
+native_psg_busy:
+    move.l  A0,-(SP)
+    movea.l (audio_native_ram_base).l,A0
+    cmpa.l  #0,A0
+    beq.s   .restore_native_base
+    tst.b   $0606(A0)
+.restore_native_base:
+    movea.l (SP)+,A0                 ; MOVEA preserves the busy test flags
+    rts
+
 set_psg_noise:
     ; SFX arbitration: if Zelda's SFX engine has an active hit ($0606 != 0),
     ; skip music drum writes so the SFX owns PSG ch 3. When the SFX ends,
     ; music drums resume on the next beat.
-    tst.b   ($00FF0606).l
+    bsr     native_psg_busy
     bne.s   .sfx_owns_psg
     tst.b   D1
     bne.s   .not_rest
@@ -1264,7 +1281,7 @@ set_psg_noise:
 ; Preserves D1.
 ;==============================================================================
 write_psg_noise_vol:
-    tst.b   ($00FF0606).l                  ; SFX owns PSG?
+    bsr     native_psg_busy                  ; SFX owns PSG?
     bne.s   .wpnv_skip
     moveq   #0,D0
     move.b  (m_noise_level).l,D0
@@ -1282,7 +1299,7 @@ write_psg_noise_vol:
 ; Preserves D1.
 ;==============================================================================
 noise_decay_tick:
-    tst.b   ($00FF0606).l                   ; SFX owns PSG?
+    bsr     native_psg_busy                   ; SFX owns PSG?
     bne.s   .nd_done
     move.b  (m_noise_level).l,D0
     beq.s   .nd_done                        ; already silent

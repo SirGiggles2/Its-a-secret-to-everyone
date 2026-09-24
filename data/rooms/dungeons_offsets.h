@@ -54,9 +54,8 @@
 #define ROOMROM_UW_LEVELINFO_BLOCK_BYTES    0x100u   /* 256 */
 
 /* LevelInfo internal layout — fields are at fixed offsets from a
- * FoeCounts anchor (NES convention). FoeCounts offset itself varies
- * per level (descending by 4 bytes from L1 to L9 per
- * RoomRom/tools/uw_reachability.py:58-60).
+ * FoeCounts anchor (NES convention). FoeCounts is at fixed offset $24 in every correctly extracted
+ * LevelInfo block.
  *
  * Offsets RELATIVE TO FoeCounts: */
 #define ROOMROM_UW_LI_START_ROOM_REL        0x0Bu
@@ -66,8 +65,7 @@
 #define ROOMROM_UW_LI_CELLAR_ARRAY_LEN      10u
 #define ROOMROM_UW_LI_BOSS_ROOM_REL         0x1Au
 
-/* Per-level FoeCounts offset table (verified 2026-05-07 via blob scan
- * for pattern $03 $05 $06 $08 within each 256-byte LevelInfo block).
+/* Per-level FoeCounts offset table: all entries $24 per NES SRAM layout.
  * Indexed by (level - 1), so level 1..9 maps to indices 0..8. */
 extern const unsigned char ROOMROM_UW_LEVELINFO_FOE_COUNTS_OFFSET[9];
 

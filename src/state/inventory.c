@@ -1,4 +1,6 @@
 #include "inventory.h"
+#include "../abi/platform_abi.h"
+#include "../game/hud/hud_dispatch.h"
 #include "../game/hud/heart_container_anim.h"
 
 /* Phase 6 Task 6.10.4 — singleton inventory storage.
@@ -62,48 +64,90 @@ unsigned char inventory_hud_consume_dirty(void)
     return dirty;
 }
 
-/* NES Z_01.asm:2812 World_ChangeRupees:
- *   FrameCounter LSR -> carry: every-other-frame gate.
- *   if RupeesToAdd > 0: DEC RupeesToAdd, INC InvRupees, queue tune.
- *   if RupeesToSubtract > 0: DEC RupeesToSubtract, DEC InvRupees, queue tune.
- *
- * RoomRom diverges in two places:
- *   - InvRupees is 16-bit (master plan 6.10.10 widening); cap at
- *     INV_RUPEE_CAP (999) — NES displays max 255 but the wider field
- *     accommodates future treasure-route economy.
- *   - Tune queueing skipped — the audio-driver hookup for HUD-tick tunes
- *     lives in Phase 6.10.11 (status-bar transfer buf already pulls the
- *     count, just the SFX side is deferred). */
+/* NES source: Variables.inc:Items / Z_01.asm:ItemIdToSlot.
+ * Drained C: item_dispatch.c:item_take_item; nes_ram_sync_inventory_hearts.
+ * Coverage: PARTIAL inventory readback; Stance: EXTEND.
+ * Native cells own gameplay inventory. This legacy struct is a readback
+ * for existing UI/weapon consumers, never an independent award ledger.
+ * Selection tokens and world_flags have different layouts and are not copied. */
+void inventory_sync_from_native(void)
+{
+    unsigned char changed = 0u;
+    unsigned char items = 0u;
+#define PULL_FIELD(field, address) do { \
+    if (g_inventory.field != nes_ram[address]) changed = 1u; \
+    g_inventory.field = nes_ram[address]; \
+} while (0)
+    PULL_FIELD(bombs, 0x0658u);
+    PULL_FIELD(arrow, 0x0659u);
+    PULL_FIELD(bow, 0x065Au);
+    PULL_FIELD(candle, 0x065Bu);
+    PULL_FIELD(food, 0x065Du);
+    PULL_FIELD(potion, 0x065Eu);
+    PULL_FIELD(raft, 0x0660u);
+    PULL_FIELD(book, 0x0661u);
+    PULL_FIELD(ring, 0x0662u);
+    PULL_FIELD(ladder, 0x0663u);
+    PULL_FIELD(magic_key, 0x0664u);
+    PULL_FIELD(bracelet, 0x0665u);
+    PULL_FIELD(letter, 0x0666u);
+    PULL_FIELD(compass_q1, 0x0667u);
+    PULL_FIELD(map_q1, 0x0668u);
+    PULL_FIELD(compass_l9, 0x0669u);
+    PULL_FIELD(map_l9, 0x066Au);
+    PULL_FIELD(clock, 0x066Cu);
+    PULL_FIELD(rupees, 0x066Du);
+    PULL_FIELD(keys, 0x066Eu);
+    PULL_FIELD(heart_values, 0x066Fu);
+    PULL_FIELD(heart_partial, 0x0670u);
+    PULL_FIELD(triforce, 0x0671u);
+    PULL_FIELD(boomerang_wood, 0x0674u);
+    PULL_FIELD(boomerang_magic, 0x0675u);
+    PULL_FIELD(magic_shield, 0x0676u);
+    PULL_FIELD(max_bombs, 0x067Cu);
+    PULL_FIELD(rupees_to_add, 0x067Du);
+    PULL_FIELD(rupees_to_sub, 0x067Eu);
+#undef PULL_FIELD
+    if (nes_ram[0x065Au]) items |= ITEMS_BIT_BOW;
+    if (nes_ram[0x065Fu]) items |= ITEMS_BIT_WAND;
+    if (nes_ram[0x0674u] || nes_ram[0x0675u]) items |= ITEMS_BIT_BOOMERANG;
+    if (nes_ram[0x065Cu]) items |= ITEMS_BIT_FLUTE;
+    if (nes_ram[0x065Du]) items |= ITEMS_BIT_BAIT;
+    if (nes_ram[0x0666u]) items |= ITEMS_BIT_LETTER;
+    if (nes_ram[0x065Eu]) items |= ITEMS_BIT_POTION_T1;
+    if (nes_ram[0x065Eu] >= 2u) items |= ITEMS_BIT_POTION_T2;
+    if (items != g_inventory.items) changed = 1u;
+    g_inventory.items = items;
+    if (changed) inventory_hud_mark_dirty();
+}
+
+/* NES source: Z_01.asm:World_ChangeRupees.
+ * Drained C: hud_dispatch.c:hud_tick_native_rupees.
+ * Coverage: FULL currency state; Stance: EXTEND.
+ * NES cells own currency and pending transactions. Mirror after each tick
+ * for legacy display/serialization consumers; never spend the mirror. */
 void inventory_rupee_tick(unsigned char frame_counter)
 {
-    if ((frame_counter & 1u) != 0u) return;   /* every other frame */
-
-    if (g_inventory.rupees_to_add != 0u) {
-        if (g_inventory.rupees < INV_RUPEE_CAP) {
-            g_inventory.rupees++;
-            inventory_hud_mark_dirty();
-        }
-        g_inventory.rupees_to_add--;
-    }
-    if (g_inventory.rupees_to_sub != 0u) {
-        if (g_inventory.rupees != 0u) {
-            g_inventory.rupees--;
-            inventory_hud_mark_dirty();
-        }
-        g_inventory.rupees_to_sub--;
-    }
+    unsigned short previous = g_inventory.rupees;
+    hud_tick_native_rupees(frame_counter);
+    g_inventory.rupees = nes_ram[0x066Du];
+    g_inventory.rupees_to_add = nes_ram[0x067Du];
+    g_inventory.rupees_to_sub = nes_ram[0x067Eu];
+    if (previous != g_inventory.rupees) inventory_hud_mark_dirty();
 }
 
 void inventory_rupee_credit(unsigned char count)
 {
-    unsigned short total = (unsigned short)(g_inventory.rupees_to_add + count);
-    g_inventory.rupees_to_add = (total > 0xFFu) ? 0xFFu : (unsigned char)total;
+    unsigned short total = (unsigned short)(nes_ram[0x067Du] + count);
+    nes_ram[0x067Du] = (total > 0xFFu) ? 0xFFu : (unsigned char)total;
+    g_inventory.rupees_to_add = nes_ram[0x067Du];
 }
 
 void inventory_rupee_debit(unsigned char count)
 {
-    unsigned short total = (unsigned short)(g_inventory.rupees_to_sub + count);
-    g_inventory.rupees_to_sub = (total > 0xFFu) ? 0xFFu : (unsigned char)total;
+    unsigned short total = (unsigned short)(nes_ram[0x067Eu] + count);
+    nes_ram[0x067Eu] = (total > 0xFFu) ? 0xFFu : (unsigned char)total;
+    g_inventory.rupees_to_sub = nes_ram[0x067Eu];
 }
 
 /* Plan v5b T2.7 — NES @TakeHeartContainer parity + native scale-up anim.

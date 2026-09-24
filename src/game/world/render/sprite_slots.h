@@ -5,7 +5,9 @@
  * (PD priority 1: best long-term outcome), the H32 SAT is gameplay-only:
  *
  *   0..9   — Link, items, projectiles, weapons (named per-slot below)
- *   10..63 — enemy bridge (mirrors NES OAM scatter via enemy_render)
+ *   10..11 — HUD equipped-item sprites
+ *   12..13 — Original HUD player/compass position markers
+ *   14..63 — enemy bridge (mirrors NES OAM scatter via enemy_render)
  *   64+    — never used in H32
  *
  * The opaque black HUD underlay now comes from BG_A tile 0 (PAL0 color 0),
@@ -42,11 +44,13 @@
 #define ROOMROM_SPRITE_SLOT_MAGIC_SHOT      9u  /* Magic rod projectile */
 #define ROOMROM_SPRITE_SLOT_HUD_B_ITEM     10u  /* HUD B-item LEFT half */
 #define ROOMROM_SPRITE_SLOT_HUD_B_ITEM_R   11u  /* HUD B-item RIGHT half (hflip) */
+#define ROOMROM_SPRITE_SLOT_HUD_PLAYER     12u  /* Original map player dot */
+#define ROOMROM_SPRITE_SLOT_HUD_COMPASS    13u  /* Original map Triforce dot */
 
 /* --- Chain / range bounds --- */
 #define ROOMROM_SPRITE_SLOT_LINK_FIRST       ROOMROM_SPRITE_SLOT_LINK
-#define ROOMROM_SPRITE_SLOT_GAMEPLAY_LAST    ROOMROM_SPRITE_SLOT_HUD_B_ITEM_R
-#define ROOMROM_SPRITE_SLOT_ENEMY_FIRST     12u
+#define ROOMROM_SPRITE_SLOT_GAMEPLAY_LAST    ROOMROM_SPRITE_SLOT_HUD_COMPASS
+#define ROOMROM_SPRITE_SLOT_ENEMY_FIRST     14u
 #define ROOMROM_SPRITE_SLOT_LAST_H32        63u
 #define ROOMROM_SPRITE_UPLOAD_COUNT_H32     64u
 

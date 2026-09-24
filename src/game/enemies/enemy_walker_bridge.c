@@ -48,6 +48,7 @@
 #include "roomrom_enemy_state.h"     /* ENEMY_* macros (re-export of state/enemy_state.h) */
 #include "enemy_render.h"            /* Phase D: enemy_render_publish_meta */
 #include "enemy_loop.h"              /* enemy_init_fn, ENEMY_LOOP_TYPE_MAX */
+#include "../../../RoomRom/src/roomrom_main_state.h" /* Link story-pose owner */
 
 /* NES non-Link offsets (cell-level; OBJ macro adds slot index).
  * ObjStunTimer  = $003D  (per-slot)
@@ -663,9 +664,10 @@ void enrt_update_octorock(unsigned int slot)
      *   2. enrt_wanderer_target_player — runs c_walker_move + targeting.
      *   3. qspeed: $20 if slow ($07/$09), else $40 (fast $08/$0A).
      *   4. _TryShooting flying rock $53. Inlined from enrt_try_shooting
-     *      (which is `static` in enemy_walker_runtime.c). With the
-     *      step-6 c_shoot_if_wanted stub returning 0, this always lands
-     *      in the failure path: ENEMY_WALK_SPEED = qspeed, no shot.
+     *      (which is `static` in enemy_walker_runtime.c). The native
+     *      c_shoot_if_wanted allocates a live projectile when the NES
+     *      timer/wants gates permit; failed allocation keeps qspeed,
+     *      while a successful shot pauses the Octorok.
      *   5. sprite_anim_fetch_obj_pos — primes draw scratch + clears
      *      ENEMY_FRAME_FLAGS (ZP_TMPF / $000F).
      *   6. dir-based frame_offset: UP=1, DOWN=2, LEFT=0, RIGHT=0+hflip.
@@ -828,14 +830,14 @@ draw_octorock:
  *                                              same offset is named
  *                                              ENEMY_ALIVE_FLAG and uses
  *                                              the OPPOSITE polarity
- *                                              (1=alive, 0=empty). We
- *                                              keep ENEMY_ALIVE_FLAG=1
- *                                              for converted drops so
- *                                              the slot keeps ticking;
- *                                              dropped-item init that
- *                                              normally relies on the
- *                                              uninit flag is deferred
- *                                              with SetUpDroppedItem.
+ *                                              (1=alive, 0=empty). The
+ *                                              enemy loop also reserves
+ *                                              $FF for an occupied slot's
+ *                                              one-time InitObject tick.
+ *                                              Converted drops use that
+ *                                              sentinel after setup so
+ *                                              UpdateItem begins on the
+ *                                              same frame as NES.
  *   Item_ObjMonsterType = OBJ($0412, slot)  ←  same offset as ENEMY_PUSH_TIMER;
  *                                              NES Z1 reuses the cell for
  *                                              dropped-item slots.
@@ -867,25 +869,6 @@ static const unsigned char k_no_drop_types[7] = {
     0x5Du, 0x14u, 0x15u, 0x1Bu, 0x1Cu, 0x1Du, 0x17u
 };
 
-/* Plan v6 T2.1 — boss death drop suppression. NES Z1 bosses skip the
- * drop-table roll on death; only mini-bosses and dungeon enemies drop.
- * Phase 6.11 close-report deferral: "Boss death drop suppression —
- * Boss infra absent (Phase 8)". Phase 8 has shipped boss types; this
- * adds the suppression check the master plan flagged.
- *
- * NES type IDs per src/game/enemies/enemy_loop.c comments + NES
- * Z_04.asm:7649+ InitGleeok / Z_04.asm:9552 InitPatra / Z_04.asm
- * Dodongo+Gohma+Aquamentus+Ganon dispatch rows. */
-static const unsigned char k_boss_no_drop_types[] = {
-    0x31u, 0x32u,           /* Dodongo (Red/Blue) */
-    0x33u, 0x34u,           /* Gohma (Blue/Red) */
-    0x3Du,                  /* Aquamentus */
-    0x42u, 0x43u, 0x44u, 0x45u, /* Gleeok 1/2/3/4 heads */
-    0x47u, 0x48u,           /* Patra1 / Patra2 */
-    0x4Du,                  /* Ganon */
-};
-#define BOSS_NO_DROP_COUNT \
-    (sizeof(k_boss_no_drop_types) / sizeof(k_boss_no_drop_types[0]))
 static const unsigned char k_drop_set0_types[6] = {
     0x07u, 0x08u, 0x0Eu, 0x04u, 0x0Fu, 0x23u
 };
@@ -909,6 +892,9 @@ static const unsigned char k_drop_item_table[40] = {
     0x23u, 0x18u, 0x22u, 0x23u, 0x22u, 0x22u, 0x22u, 0x18u
 };
 
+/* Fairy drop setup is shared with the drained flyer implementation. */
+extern void enrt_set_up_fairy_object(unsigned int slot);
+
 /* DestroyMonster_Bank4 (NES Z_04.asm:11327) — clear slot completely.
  * NES sets ObjType=0, SetShoveInfoWith0, ObjTimer=0, ObjState=0,
  * ObjInvincibilityTimer=0, ObjUninitialized=$FF, ObjMetastate=1.
@@ -924,7 +910,7 @@ static void native_destroy_monster(unsigned int slot)
 }
 
 /* SetUpDroppedItem (NES Z_04.asm:11103) — drop-item id lookup + fairy gate +
- * help-drop randomization. Stance: ADOPT. Skips SetUpFairyObject (deferred).
+ * help-drop randomization. Stance: EXTEND.
  *
  * Returns 1 if drop committed (slot converted to live $60 item), 0 if
  * slot was destroyed (no drop). */
@@ -938,17 +924,6 @@ static unsigned char native_set_up_dropped_item(unsigned int slot)
     /* @FindNoDropType — destroy if type is in no-drop list. */
     for (i = 0u; i < 7u; ++i) {
         if (monster_type == k_no_drop_types[i]) {
-            native_destroy_monster(slot);
-            return 0u;
-        }
-    }
-
-    /* Plan v6 T2.1 — boss-type drop suppression (Phase 6.11 deferral).
-     * Boss kills do not roll drop-table; the slot is destroyed without
-     * spawning an item. Matches NES Z1 boss-death behavior (boss-room
-     * exit transitions to Mode 12 EndLevel without drop). */
-    for (i = 0u; i < (unsigned char)BOSS_NO_DROP_COUNT; ++i) {
-        if (monster_type == k_boss_no_drop_types[i]) {
             native_destroy_monster(slot);
             return 0u;
         }
@@ -1013,9 +988,18 @@ static unsigned char native_set_up_dropped_item(unsigned int slot)
         META_HELP_DROP_VALUE = 0u;
     }
 
-    /* @Commit — store lifetime + id. SetUpFairyObject (item_id==$23) deferred. */
+    /* @Commit — store lifetime + id. NES jumps to SetUpFairyObject for $23. */
     META_ITEM_LIFETIME(slot) = 0xFFu;
     META_ITEM_ID(slot)       = item_id;
+    if (item_id == 0x23u) {
+        enrt_set_up_fairy_object(slot);
+    }
+    /* NES UpdateMetaObjectEnd stores ObjUninitialized=$FF before
+     * SetUpDroppedItem. The next object pass consumes one InitObject
+     * tick; only the following pass dispatches UpdateItem. In this
+     * runtime $0492 is also the occupied-slot flag, and enemy_loop_tick
+     * already treats $FF as occupied + pending initialization. */
+    ENEMY_ALIVE_FLAG(slot) = 0xFFu;
     return 1u;
 }
 
@@ -1109,34 +1093,9 @@ void update_meta_object(unsigned int slot)
         unsigned char obj_type = (unsigned char)ENEMY_TYPE(slot);
         unsigned char skip_kill_cycle = 0u;
 
-        /* Plan v5a T2.1 — boss death drop suppression. Bosses do not
-         * drop items on death (NES Z1 drop tables don't index by boss
-         * type — falls through to no-drop). Skip the drop-conv path
-         * entirely: leave slot dead, no item spawn.
-         *
-         * Boss ObjType IDs per reference/aldonunez/Z_07.asm:5601+
-         * InitObject_JumpTable:
-         *   $31/$32  Dodongo
-         *   $33/$34  Gohma
-         *   $38/$39  Digdogger
-         *   $3C      Manhandla
-         *   $3D      Aquamentus
-         *   $3E      Ganon
-         *   $41      Moldorm
-         *   $42/$43/$44/$45/$46  Gleeok (1-4 heads + detached head)
-         *   $47/$48  Patra
-         */
-        if ((obj_type >= 0x31u && obj_type <= 0x34u) ||
-            (obj_type == 0x38u || obj_type == 0x39u) ||
-            (obj_type >= 0x3Cu && obj_type <= 0x3Eu) ||
-            (obj_type == 0x41u) ||
-            (obj_type >= 0x42u && obj_type <= 0x48u)) {
-            /* Mark slot fully dead — no drop conversion, no respawn. */
-            ENEMY_ALIVE_FLAG(slot) = 0u;
-            ENEMY_METASTATE(slot)  = 0u;
-            return;
-        }
-
+        /* NES UpdateMetaObjectEnd applies the same kill accounting and
+         * drop conversion to bosses. An early alive-flag clear leaves the
+         * boss type/OAM stale and prevents the room-clear secret. */
         META_ITEM_MONSTER_TYPE(slot) = obj_type;
 
         if (obj_type == 0x5Du || obj_type == 0x14u || obj_type == 0x1Cu) {
@@ -1418,4 +1377,48 @@ void enrt_update_guard_fire(unsigned int slot)
     if ((unsigned char)ENEMY_METASTATE(slot) != 0u) {
         ENEMY_TYPE(slot) = 0x5Du;       /* DeadDummy. */
     }
+}
+
+/* NES source: Z_04.asm:InitZelda / UpdateZelda (9481, 9617).
+ * Drained C: none; this bridge owns Zelda's room object and ending handoff.
+ * Coverage: PARTIAL (Zelda encounter through Mode 13 entry).
+ * Stance: EXTEND the existing object dispatch and Link-state boundary. */
+void enrt_init_zelda(unsigned int slot)
+{
+    static const unsigned char xs[5] = { 0x78u, 0x60u, 0x70u, 0x80u, 0x90u };
+    static const unsigned char ys[5] = { 0x88u, 0xB5u, 0x9Du, 0x9Du, 0xB5u };
+    unsigned int i;
+    (void)slot;
+    for (i = 1u; i <= 5u; ++i) {
+        ENEMY_X(i) = xs[i - 1u];
+        ENEMY_Y(i) = ys[i - 1u];
+        ENEMY_TYPE(i) = 0x3Fu;
+    }
+    ENEMY_TYPE(1u) = 0x37u;
+}
+
+void enrt_update_zelda(unsigned int slot)
+{
+    (void)sprite_anim_fetch_obj_pos(slot);
+    draw_object_mirrored(0u, slot); /* Person_Draw, no combat collision. */
+    if ((unsigned char)ENEMY_STATE_TIMER(slot) == 0u) {
+        unsigned char x = (unsigned char)ENEMY_PLAYER_OBJ_X;
+        if (x < 0x70u || x >= 0x81u ||
+            (unsigned char)ENEMY_PLAYER_OBJ_Y != 0x95u) return;
+        ENEMY_STATE_TIMER(slot) = 1u;
+        RAM(NES_OBJ_STATE_BASE) = 0x40u;
+        roomrom_main_set_link_story_pose(0x88u, 0x88u,
+                                         ROOMROM_MAIN_LINK_FACE_LEFT);
+        RAM(0x0600u) = 0x06u; /* Zelda fanfare request. */
+        ENEMY_MOVE_TIMER(slot) = 0x80u;
+        return;
+    }
+    if ((unsigned char)ENEMY_MOVE_TIMER(slot) != 0u) return;
+    RAM(0x0011u) = 0u; /* IsUpdatingMode */
+    RAM(NES_SUB_MODE) = 0u;
+    RAM(NES_OBJ_STATE_BASE) = 0u;
+    RAM(NES_GAME_MODE) = 0x13u;
+    ENEMY_X(12u) = 0x20u;
+    ENEMY_X(13u) = 0x01u;
+    RAM(0x000Au) = 0x24u; /* FillTileMap blank tile selector. */
 }

@@ -1,6 +1,8 @@
 # Enemy Parity Audit — Findings
 
-Scope: every wired enemy except Octoroks $07-$0A and Tektites $0D-$0E.
+Historical scope: the original parity audit covered every wired enemy except
+Octoroks $07-$0A and Tektites $0D-$0E. The user's 2026-09 whole-game recovery
+scope now includes those families; see the focused records in `INDEX.md`.
 Audit method: static comparison of drain `*_runtime.c` vs NES asm
 `reference/aldonunez/Z_04.asm` / `Z_07.asm`. Build-clean Genesis +
 out-of-scope baseline regression check after every fix.
@@ -35,9 +37,12 @@ Bug found + fixed (commit `52f4f03c`):
   ($02/$04/$07/$08) on `ShootTimer != 0 OR Random+slot >= $F8`.
 - Drain skipped → Red Moblin/Lynel/Stalfos shoot ~32× too often.
 - Fix: add the gate. Blue Lynel/Moblin/Octorok skip it per NES.
-- Affected in-scope: $02 RedLynel, $04 RedMoblin, $2A Stalfos.
-- Out-of-scope ($07/$08): same bug in `enemy_walker_bridge.c:692
-  enrt_update_octorock` inline body — left unchanged.
+- Affected in-scope: $02 RedLynel, $04 RedMoblin, $07/$08 red
+  Octoroks, and $2A Stalfos. The Octorok path has its own inline gate in
+  `enemy_walker_bridge.c:692`; blue Octoroks skip it, matching NES.
+- The Octorok gate was formerly described as out of scope. That exclusion
+  is historical; current code includes the fix and natural-room evidence
+  confirms visible rock attacks. Per-variant cadence remains open.
 
 ### B2 walker family — full audit
 
@@ -76,14 +81,21 @@ Verified vs NES:
 
 Bug found + fixed:
 
-**B5.1 — $5B/$5C UPDATE NULL gap** (commit landed)
+**B5.1 — $5B/$5C UPDATE NULL gap** (commit landed; follow-up state-machine work)
 - Path: `src/game/enemies/enemy_loop.c` UPDATE table rows missing
 - NES: UpdateMonsterArrow (Z_04.asm:2102) + UpdateArrowOrBoomerang
   (Z_07.asm:3813). Full state machine for bounce/spark/return.
-- Stopgap drain: `enrt_update_monster_arrow` seeds q-speed=$80 +
-  enters `enrt_update_monster_shot`. `enrt_update_arrow_or_boomerang`
-  thin alias for $5C. Arrows + boomerangs now move + hurt Link.
-- Full bounce/spark/return state machine deferred.
+- `$5B` remains partial. 2026-09-23 live BizHawk wall-edge case now verifies
+  active `$10` flight enters `$20` spark, counts three updates, and clears
+  the counted arrow. `draw_arrow` now selects NES spark frame `$02` as well
+  as its spark palette. This does not yet prove visible parity against a
+  live NES capture; natural shield-hit entry and paired movement timing
+  remain open.
+- `$5C` has a drained outbound/spark/slow-return/fast-return/catch state
+  machine and focused live Blue Goriya evidence. A 2026-09-23 source review
+  also restored NES's `$00` scratch initialization before range-to-thrower
+  calculation. Exact paired NES/Genesis movement timing and Red Goriya
+  variants remain open.
 - Other projectiles verified: $1F BoulderSet, $20 Boulder,
   $53-$5A MonsterShot, $55/$56 Fireball, $2E Whirlwind,
   $49/$4A Trap.
@@ -144,12 +156,11 @@ to verify — they react to player input via dialog/proximity.
 
 ## Deferred work
 
-- Full drain of NES `UpdateArrowOrBoomerang` state machine for $5B/$5C
-  (bounce / spark / boomerang-return paths). Stopgap drain handles
-  basic flight + Link damage.
-- Octorok ($07/$08 — out of scope) shares the B1.1 bug pattern in
-  inline body at `enemy_walker_bridge.c:692`. Out of scope per user
-  direction; documented for future "MAKE LIKE NES" pass.
+- Full NES $5B arrow flight/spark presentation parity; exact paired $5C
+  boomerang direction/timing/wall-response parity.
+- Octorok ($07/$08) uses an inline copy of the B1.1 gate at
+  `enemy_walker_bridge.c:692`. The gate is present; red/blue and slow/fast
+  projectile cadence still need their own focused acceptance.
 - Per-frame live byte-diff probe pair per family (probe templates
   exist; ad-hoc capture per regression event).
 

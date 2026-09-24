@@ -21,6 +21,7 @@
  */
 
 #include "enemy_loop.h"
+#include "../room/room_dispatch.h"
 #include "roomrom_enemy_state.h"          /* still in RoomRom/src/ pre-WT-5 */
 #include "platform_abi.h"
 #include "probes/enemy_loop_probe.h"      /* step 4 live-tick publish */
@@ -184,6 +185,8 @@ extern void trap_init_trap_full(unsigned int slot);
  *   $40 StandingFire -> enrt_update_standing_fire (already drained at
  *                       enemy_walker_runtime.c:146). */
 extern void enrt_update_guard_fire(unsigned int slot);
+extern void enrt_init_zelda(unsigned int slot);
+extern void enrt_update_zelda(unsigned int slot);
 extern void enrt_update_standing_fire(unsigned int slot);
 /* 7.4 step 10 — Aquamentus boss INIT + UPDATE.
  *   $3D Aquamentus -> enrt_init_aquamentus + enrt_update_aquamentus
@@ -480,6 +483,7 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * Bodies at src/game/cave/uw_person_dispatch.c. */
     [0x35] = uw_person_init_rupee_stash_full,    /* RupeeStash */
     [0x36] = uw_person_init_grumble_full,        /* Grumble */
+    [0x37] = enrt_init_zelda,                     /* Zelda / guard fires */
     [0x4B] = uw_person_init_dispatch_by_level,   /* UnderworldPerson */
     [0x4C] = uw_person_init_dispatch_by_level,
     [0x4D] = uw_person_init_dispatch_by_level,
@@ -721,16 +725,10 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x58] = enrt_update_monster_shot,  /* MagicShot */
     [0x59] = enrt_update_monster_shot,  /* (shot variant) */
     [0x5A] = enrt_update_monster_shot,  /* (shot variant) */
-    /* 2026-05-18 — enemy parity audit B5: close $5B/$5C UPDATE NULL gap.
-     * NES UpdateMonsterArrow (Z_04.asm:2102) does ObjQSpeedFrac=$80 +
-     * timer/state pre-pass + UpdateArrowOrBoomerang base body.
-     * NES UpdateArrowOrBoomerang (Z_07.asm:3813) is full bounce/spark
-     * state machine. Full drain deferred; enrt_update_monster_arrow
-     * seeds q-speed=$80 then enters enrt_update_monster_shot (which
-     * handles tile collision + Link collision + move + L_DrawShot —
-     * $5B draws via DrawArrow). enrt_update_arrow_or_boomerang is a
-     * thin alias for $5C. Without these rows arrows/boomerangs spawn
-     * but never tick. */
+    /* B5 projectile drain: $5B uses the NES arrow-specific MoveShot,
+     * spark and Link-hit path; $5C uses the boomerang return state machine.
+     * Both share UpdateArrowOrBoomerang primitives, but differ on blocked
+     * movement, range handling and collision outcomes. */
     [0x5B] = enrt_update_monster_arrow,       /* MonsterArrow */
     [0x5C] = enrt_update_arrow_or_boomerang,  /* ArrowOrBoomerang */
     /* Task 7.4 step 2a — projectile-family carrier UPDATE rows (boulder
@@ -857,6 +855,7 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      * Primitives all linked via walker_bridge / projectile_bridge
      * (z07_animate_object_walking forwarder added in step 8). */
     [0x3F] = enrt_update_guard_fire,        /* GuardFire (native EXTEND drain) */
+    [0x37] = enrt_update_zelda,             /* Zelda rescue trigger */
     [0x40] = enrt_update_standing_fire,     /* StandingFire (oracle drain) */
     /* Task 7.4 step 10 — Aquamentus UPDATE.
      *
@@ -1134,8 +1133,10 @@ void enemy_loop_clear_all_slots(void)
  * to skip the next room_init pass (otherwise natural-spawn rolls clobber
  * the force-spawned probe target). */
 static unsigned char s_fix_arm_suppress_room_init = 0u;
+static unsigned char s_edge_spawn_pending[ENEMY_LOOP_SLOT_LAST + 1u];
 
-void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id)
+void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id,
+                          unsigned char level, unsigned char quest)
 {
     unsigned int slot;
     /* enemy_fix arm hook: bail this room_init pass exactly once. */
@@ -1143,19 +1144,50 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id)
         s_fix_arm_suppress_room_init = 0u;
         return;
     }
-    /* Scroll-glitch guard: track last (room_id, scene_id). Probe
+    /* NES source: Z_05.asm:InitMode_EnterRoom.
+     * Drained C: enemy_loop_room_init; Coverage: PARTIAL entry identity.
+     * Stance: EXTEND. Room numbers are local to level/quest, so include
+     * both in the repeat-entry guard. The caller owns scene identity.
+     * Scroll-glitch guard: track last room identity. Probe
      * build/probes/track_all.lua captured Link X-wrap $00->$F0 that
      * re-triggers room_init without room_id change, smashing enemy
      * slot types + replaying spawn-cloud. Skip whole init on repeat. */
     static unsigned char s_last_room_id  = 0xFFu;
     static unsigned char s_last_scene_id = 0xFFu;
+    static unsigned char s_last_level = 0xFFu;
+    static unsigned char s_last_quest = 0xFFu;
     unsigned char same_room = (s_last_room_id == room_id &&
-                               s_last_scene_id == scene_id);
+                               s_last_scene_id == scene_id &&
+                               s_last_level == level &&
+                               s_last_quest == quest);
+    s_last_level = level;
+    s_last_quest = quest;
     s_last_room_id  = room_id;
     s_last_scene_id = scene_id;
     if (same_room) {
         return;
     }
+
+    /* NES source: Z_05.asm:InitMode_EnterRoom / ModifyObjCountByHistoryUW.
+     * Drained C: enemy_room_load_objects / room_get_room_flags.
+     * Coverage: PARTIAL (native room entry); Stance: EXTEND.
+     * History reads RoomId implicitly; install incoming identity before it.
+     * RoomKillCount is per visit and was saved by the departure path. */
+    RAM(0x00EBu) = room_id;
+    /* NES source: Z_05.asm:InitMode_EnterRoom caches the active room's
+     * LevelBlockAttrsF byte at $04CD. Drained C: native room init.
+     * Coverage: PARTIAL room-entry consumers. Stance: EXTEND. */
+    RAM(0x04CDu) = (unsigned char)DUNGEON_LBA_F(room_id);
+    /* NES source: Z_07.asm:ResetPlayerState / Walker_Move:CheckStunned.
+     * Drained C: c_walker_move and native room entry.
+     * Coverage: PARTIAL clock lifetime; Stance: EXTEND.
+     * Clock lasts for the room, not one enemy tick. */
+    RAM(0x066Cu) = 0u;
+    /* NES Z_07.asm:MarkRoomVisited; existing room_dispatch drain.
+     * Installed dungeon flags retain visits across room transitions. */
+    if (scene_id == 1u && level >= 1u && level <= 9u)
+        room_mark_room_visited();
+    RAM(0x034Fu) = 0u;
 
     /* 2026-05-24 — reset ROOM_MONSTER_ALL_DEAD ($034D) + ROOM_SHUTTER_TRIGGERED
      * ($04CE) on room load. Pre-fix, $034D held stale value from prior room
@@ -1173,6 +1205,12 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id)
      * 4-pixel-per-frame loop = user-visible "fly across screen".
      * Clear ALL state cells the per-frame walker/AI paths read. */
     for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
+        s_edge_spawn_pending[slot] = 0u;
+        /* NES source: Z_05.asm:InitMode_EnterRoom common object defaults.
+         * Drained C: clear_slot_scratch (previously debug-spawn only).
+         * Coverage: PARTIAL room-spawn movement; Stance: EXTEND.
+         * Type-specific init overrides these after room placement. */
+        clear_slot_scratch(slot);
         ENEMY_TYPE(slot) = 0u;        /* type 0 = DoNothing = empty */
         ENEMY_ALIVE_FLAG(slot) = 0u;
         ENEMY_X(slot) = 0u;
@@ -1209,6 +1247,15 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id)
      * native body in src/game/enemies/bosses/boss_framework.c. */
     boss_framework_room_init(room_id);
 
+    /* NES source: reference/aldonunez/Z_07.asm:
+     * RunCrossRoomTasksAndBeginUpdateMode @LoopHistory.
+     * Drained C: src/game/room/room_dispatch.c:room_record_history.
+     * Coverage: PARTIAL (shared native enemy-room initialization).
+     * Stance: EXTEND.
+     * Record only after enemy_room_load_objects has consumed the previous
+     * history, matching the NES CreateRoomObjects -> history order. */
+    room_record_history(room_id);
+
     if (loaded == 0u && DUNGEON_ROOM_OBJ_COUNT == 0u) {
         return;
     }
@@ -1240,6 +1287,15 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id)
         fn = enemy_init_fns[t];
         if (fn != (enemy_init_fn)0) {
             fn(slot);  /* may overwrite ENEMY_MOVE_TIMER */
+        }
+        /* NES source: Z_07.asm:InitMonsterFromEdge clears ObjMetastate
+         * after a safe perimeter cell is selected, so edge entrants do
+         * not play the ordinary interior spawn cloud. Placement itself
+         * is drained in obj_lists.c:enemy_edge_spawn_next. */
+        if (level == 0u && (DUNGEON_LBA_F(room_id) & 0x08u) != 0u &&
+            t != 0x11u && t != 0x1Eu && t != 0x2Eu && t != 0x40u && t < 0x53u) {
+            ENEMY_METASTATE(slot) = 0u;
+            s_edge_spawn_pending[slot] = 1u;
         }
         ENEMY_ALIVE_FLAG(slot) = 1u;
     }
@@ -1383,14 +1439,6 @@ static void enemy_loop_combat_force_kill_hook(void)
 void enemy_loop_tick(void)
 {
     unsigned int slot;
-    /* 2026-05-22 — clear InvClock ($066C) per-frame. Some transpiled
-     * path sets it $01 at debug_enter (trace: $00 -> $45 -> $01 at
-     * frame 31-32). walker_move CheckStunned + flyer/wanderer DrawAnd
-     * paths gate on (InvClock | ObjStunTimer) so all non-hit enemies
-     * freeze. NES uses $066C only for magic-clock pause (always 0
-     * except when item active). Brute clear per-tick restores
-     * walker/octorok/flyer movement. */
-    RAM(0x066Cu) = 0u;
     /* enemy_fix arm-hook: check magic + consume on first call only. */
     enemy_loop_arm_fix_probe();
     /* combat-death hook: check magic + invoke combat_deal_damage. */
@@ -1471,6 +1519,35 @@ void enemy_loop_tick(void)
         unsigned char t;
         enemy_update_fn fn;
         if (ENEMY_ALIVE_FLAG(slot) == 0u) continue;
+        t = (unsigned char)ENEMY_TYPE(slot);
+        if (t == 0u || t >= ENEMY_LOOP_TYPE_MAX) continue;
+        ENEMY_THROWER_SLOT = (unsigned char)slot;
+        /* NES source: Z_07.asm:@InitMonsterFromEdge. Drained C:
+         * enemy_edge_spawn_next plus this shared long-timer gate.
+         * Coverage: PARTIAL OW edge rooms. Stance: EXTEND. */
+        if (s_edge_spawn_pending[slot]) {
+            if ((unsigned char)RAM(0x004Bu) != 0u) continue;
+            RAM(0x004Bu) = (unsigned char)(((unsigned char)ENEMY_RNG_B(slot) & 3u) + 2u);
+            if (!enemy_edge_spawn_next(slot)) continue;
+            s_edge_spawn_pending[slot] = 0u;
+        }
+        /* NES UpdateObject checks ObjUninitialized before metastate.
+         * SetTypeAndClearObject leaves $FF here for dynamic spawns;
+         * the native room loader uses 1 for an initialized live slot.
+         * Without this branch shots keep attr=0 and accept sword damage.
+         * DestroyMonster also leaves $FF, but its type=0 is skipped above. */
+        if (ENEMY_ALIVE_FLAG(slot) == 0xFFu) {
+            enemy_init_fn init = enemy_init_fns[t];
+            native_init_obj_hp(slot, t);
+            native_init_obj_attr(slot, t);
+            if (t < 0x53u && t != 0x1Eu && t != 0x22u) {
+                ENEMY_METASTATE(slot) = 1u;
+                ENEMY_MOVE_TIMER(slot) = (unsigned char)slot;
+            }
+            ENEMY_ALIVE_FLAG(slot) = 1u;
+            if (init != 0) init(slot);
+            continue;
+        }
         /* Step 20 metastate gate. NES UpdateObject (Z_07.asm:5275) checks
          * ObjMetastate before falling through to the per-type body — when
          * non-zero, control diverts to UpdateMetaObject which animates the
@@ -1491,6 +1568,7 @@ void enemy_loop_tick(void)
          * Task 7.3 known gap (vire split spawn slot computation). */
         ENEMY_THROWER_SLOT = (unsigned char)slot;
         if (fn != 0) fn(slot);
+        if (ENEMY_TYPE(slot) == 0u) continue;
 
         /* NES @LoopObject post-update wrapper (Z_07.asm:1928-1945).
          * After UpdateObject returns, NES runs:
@@ -1535,11 +1613,17 @@ void enemy_loop_tick(void)
         enemy_loop_probe_publish_live();
     }
 
-    /* 2026-05-23 — UW room-clear auto-shutter trigger. NES Z_05.asm:2410
-     * CheckSecretTriggerAllDead: when ROOM_MONSTER_ALL_DEAD set (room
-     * has no living non-bubble enemies), TriggerShutters fires which
-     * opens shutter doors via ShutterTrigger=$01. Gen previously only
-     * triggered via debug chord (RoomRom/src/main.c:2222).
+    /* NES source: Z_05.asm:CheckUnderworldSecrets,
+     * CheckSecretTriggerAllDead, CheckSecretTriggerLastBoss.
+     * Drained C: room_dispatch.c:room_check_secret_trigger_all_dead/
+     * room_check_secret_trigger_last_boss.
+     * Coverage: PARTIAL (all-dead and last-boss shutters).
+     * Stance: EXTEND the existing native door-state bridge.
+     *
+     * UW room-clear auto-shutter trigger: when ROOM_MONSTER_ALL_DEAD is
+     * set, TriggerShutters opens shutters. Ganon's slot remains alive as
+     * ashes, so his room uses AttrsF secret trigger 3 instead: the Power
+     * Triforce fanfare sets LastBossDefeated after its timer expires.
      *
      * Two-part fix:
      *   1. room_check_has_living_monsters() — bumps $034D when no
@@ -1552,7 +1636,17 @@ void enemy_loop_tick(void)
         extern unsigned char uw_door_state_has_shutters(void);
         extern void uw_door_state_trigger_shutters(void);
         room_check_has_living_monsters();
-        if (RAM(0x034Du) != 0u && uw_door_state_has_shutters()) {
+        boss_framework_check_item_secret((unsigned char)RAM(0x00EBu));
+        unsigned char secret = (unsigned char)(RAM(0x04CDu) & 0x07u);
+        /* The drained room helpers encode carry in bit 8 (CARRY_SET).
+         * Keep the full return width; narrowing to a byte drops success. */
+        unsigned int triggered = 0u;
+        if (secret == 3u) {
+            triggered = room_check_secret_trigger_last_boss();
+        } else if (RAM(0x034Du) != 0u) {
+            triggered = room_check_secret_trigger_all_dead();
+        }
+        if (triggered && uw_door_state_has_shutters()) {
             uw_door_state_trigger_shutters();
             /* Mirror NES ShutterTrigger=$01 ($04CE) for probe live-verify
              * + NES-parity dispatch (any consumer reading $04CE sees

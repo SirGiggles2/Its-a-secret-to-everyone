@@ -328,6 +328,51 @@ static unsigned char abs_diff_u8(unsigned char a, unsigned char b)
     return (a >= b) ? (unsigned char)(a - b) : (unsigned char)(b - a);
 }
 
+/* NES source: Z_05.asm:FindNextEdgeSpawnCell and
+ * Z_07.asm:InitMonsterFromEdge coordinate extraction.
+ * Drained C: NONE. Coverage: PARTIAL (entry placement, no stagger timer).
+ * Stance: EXTEND.
+ *
+ * Walk the packed perimeter counterclockwise. A packed cell uses its low
+ * nibble as the 16-pixel column and high nibble as the row. The original
+ * routine checks the room tile map for tile < $84; collision_get_* is the
+ * native owner of that same active room map, so use it after installing the
+ * candidate coordinates. Also reject Link-near cells as the NES consumer's
+ * IsDistanceSafeToSpawn step does. */
+unsigned char enemy_edge_spawn_next(unsigned int slot)
+{
+    unsigned char start = (unsigned char)RAM(0x0525u);
+    unsigned char cell;
+    unsigned int tries;
+    if ((start & 0xF0u) < 0x40u || (start & 0xF0u) >= 0xE0u)
+        start = 0x40u;
+    cell = start;
+    for (tries = 0u; tries < 64u; ++tries) {
+        unsigned char low = (unsigned char)(cell & 0x0Fu);
+        if (low == 0u) cell = (unsigned char)(cell + 0x10u);
+        else if (low == 0x0Fu) cell = (unsigned char)(cell - 0x10u);
+        if ((cell & 0xF0u) == 0xE0u) cell++;
+        else if ((cell & 0xF0u) == 0x40u) cell--;
+
+        ENEMY_X(slot) = (unsigned char)((cell & 0x0Fu) << 4);
+        ENEMY_Y(slot) = (unsigned char)((cell & 0xF0u) - 3u);
+        (void)collision_get_collidable_tile_still(slot);
+        if ((unsigned char)ENEMY_COLLIDED_TILE(slot) < 0x84u) {
+            unsigned char dx = abs_diff_u8((unsigned char)OBJ(NES_OBJ_X, 0u),
+                                           (unsigned char)ENEMY_X(slot));
+            unsigned char dy = abs_diff_u8((unsigned char)OBJ(NES_OBJ_Y, 0u),
+                                           (unsigned char)ENEMY_Y(slot));
+            if (dx >= 0x22u || dy >= 0x22u) {
+                RAM(0x0525u) = cell;
+                return 1u;
+            }
+        }
+        if (cell == start) break;
+    }
+    RAM(0x0525u) = start;
+    return 0u;
+}
+
 /* NES Z_05.asm:2006 IsSafeToSpawn — returns 1 if unsafe, 0 if safe. */
 static unsigned char is_safe_to_spawn(unsigned int slot)
 {
@@ -422,17 +467,12 @@ void enemy_assign_spawn_positions(unsigned char room_id, unsigned char template_
         unsigned char y = (unsigned char)DUNGEON_SPAWN_CYCLE;
         unsigned int x;
         if (edge_spawn_substitute) {
-            /* Edge-spawn substitute path: bypass is_safe_to_spawn (which
-             * depends on collision grid that may not match OW rooms
-             * during the substrate-gap window) and walk the spawn list
-             * sequentially. Each slot gets a distinct (col, row) so
-             * enemies don't pile on one tile. */
+            /* NES edge-spawn rooms bypass SpawnPosListAddrs. Per-slot
+             * placement is deferred to enemy_loop_tick so the shared
+             * long timer can release one perimeter entrant at a time. */
             for (x = 1u; x <= DUNGEON_ROOM_OBJ_COUNT && x < 0x0Au; ++x) {
-                unsigned char b = list[y];
-                OBJ(NES_OBJ_X, x) = (unsigned char)((b & 0x0Fu) << 4);
-                OBJ(NES_OBJ_Y, x) = (unsigned char)((b & 0xF0u) | 0x0Du);
-                ++y;
-                if (y >= 9u) y = 0u;
+                OBJ(NES_OBJ_X, x) = 0u;
+                OBJ(NES_OBJ_Y, x) = 0u;
             }
         } else {
             unsigned int iter_cap = 0u;

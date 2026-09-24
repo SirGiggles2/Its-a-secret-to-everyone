@@ -269,37 +269,41 @@ def extract_init_link_speed_constants(z05_path):
     }
 
 
-def nes_level_to_genesis(level):
-    level = clamp(level, 0.0, 1.0)
-    return int(round(level * 7.0)) * 2
+# Frozen 64-color RGB table from the locked BizHawk 2.11 NesHawk `Palette`
+# setting (config.ini). The former generic RGB table made Original colors
+# visibly wrong even though the extracted NES palette indices were correct.
+# Keep this embedded so the drag-and-drop builder needs only the user's ROM.
+NES_REFERENCE_RGB = [
+    (102, 102, 102), (0, 42, 136), (20, 18, 168), (59, 0, 164),
+    (92, 0, 126), (110, 0, 64), (108, 7, 0), (87, 29, 0),
+    (52, 53, 0), (12, 73, 0), (0, 82, 0), (0, 79, 8),
+    (0, 64, 78), (0, 0, 0), (0, 0, 0), (0, 0, 0),
+    (174, 174, 174), (21, 95, 218), (66, 64, 254), (118, 39, 255),
+    (161, 27, 205), (184, 30, 124), (181, 50, 32), (153, 79, 0),
+    (108, 110, 0), (56, 135, 0), (13, 148, 0), (0, 144, 50),
+    (0, 124, 142), (0, 0, 0), (0, 0, 0), (0, 0, 0),
+    (254, 254, 254), (100, 176, 254), (147, 144, 254), (199, 119, 254),
+    (243, 106, 254), (254, 110, 205), (254, 130, 112), (235, 159, 35),
+    (189, 191, 0), (137, 217, 0), (93, 229, 48), (69, 225, 130),
+    (72, 206, 223), (79, 79, 79), (0, 0, 0), (0, 0, 0),
+    (254, 254, 254), (193, 224, 254), (212, 211, 254), (233, 200, 254),
+    (251, 195, 254), (254, 197, 235), (254, 205, 198), (247, 217, 166),
+    (229, 230, 149), (208, 240, 151), (190, 245, 171), (180, 243, 205),
+    (181, 236, 243), (184, 184, 184), (0, 0, 0), (0, 0, 0),
+]
+
+
+def nes_level_to_genesis(channel):
+    # Genplus-gx displays the eight Genesis channel levels as 0,34,...,238.
+    return int(clamp(round(channel / 34.0), 0, 7)) * 2
 
 
 def nes_color_index_to_genesis(color_index):
     color_index &= 0x3F
-    nes_rgb_palette = [
-        (124, 124, 124), (0, 0, 252), (0, 0, 188), (68, 40, 188),
-        (148, 0, 132), (168, 0, 32), (168, 16, 0), (136, 20, 0),
-        (80, 48, 0), (0, 120, 0), (0, 104, 0), (0, 88, 0),
-        (0, 64, 88), (0, 0, 0), (0, 0, 0), (0, 0, 0),
-        (188, 188, 188), (0, 120, 248), (0, 88, 248), (104, 68, 252),
-        (216, 0, 204), (228, 0, 88), (248, 56, 0), (228, 92, 16),
-        (172, 124, 0), (0, 184, 0), (0, 168, 0), (0, 168, 68),
-        (0, 136, 136), (0, 0, 0), (0, 0, 0), (0, 0, 0),
-        (248, 248, 248), (60, 188, 252), (104, 136, 252), (152, 120, 248),
-        (248, 120, 248), (248, 88, 152), (248, 120, 88), (252, 160, 68),
-        (248, 184, 0), (184, 248, 24), (88, 216, 84), (88, 248, 152),
-        (0, 232, 216), (120, 120, 120), (0, 0, 0), (0, 0, 0),
-        (252, 252, 252), (164, 228, 252), (184, 184, 248), (216, 184, 248),
-        (248, 184, 248), (248, 164, 192), (240, 208, 176), (252, 224, 168),
-        (248, 216, 120), (216, 248, 120), (184, 248, 184), (184, 248, 216),
-        (0, 252, 252), (248, 216, 248), (0, 0, 0), (0, 0, 0),
-    ]
-
-    red, green, blue = nes_rgb_palette[color_index]
-
-    red_level = nes_level_to_genesis((red / 255.0) ** 0.9)
-    green_level = nes_level_to_genesis((green / 255.0) ** 0.9)
-    blue_level = nes_level_to_genesis((blue / 255.0) ** 0.9)
+    red, green, blue = NES_REFERENCE_RGB[color_index]
+    red_level = nes_level_to_genesis(red)
+    green_level = nes_level_to_genesis(green)
+    blue_level = nes_level_to_genesis(blue)
     return (blue_level << 8) | (green_level << 4) | red_level
 
 

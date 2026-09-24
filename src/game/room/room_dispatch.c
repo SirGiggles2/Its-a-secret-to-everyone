@@ -147,6 +147,28 @@ void room_clear_room_history(void)
     }
 }
 
+/* NES source: reference/aldonunez/Z_07.asm:
+ * RunCrossRoomTasksAndBeginUpdateMode @LoopHistory.
+ * Drained C: NONE.
+ * Coverage: PARTIAL (native room-entry history ownership).
+ * Stance: EXTEND.
+ *
+ * CreateRoomObjects consults the prior six-room history before this runs;
+ * the current room is inserted only after its object count is resolved. */
+void room_record_history(unsigned char room_id)
+{
+    unsigned char i;
+    unsigned char idx;
+    for (i = 0u; i < 6u; ++i) {
+        if ((unsigned char)ROOM_HISTORY(i) == room_id) return;
+    }
+    idx = (unsigned char)ROOM_HISTORY_IDX;
+    if (idx >= 6u) idx = 0u;
+    ROOM_HISTORY(idx) = room_id;
+    idx = (unsigned char)(idx + 1u);
+    ROOM_HISTORY_IDX = (idx < 6u) ? idx : 0u;
+}
+
 void room_reset_player_state(void)
 {
     /* drain at room_runtime.c:289-292. */
@@ -1115,6 +1137,36 @@ void room_save_kill_count_ow(unsigned int slot)
             new_kill = 7u;
     }
     nes_ram[ptr + (unsigned char)slot] = (unsigned char)(cell | new_kill);
+}
+
+/* NES source: Z_05.asm:SaveKillCountUW ($4036 source listing).
+ * Drained C: room_save_kill_count_ow / room_get_room_flags; UW translated
+ * body exists in src/zelda_translated/z_05.asm:SaveKillCountUW.
+ * Coverage: PARTIAL (dungeon room departure, not SRAM serialization).
+ * Stance: EXTEND.
+ */
+void room_save_kill_count_uw(void)
+{
+    unsigned char flags = (unsigned char)(room_get_room_flags() & 0x3Fu);
+    unsigned short ptr = (unsigned short)(((unsigned short)SAVEFILE_PTR_HI << 8) |
+                                         SAVEFILE_PTR_LO);
+    unsigned char room = (unsigned char)CUR_ROOM_ID;
+    unsigned char count = (unsigned char)RAM(0x034Eu);
+    unsigned char killed = (unsigned char)RAM(0x034Fu);
+    unsigned char type = (unsigned char)RAM(0x035Fu);
+    unsigned char total;
+    if (count == 0u || killed >= count ||
+        (killed != 0u && type >= 0x32u && type != 0x3Au &&
+         type != 0x3Bu && type < 0x49u)) {
+        RAM(0x0560u + room) = 0x0Fu;
+        flags |= 0xC0u;
+    } else {
+        total = (unsigned char)(killed + RAM(0x0560u + room));
+        RAM(0x0560u + room) = total;
+        if (total > 2u) total = 2u;
+        flags |= (unsigned char)(total << 6);
+    }
+    nes_ram[ptr + room] = flags;
 }
 
 /* room_runtime.c:157-160. NES TriggerOpenDoor. */

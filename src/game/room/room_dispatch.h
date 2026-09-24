@@ -46,6 +46,10 @@ unsigned char room_get_unique_room_id(void);
  * drain at room_runtime.c:283-287. */
 void room_clear_room_history(void);
 
+/* Record room_id in the NES six-room cycling history if absent.
+ * NES RunCrossRoomTasksAndBeginUpdateMode. */
+void room_record_history(unsigned char room_id);
+
 /* Reset LINK_ACTION_TIMER + LINK_HALT_FLAG. NES ResetPlayerState.
  * drain at room_runtime.c:289-292. */
 void room_reset_player_state(void);
@@ -247,6 +251,7 @@ void room_set_door_flag(unsigned int dir_idx);
 void room_reset_door_flag(unsigned int dir_idx);
 void room_set_entering_doorway(void);
 void room_save_kill_count_ow(unsigned int slot);
+void room_save_kill_count_uw(void);
 void room_trigger_open_door(unsigned int val);
 void room_touch_door_wall(void);
 void room_touch_door_open(void);

@@ -1170,8 +1170,17 @@ def build_legacy_variant_blob(item_defs: List[dict],
                 bot = get_gen(tile_ids[i+1])
                 out.extend(top)
                 out.extend(bot)
-                out.extend(hflip_genesis_tile(top))
-                out.extend(hflip_genesis_tile(bot))
+                for half in (top, bot):
+                    right = hflip_genesis_tile(half)
+                    if rule.endswith("_slim"):
+                        # NES @_Slim places the mirrored half at x+7.
+                        # Its first column overlaps the left half's last;
+                        # column 8 therefore starts at mirrored pixel 1.
+                        right = b"".join(
+                            ((int.from_bytes(right[y:y + 4], "big") << 4)
+                             & 0xFFFFFFFF).to_bytes(4, "big")
+                            for y in range(0, 32, 4))
+                    out.extend(right)
         else:
             for tile_id in tile_ids:
                 gen = get_gen(tile_id)
@@ -1539,7 +1548,13 @@ def emit_boss_chr(out_dir: Path) -> int:
         path = PRG_ORIG_DIR / fname
         if not path.exists():
             raise SystemExit(f"PR-5: missing {path}")
-        blobs.append((sym, _build_boss_blob(path)))
+        blob = _build_boss_blob(path)
+        blobs.append((sym, blob))
+        # NES sprite palette 3 already occupies PAL1[12..15]. Preserve
+        # transparent zero and bias its visible pixels into that range.
+        biased = bytes((((v >> 4) + 12) << 4 if v >> 4 else 0) |
+                       ((v & 15) + 12 if v & 15 else 0) for v in blob)
+        blobs.append((sym + "_subpal3", biased))
 
     guard = "ROOMROM_ATLAS_BOSS_CHR_H"
     h_path = out_dir / "boss_chr.h"
@@ -1554,7 +1569,8 @@ def emit_boss_chr(out_dir: Path) -> int:
         " * NES sprite tiles, 1x sub-pal (boss CRAM is loaded per-boss via",
         " * UpdatePalettes; sub-pal index flows through OAM attr).",
         " *",
-        " * Per-bank Genesis bytes = 64 tiles * 32 = 2048.",
+        " * Per-bank Genesis bytes = 64 tiles * 32 = 2048. Each bank has",
+        " * a _subpal3 copy with visible pixels biased by 12 for PAL1.",
         " *",
         " * Consumed by RoomRom/src/atlas/level_chr_swap.c via parallel boss",
         " * DMA state machine; resident at ROOMROM_BOSS_TILE_BASE.",
@@ -1587,8 +1603,8 @@ def emit_boss_chr(out_dir: Path) -> int:
         c_lines += ["};", ""]
     write_lines(c_path, c_lines)
 
-    print(f"  boss_chr: 3 UWSPBoss banks x {BOSS_BANK_BYTES} bytes "
-          f"({BOSS_NES_TILE_COUNT} tiles each, 1x sub-pal)")
+    print(f"  boss_chr: 3 UWSPBoss banks, base + subpal3 copies, "
+          f"{BOSS_BANK_BYTES} bytes per copy")
     return BOSS_BANK_BYTES
 
 

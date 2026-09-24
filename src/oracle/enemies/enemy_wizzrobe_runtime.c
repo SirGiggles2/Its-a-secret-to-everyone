@@ -25,10 +25,9 @@
  *             Wizzrobe_DrawAndCheckCollisions verbatim).
  * Stance:     GREENFIELD (no prior Wizzrobe drain rows).
  *
- * Wires $35 BlueWizzrobe + $36 RedWizzrobe in enemy_loop.c dispatch.
- * Ganon's inlined Wizzrobe primitives (enemy_ganon_runtime.c:96-167)
- * remain in place; refactoring to import from this file deferred to a
- * follow-up so Ganon parity is unchanged this commit.
+ * Wires $23 BlueWizzrobe + $24 RedWizzrobe in enemy_loop.c dispatch.
+ * Ganon_MoveAndShoot and burst rays now import these shared movement
+ * primitives, including the NES collidable-tile response.
  *
  * RAM cell mapping (NES Variables.inc + ObjVars.inc):
  *   ObjRemDistance              ($0394) -> ENEMY_MOVE_TIMER (alias)
@@ -125,7 +124,7 @@ static const unsigned char k_rw_dirs[4] = {
 #define WIZ_RANDOM_BASE       RAM(0x0018u)
 
 /* NES Z_04.asm:7212 BlueWizzrobe_Move. */
-static void blue_wizzrobe_move(unsigned int slot)
+void enrt_blue_wizzrobe_move(unsigned int slot)
 {
     unsigned char dir = (unsigned char)WIZ_DIR(slot);
     if (dir < 11u) {
@@ -255,7 +254,7 @@ static void blue_wizzrobe_choose_teleport_target(unsigned int slot)
  * Includes the @HitWall / @HitBlockOrWater branches at 7104+. */
 static void blue_wizzrobe_move_and_check_tile(unsigned int slot)
 {
-    blue_wizzrobe_move(slot);
+    enrt_blue_wizzrobe_move(slot);
     /* Z_04.asm:7104-7124 collidable-tile check. */
     if (wizzrobe_get_collidable_tile(slot) == 0u) return;
 
@@ -276,7 +275,7 @@ static void blue_wizzrobe_move_and_check_tile(unsigned int slot)
         dir = (unsigned char)(dir ^ 0x03u);
         WIZ_DIR(slot) = dir;
     }
-    blue_wizzrobe_move(slot);
+    enrt_blue_wizzrobe_move(slot);
 }
 
 /* NES Z_04.asm:7159 BlueWizzrobe_AdvanceCounterAndTurnTowardLinkIfNeeded. */
@@ -287,6 +286,13 @@ static void blue_wizzrobe_advance_counter_and_turn(unsigned int slot)
     if ((counter & 0x3Fu) == 0u) {
         blue_wizzrobe_turn_toward_link(slot);
     }
+}
+
+/* NES Z_04.asm:7100 — shared with Ganon_MoveAndShoot. */
+void enrt_blue_wizzrobe_turn_sometimes_and_move_and_check_tile(unsigned int slot)
+{
+    blue_wizzrobe_advance_counter_and_turn(slot);
+    blue_wizzrobe_move_and_check_tile(slot);
 }
 
 /* NES Z_04.asm:7055 BlueWizzrobe_WalkOrTeleport. */
@@ -312,8 +318,7 @@ static void blue_wizzrobe_walk_or_teleport(unsigned int slot)
             blue_wizzrobe_turn_toward_link(slot);
             return;
         }
-        blue_wizzrobe_advance_counter_and_turn(slot);
-        blue_wizzrobe_move_and_check_tile(slot);
+        enrt_blue_wizzrobe_turn_sometimes_and_move_and_check_tile(slot);
         return;
     }
     if (timer == 1u) {
