@@ -1,0 +1,4 @@
+f=30 room=42 mode=05 linkXY=78,69 taken=01 bossFlag=01 secret=03 opened=0C shutter=01 doors=01,01,07,07 has=01
+f=60 room=42 mode=05 linkXY=78,46 taken=01 bossFlag=01 secret=03 opened=0C shutter=01 doors=01,01,07,07 has=01
+f=90 room=42 mode=05 linkXY=78,39 taken=01 bossFlag=01 secret=03 opened=0C shutter=01 doors=01,01,07,07 has=01
+f=113 room=32 mode=05 linkXY=78,D0 taken=00 bossFlag=01 secret=01 opened=00 shutter=00 doors=01,01,07,01 has=01

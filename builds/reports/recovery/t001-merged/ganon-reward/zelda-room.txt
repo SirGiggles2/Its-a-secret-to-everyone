@@ -1,0 +1,16 @@
+room=32 mode=05 type1=37 type2=3F linkXY=78,CE
+approach f=20 link=78,B9 zeldaState=00 timer=00 mode=05
+approach f=40 link=78,A7 zeldaState=00 timer=00 mode=05
+approach f=60 link=78,B5 zeldaState=00 timer=00 mode=05
+approach f=80 link=78,A1 zeldaState=00 timer=00 mode=05
+approach f=91 link=88,88 zeldaState=01 timer=80 mode=05
+wait f=20 mode=05 sub=00 timer=72 state=01 type=37
+wait f=40 mode=05 sub=00 timer=62 state=01 type=37
+wait f=60 mode=05 sub=00 timer=53 state=01 type=37
+wait f=80 mode=05 sub=00 timer=42 state=01 type=37
+wait f=100 mode=05 sub=00 timer=34 state=01 type=37
+wait f=120 mode=05 sub=00 timer=24 state=01 type=37
+wait f=140 mode=05 sub=00 timer=14 state=01 type=37
+wait f=160 mode=05 sub=00 timer=05 state=01 type=37
+wait f=165 mode=13 sub=00 timer=00 state=01 type=37
+ending mode=13 sub=00 link=88,88 zeldaState=01 timer=00

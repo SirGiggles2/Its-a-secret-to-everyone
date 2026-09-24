@@ -33,7 +33,7 @@ Git from the VM: `git -c core.checkStat=minimal -c core.trustctime=false -c core
 
 - **Branch:** `main` (local; not pushed). `main` = recovery work (Sep 11–24) + merged `feat/cave-entry-transition-parity` (Aug).
   Old main preserved at `codex/recovery-baseline-20260911-074018` (= f513b997).
-- **Last verified ROM:** `cfea713e…` (pre-merge, Ganon→Zelda handoff). **Merged tree has NOT been built yet → T-001.**
+- **Last verified ROM:** `f3a38e2b…` merged tree (T-001, `builds/reports/recovery/t001-merged/result.json`). Claude now runs on the Windows host: builds + BizHawk.
 - **Generated data:** freshness 8/8 OK. UW blob 649 rooms. Room generator reproduces 330/331 original rooms byte-exact; only L9Q1 `$42` (Ganon) differs → T-004.
 - **Music:** deferred to last by user direction.
 
@@ -45,7 +45,7 @@ Status: `TODO` · `ACTIVE` · `BLOCKED` · `REVIEW` · `DONE`. Plan ref = task I
 
 | ID | Task | Plan ref | Status | Owner | Scope | Acceptance / evidence |
 |---|---|---|---|---|---|---|
-| T-001 | Build + boot the merged tree | P0.2 | ACTIVE | Claude (Windows host) | build only | `Debug.bat` clean; regression matrix GREEN 12/12; Ganon→Zelda `reward.lua` passes; Aquamentus consumer passes; File Select→New Game; save survives hard reset (`probe_save_persistence.lua`). Record ROM SHA here. Any failure → new T row, fix before S1 |
+| T-001 | Build + boot the merged tree | P0.2 | DONE | Claude (Windows host) | build only | `Debug.bat` clean; regression matrix GREEN 12/12; Ganon→Zelda `reward.lua` passes; Aquamentus consumer passes; File Select→New Game; save survives hard reset (`probe_save_persistence.lua`). Record ROM SHA here. Any failure → new T row, fix before S1 |
 | T-002 | Quest 2 LevelInfo patch (was missing from the active install path) | P0.12 | REVIEW | Claude → Astra | done | **Found:** `level_info_install_uw` ignored quest, so every Q2 dungeon ran with Q1 LevelInfo from $6BA7 on (start room, map, triforce, cellars, boss room, map mask). **Fixed:** `level_info_apply_q2_patch` (NES `UpdateMode2Load_Full`, Sizes+1 bytes) from the ROM-extracted blob; `room_dispatch` Q2 branch uses it, hardcoded tables deleted. **Offline evidence:** `python tools/audit/test_q2_levelinfo.py` → 18/18 byte-exact vs ROM pointers (Python mirror of the C). **Astra:** after T-001, boot Q2 (X+Y+Z), enter L1: start room $77, pause map matches NES |
 | T-003 | World-flag regions (`$067F` OW, `$06FF` L1–6, `$077F` L7–9) | P7.2 / P5.4 | TODO | Claude → Astra | `level_info_install.c`, `save_game.c`, `save_serializer.c` | Code: new game zeroes all three, SRAM save/load keeps all three. Runtime (Astra): kill Digdogger + Patra, leave, re-enter → no respawn; OW secret still open after a dungeon |
 | T-004 | Room generator: Ganon room `$42` | P0.14 | TODO | Claude | `tools/builder/gen_uw_room_tiles.py` | Generator output for L9Q1 `$42` byte-equal to the live capture in `uw_room_blob.c` (240 NT bytes differ today). Then 331/331 → builder no longer needs live captures |
@@ -59,7 +59,8 @@ Status: `TODO` · `ACTIVE` · `BLOCKED` · `REVIEW` · `DONE`. Plan ref = task I
 |---|---|---|---|---|
 | T-090 | Runtime `debug_session` gate: set only by title A+B+C / X+Y+Z chord; all gameplay debug inputs (X/Y/MODE/C/Z+START/B+Z+C/A+B+C+START in `RoomRom/src/main.c`) require it | TODO | | FS New Game: every debug input inert (RAM trace) |
 | T-091 | Boot probes (options/persistence/serializer/warp/roundtrip/metadata) run only when armed; none write SRAM on normal boot | TODO | | SRAM bytes unchanged across normal boot (before/after dump) |
-| T-092 | NES new-game init on FS path: no seeded sword, keys 0, no default B-item, NES start facing; B-item only via pause | TODO | | Inventory + Link RAM byte-diff vs NES new-game capture |
+| T-092 | NES new-game init on FS path: no seeded sword, keys 0, no default B-item, NES start facing; B-item only via pause. **Seen T-001:** FS New Game HUD LIFE empty (NES = 3 hearts), Link not visible at +60f | TODO | | Inventory + Link RAM byte-diff vs NES new-game capture |
+| T-093 | Build warnings: macro redefinitions `LINK_X`/`LINK_Y` (world_state.h), `OBJ_STATE` (object/world/combat_state.h), `CUR_LEVEL` (room_load_runtime.c). Prove each pair same address or fix the wrong one | TODO | | 0 redefinition warnings; any address change byte-verified |
 
 ### S0c — Native game-mode spine (finish plan Phase 2)
 
@@ -114,6 +115,11 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 | T-080 | Builder: clean-staging build from user ROM, no live captures, drag-and-drop shell, reproducibility | P10 | TODO |
 
 ## Handoff log (newest first)
+
+**2026-09-24 · Claude (Windows host)** — T-001 DONE. Merged tree builds (`f3a38e2b…`). Freshness gate failed only because `sorted(Path)`
+is case-insensitive on Windows; fixed with POSIX-relpath sort (`9c6a04a1`). Matrix GREEN 12/12. Ganon→Zelda→Mode13, Aquamentus
+consumer, map/compass consumer, FS→New Game and save/hard-reset (Items only) all PASS. `probe_save_persistence.lua` entry was broken
+(false ready on title `$EB`); fixed. New: T-093 macro warnings; T-092 new-game hearts/Link visibility. Next: T-002 runtime check, then S0b.
 
 **2026-09-24 · Claude** — T-002: Q2 dungeons were installing Q1 LevelInfo (patch existed only in an unlinked drained path with
 hardcoded game bytes). Added `level_info_apply_q2_patch` from the ROM blob (+18-byte addr table so the NES's one-byte overrun is exact),

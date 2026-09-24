@@ -1,0 +1,4 @@
+L1 room46 map=01 taken=1
+L1 room62 compass=01 taken=1 marker y=96->156 tile=1294
+pause icons map=1 compass=2 target=1
+PASS native room-entry map/compass awards reflected in gameplay HUD and pause inventory

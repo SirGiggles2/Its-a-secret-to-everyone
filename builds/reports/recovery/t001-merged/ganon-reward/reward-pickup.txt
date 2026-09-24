@@ -1,0 +1,2 @@
+pickup f=2 linkXY=7D,85 item=0E taken=01 fanfare=01 timer=C0 linkState=40 mode=05
+settled fanfare=00 timer=00 linkState=00 mode=05 room=42 taken=01

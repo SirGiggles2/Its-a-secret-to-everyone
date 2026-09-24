@@ -1,0 +1,53 @@
+swing timerStart=30 f=1 state=00 hp=10 sword=00 swordXY=00,00 bossXY=30,6D timer=2F
+swing timerStart=30 f=2 state=00 hp=10 sword=02 swordXY=79,92 bossXY=30,6D timer=2E
+swing timerStart=30 f=3 state=00 hp=10 sword=02 swordXY=79,92 bossXY=71,88 timer=2D
+swing timerStart=30 f=4 state=00 hp=10 sword=02 swordXY=79,92 bossXY=71,88 timer=2C
+swing timerStart=30 f=5 state=00 hp=10 sword=02 swordXY=79,92 bossXY=71,88 timer=2B
+swing timerStart=30 f=6 state=00 hp=10 sword=02 swordXY=79,92 bossXY=71,88 timer=2A
+swing timerStart=30 f=7 state=00 hp=10 sword=02 swordXY=79,92 bossXY=71,88 timer=29
+swing timerStart=30 f=8 state=00 hp=10 sword=02 swordXY=79,92 bossXY=71,88 timer=29
+swing timerStart=30 f=9 state=00 hp=10 sword=02 swordXY=79,92 bossXY=71,88 timer=28
+swing timerStart=30 f=10 state=00 hp=10 sword=02 swordXY=79,92 bossXY=71,88 timer=27
+swing timerStart=30 f=11 state=00 hp=10 sword=00 swordXY=79,92 bossXY=71,88 timer=26
+swing timerStart=30 f=12 state=00 hp=10 sword=00 swordXY=79,92 bossXY=71,88 timer=25
+between linkState=00 sword=00 bossPhase=02 mode=05
+swing timerStart=00 f=1 state=00 hp=10 sword=02 swordXY=79,92 bossXY=30,A0 timer=00
+swing timerStart=00 f=2 state=FE hp=F0 sword=02 swordXY=79,92 bossXY=71,88 timer=40
+result visibleFrames=9 invisibleFrames=1 state=FE hp=F0
+arrow tier=1 f=1 phase=00 state=E3 arrow=10 arrowXY=78,90 bossXY=71,88
+arrow tier=1 f=2 phase=00 state=E2 arrow=10 arrowXY=78,93 bossXY=6E,86
+arrow tier=1 f=3 phase=00 state=E2 arrow=10 arrowXY=78,93 bossXY=6E,89
+arrow tier=1 f=4 phase=00 state=E2 arrow=10 arrowXY=78,93 bossXY=6E,89
+arrow tier=1 f=5 phase=00 state=E2 arrow=10 arrowXY=78,96 bossXY=6E,89
+arrow tier=1 f=6 phase=00 state=E1 arrow=10 arrowXY=78,99 bossXY=6E,8C
+arrow tier=1 f=7 phase=00 state=E1 arrow=10 arrowXY=78,9C bossXY=6E,8F
+arrow tier=1 f=8 phase=00 state=E0 arrow=10 arrowXY=78,9F bossXY=6E,92
+arrow tier=1 f=9 phase=00 state=E0 arrow=10 arrowXY=78,A2 bossXY=6E,95
+arrow tier=1 f=10 phase=00 state=DF arrow=10 arrowXY=78,A5 bossXY=6E,98
+arrow tier=1 f=11 phase=00 state=DF arrow=10 arrowXY=78,A5 bossXY=6E,9B
+arrow tier=1 f=12 phase=00 state=DF arrow=10 arrowXY=78,A8 bossXY=6E,9B
+arrow tier=1 f=13 phase=00 state=DE arrow=10 arrowXY=78,AB bossXY=6E,9E
+arrow tier=1 f=14 phase=00 state=DE arrow=10 arrowXY=78,AE bossXY=6E,A1
+arrow tier=1 f=15 phase=00 state=DD arrow=10 arrowXY=78,B1 bossXY=6E,A4
+arrow tier=1 f=16 phase=00 state=DD arrow=10 arrowXY=78,B4 bossXY=6E,A7
+arrow tier=1 f=17 phase=00 state=DC arrow=10 arrowXY=78,B7 bossXY=6E,AA
+arrow tier=1 f=18 phase=00 state=DC arrow=10 arrowXY=78,B7 bossXY=6E,AD
+arrow tier=1 f=19 phase=00 state=DC arrow=10 arrowXY=78,BA bossXY=6E,AD
+arrow tier=1 f=20 phase=00 state=DB arrow=10 arrowXY=78,BD bossXY=6E,B0
+arrow tier=1 f=21 phase=00 state=DB arrow=10 arrowXY=78,C0 bossXY=6E,B3
+arrow tier=1 f=22 phase=00 state=DA arrow=10 arrowXY=78,C3 bossXY=6E,B6
+arrow tier=1 f=23 phase=00 state=DA arrow=10 arrowXY=78,C6 bossXY=6E,B9
+arrow tier=1 f=24 phase=00 state=D9 arrow=10 arrowXY=78,C9 bossXY=6E,BC
+arrow tier=1 f=25 phase=00 state=D9 arrow=10 arrowXY=78,C9 bossXY=6E,BF
+arrow tier=1 f=26 phase=00 state=D9 arrow=10 arrowXY=78,CC bossXY=6E,BF
+arrow tier=1 f=27 phase=00 state=D8 arrow=10 arrowXY=78,CF bossXY=6E,C2
+arrow tier=1 f=28 phase=00 state=D8 arrow=10 arrowXY=78,D2 bossXY=6E,C5
+arrow tier=1 f=29 phase=00 state=D7 arrow=10 arrowXY=78,D5 bossXY=6E,C8
+arrow tier=1 f=30 phase=00 state=D7 arrow=10 arrowXY=78,D8 bossXY=6E,CB
+arrow tier=2 f=1 phase=00 state=B4 arrow=10 arrowXY=78,90 bossXY=6E,CB
+arrow tier=2 f=2 phase=01 state=B3 arrow=20 arrowXY=78,93 bossXY=6E,86
+death f=79 phase=45 roomItemLife=FF killCount=00 linkXY=80,85 scene=01 room=42 itemMeta=0E taken=00
+death f=159 phase=81 roomItemLife=FF killCount=00 linkXY=80,85 scene=01 room=42 itemMeta=0E taken=00
+death f=210 phase=A8 roomItemLife=00 killCount=01 linkXY=80,85 scene=01 room=42 itemMeta=0E taken=00
+death f=230 phase=B9 roomItemLife=00 killCount=01 linkXY=80,85 scene=01 room=42 itemMeta=0E taken=00
+rewardPosition native=75,8E sat=75,8E

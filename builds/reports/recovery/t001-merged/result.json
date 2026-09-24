@@ -1,0 +1,16 @@
+{
+  "task": "T-001",
+  "scope": "merged-tree build + representative accepted-probe reruns (control flow / state; not NES byte-parity)",
+  "rom_sha256": "f3a38e2b1132a5ceaddca0654b2e36b283190816df37c57c6a8149c8516f4f36",
+  "source_commit": "9c6a04a1 + probe_save_persistence.lua entry fix (this commit)",
+  "build": "PASS (python tools/debug/build_debug.py, exit 0; 65 warnings, macro redefinitions LINK_X/LINK_Y/OBJ_STATE/CUR_LEVEL -> T-093)",
+  "freshness": "8/8 after OS-independent glob sort fix (9c6a04a1)",
+  "regression_matrix": "GREEN=12 RED=0 SKIP=0",
+  "cases": {
+    "ganon-reward": "PASS: sword/arrow gates, killCount 0->1, reward at 75,8E, $42->$32, Zelda state 01, Link 88,88, Mode $13. Timing drift vs 2026-09-23 run: Zelda contact approach f=91 (was 88), Mode13 at wait f=165 (was 160); phase byte +1 at f79/f159. Staged fixture, not investigated further here.",
+    "aquamentus-consumer": "PASS, result.txt identical to p3-spawn-boss-consumer",
+    "map-consumer": "PASS, trace.txt identical to ganon-reward-map-consumer-20260923",
+    "save-persistence": "PASS 7/7 (Items block only; full profile is T-100). Probe entry was broken (single chord press never entered gameplay; $EB nonzero on title gave a false 'ready'); replaced with mirror-signature entry used by accepted probes.",
+    "fs-entry": "PASS 5/5 control flow title->FS->handoff->Mode $05 room $77. Triage screenshot: HUD LIFE empty, Link not visible at +60 frames -> T-092."
+  }
+}

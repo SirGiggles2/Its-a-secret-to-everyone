@@ -1,0 +1,1 @@
+PASS boss bank load: HUD header intact and at least two fireball SAT entries
