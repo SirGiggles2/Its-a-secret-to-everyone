@@ -256,6 +256,10 @@ void roomrom_sprites_upload_persistent_chr(void)
      * (Link, sword, hearts) goes first. */
     render_chr_upload((unsigned short)(COMMON_VRAM_TILE_BASE * 32u),
                       common_chr, COMMON_CHR_BYTES);
+    /* HUD position marker $3E/$3F outside the scene overlay. */
+    render_chr_upload((unsigned short)(ROOMROM_HUD_MARKER_TILE_BASE * 32u),
+                      common_chr + 0x3Eu * 32u,
+                      ROOMROM_HUD_MARKER_TILE_COUNT * 32u);
 
     /* Walk poses (32 tiles). */
     {
@@ -440,7 +444,7 @@ void roomrom_sprites_spawn_link(short x, short y)
                       (signed short)-32, (signed short)-32,
                       RENDER_SPRITE_SIZE(1, 2),
                       RENDER_TILE_ATTR_FULL(RENDER_PAL1, 1, 0, 0,
-                          (unsigned short)(ROOMROM_SPR_TILE_BASE + 0x3Eu)),
+                          ROOMROM_HUD_MARKER_TILE_BASE),
                       ROOMROM_SPRITE_SLOT_HUD_COMPASS);
     VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_HUD_COMPASS,
                       (signed short)-32, (signed short)-32,
@@ -465,7 +469,7 @@ void roomrom_sprites_set_hud_marker(unsigned char compass, short x, short y,
                                   : ROOMROM_SPRITE_SLOT_HUD_COMPASS;
     unsigned short tile = compass && inactive_palette
         ? ROOMROM_HUD_COMPASS_MARKER_TILE
-        : (unsigned short)(ROOMROM_SPR_TILE_BASE + 0x3Eu);
+        : ROOMROM_HUD_MARKER_TILE_BASE;
     unsigned char pal = compass
         ? (inactive_palette ? RENDER_PAL0 : RENDER_PAL3)
         : RENDER_PAL1;

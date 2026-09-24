@@ -1,0 +1,9 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\roms\\Legend of Zelda, The (USA).nes",
+  "rom_sha256": "8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac",
+  "script": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\tools\\lockstep\\capture.lua",
+  "script_sha256": "a1fc0014f25d31caf0162bd13dd2aa3a5ac3277c4f795e904ef5512c0f214266",
+  "symbols": {},
+  "exit_code": 0,
+  "collected": []
+}

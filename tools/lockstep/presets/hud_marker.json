@@ -1,0 +1,7 @@
+{
+  "name": "hud_marker",
+  "file_name": "LINK",
+  "quest": 0,
+  "items": {},
+  "script": [[30, ""], [200, "U"], [120, ""]]
+}

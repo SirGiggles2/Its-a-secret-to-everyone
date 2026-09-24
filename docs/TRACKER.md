@@ -66,6 +66,7 @@ Status: `TODO` · `ACTIVE` · `BLOCKED` · `REVIEW` · `DONE`. Plan ref = task I
 | T-103 | Link turn between grid points (`Link_ModifyDirOnGridLine`): opposite input reverses now; perpendicular <4px reverses to grid point with mirrored offset | DONE | Claude | Lockstep `newgame` f189: GEN now steps right 1px to `$38` then up (was 7px left to `$30`), identical to NES |
 | T-104 | OW collision sampler used HUD origin `$38` + one column; NES `GetCollidableTile` = origin `$40`, two columns vertical | DONE | Claude | OW now uses shared NES sampler. Lockstep `newgame`: GEN stops at Y `$5D` on tile `$DE` like NES (was walking to `$55`) |
 | T-105 | OW room scroll: trigger Y `$39` vs NES `$3D`; GEN stays GameMode `$05` (NES `$07`); ~32 vs ~80 frames; arrival Y `$CD` vs NES `$DD`; grid offset not re-phased → Link off-grid after every vertical change (walks through walls after) | ACTIVE | Astra | Scope: `src/game/world/ow_scroll.*`, required scroll call-site glue in `RoomRom/src/main.c`, `tools/debug/build_debug.py`, focused `tools/lockstep/` verification, `docs/audit/drain_findings/t105-scroll.md`, task evidence.  Lockstep `ow_walk` equal through room `$77`→`$67` and after |
+| T-106 | User report: "enemy half stuck in HUD top-left" = minimap position marker. It used VRAM `SPR_TILE_BASE+$3E` (tile `$2BC`), inside the SCENE_OBJ overlay (`SPR+44`, 136 tiles), so OW enemy CHR replaced the NES `$3E/$3F` dot | DONE | Claude | Marker pair uploaded from ROM-extracted `common_chr` to protected tiles 1312–1313 (VRAM budget gate registers it). Lockstep `hud_marker`: GEN tile pixels == NES `$3E/$3F`, same X/Y/size; before/after in `builds/reports/recovery/t106-hud-marker/`. Built in an isolated worktree so Astra's T-105 WIP was not built |
 | T-093 | Build warnings: macro redefinitions `LINK_X`/`LINK_Y` (world_state.h), `OBJ_STATE` (object/world/combat_state.h), `CUR_LEVEL` (room_load_runtime.c). Prove each pair same address or fix the wrong one | TODO | | 0 redefinition warnings; any address change byte-verified |
 
 ### S0c — Native game-mode spine (finish plan Phase 2)
@@ -121,6 +122,10 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 | T-080 | Builder: clean-staging build from user ROM, no live captures, drag-and-drop shell, reproducibility | P10 | TODO |
 
 ## Handoff log (newest first)
+
+**2026-09-24 · Claude** — T-106 DONE (minimap marker showed enemy art; now NES `$3E/$3F` in protected VRAM 1312–1313).
+Lockstep capture now also dumps full video state at end (NES OAM/PAL/CHR/CIRAM, GEN VRAM/CRAM/VSRAM). Astra: your T-105 WIP in
+`main.c`/`build_debug.py`/`ow_scroll.*` untouched and uncommitted; my commit only stages my files. Rebuild before your next capture.
 
 **2026-09-24 · Claude** — Lockstep-driven fixes: T-103 turn-between-grid rule and T-104 OW collision origin/2-column sampler (both
 byte-verified vs NES). T-101 closed as harness artifact (seed alignment added). New: T-102 tick order, T-105 room scroll

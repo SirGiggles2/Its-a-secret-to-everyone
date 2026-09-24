@@ -162,6 +162,12 @@
 #define ROOMROM_FIREBALL_TILE_COUNT 2u
 #define ROOMROM_SPARK_TILE_BASE 1308u
 #define ROOMROM_SPARK_TILE_COUNT 4u
+/* HUD position marker: NES common sprite pair $3E/$3F (8x16). The copy at
+ * SPR_TILE_BASE+$3E lies inside the SCENE_OBJ overlay (SPR_TILE_BASE+44,
+ * 136 tiles) and was overwritten by OW enemy CHR: the marker showed half an
+ * enemy in the minimap (lockstep hud_marker, VRAM tile $2BC). */
+#define ROOMROM_HUD_MARKER_TILE_BASE 1312u
+#define ROOMROM_HUD_MARKER_TILE_COUNT 2u
 /* The pause inventory owns 1280..1295. Its ROM-derived marker pair
  * (indices 14/15) is also uploaded at gameplay boot for the Original HUD. */
 #define ROOMROM_SUBSCREEN_SPRITE_TILE_BASE 1280u

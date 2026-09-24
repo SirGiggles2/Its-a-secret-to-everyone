@@ -1,0 +1,1555 @@
+{
+ "frames": 350,
+ "verdict": "DIVERGE",
+ "frame0": [
+  {
+   "addr": "$0011",
+   "name": "IsUpdatingMode",
+   "nes": 1,
+   "gen": 0
+  },
+  {
+   "addr": "$0014",
+   "name": "TileBufSelector",
+   "nes": 122,
+   "gen": 0
+  },
+  {
+   "addr": "$0028",
+   "name": "ObjTimer",
+   "nes": 2,
+   "gen": 0
+  },
+  {
+   "addr": "$002A",
+   "name": "ObjTimer+2",
+   "nes": 0,
+   "gen": 1
+  },
+  {
+   "addr": "$002B",
+   "name": "ObjTimer+3",
+   "nes": 0,
+   "gen": 2
+  },
+  {
+   "addr": "$002C",
+   "name": "ObjTimer+4",
+   "nes": 0,
+   "gen": 3
+  },
+  {
+   "addr": "$002D",
+   "name": "ObjTimer+5",
+   "nes": 0,
+   "gen": 4
+  },
+  {
+   "addr": "$002E",
+   "name": "ObjTimer+6",
+   "nes": 0,
+   "gen": 5
+  },
+  {
+   "addr": "$002F",
+   "name": "ObjTimer+7",
+   "nes": 0,
+   "gen": 6
+  },
+  {
+   "addr": "$0030",
+   "name": "ObjTimer+8",
+   "nes": 0,
+   "gen": 7
+  },
+  {
+   "addr": "$0031",
+   "name": "ObjTimer+9",
+   "nes": 0,
+   "gen": 8
+  },
+  {
+   "addr": "$0032",
+   "name": "ObjTimer+10",
+   "nes": 0,
+   "gen": 9
+  },
+  {
+   "addr": "$0033",
+   "name": "ObjTimer+11",
+   "nes": 0,
+   "gen": 10
+  },
+  {
+   "addr": "$0060",
+   "name": "ChaseOtherTarget",
+   "nes": 0,
+   "gen": 1
+  },
+  {
+   "addr": "$0061",
+   "name": "ChaseTargetX",
+   "nes": 0,
+   "gen": 135
+  },
+  {
+   "addr": "$0062",
+   "name": "ChaseTargetY",
+   "nes": 0,
+   "gen": 114
+  },
+  {
+   "addr": "$007D",
+   "name": "ObjX+13",
+   "nes": 33,
+   "gen": 0
+  },
+  {
+   "addr": "$00E8",
+   "name": "CurColumn",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$00EF",
+   "name": "CurOpenedDoors+1",
+   "nes": 2,
+   "gen": 0
+  },
+  {
+   "addr": "$00F4",
+   "name": "InitializedGame",
+   "nes": 1,
+   "gen": 0
+  },
+  {
+   "addr": "$00F5",
+   "name": "TransferredCommonPatterns",
+   "nes": 90,
+   "gen": 0
+  },
+  {
+   "addr": "$00F6",
+   "name": "TransferredDemoPatterns",
+   "nes": 16,
+   "gen": 0
+  },
+  {
+   "addr": "$00FE",
+   "name": "CurPpuMask_2001",
+   "nes": 30,
+   "gen": 0
+  },
+  {
+   "addr": "$00FF",
+   "name": "CurPpuControl_2000",
+   "nes": 180,
+   "gen": 0
+  },
+  {
+   "addr": "$0340",
+   "name": "CurObjIndex",
+   "nes": 11,
+   "gen": 0
+  },
+  {
+   "addr": "$0343",
+   "name": "LeftSpriteOffset",
+   "nes": 72,
+   "gen": 0
+  },
+  {
+   "addr": "$0344",
+   "name": "RightSpriteOffset",
+   "nes": 76,
+   "gen": 0
+  },
+  {
+   "addr": "$034D",
+   "name": "RoomAllDead",
+   "nes": 0,
+   "gen": 1
+  },
+  {
+   "addr": "$03BC",
+   "name": "Moldorm_ObjBounceDir",
+   "nes": 96,
+   "gen": 0
+  },
+  {
+   "addr": "$03D0",
+   "name": "ObjAnimCounter",
+   "nes": 3,
+   "gen": 0
+  },
+  {
+   "addr": "$0493",
+   "name": "ObjUninitialized+1",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$0494",
+   "name": "ObjUninitialized+2",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$0495",
+   "name": "ObjUninitialized+3",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$0496",
+   "name": "ObjUninitialized+4",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$0497",
+   "name": "ObjUninitialized+5",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$0498",
+   "name": "ObjUninitialized+6",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$0499",
+   "name": "ObjUninitialized+7",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$049A",
+   "name": "ObjUninitialized+8",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$049B",
+   "name": "ObjUninitialized+9",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$049C",
+   "name": "ObjUninitialized+10",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$049D",
+   "name": "ObjUninitialized+11",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$049E",
+   "name": "ObjCollidedTile",
+   "nes": 0,
+   "gen": 38
+  },
+  {
+   "addr": "$04CE",
+   "name": "ShutterTrigger",
+   "nes": 0,
+   "gen": 1
+  },
+  {
+   "addr": "$0525",
+   "name": "CurEdgeSpawnCell",
+   "nes": 64,
+   "gen": 0
+  },
+  {
+   "addr": "$0526",
+   "name": "CaveSourceRoomId",
+   "nes": 255,
+   "gen": 0
+  },
+  {
+   "addr": "$0528",
+   "name": "SkippedDemo",
+   "nes": 90,
+   "gen": 0
+  },
+  {
+   "addr": "$0530",
+   "name": "PlayAreaAttrs",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0531",
+   "name": "PlayAreaAttrs+1",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0532",
+   "name": "PlayAreaAttrs+2",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0533",
+   "name": "PlayAreaAttrs+3",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0534",
+   "name": "PlayAreaAttrs+4",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0535",
+   "name": "PlayAreaAttrs+5",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0536",
+   "name": "PlayAreaAttrs+6",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0537",
+   "name": "PlayAreaAttrs+7",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0538",
+   "name": "PlayAreaAttrs+8",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0539",
+   "name": "PlayAreaAttrs+9",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$053A",
+   "name": "PlayAreaAttrs+10",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$053B",
+   "name": "PlayAreaAttrs+11",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$053C",
+   "name": "PlayAreaAttrs+12",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$053D",
+   "name": "PlayAreaAttrs+13",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$053E",
+   "name": "PlayAreaAttrs+14",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$053F",
+   "name": "PlayAreaAttrs+15",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0540",
+   "name": "PlayAreaAttrs+16",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0541",
+   "name": "PlayAreaAttrs+17",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0542",
+   "name": "PlayAreaAttrs+18",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0543",
+   "name": "PlayAreaAttrs+19",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0544",
+   "name": "PlayAreaAttrs+20",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0545",
+   "name": "PlayAreaAttrs+21",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0546",
+   "name": "PlayAreaAttrs+22",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0547",
+   "name": "PlayAreaAttrs+23",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0548",
+   "name": "PlayAreaAttrs+24",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0549",
+   "name": "PlayAreaAttrs+25",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$054A",
+   "name": "PlayAreaAttrs+26",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$054B",
+   "name": "PlayAreaAttrs+27",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$054C",
+   "name": "PlayAreaAttrs+28",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$054D",
+   "name": "PlayAreaAttrs+29",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$054E",
+   "name": "PlayAreaAttrs+30",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$054F",
+   "name": "PlayAreaAttrs+31",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0550",
+   "name": "PlayAreaAttrs+32",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0551",
+   "name": "PlayAreaAttrs+33",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0552",
+   "name": "PlayAreaAttrs+34",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0553",
+   "name": "PlayAreaAttrs+35",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0554",
+   "name": "PlayAreaAttrs+36",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0555",
+   "name": "PlayAreaAttrs+37",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0556",
+   "name": "PlayAreaAttrs+38",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0557",
+   "name": "PlayAreaAttrs+39",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0558",
+   "name": "PlayAreaAttrs+40",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0559",
+   "name": "PlayAreaAttrs+41",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$055A",
+   "name": "PlayAreaAttrs+42",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$055B",
+   "name": "PlayAreaAttrs+43",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$055C",
+   "name": "PlayAreaAttrs+44",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$055D",
+   "name": "PlayAreaAttrs+45",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$055E",
+   "name": "PlayAreaAttrs+46",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$055F",
+   "name": "PlayAreaAttrs+47",
+   "nes": 170,
+   "gen": 0
+  },
+  {
+   "addr": "$0636",
+   "name": "IsRegisterSaveFileOptionEnabled",
+   "nes": 1,
+   "gen": 0
+  },
+  {
+   "addr": "$0637",
+   "name": "IsEliminateSaveFileOptionEnabled",
+   "nes": 1,
+   "gen": 0
+  },
+  {
+   "addr": "$0638",
+   "name": "Names",
+   "nes": 21,
+   "gen": 0
+  },
+  {
+   "addr": "$0639",
+   "name": "Names+1",
+   "nes": 18,
+   "gen": 0
+  },
+  {
+   "addr": "$063A",
+   "name": "Names+2",
+   "nes": 23,
+   "gen": 0
+  },
+  {
+   "addr": "$063B",
+   "name": "Names+3",
+   "nes": 20,
+   "gen": 0
+  },
+  {
+   "addr": "$063C",
+   "name": "Names+4",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$063D",
+   "name": "Names+5",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$063E",
+   "name": "Names+6",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$063F",
+   "name": "Names+7",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$0640",
+   "name": "Names+8",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$0641",
+   "name": "Names+9",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$0642",
+   "name": "Names+10",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$0643",
+   "name": "Names+11",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$0644",
+   "name": "Names+12",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$0645",
+   "name": "Names+13",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$0646",
+   "name": "Names+14",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$0647",
+   "name": "Names+15",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$0648",
+   "name": "Names+16",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$0649",
+   "name": "Names+17",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$064A",
+   "name": "Names+18",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$064B",
+   "name": "Names+19",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$064C",
+   "name": "Names+20",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$064D",
+   "name": "Names+21",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$064E",
+   "name": "Names+22",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$064F",
+   "name": "Names+23",
+   "nes": 36,
+   "gen": 0
+  },
+  {
+   "addr": "$0650",
+   "name": "SaveSlotHearts",
+   "nes": 34,
+   "gen": 0
+  },
+  {
+   "addr": "$0651",
+   "name": "SaveSlotHearts+1",
+   "nes": 255,
+   "gen": 0
+  }
+ ],
+ "later": [
+  {
+   "frame": 1,
+   "addr": "$0341",
+   "name": "RollingSpriteIndex"
+  },
+  {
+   "frame": 1,
+   "addr": "$0342",
+   "name": "FirstSpriteIndex"
+  },
+  {
+   "frame": 31,
+   "addr": "$0084",
+   "name": "ObjY"
+  },
+  {
+   "frame": 31,
+   "addr": "$0394",
+   "name": "ObjRemDistance"
+  },
+  {
+   "frame": 31,
+   "addr": "$03A8",
+   "name": "Item_ObjItemLifetime"
+  },
+  {
+   "frame": 31,
+   "addr": "$03F8",
+   "name": "ObjInputDir"
+  },
+  {
+   "frame": 33,
+   "addr": "$03E4",
+   "name": "ObjAnimFrame"
+  },
+  {
+   "frame": 90,
+   "addr": "$0012",
+   "name": "GameMode"
+  },
+  {
+   "frame": 93,
+   "addr": "$0013",
+   "name": "GameSubmode"
+  },
+  {
+   "frame": 94,
+   "addr": "$0015",
+   "name": "FrameCounter"
+  },
+  {
+   "frame": 94,
+   "addr": "$0018",
+   "name": "Random"
+  },
+  {
+   "frame": 94,
+   "addr": "$0019",
+   "name": "Random+1"
+  },
+  {
+   "frame": 94,
+   "addr": "$001A",
+   "name": "Random+2"
+  },
+  {
+   "frame": 94,
+   "addr": "$001B",
+   "name": "Random+3"
+  },
+  {
+   "frame": 94,
+   "addr": "$001C",
+   "name": "Random+4"
+  },
+  {
+   "frame": 94,
+   "addr": "$001D",
+   "name": "Random+5"
+  },
+  {
+   "frame": 94,
+   "addr": "$001E",
+   "name": "Random+6"
+  },
+  {
+   "frame": 94,
+   "addr": "$001F",
+   "name": "Random+7"
+  },
+  {
+   "frame": 94,
+   "addr": "$0020",
+   "name": "Random+8"
+  },
+  {
+   "frame": 94,
+   "addr": "$0021",
+   "name": "Random+9"
+  },
+  {
+   "frame": 94,
+   "addr": "$0022",
+   "name": "Random+10"
+  },
+  {
+   "frame": 94,
+   "addr": "$0023",
+   "name": "Random+11"
+  },
+  {
+   "frame": 94,
+   "addr": "$0024",
+   "name": "Random+12"
+  },
+  {
+   "frame": 94,
+   "addr": "$0026",
+   "name": "StunCycle"
+  },
+  {
+   "frame": 94,
+   "addr": "$00E7",
+   "name": "VScrollStartFrame+1"
+  },
+  {
+   "frame": 94,
+   "addr": "$00E9",
+   "name": "CurRow"
+  },
+  {
+   "frame": 94,
+   "addr": "$00EC",
+   "name": "NextRoomId"
+  },
+  {
+   "frame": 94,
+   "addr": "$00ED",
+   "name": "PrevRow"
+  },
+  {
+   "frame": 94,
+   "addr": "$00EE",
+   "name": "CurOpenedDoors"
+  },
+  {
+   "frame": 94,
+   "addr": "$04E4",
+   "name": "GleeokTertiarySegmentLimits+7"
+  },
+  {
+   "frame": 101,
+   "addr": "$004A",
+   "name": "ChaseLongTimer"
+  },
+  {
+   "frame": 119,
+   "addr": "$00EB",
+   "name": "RoomId"
+  },
+  {
+   "frame": 120,
+   "addr": "$052B",
+   "name": "RoomTileObjType"
+  },
+  {
+   "frame": 120,
+   "addr": "$052C",
+   "name": "RoomTileObjX"
+  },
+  {
+   "frame": 120,
+   "addr": "$052D",
+   "name": "RoomTileObjY"
+  },
+  {
+   "frame": 121,
+   "addr": "$00E3",
+   "name": "IsSprite0CheckActive"
+  },
+  {
+   "frame": 121,
+   "addr": "$00F3",
+   "name": "_Unknown_F3"
+  },
+  {
+   "frame": 122,
+   "addr": "$0058",
+   "name": "VScrollAddrHi"
+  },
+  {
+   "frame": 124,
+   "addr": "$00E6",
+   "name": "VScrollStartFrame"
+  },
+  {
+   "frame": 125,
+   "addr": "$00E2",
+   "name": "VScrollAddrLo"
+  },
+  {
+   "frame": 136,
+   "addr": "$0029",
+   "name": "ObjTimer+1"
+  },
+  {
+   "frame": 136,
+   "addr": "$0071",
+   "name": "ObjX+1"
+  },
+  {
+   "frame": 136,
+   "addr": "$0072",
+   "name": "ObjX+2"
+  },
+  {
+   "frame": 136,
+   "addr": "$0073",
+   "name": "ObjX+3"
+  },
+  {
+   "frame": 136,
+   "addr": "$0074",
+   "name": "ObjX+4"
+  },
+  {
+   "frame": 136,
+   "addr": "$0075",
+   "name": "ObjX+5"
+  },
+  {
+   "frame": 136,
+   "addr": "$0085",
+   "name": "ObjY+1"
+  },
+  {
+   "frame": 136,
+   "addr": "$0086",
+   "name": "ObjY+2"
+  },
+  {
+   "frame": 136,
+   "addr": "$0087",
+   "name": "ObjY+3"
+  },
+  {
+   "frame": 136,
+   "addr": "$0088",
+   "name": "ObjY+4"
+  },
+  {
+   "frame": 136,
+   "addr": "$0089",
+   "name": "ObjY+5"
+  },
+  {
+   "frame": 136,
+   "addr": "$034E",
+   "name": "RoomObjCount"
+  },
+  {
+   "frame": 136,
+   "addr": "$0350",
+   "name": "RoomKillCount+1"
+  },
+  {
+   "frame": 136,
+   "addr": "$0351",
+   "name": "RoomKillCount+2"
+  },
+  {
+   "frame": 136,
+   "addr": "$0352",
+   "name": "RoomKillCount+3"
+  },
+  {
+   "frame": 136,
+   "addr": "$0353",
+   "name": "RoomKillCount+4"
+  },
+  {
+   "frame": 136,
+   "addr": "$035F",
+   "name": "RoomObjTemplateType"
+  },
+  {
+   "frame": 136,
+   "addr": "$049F",
+   "name": "ObjCollidedTile+1"
+  },
+  {
+   "frame": 136,
+   "addr": "$04A0",
+   "name": "ObjCollidedTile+2"
+  },
+  {
+   "frame": 136,
+   "addr": "$04A1",
+   "name": "ObjCollidedTile+3"
+  },
+  {
+   "frame": 136,
+   "addr": "$04A2",
+   "name": "ObjCollidedTile+4"
+  },
+  {
+   "frame": 136,
+   "addr": "$04A3",
+   "name": "ObjCollidedTile+5"
+  },
+  {
+   "frame": 136,
+   "addr": "$04CD",
+   "name": "LevelBlockAttrsByteF"
+  },
+  {
+   "frame": 137,
+   "addr": "$0076",
+   "name": "ObjX+6"
+  },
+  {
+   "frame": 137,
+   "addr": "$0077",
+   "name": "ObjX+7"
+  },
+  {
+   "frame": 137,
+   "addr": "$0078",
+   "name": "ObjX+8"
+  },
+  {
+   "frame": 137,
+   "addr": "$0079",
+   "name": "ObjX+9"
+  },
+  {
+   "frame": 137,
+   "addr": "$008A",
+   "name": "ObjY+6"
+  },
+  {
+   "frame": 137,
+   "addr": "$008B",
+   "name": "ObjY+7"
+  },
+  {
+   "frame": 137,
+   "addr": "$008C",
+   "name": "ObjY+8"
+  },
+  {
+   "frame": 137,
+   "addr": "$008D",
+   "name": "ObjY+9"
+  },
+  {
+   "frame": 137,
+   "addr": "$0099",
+   "name": "ObjRoomItemId+1"
+  },
+  {
+   "frame": 137,
+   "addr": "$009A",
+   "name": "ObjRoomItemId+2"
+  },
+  {
+   "frame": 137,
+   "addr": "$009B",
+   "name": "ObjRoomItemId+3"
+  },
+  {
+   "frame": 137,
+   "addr": "$009C",
+   "name": "ObjRoomItemId+4"
+  },
+  {
+   "frame": 137,
+   "addr": "$03D1",
+   "name": "ObjAnimCounter+1"
+  },
+  {
+   "frame": 137,
+   "addr": "$03D2",
+   "name": "ObjAnimCounter+2"
+  },
+  {
+   "frame": 137,
+   "addr": "$03D3",
+   "name": "ObjAnimCounter+3"
+  },
+  {
+   "frame": 137,
+   "addr": "$03D4",
+   "name": "ObjAnimCounter+4"
+  },
+  {
+   "frame": 137,
+   "addr": "$0486",
+   "name": "ObjHP+1"
+  },
+  {
+   "frame": 137,
+   "addr": "$0487",
+   "name": "ObjHP+2"
+  },
+  {
+   "frame": 137,
+   "addr": "$0488",
+   "name": "ObjHP+3"
+  },
+  {
+   "frame": 137,
+   "addr": "$0489",
+   "name": "ObjHP+4"
+  },
+  {
+   "frame": 137,
+   "addr": "$04A4",
+   "name": "ObjCollidedTile+6"
+  },
+  {
+   "frame": 137,
+   "addr": "$04A5",
+   "name": "ObjCollidedTile+7"
+  },
+  {
+   "frame": 137,
+   "addr": "$04A6",
+   "name": "ObjCollidedTile+8"
+  },
+  {
+   "frame": 137,
+   "addr": "$04A7",
+   "name": "ObjCollidedTile+9"
+  },
+  {
+   "frame": 137,
+   "addr": "$04C0",
+   "name": "ObjAttr+1"
+  },
+  {
+   "frame": 137,
+   "addr": "$04C1",
+   "name": "ObjAttr+2"
+  },
+  {
+   "frame": 137,
+   "addr": "$04C2",
+   "name": "ObjAttr+3"
+  },
+  {
+   "frame": 137,
+   "addr": "$04C3",
+   "name": "ObjAttr+4"
+  },
+  {
+   "frame": 137,
+   "addr": "$0524",
+   "name": "SpawnCycle"
+  },
+  {
+   "frame": 137,
+   "addr": "$0620",
+   "name": "CurRoomHistoryIndex"
+  },
+  {
+   "frame": 137,
+   "addr": "$0622",
+   "name": "RoomHistory+1"
+  },
+  {
+   "frame": 138,
+   "addr": "$00F8",
+   "name": "ButtonsPressed"
+  },
+  {
+   "frame": 169,
+   "addr": "$0406",
+   "name": "ObjMetastate+1"
+  },
+  {
+   "frame": 174,
+   "addr": "$0054",
+   "name": "TriggeredDoorCmd"
+  },
+  {
+   "frame": 174,
+   "addr": "$0055",
+   "name": "TriggeredDoorDir"
+  },
+  {
+   "frame": 174,
+   "addr": "$007B",
+   "name": "ObjX+11"
+  },
+  {
+   "frame": 174,
+   "addr": "$008F",
+   "name": "ObjY+11"
+  },
+  {
+   "frame": 174,
+   "addr": "$035A",
+   "name": "RoomKillCount+11"
+  },
+  {
+   "frame": 177,
+   "addr": "$0410",
+   "name": "ObjMetastate+11"
+  },
+  {
+   "frame": 177,
+   "addr": "$0490",
+   "name": "ObjHP+11"
+  },
+  {
+   "frame": 177,
+   "addr": "$04CA",
+   "name": "ObjAttr+11"
+  },
+  {
+   "frame": 182,
+   "addr": "$03A9",
+   "name": "Gleook_HeadInfo3"
+  },
+  {
+   "frame": 182,
+   "addr": "$03F9",
+   "name": "ObjInputDir+1"
+  },
+  {
+   "frame": 182,
+   "addr": "$0413",
+   "name": "PeaceCharIndex"
+  },
+  {
+   "frame": 182,
+   "addr": "$0420",
+   "name": "TitleWaveYs"
+  },
+  {
+   "frame": 182,
+   "addr": "$0479",
+   "name": "Gleeok_NeckYs2"
+  },
+  {
+   "frame": 184,
+   "addr": "$0395",
+   "name": "Gleeok_NeckXs3"
+  },
+  {
+   "frame": 185,
+   "addr": "$0407",
+   "name": "ObjMetastate+2"
+  },
+  {
+   "frame": 187,
+   "addr": "$03E5",
+   "name": "ObjAnimFrame+1"
+  },
+  {
+   "frame": 198,
+   "addr": "$03AA",
+   "name": "Gleook_HeadInfo3+1"
+  },
+  {
+   "frame": 198,
+   "addr": "$03FA",
+   "name": "ObjInputDir+2"
+  },
+  {
+   "frame": 198,
+   "addr": "$0414",
+   "name": "Gleeok_ObjHeadDirCounterV"
+  },
+  {
+   "frame": 198,
+   "addr": "$0421",
+   "name": "NameCharOffset"
+  },
+  {
+   "frame": 198,
+   "addr": "$047A",
+   "name": "Gleeok_NeckYs2+1"
+  },
+  {
+   "frame": 199,
+   "addr": "$0396",
+   "name": "Gleeok_NeckXs3+1"
+  },
+  {
+   "frame": 201,
+   "addr": "$0408",
+   "name": "ObjMetastate+3"
+  },
+  {
+   "frame": 203,
+   "addr": "$03E6",
+   "name": "ObjAnimFrame+2"
+  },
+  {
+   "frame": 210,
+   "addr": "$03BE",
+   "name": "Gleeok_NeckYs3+1"
+  },
+  {
+   "frame": 210,
+   "addr": "$0453",
+   "name": "Gleeok_NeckXs1+1"
+  },
+  {
+   "frame": 214,
+   "addr": "$0397",
+   "name": "Gleeok_NeckXs3+2"
+  },
+  {
+   "frame": 214,
+   "addr": "$03AB",
+   "name": "Gleook_HeadInfo3+2"
+  },
+  {
+   "frame": 214,
+   "addr": "$03FB",
+   "name": "ObjInputDir+3"
+  },
+  {
+   "frame": 214,
+   "addr": "$0422",
+   "name": "NameInputCharBuf"
+  },
+  {
+   "frame": 217,
+   "addr": "$0409",
+   "name": "ObjMetastate+4"
+  },
+  {
+   "frame": 219,
+   "addr": "$03E7",
+   "name": "ObjAnimFrame+3"
+  },
+  {
+   "frame": 230,
+   "addr": "$0398",
+   "name": "Gleeok_NeckXs3+3"
+  },
+  {
+   "frame": 230,
+   "addr": "$03AC",
+   "name": "Gleook_HeadInfo3+3"
+  },
+  {
+   "frame": 230,
+   "addr": "$03FC",
+   "name": "ObjInputDir+4"
+  },
+  {
+   "frame": 230,
+   "addr": "$0423",
+   "name": "NameInputCharBuf+1"
+  },
+  {
+   "frame": 235,
+   "addr": "$03E8",
+   "name": "ObjAnimFrame+4"
+  },
+  {
+   "frame": 242,
+   "addr": "$00A3",
+   "name": "ObjRoomItemId+11"
+  },
+  {
+   "frame": 242,
+   "addr": "$00B7",
+   "name": "Item_ObjItemId+11"
+  },
+  {
+   "frame": 242,
+   "addr": "$034C",
+   "name": "ActiveMonsterShots"
+  },
+  {
+   "frame": 242,
+   "addr": "$03C7",
+   "name": "Gleeok_NeckYs3+10"
+  },
+  {
+   "frame": 242,
+   "addr": "$0439",
+   "name": "CaveChosenIndex+1"
+  },
+  {
+   "frame": 242,
+   "addr": "$04A9",
+   "name": "ObjCollidedTile+11"
+  },
+  {
+   "frame": 244,
+   "addr": "$0415",
+   "name": "PersonTextSelector"
+  },
+  {
+   "frame": 244,
+   "addr": "$047B",
+   "name": "Gleeok_NeckYs2+2"
+  },
+  {
+   "frame": 260,
+   "addr": "$0416",
+   "name": "TextboxCharIndex"
+  },
+  {
+   "frame": 260,
+   "addr": "$047C",
+   "name": "Gleeok_NeckYs2+3"
+  },
+  {
+   "frame": 263,
+   "addr": "$03C0",
+   "name": "Gleeok_NeckYs3+3"
+  },
+  {
+   "frame": 263,
+   "addr": "$0455",
+   "name": "Gleeok_NeckXs1+3"
+  },
+  {
+   "frame": 270,
+   "addr": "$0059",
+   "name": "EmptyMonsterSlot"
+  },
+  {
+   "frame": 270,
+   "addr": "$007A",
+   "name": "ObjX+10"
+  },
+  {
+   "frame": 270,
+   "addr": "$008E",
+   "name": "ObjY+10"
+  },
+  {
+   "frame": 270,
+   "addr": "$00A2",
+   "name": "ObjRoomItemId+10"
+  },
+  {
+   "frame": 270,
+   "addr": "$00B6",
+   "name": "Item_ObjItemId+10"
+  },
+  {
+   "frame": 270,
+   "addr": "$00C0",
+   "name": "ObjShoveDir"
+  },
+  {
+   "frame": 270,
+   "addr": "$00D3",
+   "name": "ObjShoveDistance"
+  },
+  {
+   "frame": 270,
+   "addr": "$0359",
+   "name": "RoomKillCount+10"
+  },
+  {
+   "frame": 270,
+   "addr": "$04F0",
+   "name": "ObjInvincibilityTimer"
+  },
+  {
+   "frame": 270,
+   "addr": "$0670",
+   "name": "HeartPartial"
+  },
+  {
+   "frame": 271,
+   "addr": "$03C6",
+   "name": "Gleeok_NeckYs3+9"
+  },
+  {
+   "frame": 271,
+   "addr": "$040F",
+   "name": "ObjMetastate+10"
+  },
+  {
+   "frame": 271,
+   "addr": "$04C9",
+   "name": "ObjAttr+10"
+  },
+  {
+   "frame": 272,
+   "addr": "$04A8",
+   "name": "ObjCollidedTile+10"
+  },
+  {
+   "frame": 295,
+   "addr": "$043B",
+   "name": "CaveChosenIndex+3"
+  },
+  {
+   "frame": 313,
+   "addr": "$03BD",
+   "name": "Gleeok_NeckYs3"
+  },
+  {
+   "frame": 313,
+   "addr": "$0452",
+   "name": "Gleeok_NeckXs1"
+  },
+  {
+   "frame": 345,
+   "addr": "$0438",
+   "name": "CaveChosenIndex"
+  }
+ ]
+}
