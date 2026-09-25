@@ -472,9 +472,29 @@ static void plane_write_live_word(unsigned short col, unsigned short row,
     plane_write(col, row, word);
 }
 
-static void write_tile_raw_at(unsigned char col, unsigned char row,
-                           unsigned char dst_row_base,
-                           unsigned char raw_tile, unsigned char pal)
+/* T-118: per-palette plane word and tile class for every NES tile,
+ * built once from bg_sparse_tile_lut (tile_word below). Room column
+ * fills look words up instead of re-deriving them per tile. */
+#define UW_CLS_DOOR 0x01u
+#define UW_CLS_WALK 0x02u
+static unsigned short s_uw_word[4][256];
+static unsigned char s_uw_cls[256];
+static unsigned char s_uw_tables_built;
+static unsigned short tile_word(unsigned char raw_tile, unsigned char pal);
+
+static void uw_tables_build(void)
+{
+    unsigned int t, pal;
+    for (t = 0u; t < 256u; ++t) {
+        s_uw_cls[t] = (unsigned char)((uw_is_door_tile((unsigned char)t) ? UW_CLS_DOOR : 0u) |
+                                      (uw_walkable_tile_id((unsigned char)t) ? UW_CLS_WALK : 0u));
+        for (pal = 0u; pal < 4u; ++pal)
+            s_uw_word[pal][t] = tile_word((unsigned char)t, (unsigned char)pal);
+    }
+    s_uw_tables_built = 1u;
+}
+
+static unsigned short tile_word(unsigned char raw_tile, unsigned char pal)
 {
     /* Phase 4: NES sub-pal selector lives in the tile index (pixel-biased
      * sub-pal copy); Gen pal-slot bits stay 0 (PAL0 owns NES BG).
@@ -488,10 +508,17 @@ static void write_tile_raw_at(unsigned char col, unsigned char row,
     unsigned short tile_index = (slot == 0xFFFFu)
         ? ROOMROM_BLANK_TILE
         : (unsigned short)(ROOMROM_BG_TILE_BASE + slot);
-    unsigned short word = (unsigned short)(pri | tile_index);
+    return (unsigned short)(pri | tile_index);
+}
+
+static void write_tile_raw_at(unsigned char col, unsigned char row,
+                           unsigned char dst_row_base,
+                           unsigned char raw_tile, unsigned char pal)
+{
     plane_write(col, wrapped_plane_row(
                     (unsigned short)(dst_row_base + row +
-                                     ROOMROM_ROOM_FIRST_ROW)), word);
+                                     ROOMROM_ROOM_FIRST_ROW)),
+                tile_word(raw_tile, pal));
 }
 
 /* T-114: plane placement of the live (last rendered) room. Rooms are
@@ -588,16 +615,27 @@ static void blit_blob_one_metacol_at(int idx, unsigned char src_col,
     unsigned char src_p1 = (unsigned char)(src_p0 + 1);
     unsigned char dst_p0 = (unsigned char)(dst_col << 1);
     unsigned char dst_p1 = (unsigned char)(dst_p0 + 1);
+    /* T-118: build both plane columns, then stream each with one VDP
+     * address set (render_plane_a_write_col) instead of one per tile.
+     * Words and tile classes come from the prebuilt tables; the two plane
+     * columns of a metatile column share an attribute quadrant, and so do
+     * row pairs (play rows start at NT row 8), so the palette is read once
+     * per 2x2. */
+    unsigned short col0[ROOMROM_UW_BLOB_ROWS];
+    unsigned short col1[ROOMROM_UW_BLOB_ROWS];
+    const unsigned short *words = s_uw_word[0];
+    if (!s_uw_tables_built) uw_tables_build();
     for (row = 0; row < ROOMROM_UW_BLOB_ROWS; row++) {
-        unsigned char nt_row = (unsigned char)(row + 8u);
         unsigned char raw0 = nt[row * ROOMROM_UW_BLOB_COLS + src_p0];
         unsigned char raw1 = nt[row * ROOMROM_UW_BLOB_COLS + src_p1];
-        unsigned char pal0 = attr_palette_for(attr, src_p0, nt_row);
-        unsigned char pal1 = attr_palette_for(attr, src_p1, nt_row);
-        write_tile_raw_at(dst_p0, row, dst_row_base, raw0, pal0);
-        write_tile_raw_at(dst_p1, row, dst_row_base, raw1, pal1);
-        if (uw_is_door_tile(raw0)) door_priority_cache_record(dst_p0, row);
-        if (uw_is_door_tile(raw1)) door_priority_cache_record(dst_p1, row);
+        unsigned char cls0 = s_uw_cls[raw0];
+        unsigned char cls1 = s_uw_cls[raw1];
+        if ((row & 1u) == 0u)
+            words = s_uw_word[attr_palette_for(attr, src_p0, (unsigned char)(row + 8u))];
+        col0[row] = words[raw0];
+        col1[row] = words[raw1];
+        if (cls0 & UW_CLS_DOOR) door_priority_cache_record(dst_p0, row);
+        if (cls1 & UW_CLS_DOOR) door_priority_cache_record(dst_p1, row);
         /* Task 5.5 fix: BG-tile walkability cache is keyed on SOURCE
          * col, not plane dst col. Link's collision probe samples via
          * tile_col = link_x>>3 (0..31, source-room space) regardless
@@ -606,10 +644,26 @@ static void blit_blob_one_metacol_at(int idx, unsigned char src_col,
          * previous room's data for cols 0..31, blocking Link in the
          * new room. Same architectural bug as Task 5.4's OW raw-tile
          * cache. */
-        s_uw_tile_walkable[src_p0][row] = uw_walkable_tile_id(raw0);
-        s_uw_tile_walkable[src_p1][row] = uw_walkable_tile_id(raw1);
+        s_uw_tile_walkable[src_p0][row] = (cls0 & UW_CLS_WALK) ? 1u : 0u;
+        s_uw_tile_walkable[src_p1][row] = (cls1 & UW_CLS_WALK) ? 1u : 0u;
         play_area_set(src_p0, row, raw0);
         play_area_set(src_p1, row, raw1);
+    }
+    {
+        unsigned short first = wrapped_plane_row(
+            (unsigned short)(dst_row_base + ROOMROM_ROOM_FIRST_ROW));
+        if (s_target_plane) {
+            for (row = 0; row < ROOMROM_UW_BLOB_ROWS; row++) {
+                unsigned short r = wrapped_plane_row((unsigned short)(first + row));
+                plane_write(dst_p0, r, col0[row]);
+                plane_write(dst_p1, r, col1[row]);
+            }
+        } else {
+            render_plane_a_write_col(dst_p0, first, col0, ROOMROM_UW_BLOB_ROWS,
+                                     ROOMROM_PLANE_ROWS);
+            render_plane_a_write_col(dst_p1, first, col1, ROOMROM_UW_BLOB_ROWS,
+                                     ROOMROM_PLANE_ROWS);
+        }
     }
     /* Legacy 16x11 metatile summary — also keyed by SOURCE col now so
      * the metatile-grain query matches BG-grain in slot 1 scroll. */

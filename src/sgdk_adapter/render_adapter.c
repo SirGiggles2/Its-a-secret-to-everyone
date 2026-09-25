@@ -525,6 +525,35 @@ void render_plane_a_write_row(unsigned short row, const unsigned short *cells,
     while (count--) VDP_DATA_WORD = *cells++;
 }
 
+/* T-118: write count cells down Plane A column col starting at row,
+ * wrapping at plane_rows. One VDP address set per contiguous run with
+ * auto-increment = plane row stride (room column fills were setting the
+ * address and multiplying the row stride for every tile). Interrupts are
+ * masked per run: the VBlank handler's DMA queue rewrites the VDP address
+ * and auto-increment. */
+void render_plane_a_write_col(unsigned short col, unsigned short row,
+                              const unsigned short *cells, unsigned short count,
+                              unsigned short plane_rows)
+{
+    const unsigned short stride = s_plane_row_stride_bytes;
+    while (count) {
+        unsigned short run = (unsigned short)(plane_rows - row);
+        unsigned short addr;
+        if (run > count) run = count;
+        addr = (unsigned short)(PLANE_A_BASE + row * stride + col * 2u);
+        count = (unsigned short)(count - run);
+        SYS_disableInts();
+        VDP_CTRL_WORD = (unsigned short)(0x8F00u | (stride & 0xFFu));
+        VDP_CTRL_LONG = 0x40000000UL
+                      | ((unsigned long)(addr & 0x3FFFu) << 16)
+                      | ((addr >> 14) & 0x0003u);
+        while (run--) VDP_DATA_WORD = *cells++;
+        render_set_autoinc_word();
+        SYS_enableInts();
+        row = 0u;
+    }
+}
+
 /* ---- Phase F5 FS frontend cutover primitives ---- */
 
 /* Open CRAM write cursor at a raw byte address.

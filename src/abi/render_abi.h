@@ -170,6 +170,10 @@ void render_vsram_write_word(unsigned short value);
  */
 void render_plane_fill(unsigned short plane_base, unsigned short fill_word,
                        unsigned short tile_count);
+/* T-118: count cells down a Plane A column, wrapping at plane_rows. */
+void render_plane_a_write_col(unsigned short col, unsigned short row,
+                              const unsigned short *cells, unsigned short count,
+                              unsigned short plane_rows);
 void render_plane_a_write_row(unsigned short row, const unsigned short *cells,
                               unsigned short count);
 
