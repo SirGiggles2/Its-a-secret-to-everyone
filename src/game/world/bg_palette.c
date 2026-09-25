@@ -1,5 +1,6 @@
 #include "bg_palette.h"
 #include "render_abi.h"
+#include "platform_abi.h"
 
 /* Reuse the existing misc_palettes NES-color-index -> Gen-CRAM-word LUT.
  * Same table consumed by ow_room_render_roomrom.c, uw_room_render_roomrom.c,
@@ -108,4 +109,67 @@ const unsigned short *roomrom_bg_palette_get_sprite_subpal_cram(
 void roomrom_bg_palette_load_bg_only(const unsigned char *palram16)
 {
     load_slot16(0, palram16);
+}
+
+/* PPUMASK grayscale consumer (T-110).
+ *
+ * NES source: Z_01.asm UpdateBombFlashEffect sets/clears CurPpuMask_2001
+ * ($FE) bit 0; the PPU then outputs every palette entry as (index & $30).
+ * Genesis has no grayscale bit, so on the rising edge the live CRAM is
+ * snapshotted and each color replaced by the converted NES gray for its
+ * source index; the falling edge restores the snapshot.
+ *
+ * CRAM holds converted words, not NES indices, so the index is recovered
+ * by a reverse lookup of the NES->CRAM table. Two words are ambiguous in
+ * that table: $0000 (NES $0D-$0F,$1D-$1F,$2E,$2F,$3E,$3F) resolves to
+ * $0F, the only black Zelda's palettes use; $0AAA ($10 and $3D) resolves
+ * to $10. Every other collision group shares one gray (& $30), so the
+ * lookup is exact for them. */
+#define NES_CUR_PPU_MASK 0x00FEu
+static unsigned short s_gray_snapshot[64];
+static unsigned char  s_gray_active = 0u;
+
+/* Genesis color word (9 significant bits: BBB0GGG0RRR0 >> 1) -> gray.
+ * Built once; first NES index wins, which resolves $0000 to $0D (same
+ * gray as $0F) and $0AAA to $10. Words not produced by the NES table
+ * (none in Zelda's palettes) fall back to the $0F gray. */
+static unsigned short s_gray_by_word[512];
+static unsigned char  s_gray_table_ready = 0u;
+
+static unsigned short word_key(unsigned short w)
+{
+    return (unsigned short)(((w >> 1) & 0x7u) | ((w >> 2) & 0x38u) |
+                            ((w >> 3) & 0x1C0u));
+}
+
+static void build_gray_table(void)
+{
+    unsigned short k;
+    signed char i;
+    for (k = 0u; k < 512u; ++k)
+        s_gray_by_word[k] = roomrom_bg_palette_nes_to_cram(0x0Fu & 0x30u);
+    /* Descending, so the lowest NES index sharing a word is written last. */
+    for (i = 63; i >= 0; --i) {
+        s_gray_by_word[word_key(roomrom_bg_palette_nes_to_cram((unsigned char)i))] =
+            roomrom_bg_palette_nes_to_cram((unsigned char)((unsigned char)i & 0x30u));
+    }
+    s_gray_table_ready = 1u;
+}
+
+void roomrom_ppu_mask_grayscale_sync(void)
+{
+    unsigned char want = (unsigned char)(nes_ram[NES_CUR_PPU_MASK] & 0x01u);
+    if (want == s_gray_active) return;
+    if (want) {
+        unsigned short gray[64];
+        unsigned char i;
+        render_cram_read(s_gray_snapshot, 64u);
+        if (!s_gray_table_ready) build_gray_table();
+        for (i = 0u; i < 64u; ++i)
+            gray[i] = s_gray_by_word[word_key(s_gray_snapshot[i])];
+        render_cram_subrange_upload(0u, gray, 64u);
+    } else {
+        render_cram_subrange_upload(0u, s_gray_snapshot, 64u);
+    }
+    s_gray_active = want;
 }

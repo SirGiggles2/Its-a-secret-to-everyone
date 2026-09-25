@@ -1,0 +1,2 @@
+t110_fire: FAIL (200 ticks, gen_lag 1, 1 differing cells, lag frames {'nes': 0, 'gen': 0})
+  HeartPartial: tick 44 nes=7F gen=FF

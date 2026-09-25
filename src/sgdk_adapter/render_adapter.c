@@ -209,6 +209,13 @@ void render_cram_fade_apply(unsigned char step, unsigned char total)
     }
 }
 
+void render_cram_read(unsigned short *dst, unsigned short count)
+{
+    render_set_autoinc_word();
+    VDP_CTRL_LONG = 0x00000020UL;
+    while (count--) *dst++ = VDP_DATA_WORD;
+}
+
 /* ---- Internal DMA / CRAM helpers (were extern'd from intro_common.c) ---- */
 
 /* CPU-based VRAM upload. Writes len bytes from src to VRAM[dst..dst+len-1].

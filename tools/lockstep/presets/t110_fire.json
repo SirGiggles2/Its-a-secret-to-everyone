@@ -1,0 +1,9 @@
+{
+  "name": "t110_fire",
+  "file_name": "LINK",
+  "quest": 0,
+  "items": {"InvCandle": 1},
+  "script": [[30, ""], [2, "B"], [20, ""], [2, "B"], [8, ""], [24, "U"], [160, ""]],
+  "stage_at": 20,
+  "stage": "wr(0x656, 4)\ngen_b_item(4)\nlog(string.format('selected candle; link %02X,%02X dir %02X candle %d', rd(0x70), rd(0x84), rd(0x98), rd(0x65B)))"
+}

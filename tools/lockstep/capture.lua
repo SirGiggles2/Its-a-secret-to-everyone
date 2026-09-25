@@ -150,10 +150,26 @@ local total = math.min(MAXF, #seq)
 local function srd(o) return memory.read_u8(RAM_BASE + o, RAM_DOM) end
 local function swr(o, v) memory.write_u8(RAM_BASE + o, v & 0xFF, RAM_DOM) end
 local function slog(msg) meta:write("stage: " .. msg .. "\n") end
+-- Genesis selects the B item from a private C static (RoomRom/src/main.c
+-- s_b_item, b_item_t = 4-byte int), not NES SelectedItemSlot $656 (T-092).
+-- A stage that selects an item on NES ($656) calls gen_b_item(v) to make
+-- the same selection on Genesis. No-op on NES. Written, then read back.
+local GEN_B_ITEM = tonumber("@SYM:s_b_item@")
+local stage_failed = false
+local function gen_b_item(v)
+    if sys ~= "GEN" then return end
+    if GEN_B_ITEM == nil then slog("s_b_item symbol unresolved"); stage_failed = true; return end
+    local a = (RAM_DOM == "M68K BUS") and GEN_B_ITEM or (GEN_B_ITEM - 0xFF0000)
+    memory.write_u32_be(a, v, RAM_DOM)
+    local back = memory.read_u32_be(a, RAM_DOM)
+    slog(string.format("gen s_b_item @%06X = %d (read %d)", GEN_B_ITEM, v, back))
+    if back ~= v then stage_failed = true end
+end
 for f = 1, total do
     if PRESET.stage_at == f - 1 then
         meta:write(string.format("stage at f=%d\n", f - 1))
-        PRESET.stage(srd, swr, slog)
+        PRESET.stage(srd, swr, slog, sys, gen_b_item)
+        if stage_failed then ram:close(); fail("gen_b_item write did not stick") return end
     end
     local bytes = memory.read_bytes_as_array(RAM_BASE, 0x800, RAM_DOM)
     local chunk = {}

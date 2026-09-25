@@ -273,6 +273,10 @@ void render_sat_clear(void);
 void render_cram_fade_capture(void);
 void render_cram_fade_apply(unsigned char step, unsigned char total);
 
+/* Read `count` CRAM color words starting at slot 0 (VDP CRAM-read mode).
+ * Used by the PPUMASK grayscale consumer to snapshot live colors. */
+void render_cram_read(unsigned short *dst, unsigned short count);
+
 /* ---- Genesis ROM bank-window cache ----
  *
  * render_bank_window_load(bank) -- ensure the M68K bank-window at

@@ -95,4 +95,19 @@ void enemy_render_publish_gleeok(unsigned char tile,
                                  unsigned char x,
                                  unsigned char y);
 
+/* T-110 bomb / fire weapon slots $10/$11. The owner resets its slot and
+ * re-adds this frame's sprites on every update (NES OAM semantics:
+ * tile, attrs, x, y). add_item routes the tile to the ITEM atlas;
+ * add_cloud draws DrawCloud frame 1..3 as a mirrored pair. */
+void enemy_render_weapon_reset(unsigned char slot);
+void enemy_render_weapon_add_item(unsigned char slot, unsigned char tile,
+                                  unsigned char attrs, unsigned char x,
+                                  unsigned char y);
+void enemy_render_weapon_add_obj(unsigned char slot, unsigned char tile,
+                                 unsigned char attrs, unsigned char x,
+                                 unsigned char y);
+void enemy_render_weapon_add_cloud(unsigned char slot, unsigned char frame,
+                                   unsigned char attrs, unsigned char x,
+                                   unsigned char y);
+
 #endif

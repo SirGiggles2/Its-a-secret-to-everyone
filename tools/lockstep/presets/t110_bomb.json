@@ -1,0 +1,9 @@
+{
+  "name": "t110_bomb",
+  "file_name": "LINK",
+  "quest": 0,
+  "items": {"InvBombs": 4},
+  "script": [[30, ""], [2, "B"], [140, ""], [2, "B"], [20, ""], [2, "B"], [140, ""]],
+  "stage_at": 20,
+  "stage": "wr(0x656, 1)\ngen_b_item(3)\nlog(string.format('selected bombs; link %02X,%02X dir %02X bombs %d', rd(0x70), rd(0x84), rd(0x98), rd(0x658)))"
+}

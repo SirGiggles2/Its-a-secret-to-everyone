@@ -333,6 +333,75 @@ static void cloud_chr_ensure_uploaded(void)
     s_cloud_chr_uploaded = 1u;
 }
 
+/* T-110: weapon-slot ($10/$11) sprite cache. Owned by the bomb / fire
+ * object (src/game/items/bomb.c), which resets and refills its slot on
+ * every update, so entries survive enemy_render_reset_oam (that runs
+ * later in the frame than the weapon update). Entries hold NES OAM
+ * fields; item tiles carry ITEM_ATTR_MARKER, cloud frames use the same
+ * biased cloud bank as enemy_render_publish_meta (DrawCloud is the one
+ * NES routine behind both). */
+#define ENEMY_RENDER_WEAPON_SLOT_FIRST 0x10u
+#define ENEMY_RENDER_WEAPON_SLOTS      2u
+#define ENEMY_RENDER_WEAPON_MAX        8u   /* 4 clouds x mirrored pair */
+static enemy_render_entry_t
+    s_weapon_entries[ENEMY_RENDER_WEAPON_SLOTS][ENEMY_RENDER_WEAPON_MAX];
+static unsigned char s_weapon_count[ENEMY_RENDER_WEAPON_SLOTS];
+
+void enemy_render_weapon_reset(unsigned char slot)
+{
+    unsigned char w = (unsigned char)(slot - ENEMY_RENDER_WEAPON_SLOT_FIRST);
+    if (w < ENEMY_RENDER_WEAPON_SLOTS) s_weapon_count[w] = 0u;
+}
+
+static void weapon_add(unsigned char slot, unsigned char tile,
+                       unsigned char attrs, unsigned char x, unsigned char y)
+{
+    unsigned char w = (unsigned char)(slot - ENEMY_RENDER_WEAPON_SLOT_FIRST);
+    unsigned char n;
+    if (w >= ENEMY_RENDER_WEAPON_SLOTS) return;
+    n = s_weapon_count[w];
+    if (n >= ENEMY_RENDER_WEAPON_MAX) return;
+    s_weapon_entries[w][n].tile  = tile;
+    s_weapon_entries[w][n].attrs = attrs;
+    s_weapon_entries[w][n].x     = x;
+    s_weapon_entries[w][n].y     = y;
+    s_weapon_count[w] = (unsigned char)(n + 1u);
+}
+
+void enemy_render_weapon_add_item(unsigned char slot, unsigned char tile,
+                                  unsigned char attrs, unsigned char x,
+                                  unsigned char y)
+{
+    weapon_add(slot, tile, (unsigned char)(attrs | ITEM_ATTR_MARKER), x, y);
+}
+
+void enemy_render_weapon_add_obj(unsigned char slot, unsigned char tile,
+                                 unsigned char attrs, unsigned char x,
+                                 unsigned char y)
+{
+    /* DrawObjectWithType path (no item marker): fire $5C-$5F resolves
+     * through the NES_FIRE_TILE route in translate_tile. */
+    weapon_add(slot, tile, attrs, x, y);
+}
+
+void enemy_render_weapon_add_cloud(unsigned char slot, unsigned char frame,
+                                   unsigned char attrs, unsigned char x,
+                                   unsigned char y)
+{
+    /* Frame 1..3 = NES tiles $70/$72/$74 = biased bank offsets 0/2/4.
+     * Mirrored pair, X separation 8 (Anim_WriteMirroredSpritePair). */
+    unsigned char off = (unsigned char)((frame - 1u) * 2u);
+    cloud_chr_ensure_uploaded();
+    /* The biased cloud bank already encodes palette row 1 (see
+     * k_cloud_chr_subpal1), so row 1 maps to marker palette bits 0 as in
+     * enemy_render_publish_meta; any other row (invincibility flash)
+     * passes through. */
+    unsigned char pal = (unsigned char)((attrs & 0x03u) == 0x01u ? 0u : (attrs & 0x03u));
+    weapon_add(slot, off, (unsigned char)(META_ATTR_MARKER | pal), x, y);
+    weapon_add(slot, off, (unsigned char)(META_ATTR_MARKER | pal | 0x40u),
+               (unsigned char)(x + 8u), y);
+}
+
 void enemy_render_publish_meta(unsigned int slot)
 {
     if (slot > (unsigned int)ENEMY_LOOP_SLOT_LAST) return;
@@ -683,6 +752,27 @@ static unsigned int emit_native_entries(unsigned int sat_slot)
                                      (signed short)e->x, (signed short)y,
                                      size, sat_attrs, link);
             ++sat_slot;
+        }
+    }
+
+    /* T-110: bomb / fire weapon slots $10/$11, emitted after the
+     * monsters in NES update order (Z_07.asm UpdateMode5Play). */
+    {
+        unsigned char wi, ei;
+        for (wi = 0u; wi < ENEMY_RENDER_WEAPON_SLOTS; ++wi) {
+            for (ei = 0u; ei < s_weapon_count[wi]; ++ei) {
+                if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
+                enemy_render_entry_t *e = &s_weapon_entries[wi][ei];
+                if (e->y == 0xF0u) continue;
+                unsigned short tile_id   = translate_tile(e->tile, e->attrs);
+                unsigned short sat_attrs = translate_attrs(e->attrs, tile_id);
+                unsigned char link = (sat_slot < ENEMY_RENDER_SLOT_LAST)
+                                         ? (unsigned char)(sat_slot + 1u) : 0u;
+                render_set_sprite_inline((unsigned short)sat_slot,
+                                         (signed short)e->x, (signed short)e->y,
+                                         RENDER_SPRITE_SIZE(1, 2), sat_attrs, link);
+                ++sat_slot;
+            }
         }
     }
 

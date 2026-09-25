@@ -26,6 +26,10 @@ Spec file (JSON): {"name": "...", "file_name": "LINK", "quest": 0,
   Optional "stage_at": script frame, "stage": Lua body run on both consoles
   at that frame with rd(off)/wr(off,v) on NES work-RAM offsets and log(s).
   Staging is an explicit, disclosed setup, never a route pass.
+  The stage also gets sys ("NES"/"GEN") and gen_b_item(v): Genesis keeps
+  the B item in a C static (b_item_t: 1 boomerang, 2 arrow, 3 bomb,
+  4 candle, 5 rod), so a stage writing SelectedItemSlot $656 mirrors the
+  selection with gen_b_item.
 """
 from __future__ import annotations
 
@@ -134,7 +138,7 @@ def to_lua(p: dict) -> str:
     return (f'PRESET={{name="{p["name"]}",nes_wram={{{nes}}},gen_slot0={{{gen}}},'
             f'items={{{items}}},script={{{script}}},stage_at={p.get("stage_at", -1)},'
             f'gen_entry="{p.get("gen_entry", "fs")}"}}\n'
-            f'function PRESET.stage(rd, wr, log)\n{stage}\nend\n')
+            f'function PRESET.stage(rd, wr, log, sys, gen_b_item)\n{stage}\nend\n')
 
 
 if __name__ == "__main__":

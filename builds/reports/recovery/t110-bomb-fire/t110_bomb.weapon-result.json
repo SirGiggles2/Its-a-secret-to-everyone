@@ -1,0 +1,70 @@
+{
+  "scope": "weapon slots $10/$11 object cells + InvBombs/UsedCandle/hearts",
+  "alignment": "first tick with ObjState $10 or $11 nonzero; one snapshot per advancing FrameCounter",
+  "gen_lag_ticks": 1,
+  "lag_video_frames": {
+    "nes": 0,
+    "gen": 0
+  },
+  "not_verified": [
+    "all RAM",
+    "OAM / SAT bytes",
+    "CRAM grayscale",
+    "audio"
+  ],
+  "rom_sha256": {
+    "nes": "8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac",
+    "gen": "7c9d413bdd54e427acdf0518291fde91deb3a9be63fe83be6386ad15596ff385"
+  },
+  "fields": {
+    "ObjState+16": 188,
+    "ObjState+17": 189,
+    "ObjTimer+16": 56,
+    "ObjTimer+17": 57,
+    "ObjX+16": 128,
+    "ObjX+17": 129,
+    "ObjY+16": 148,
+    "ObjY+17": 149,
+    "ObjDir+16": 168,
+    "ObjDir+17": 169,
+    "ObjGridOffset+16": 932,
+    "ObjGridOffset+17": 933,
+    "ObjPosFrac+16": 952,
+    "ObjPosFrac+17": 953,
+    "ObjQSpeedFrac+16": 972,
+    "ObjQSpeedFrac+17": 973,
+    "ObjAnimCounter+16": 992,
+    "ObjAnimCounter+17": 993,
+    "ObjAnimFrame+16": 1012,
+    "ObjAnimFrame+17": 1013,
+    "InvBombs": 1624,
+    "UsedCandle": 1299,
+    "HeartValues": 1647,
+    "HeartPartial": 1648
+  },
+  "first_active_video_frame": {
+    "nes": 31,
+    "gen": 32
+  },
+  "compared_ticks": 240,
+  "first_divergence_by_field": {
+    "ObjState+16": {
+      "tick": 141,
+      "nes_video_frame": 172,
+      "gen_video_frame": 173,
+      "field": "ObjState+16",
+      "nes": 0,
+      "gen": 17
+    },
+    "InvBombs": {
+      "tick": 141,
+      "nes_video_frame": 172,
+      "gen_video_frame": 173,
+      "field": "InvBombs",
+      "nes": 3,
+      "gen": 2
+    }
+  },
+  "failure_count": 2,
+  "verdict": "FAIL"
+}

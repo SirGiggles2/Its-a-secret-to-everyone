@@ -1,166 +1,167 @@
-/* Task 5.8.1 candle fire — NES Z_07.asm:4622 UpdateFire.
+/* candle_fire.c — NES candle fire in object slots $10/$11 (T-110).
  *
- * NES TRUTH (re-derived 2026-05-08 from Z_01/Z_07 disasm):
- * - UpdateFire (Z_07.asm:4683) passes A=0 (frame=0) into DrawObjectWithType.
- * - ObjAnimations[$41] = $08. DrawObjectWithAnim (Z_01.asm:5054):
- *     Y = ObjAnimations[$41] + 0 = $08.
- *     tile_left  = ObjAnimFrameHeap[$08]   = $5C
- *     tile_right = ObjAnimFrameHeap[$08]+2 = $5E
- *   Tiles are FIXED at $5C / $5E for every visible frame. The disasm's
- *   ObjAnimFrameHeap[$09..$0B] = $9E/$44/$CE belong to OTHER objects, NOT
- *   candle fire — earlier code mis-attributed those to per-frame fire art.
- * - Anim_AdvanceAnimCounterAndSetObjPos (Z_07.asm:5116) decrements the
- *   counter; on rollover (every 4 ticks given A=$04 caller arg), it XORs
- *   ObjAnimFrame with 1, toggling 0/1.
- * - Anim_SetObjHFlipForSpriteDescriptor (Z_07.asm:5084) stores
- *   ObjAnimFrame into [0F]. Anim_WriteHorizontallyFlippableSpritePair flips
- *   tile pair + sets hflip attr if [0F] != 0.
+ * NES source: Z_01.asm WieldCandle (3948), Z_07.asm UpdateFire (4622),
+ *             Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor (5116),
+ *             DrawObjectWithAnimAndSpecificSprites (Z_01.asm:5045).
+ * Drained C: none for WieldCandle/UpdateFire. MoveObject, DoObjectsCollide,
+ *            BeginShove and Link_BeHarmed are drained and called here.
+ * Coverage: FULL for the OW fire. Stance: REPLACE the Genesis-only fire
+ *           (48 px travel, 30-frame stand, private state).
  *
- * Net visual: tile $5C/$5D + $5E/$5F (16x16 in PPU 8x16 mode), sub-pal 2
- * (red — Anim_SetSpriteDescriptorRedPaletteRow), with HFLIP toggling every
- * 4 ticks. Two-state shimmer, NOT four-distinct-tile cycle.
+ * WieldCandle: first empty slot of $10/$11; blue candle refuses when
+ * UsedCandle ($513) is set. State $21 moves at q-speed $20 (half a pixel
+ * a frame) until |grid offset| = $10, then state $22 stands $3F frames.
+ * Draw: anim index $41 -> ObjAnimFrameHeap[$08] = $5C / $5E, attrs
+ * ObjAnimAttrHeap[$08] = $02, h-flip = ObjAnimFrame toggled every 4
+ * frames. A fire touching Link shoves him and deals $0080.
  *
- * Atlas tiles $5C/$5D/$5E/$5F = ROOMROM_ITEM_TILE_CANDLE_FIRE_F0 (4 tiles).
- * Other "frame" entries in items_chr_x4.h (F1/F2/F3) are leftover atlas
- * data for the misattributed tiles — harmless dead VRAM, removable in a
- * future atlas refactor.
+ * Documented divergence: UW UpdateCandle (CandleState / FadeCycle
+ * brightening) is not run here. Genesis dark rooms are plane-darkened,
+ * not palette-faded, and main.c relights on candle use (T-111).
  */
 
 #include "candle_fire.h"
+#include "bomb.h"
+#include <stdint.h>
+#include "platform_abi.h"
 #include "../../state/inventory.h"
+#include "../../state/combat_state.h"
+#include "../../state/enemy_state.h"
+#include "../enemies/enemy_render.h"
+#include "../world/object_dispatch.h"
+#include "../combat/collision_dispatch.h"
+#include "../combat/link_collision_dispatch.h"
 
-/* Travel: NES uses q-speed $20 = 0.5 px/frame for distance $10 (16 px),
- * then stand $3F frames. Approximate with whole-pixel travel.
- * 2026-05-08 visibility-debug: bumped TRAVEL to 48 + STAND to 30 so the
- * candle clears Link's 16x16 body footprint and shows visibly. NES-faithful
- * 16 px keeps the candle merged with Link visually. Restore to 16 once
- * NES movement model is fully ported (4-direction q-speed). */
-#define CANDLE_FIRE_TRAVEL_PX     48
-#define CANDLE_FIRE_STAND_FRAMES  30   /* shorter so cycle visible */
-#define CANDLE_FIRE_SPEED_PX      1
-#define CANDLE_FIRE_TICKS_PER_FRM 4    /* NES LDA #$04 — anim_counter rollover */
-#define CANDLE_FIRE_FRAME_COUNT   2    /* NES toggles ObjAnimFrame 0/1 */
+#define NES_OBJ_TIMER_BASE      0x0028u
+#define NES_OBJ_DIR_BASE        0x0098u
+#define NES_OBJ_ANIM_COUNTER    0x03D0u
+#define NES_OBJ_ANIM_FRAME      0x03E4u
+#define NES_USED_CANDLE         0x0513u
+#define NES_INV_CANDLE          0x065Bu
+#define NES_EFFECT_REQUEST      0x0603u
 
-/* Single tile pair, sub-pal 2 (red). Frame index controls hflip only. */
-#define CANDLE_FIRE_SUBPAL        2u
+#define FIRE_TILE_LEFT          0x5Cu
+#define FIRE_ATTRS              0x02u
 
-typedef enum {
-    FIRE_IDLE = 0,
-    FIRE_FLYING,
-    FIRE_STANDING
-} fire_state_t;
-
-static fire_state_t s_state = FIRE_IDLE;
-static link_face_t  s_face  = LINK_FACE_DOWN;
-static short        s_x     = 0;
-static short        s_y     = 0;
-static unsigned char s_offset_traveled = 0u;
-static unsigned char s_stand_timer     = 0u;
-static unsigned char s_anim_tick       = 0u;
-static unsigned char s_anim_frame      = 0u;
-
-/* NES UsedCandle ($0506 in NES RAM map): blue candle 1-shot per room. */
-static unsigned char s_used_candle = 0u;
-
-unsigned char roomrom_candle_fire_used_this_room(void) { return s_used_candle; }
-void          roomrom_candle_fire_mark_used(void)      { s_used_candle = 1u; }
-void          roomrom_candle_fire_room_reset(void)     { s_used_candle = 0u; }
-
-static void hide_slot(void)
-{
-    roomrom_sprites_clear_candle_fire();
-}
+#define OBJ_STATE_(s)  nes_ram[NES_OBJ_STATE_BASE + (s)]
+#define OBJ_TIMER_(s)  nes_ram[NES_OBJ_TIMER_BASE + (s)]
 
 void roomrom_candle_fire_init(void)
 {
-    s_state = FIRE_IDLE;
-    s_anim_tick = 0u;
-    s_anim_frame = 0u;
-    hide_slot();
+    /* Slots $10/$11 are shared with bombs; roomrom_bomb_init owns the
+     * reset. */
 }
 
-/* NES Z_01.asm:3958 WieldCandle: refuse if Link doesn't own a candle
- * (`InvCandle == 0`) or, for the blue candle (tier 1), if `UsedCandle`
- * is already set this room. Red candle (tier 2) ignores UsedCandle. */
+unsigned char roomrom_candle_fire_used_this_room(void)
+{
+    return nes_ram[NES_USED_CANDLE];
+}
+
+void roomrom_candle_fire_mark_used(void)
+{
+    nes_ram[NES_USED_CANDLE] = 0x01u;
+}
+
+void roomrom_candle_fire_room_reset(void)
+{
+    /* UsedCandle lies in the $0300-$051F block InitMode_EnterRoom clears. */
+    nes_ram[NES_USED_CANDLE] = 0x00u;
+}
+
+/* WieldCandle. */
 void roomrom_candle_fire_spawn(link_face_t face, short link_x, short link_y)
 {
-    if (s_state != FIRE_IDLE) return;
-    if (g_inventory.candle == INV_CANDLE_NONE) return;
-    if (g_inventory.candle == INV_CANDLE_BLUE
-        && roomrom_candle_fire_used_this_room()) return;
-    roomrom_candle_fire_mark_used();
-    s_state = FIRE_FLYING;
-    s_face  = face;
-    s_x     = link_x;
-    s_y     = link_y;
-    switch (face) {
-    case LINK_FACE_UP:    s_y = (short)(s_y - 8); break;
-    case LINK_FACE_DOWN:  s_y = (short)(s_y + 8); break;
-    case LINK_FACE_LEFT:  s_x = (short)(s_x - 8); break;
-    case LINK_FACE_RIGHT: s_x = (short)(s_x + 8); break;
+    unsigned char x = 0x10u;
+    if (OBJ_STATE_(x) != 0u) {
+        x = 0x11u;
+        if (OBJ_STATE_(x) != 0u) return;
     }
-    s_offset_traveled = 0u;
-    s_stand_timer = 0u;
-    s_anim_tick = 0u;
-    s_anim_frame = 0u;
+    if (nes_ram[NES_INV_CANDLE] == 0x01u &&
+        nes_ram[NES_USED_CANDLE] != 0u) return;
+    nes_ram[NES_USED_CANDLE] = 0x01u;
+    OBJ(NES_OBJ_GRID_OFFSET, x) = 0u;
+    OBJ(NES_OBJ_POS_FRAC, x) = 0u;
+    OBJ(NES_OBJ_QSPD_FRAC, x) = 0x20u;
+    OBJ_STATE_(x) = 0x21u;
+    nes_ram[NES_EFFECT_REQUEST] |= 0x04u;
+    nes_ram[NES_OBJ_ANIM_COUNTER + x] = 0x04u;
+    bomb_fire_place_weapon(x, bomb_fire_nes_dir_for_face(face),
+                           (unsigned char)link_x, (unsigned char)link_y);
 }
 
 unsigned char roomrom_candle_fire_active(void)
 {
-    return s_state != FIRE_IDLE;
-}
-
-static void draw_fire(void)
-{
-    /* Phase P (2026-05-18): cycle through 4-frame animation set
-     * (F0/F1/F2/F3) per NES Z_07.asm:4622 UpdateFire ObjAnimFrameHeap
-     * cadence. Pre-Phase-P toggled only hflip on a 2-frame counter
-     * (s_anim_frame & 1u). Now s_anim_frame is 0..3; frame_index drives
-     * F0..F3 tile selection AND hflip (bit 0). */
-    unsigned char hflip = s_anim_frame & 1u;
-    /* Priority bit set so flame renders ABOVE BG_A door art (which uses
-     * BG priority 0x8000). NES Z1 fire is foreground. */
-    roomrom_sprites_set_candle_fire(s_x, s_y, hflip, CANDLE_FIRE_SUBPAL,
-                                    s_anim_frame & 0x03u);
-}
-
-static void advance_anim(void)
-{
-    s_anim_tick++;
-    if (s_anim_tick >= CANDLE_FIRE_TICKS_PER_FRM) {
-        s_anim_tick = 0u;
-        /* Phase P: 4-frame cycle (was 2-frame XOR toggle). */
-        s_anim_frame = (unsigned char)((s_anim_frame + 1u) & 0x03u);
-    }
+    return (unsigned char)(((OBJ_STATE_(0x10u) & 0xF0u) == 0x20u) ||
+                           ((OBJ_STATE_(0x11u) & 0xF0u) == 0x20u));
 }
 
 void roomrom_candle_fire_update(void)
 {
-    if (s_state == FIRE_IDLE) {
-        return;
+    /* UpdateFire runs inside roomrom_bomb_update (UpdateBombOrFire). */
+}
+
+static void draw_fire_and_check_link(unsigned char x)
+{
+    unsigned char frame_ctr;
+    unsigned char left = FIRE_TILE_LEFT;
+    unsigned char right = (unsigned char)(FIRE_TILE_LEFT + 2u);
+    unsigned char attrs = bomb_fire_flash_attrs(x, FIRE_ATTRS);
+    unsigned char ox = OBJ(NES_OBJ_X, x);
+    unsigned char oy = OBJ(NES_OBJ_Y, x);
+
+    /* Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor(4). */
+    frame_ctr = (unsigned char)(nes_ram[NES_OBJ_ANIM_COUNTER + x] - 1u);
+    nes_ram[NES_OBJ_ANIM_COUNTER + x] = frame_ctr;
+    if (frame_ctr == 0u) {
+        nes_ram[NES_OBJ_ANIM_COUNTER + x] = 0x04u;
+        nes_ram[NES_OBJ_ANIM_FRAME + x] ^= 0x01u;
     }
-    advance_anim();
-    if (s_state == FIRE_FLYING) {
-        switch (s_face) {
-        case LINK_FACE_UP:    s_y = (short)(s_y - CANDLE_FIRE_SPEED_PX); break;
-        case LINK_FACE_DOWN:  s_y = (short)(s_y + CANDLE_FIRE_SPEED_PX); break;
-        case LINK_FACE_LEFT:  s_x = (short)(s_x - CANDLE_FIRE_SPEED_PX); break;
-        case LINK_FACE_RIGHT: s_x = (short)(s_x + CANDLE_FIRE_SPEED_PX); break;
+    /* Anim_WriteHorizontallyFlippableSpritePair with [0F] = ObjAnimFrame. */
+    if (nes_ram[NES_OBJ_ANIM_FRAME + x] != 0u) {
+        unsigned char t = left; left = right; right = t;
+        attrs ^= 0x40u;
+    }
+    enemy_render_weapon_add_obj(x, left, attrs, ox, oy);
+    enemy_render_weapon_add_obj(x, right, attrs, (unsigned char)(ox + 8u), oy);
+
+    /* Collision with Link. */
+    if (nes_ram[NES_OBJ_INV_TIMER_BASE + 0u] != 0u) return;
+    /* GetWideObjectMiddle: Link into [04]/[05], fire into [02]/[03]. */
+    COMBAT_HITBOX_X = (uint8_t)(OBJ(NES_OBJ_X, 0u) + 8u);
+    COMBAT_HITBOX_Y = (uint8_t)(OBJ(NES_OBJ_Y, 0u) + 8u);
+    ENEMY_GLEEOK_NECK_Y_PTR_LO = (uint8_t)(ox + 8u);
+    ENEMY_GLEEOK_NECK_Y_PTR_HI = (uint8_t)(oy + 8u);
+    COMBAT_WEAPON_SLOT = x;
+    if (!collision_do_objects_collide(0x0Eu)) return;
+    COMBAT_WEAPON_SLOT = 0u;               /* [00] = 0: Link is shoved */
+    link_collision_begin_shove(x);
+    COMBAT_THRESHOLD_X = 0x00u;            /* [0D] */
+    COMBAT_THRESHOLD_Y = 0x80u;            /* [0E] */
+    link_collision_link_be_harmed(x);
+}
+
+/* UpdateFire. */
+void bomb_fire_update_fire(unsigned char x)
+{
+    if (OBJ_STATE_(x) == 0x21u) {
+        unsigned char saved = OBJ(NES_OBJ_GRID_OFFSET, x);
+        unsigned char moved;
+        OBJ(NES_OBJ_GRID_OFFSET, x) = 0u;
+        nes_ram[NES_OBJ_DIR] = nes_ram[NES_OBJ_DIR_BASE + x];
+        object_move_object(x);
+        moved = (unsigned char)(saved + OBJ(NES_OBJ_GRID_OFFSET, x));
+        OBJ(NES_OBJ_GRID_OFFSET, x) = moved;
+        if (((moved & 0x80u) ? (unsigned char)(0u - moved) : moved) != 0x10u) {
+            draw_fire_and_check_link(x);
+            return;
         }
-        s_offset_traveled++;
-        if (s_offset_traveled >= CANDLE_FIRE_TRAVEL_PX) {
-            s_state = FIRE_STANDING;
-            s_stand_timer = CANDLE_FIRE_STAND_FRAMES;
-        }
-        draw_fire();
+        OBJ_TIMER_(x) = 0x3Fu;
+        OBJ_STATE_(x)++;
+    }
+    /* Standing fire. */
+    if (OBJ_TIMER_(x) == 0u) {
+        OBJ_STATE_(x) = 0u;                /* ResetObjState */
         return;
     }
-    /* FIRE_STANDING */
-    if (s_stand_timer == 0u) {
-        s_state = FIRE_IDLE;
-        hide_slot();
-        return;
-    }
-    s_stand_timer--;
-    draw_fire();
+    draw_fire_and_check_link(x);
 }

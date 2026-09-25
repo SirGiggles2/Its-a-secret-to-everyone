@@ -83,4 +83,8 @@ void roomrom_bg_palette_load_bg_only(const unsigned char *palram16);
 const unsigned short *roomrom_bg_palette_get_sprite_subpal_cram(
     unsigned char subpal_idx);
 
+/* Apply NES PPUMASK grayscale (CurPpuMask $FE bit 0) to CRAM on each
+ * edge. Call once per frame after anything that writes $FE. */
+void roomrom_ppu_mask_grayscale_sync(void);
+
 #endif

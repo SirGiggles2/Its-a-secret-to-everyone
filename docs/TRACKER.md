@@ -71,6 +71,11 @@ Status: `TODO` · `ACTIVE` · `BLOCKED` · `REVIEW` · `DONE`. Plan ref = task I
 | T-107 | NES chase decoy (`$4A/$60–$62`, Z_07:1879–1915) | DONE | Claude | Not missing: `enemy_loop_tick` port matches NES line-for-line. Divergence was start phase: NES spends first Mode 5 frame in InitMode (no chase update), Genesis toggles on its first tick with unseeded RNG → flag inverted all run. Harness now seeds `$4A/$60–$62`; `newgame` then equal f0–131, rest = T-102 1-frame Link lag. Real fix for the init frame → T-095 |
 | T-109 | Debug sentinels written into NES `$07E0–$07FF` (= WorldFlags L7–9 `$077F–$07FE`) every frame (joypad, Link X/Y/room, markers) → L7–9 room flags + saves corrupted | DONE | Claude | Moved to linker-owned `g_debug_sentinel[32]` (`DBG_SENTINEL(i)`, i = old addr − `$07E0`); 4 probes read via `@SYM:g_debug_sentinel@`. Found by `save_roundtrip` (9 byte diffs → 0). `main.c` change committed through an index-only patch; Astra's T-105 WIP untouched |
 | T-093 | Macro redefinitions (were 65 warnings) | DONE | Claude | 0 redefinitions, 27 warnings total. Real bugs found: (1) `enemy_state.h` `LINK_X/Y`=ChaseTarget `$61/$62` vs `world_state.h` `LINK_X/Y`=ObjX `$70/$84`; first include won per file. Renamed enemy alias to `CHASE_TARGET_X/Y` (NES meaning; per-file audit `tools/audit/macro_audit.py` shows all prior `$61` users unchanged). (2) `room_load_runtime.c` redefined `CUR_LEVEL` to the address `$10` mid-file, so Mode 2 loaders read level=16 (unlinked today, T-099 will wire them). `OBJ_STATE`/`NES_OBJ_INV_TIMER_BASE` single-owner; SGDK `RAM` constant `#undef` (unused). `builds/reports/recovery/t093-macros/` |
+| T-110 | Bombs / candle fire were Genesis-only objects (60-frame fuse, 48 px fire) never written to NES slots `$10/$11` → bombs/fire could not hurt enemies or trigger secrets. Port WieldBomb/UpdateBomb/DrawClouds/UpdateBombFlashEffect, WieldCandle/UpdateFire into NES slots; sprites via enemy_render weapon cache; PPUMASK grayscale consumer | DONE | Claude | `builds/reports/recovery/t110-bomb-fire/SUMMARY.md`: slot RAM identical vs NES over 240/200 ticks except T-102 one-tick input/Link-order cells (3); enemy kill identical; SAT == NES OAM for bomb/clouds/fire; tile pixels byte-match; grayscale CRAM 29/30 (miss = pre-existing sub-pal 3). UW bombable wall unverified → T-114 |
+| T-111 | UW dark rooms: NES darkens by palette (FadeCycle/AnimateWorldFading) and the candle brightens via UpdateCandle/CandleState; Genesis darkens the plane (`fill_plane_a_dark`) and main.c relights instantly on any candle press (even when WieldCandle refuses) | TODO | | Lockstep in a dark UW room: PALRAM-vs-CRAM per frame through candle use |
+| T-112 | Rod / magic shot is Genesis-only (3 px/frame, private state, never slot `$0E`); NES UpdateSwordShotOrMagicShot + book-of-magic fire (WieldCandle with UsedCandle bypass, Z_07:3505) not ported | TODO | | Lockstep: slot `$0E` + fire slot cells equal vs NES |
+| T-113 | Link shove distance: fire hit (t110_fire) — NES Link 7A→99, Genesis 7A→9D (native Link shove) | TODO | | Lockstep `t110_fire`: Link Y equal through shove |
+| T-114 | Verify UW bombable wall (bomb.c `bomb_check_wall`) vs NES. Needs both consoles in the same UW room: blocked by T-105 route divergence / no NES UW staging | TODO | | Lockstep in L1 bombable-wall room: door opened bit + tiles vs NES |
 
 ### S0c — Native game-mode spine (finish plan Phase 2)
 
@@ -125,6 +130,10 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 | T-080 | Builder: clean-staging build from user ROM, no live captures, drag-and-drop shell, reproducibility | P10 | TODO |
 
 ## Handoff log (newest first)
+
+**2026-09-24 · Claude** — T-110 done: bombs/fire now NES objects in slots `$10/$11` (bomb.c/candle_fire.c), drawn via
+enemy_render weapon cache, bomb flash = CRAM grayscale (bg_palette.c). Byte evidence in `t110-bomb-fire/`. New rows T-111..T-114.
+Lockstep stage can now set the Genesis B item (`gen_b_item`). Resuming T-050 (OW tile objects; rock wall now sees bomb state `$13`).
 
 **2026-09-24 · Claude** — T-099 FS done: register name / erase / copy / real slot display, all NES-format through
 `save_game.c`. New Game now = register on an empty slot (as NES) → NES new-file stats. `probe_fs_entry.lua` registers first.
