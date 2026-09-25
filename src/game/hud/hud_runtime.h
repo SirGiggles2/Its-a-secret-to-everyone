@@ -2,6 +2,9 @@
 #define ROOMROM_HUD_H
 
 void roomrom_hud_upload_chr(void);
+/* T-118: force the next roomrom_hud_draw to rebuild the whole window
+ * (call after writing the Window plane outside this module). */
+void roomrom_hud_invalidate(void);
 void roomrom_hud_draw(unsigned char hud_id, unsigned char room_id,
                       unsigned char is_underworld);
 

@@ -268,10 +268,16 @@ static void clear_hud_b(void)
 
 /* T-118: set by any window rebuild; see the HUD draw cache below. */
 static unsigned char s_hud_force = 1u;
+/* T-118: 1 while the window holds a complete HUD for s_hud_id_cached /
+ * s_last_is_uw_cached; cleared by every window clear and by
+ * roomrom_hud_invalidate (outside window writers). */
+static unsigned char s_hud_built = 0u;
+static unsigned char s_hud_level_cached = 0xFFu;   /* CurLevel $10 at build */
 
 static void clear_hud_window(void)
 {
     s_hud_force = 1u;
+    s_hud_built = 0u;
     render_clear_window_rect(0, (unsigned short)HUD_WIN_ROW_BASE,
                               ROOMROM_ROOM_COLS, ROOMROM_HUD_ROWS);
 }
@@ -589,6 +595,20 @@ void roomrom_hud_draw(unsigned char hud_id, unsigned char room_id,
     if (hud_id == ROOMROM_MAP_REDUX)
         macro = is_underworld ? s_redux_uw_hud_macro : s_redux_ow_hud_macro;
 
+    /* T-118: room-to-room entries redrew the whole HUD (static macro +
+     * window clear, a frame of 68000 time at every scroll) although its
+     * static part depends only on hud_id and OW/UW; NES leaves the status
+     * bar alone across rooms. Same layout still on screen: refresh only
+     * the dynamic cells. */
+    if (s_hud_built && hud_id == s_hud_id_cached &&
+        is_underworld == s_last_is_uw_cached &&
+        RAM(0x0010u) == s_hud_level_cached) {
+        s_last_room_id_cached = room_id;
+        draw_hud_dynamic(hud_id);
+        (void)inventory_hud_consume_dirty();
+        return;
+    }
+
     clear_hud_pal();
     clear_hud_window();
     clear_hud_b();
@@ -600,6 +620,14 @@ void roomrom_hud_draw(unsigned char hud_id, unsigned char room_id,
     s_last_is_uw_cached = is_underworld;
     draw_hud_dynamic(hud_id);
     (void)inventory_hud_consume_dirty();
+    s_hud_built = 1u;
+    s_hud_level_cached = RAM(0x0010u);
+}
+
+void roomrom_hud_invalidate(void)
+{
+    s_hud_built = 0u;
+    s_hud_force = 1u;
 }
 
 /* V2.4k: HUD position toggle. */

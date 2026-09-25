@@ -7,6 +7,8 @@
  */
 #include "intro_title.h"
 #include "render_abi.h"
+/* T-118: the $E000 fill below overwrites the gameplay HUD window. */
+extern void roomrom_hud_invalidate(void);
 
 /* S1.F4: display-enable register writes moved to render_display_enable(). */
 
@@ -231,6 +233,7 @@ void intro_title_setup(void) {
     /* Plane A: title rows. Plane B blank. */
     render_plane_fill(PLANE_A_BASE, 0x0024u, 32u * 32u);
     render_plane_fill(0xE000u,      0x0024u, 32u * 32u);
+    roomrom_hud_invalidate();
     for (unsigned short r = 0; r < intro_title_tilemap_rows; r++) {
         render_plane_a_write_row(r, &intro_title_tilemap[r * 32], 32u);
     }

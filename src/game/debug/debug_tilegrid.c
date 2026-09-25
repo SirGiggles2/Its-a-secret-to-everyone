@@ -28,6 +28,8 @@
 #include "../../../RoomRom/src/atlas/items_chr_x4.h"
 #include "../../../RoomRom/src/atlas/enemy_chr.h"
 #include "../../../RoomRom/src/atlas/boss_chr.h"
+/* T-118: the $E000 fill below overwrites the gameplay HUD window. */
+extern void roomrom_hud_invalidate(void);
 
 /* Gameplay-side atlas + palette upload routines (declared here to avoid
  * pulling subsystem headers). All defined under src/game/. */
@@ -273,6 +275,7 @@ static void plane_clear(void) {
     unsigned short blank_attr = RENDER_TILE_ATTR_FULL(RENDER_PAL0, 0, 0, 0, BLANK_TILE);
     render_plane_fill(PLANE_A_BASE, blank_attr, 32u * 32u);
     render_plane_fill(0xE000u,      blank_attr, 32u * 32u);
+    roomrom_hud_invalidate();
 
     /* Reset scroll registers. */
     *((volatile unsigned long *)0xC00004) = 0x40000010UL;
