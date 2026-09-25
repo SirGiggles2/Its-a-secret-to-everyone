@@ -216,7 +216,27 @@ local function gen_link_pos(x, y, nes_dir)
     slog(string.format("gen s_link_dir=%d (read %d) s_link_grid_offset=0 (read %d)", ld, rld, rg))
     if rld ~= ld or rg ~= 0 then stage_fail("gen_link_pos static write did not stick") end
 end
+-- Optional 68K PC histogram (T-118 frame budget), GEN only:
+-- PRESET.pc_profile = {first, last} script frames. Every executed
+-- instruction address in that window is counted (execute callback on the
+-- "M68K BUS" scope); written to <OUT>.pcprof as "addr count" lines, mapped
+-- to functions by tools/lockstep/pc_profile.py. Zero samples = the core
+-- gave no execute callbacks: recorded as a failure, never an empty profile.
+local PCP = (sys == "GEN") and PRESET.pc_profile or nil
+local pc_hist, pc_id, pc_samples = {}, nil, 0
+local function pc_hook(addr)
+    pc_hist[addr] = (pc_hist[addr] or 0) + 1
+    pc_samples = pc_samples + 1
+end
+local function pc_stop()
+    if pc_id then event.unregisterbyid(pc_id); pc_id = nil end
+end
 for f = 1, total do
+    if PCP and f - 1 == PCP[1] then
+        pc_id = event.onmemoryexecuteany(pc_hook, "t118_pc", "M68K BUS")
+        meta:write(string.format("pc_profile start f=%d id=%s\n", f - 1, tostring(pc_id)))
+    end
+    if PCP and f - 1 == PCP[2] + 1 then pc_stop() end
     for _, st in ipairs(PRESET.stages) do
         if st.at == f - 1 then
             meta:write(string.format("stage at f=%d\n", f - 1))
@@ -234,6 +254,17 @@ for f = 1, total do
     emu.frameadvance()
 end
 ram:close()
+pc_stop()
+if PCP then
+    if pc_samples == 0 then
+        meta:close(); fail("pc_profile: no execute callbacks from M68K BUS") return
+    end
+    local fh = io.open(OUT .. ".pcprof", "w")
+    fh:write(string.format("# frames %d..%d samples %d\n", PCP[1], PCP[2], pc_samples))
+    for a, n in pairs(pc_hist) do fh:write(string.format("%06X %d\n", a, n)) end
+    fh:close()
+    meta:write(string.format("pc_profile samples=%d\n", pc_samples))
+end
 client.screenshot(OUT .. ".png")
 
 -- Final-frame full video dump (RULE V3: every domain, full range).

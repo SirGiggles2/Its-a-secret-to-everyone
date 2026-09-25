@@ -151,6 +151,9 @@ def to_lua(p: dict) -> str:
     for i, (at, body) in enumerate(p.get("stages", []), 1):
         out += (f'PRESET.stages[{i}] = {{at={at}, fn=function(rd, wr, log, sys, '
                 f'gen_b_item, gen_link_pos)\n{body}\nend}}\n')
+    if p.get("pc_profile"):
+        a, b = p["pc_profile"]
+        out += f'PRESET.pc_profile = {{{int(a)}, {int(b)}}}\n'
     return out
 
 

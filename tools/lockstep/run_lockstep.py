@@ -29,10 +29,15 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("preset", type=Path)
     ap.add_argument("--frames", type=int, default=100000)
+    ap.add_argument("--pc-profile", metavar="FIRST:LAST",
+                    help="Genesis 68K PC histogram over script frames FIRST..LAST "
+                         "(writes gen.pcprof; report with pc_profile.py)")
     a = ap.parse_args()
 
     spec = json.loads(a.preset.read_text(encoding="utf-8"))
     p = presets.build(spec)
+    if a.pc_profile:
+        p["pc_profile"] = [int(x) for x in a.pc_profile.split(":")]
     out = ROOT / "builds" / "reports" / "lockstep" / p["name"]
     out.mkdir(parents=True, exist_ok=True)
     for f in out.glob("*"):
