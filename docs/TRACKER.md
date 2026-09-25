@@ -77,6 +77,8 @@ Status: `TODO` · `ACTIVE` · `BLOCKED` · `REVIEW` · `DONE`. Plan ref = task I
 | T-113 | Link shove distance (+4 px): Genesis Link keeps grid offset / pos frac / q-speed in `RoomRom/src/main.c` statics (`s_link_grid_offset`…) and never publishes NES `$394/$3A8/$3BC` for slot 0. Drained Obj_Shove sees grid offset 0 and runs EnsureObjectAligned (+4 snap) before shoving (lockstep `t110_fire` f77-78: NES 7A→7E, GEN 79→81). Same missing mirror disables CheckTileObjectsBlocking. Fix in main.c Link movement (blocked on T-105 WIP) | TODO | | Lockstep `t110_fire`: Link Y equal through shove |
 | T-114 | Verify UW bombable wall (bomb.c `bomb_check_wall`) vs NES. Needs both consoles in the same UW room: blocked by T-105 route divergence / no NES UW staging | DONE | Claude | Lockstep in L1 bombable-wall room: door opened bit + tiles vs NES |
 | T-115 | OW nametable sub-palette: `ow_render.c` forces sub-pal 2 for every OW room (2026-05-23 assumption from one probe); NES room $79 uses sub-pal 3 (brown). Genesis draws it green | DONE | Claude | `verify_plane.py t050_rock_push`: tile identity 704/704, sub-palette 0/704 → must be 704/704 exact in $76/$78/$79 + a sweep |
+| T-117 | UW PlayAreaTiles (`$6530`) never published on Genesis (lockstep `t114_uw_wall` room $53: 6/704 cells match NES; stale OW data). Drained collision (enemies, shots) reads it in UW | ACTIVE | Claude | `verify_play_area.py` 704/704 in UW rooms |
+| T-118 | Frame budget: Genesis drops frames on event spikes in busy rooms (VDP V-counter profile, L1 $53): HUD redraw ~60 lines, bomb flash CRAM read-back ~24, door open ~115, explosion ~20/frame | ACTIVE | Claude | Lag frames == NES in t114_uw_wall / t110 / t105 runs |
 
 ### S0c — Native game-mode spine (finish plan Phase 2)
 

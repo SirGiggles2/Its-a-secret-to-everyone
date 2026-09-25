@@ -277,6 +277,11 @@ void render_cram_fade_apply(unsigned char step, unsigned char total);
  * Used by the PPUMASK grayscale consumer to snapshot live colors. */
 void render_cram_read(unsigned short *dst, unsigned short count);
 
+/* PPUMASK grayscale: route every CRAM write (and re-upload all 64 colors
+ * now) through a 512-entry table indexed by the 9 color bits
+ * (BBB GGG RRR); NULL turns it off. The adapter keeps a CRAM shadow. */
+void render_cram_set_grayscale(const unsigned short *word_to_gray);
+
 /* ---- Genesis ROM bank-window cache ----
  *
  * render_bank_window_load(bank) -- ensure the M68K bank-window at

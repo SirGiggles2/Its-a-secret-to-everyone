@@ -177,6 +177,32 @@ void render_sat_clear(void)
 
 static unsigned short s_fade_snapshot[64];
 
+/* CRAM shadow + PPUMASK grayscale (T-114/T-080).
+ *
+ * Every gameplay CRAM write goes through this adapter, so the shadow holds
+ * the intended colors. While a grayscale table is set, each write (and a
+ * full re-upload on the edge) goes to CRAM through the table: grayscale is
+ * a display post-process on the NES, palette writes during it still land.
+ * Replaces a 64-word VDP read-back per edge (~35 scanlines in a busy UW
+ * room, which pushed bomb-flash frames over budget). */
+static unsigned short s_cram_shadow[64];
+static const unsigned short *s_cram_gray = (const unsigned short *)0;
+
+static unsigned short cram_out(unsigned short w)
+{
+    if (s_cram_gray == (const unsigned short *)0) return w;
+    return s_cram_gray[((w >> 1) & 0x7u) | ((w >> 2) & 0x38u) | ((w >> 3) & 0x1C0u)];
+}
+
+void render_cram_set_grayscale(const unsigned short *word_to_gray)
+{
+    unsigned char i;
+    s_cram_gray = word_to_gray;
+    render_set_autoinc_word();
+    VDP_CTRL_LONG = 0xC0000000UL;
+    for (i = 0u; i < 64u; i++) VDP_DATA_WORD = cram_out(s_cram_shadow[i]);
+}
+
 void render_cram_fade_capture(void)
 {
     VDP_CTRL_LONG = 0x00000020UL;
@@ -205,7 +231,8 @@ void render_cram_fade_apply(unsigned char step, unsigned char total)
         b = (unsigned short)((b * remaining) / total) & 0x000Eu;
         g = (unsigned short)((g * remaining) / total) & 0x000Eu;
         r = (unsigned short)((r * remaining) / total) & 0x000Eu;
-        VDP_DATA_WORD = (unsigned short)((b << 8) | (g << 4) | r);
+        s_cram_shadow[i] = (unsigned short)((b << 8) | (g << 4) | r);
+        VDP_DATA_WORD = cram_out(s_cram_shadow[i]);
     }
 }
 
@@ -277,8 +304,12 @@ void render_set_plane_b_word(unsigned short col, unsigned short row,
 void render_load_palette(unsigned short idx, const unsigned short *src)
 {
     unsigned short count = CRAM_COLORS_PER_PAL;
+    unsigned short slot = (unsigned short)((idx * 16u) & 0x3Fu);
     render_cram_open_write((unsigned short)(idx * 16u));
-    while (count--) VDP_DATA_WORD = *src++;
+    while (count--) {
+        s_cram_shadow[slot++ & 0x3Fu] = *src;
+        VDP_DATA_WORD = cram_out(*src++);
+    }
 }
 
 void render_chr_upload(unsigned short vram_addr,
@@ -333,16 +364,21 @@ void render_cram_open_write(unsigned short slot)
 void render_cram_write_color(unsigned short slot, unsigned short value)
 {
     render_cram_open_write(slot);
-    VDP_DATA_WORD = value;
+    s_cram_shadow[slot & 0x3Fu] = value;
+    VDP_DATA_WORD = cram_out(value);
 }
 
 /* Open CRAM at offset 0 and stream count color words. */
 void render_cram_upload(const unsigned short *src, unsigned short count)
 {
     unsigned long bytes = (unsigned long)count * 2UL;
+    unsigned short slot = 0u;
     render_set_autoinc_word();
     VDP_CTRL_LONG = 0xC0000000UL;
-    while (count--) VDP_DATA_WORD = *src++;
+    while (count--) {
+        s_cram_shadow[slot++ & 0x3Fu] = *src;
+        VDP_DATA_WORD = cram_out(*src++);
+    }
     dma_stats_record(bytes);
 }
 
@@ -354,8 +390,12 @@ void render_cram_subrange_upload(unsigned short start_slot,
                                  unsigned short count)
 {
     unsigned long bytes = (unsigned long)count * 2UL;
+    unsigned short slot = start_slot;
     render_cram_open_write(start_slot);
-    while (count--) VDP_DATA_WORD = *src++;
+    while (count--) {
+        s_cram_shadow[slot++ & 0x3Fu] = *src;
+        VDP_DATA_WORD = cram_out(*src++);
+    }
     dma_stats_record(bytes);
 }
 

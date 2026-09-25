@@ -115,9 +115,9 @@ void roomrom_bg_palette_load_bg_only(const unsigned char *palram16)
  *
  * NES source: Z_01.asm UpdateBombFlashEffect sets/clears CurPpuMask_2001
  * ($FE) bit 0; the PPU then outputs every palette entry as (index & $30).
- * Genesis has no grayscale bit, so on the rising edge the live CRAM is
- * snapshotted and each color replaced by the converted NES gray for its
- * source index; the falling edge restores the snapshot.
+ * Genesis has no grayscale bit: the render adapter keeps a CRAM shadow and,
+ * while a gray table is set, writes every color through it (a display
+ * post-process, as on the NES).
  *
  * CRAM holds converted words, not NES indices, so the index is recovered
  * by a reverse lookup of the NES->CRAM table. Two words are ambiguous in
@@ -126,7 +126,6 @@ void roomrom_bg_palette_load_bg_only(const unsigned char *palram16)
  * to $10. Every other collision group shares one gray (& $30), so the
  * lookup is exact for them. */
 #define NES_CUR_PPU_MASK 0x00FEu
-static unsigned short s_gray_snapshot[64];
 static unsigned char  s_gray_active = 0u;
 
 /* Genesis color word (9 significant bits: BBB0GGG0RRR0 >> 1) -> gray.
@@ -166,16 +165,7 @@ void roomrom_ppu_mask_grayscale_sync(void)
 {
     unsigned char want = (unsigned char)(nes_ram[NES_CUR_PPU_MASK] & 0x01u);
     if (want == s_gray_active) return;
-    if (want) {
-        unsigned short gray[64];
-        unsigned char i;
-        render_cram_read(s_gray_snapshot, 64u);
-        if (!s_gray_table_ready) build_gray_table();
-        for (i = 0u; i < 64u; ++i)
-            gray[i] = s_gray_by_word[word_key(s_gray_snapshot[i])];
-        render_cram_subrange_upload(0u, gray, 64u);
-    } else {
-        render_cram_subrange_upload(0u, s_gray_snapshot, 64u);
-    }
+    if (!s_gray_table_ready) build_gray_table();
+    render_cram_set_grayscale(want ? s_gray_by_word : (const unsigned short *)0);
     s_gray_active = want;
 }
