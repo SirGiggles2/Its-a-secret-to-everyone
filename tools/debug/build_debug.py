@@ -34,6 +34,26 @@ CFLAGS = [
     "-ffixed-a4",
 ]
 
+# T-118: link-time optimization for C translation units. The gameplay
+# frame makes ~270 small cross-file calls (drained NES routines call each
+# other across TUs); on the 68000 each costs ~80-120 cycles of JSR/RTS,
+# argument pushes and register saves that -O3 cannot remove across files.
+# PC profile, L1 room $53 with 5 Stalfos + bomb: gameplay lag frames 13 -> 1.
+# Assembly units and SGDK libmd.a stay non-LTO. LTO_LINK_FLAGS repeats the
+# codegen flags that matter at link time (LTO re-runs code generation):
+# -ffixed-a4 keeps the nes_ram register binding (platform_abi.h).
+# One partition so every TU sees every other for inlining.
+LTO_CFLAGS = ["-flto"]
+LTO_LINK_FLAGS = [
+    "-flto",
+    "-flto-partition=none",
+    "-O3",
+    "-fomit-frame-pointer",
+    "-ffixed-a4",
+    "-fno-builtin",
+    "-fms-extensions",
+]
+
 INCS = [
     ROOT / "src",
     ROOT / "src" / "abi",
@@ -522,7 +542,7 @@ def compile_c(src: str, obj_name: str) -> Path:
     src_path = ROOT / src
     obj_path = OUT / obj_name
     print(f"[3] Compiling {src}...")
-    run(gcc_prefix() + CFLAGS + include_args() + ["-c", src_path, "-o", obj_path], cwd=PROJ)
+    run(gcc_prefix() + CFLAGS + LTO_CFLAGS + include_args() + ["-c", src_path, "-o", obj_path], cwd=PROJ)
     return obj_path
 
 
@@ -626,7 +646,8 @@ def main() -> int:
             "-o",
             OUT / "Debug.out",
             "-Wl,--gc-sections",
-        ],
+        ]
+        + LTO_LINK_FLAGS,
         cwd=PROJ,
     )
 
