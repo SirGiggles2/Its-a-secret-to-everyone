@@ -23,6 +23,7 @@
 #include "render_abi.h"
 #include "../../src/state/rng_state.h"  /* Phase 7 NMI fix: per-frame rng_next() */
 #include "roomrom_main_state.h"  /* Task 5.4: warp-outcome apply boundary */
+#include "../../src/game/world/ow_scroll.h"
 #include "../../src/game/world/transition.h"  /* Task 5.4 warp coord (Phase 12.2 promoted) */
 #include "../../src/game/dungeon/cellar_meta.h"      /* Phase 12.2 promoted */
 #include "../../src/game/dungeon/push_block_meta.h"  /* Phase 12.2 promoted */
@@ -268,6 +269,7 @@ typedef enum {
 } scroll_state_t;
 
 static scroll_state_t s_scroll_state    = SCROLL_NONE;
+static u8             s_ow_edge = 0u;
 static u8             s_scroll_frame    = 0u;     /* counts up during scroll */
 static u8             s_scroll_total_frames = SCROLL_TOTAL_FRAMES_SMOOTH;
 static u8             s_active_slot_x   = 0u;     /* 0 = cols 0..31, 1 = cols 32..63 */
@@ -315,6 +317,11 @@ static u8 plane_col_for_slot(u8 src_col, u8 slot_x)
 static short scroll_x_offset_for_slot(u8 slot)
 {
     return slot ? (short)-ROOMROM_SLOT_PIXELS : 0;
+}
+
+static u8 ow_nes_scroll_enabled(void)
+{
+    return s_scene == SCENE_OW && s_move_style == MOVE_STYLE_NES;
 }
 
 static u8 transition_scroll_total_frames(void)
@@ -1608,56 +1615,66 @@ static void edge_load_or_clamp(void)
     short pre_x = players[0].x;
     short pre_y = players[0].y;
 
-    if (players[0].x < UW_WALK_EDGE_WEST_X) {
-        if (col > 0u && (s_scene != SCENE_UW ||
-                link_door_touch_latched(UW_WALK_DOOR_W, &s_link_keys))) {
-            col--;
-            if (s_scene == SCENE_UW) {
-                uw_walk_arrival_position(UW_WALK_DOOR_W, &players[0].x, &players[0].y);
-                s_doorway_dir = UW_WALK_DOOR_W;
-            } else {
-                players[0].x = UW_WALK_EDGE_EAST_X;
-            }
-            want = SCROLL_H_LEFT;
-        } else { players[0].x = UW_WALK_EDGE_WEST_X; }
-    } else if (players[0].x > UW_WALK_EDGE_EAST_X) {
-        if (col < 15u && (s_scene != SCENE_UW ||
-                link_door_touch_latched(UW_WALK_DOOR_E, &s_link_keys))) {
-            col++;
-            if (s_scene == SCENE_UW) {
-                uw_walk_arrival_position(UW_WALK_DOOR_E, &players[0].x, &players[0].y);
-                s_doorway_dir = UW_WALK_DOOR_E;
-            } else {
-                players[0].x = UW_WALK_EDGE_WEST_X;
-            }
-            want = SCROLL_H_RIGHT;
-        } else { players[0].x = UW_WALK_EDGE_EAST_X; }
-    }
+    if (ow_nes_scroll_enabled()) {
+        want = (scroll_state_t)s_ow_edge;
+        s_ow_edge = 0u;
+        if (want == SCROLL_H_LEFT) { --col; players[0].x = 0xF0; }
+        if (want == SCROLL_H_RIGHT) { ++col; players[0].x = 0; }
+        if (want == SCROLL_V_UP) { --row; players[0].y = 0xDD; }
+        if (want == SCROLL_V_DOWN) { ++row; players[0].y = 0x3D; }
+    } else {
+        if (players[0].x < UW_WALK_EDGE_WEST_X) {
+            if (col > 0u && (s_scene != SCENE_UW ||
+                    link_door_touch_latched(UW_WALK_DOOR_W, &s_link_keys))) {
+                col--;
+                if (s_scene == SCENE_UW) {
+                    uw_walk_arrival_position(UW_WALK_DOOR_W, &players[0].x, &players[0].y);
+                    s_doorway_dir = UW_WALK_DOOR_W;
+                } else {
+                    players[0].x = UW_WALK_EDGE_EAST_X;
+                }
+                want = SCROLL_H_LEFT;
+            } else { players[0].x = UW_WALK_EDGE_WEST_X; }
+        } else if (players[0].x > UW_WALK_EDGE_EAST_X) {
+            if (col < 15u && (s_scene != SCENE_UW ||
+                    link_door_touch_latched(UW_WALK_DOOR_E, &s_link_keys))) {
+                col++;
+                if (s_scene == SCENE_UW) {
+                    uw_walk_arrival_position(UW_WALK_DOOR_E, &players[0].x, &players[0].y);
+                    s_doorway_dir = UW_WALK_DOOR_E;
+                } else {
+                    players[0].x = UW_WALK_EDGE_WEST_X;
+                }
+                want = SCROLL_H_RIGHT;
+            } else { players[0].x = UW_WALK_EDGE_EAST_X; }
+        }
 
-    if (players[0].y < UW_WALK_EDGE_NORTH_Y) {
-        if (row > 0u && (s_scene != SCENE_UW ||
-                link_door_touch_latched(UW_WALK_DOOR_N, &s_link_keys))) {
-            row--;
-            if (s_scene == SCENE_UW) {
-                uw_walk_arrival_position(UW_WALK_DOOR_N, &players[0].x, &players[0].y);
-                s_doorway_dir = UW_WALK_DOOR_N;
-            } else {
-                players[0].y = UW_WALK_EDGE_SOUTH_Y;
-            }
-            want = SCROLL_V_UP;
-        } else { players[0].y = UW_WALK_EDGE_NORTH_Y; }
-    } else if (players[0].y > UW_WALK_EDGE_SOUTH_Y) {
-        if (row < 7u && (s_scene != SCENE_UW ||
-                link_door_touch_latched(UW_WALK_DOOR_S, &s_link_keys))) {
-            row++;
-            if (s_scene == SCENE_UW) {
-                uw_walk_arrival_position(UW_WALK_DOOR_S, &players[0].x, &players[0].y);
-                s_doorway_dir = UW_WALK_DOOR_S;
-            } else {
-                players[0].y = UW_WALK_EDGE_NORTH_Y;
-            }
-            want = SCROLL_V_DOWN;
-        } else { players[0].y = UW_WALK_EDGE_SOUTH_Y; }
+        if (players[0].y < UW_WALK_EDGE_NORTH_Y) {
+            if (row > 0u && (s_scene != SCENE_UW ||
+                    link_door_touch_latched(UW_WALK_DOOR_N, &s_link_keys))) {
+                row--;
+                if (s_scene == SCENE_UW) {
+                    uw_walk_arrival_position(UW_WALK_DOOR_N, &players[0].x, &players[0].y);
+                    s_doorway_dir = UW_WALK_DOOR_N;
+                } else {
+                    players[0].y = UW_WALK_EDGE_SOUTH_Y;
+                }
+                want = SCROLL_V_UP;
+            } else { players[0].y = UW_WALK_EDGE_NORTH_Y; }
+        } else if (players[0].y > UW_WALK_EDGE_SOUTH_Y) {
+            if (row < 7u && (s_scene != SCENE_UW ||
+                    link_door_touch_latched(UW_WALK_DOOR_S, &s_link_keys))) {
+                row++;
+                if (s_scene == SCENE_UW) {
+                    uw_walk_arrival_position(UW_WALK_DOOR_S, &players[0].x, &players[0].y);
+                    s_doorway_dir = UW_WALK_DOOR_S;
+                } else {
+                    players[0].y = UW_WALK_EDGE_NORTH_Y;
+                }
+                want = SCROLL_V_DOWN;
+            } else { players[0].y = UW_WALK_EDGE_SOUTH_Y; }
+        }
+
     }
 
     if (want != SCROLL_NONE) {
@@ -1677,15 +1694,17 @@ static void edge_load_or_clamp(void)
          * H_LEFT pre_x is just past 0 (clamp to 0). Y is unchanged. */
         if (pre_x < UW_WALK_EDGE_WEST_X)  pre_x = UW_WALK_EDGE_WEST_X;
         if (pre_x > UW_WALK_EDGE_EAST_X)  pre_x = UW_WALK_EDGE_EAST_X;
-        if (pre_y < UW_WALK_EDGE_NORTH_Y) pre_y = UW_WALK_EDGE_NORTH_Y;
-        if (pre_y > UW_WALK_EDGE_SOUTH_Y) pre_y = UW_WALK_EDGE_SOUTH_Y;
+        if (!ow_nes_scroll_enabled()) {
+            if (pre_y < UW_WALK_EDGE_NORTH_Y) pre_y = UW_WALK_EDGE_NORTH_Y;
+            if (pre_y > UW_WALK_EDGE_SOUTH_Y) pre_y = UW_WALK_EDGE_SOUTH_Y;
+        }
         s_scroll_start_link_x = pre_x;
         s_scroll_start_link_y = pre_y;
         s_scroll_state = want;
         s_scroll_frame = 0u;
         s_scroll_total_frames = transition_scroll_total_frames();
         /* Reset sub-pixel/grid so motion starts clean post-transition. */
-        s_link_pos_frac    = 0u;
+        if (!ow_nes_scroll_enabled()) s_link_pos_frac = 0u;
         s_link_subx        = 0u;
         s_link_suby        = 0u;
         s_link_grid_offset = 0;
@@ -1703,8 +1722,9 @@ static void edge_load_or_clamp(void)
          * trade vs new room wrong throughout. */
         if (s_scene == SCENE_UW)
             roomrom_uw_room_render_load_palette(s_transition_target);
-        else
+        else if (!ow_nes_scroll_enabled())
             roomrom_ow_room_render_load_palette(s_transition_target);
+        /* Original OW palette handoff follows the completed staged fill. */
         roomrom_sprites_load_palette();
         /* Task 5.4: bracket the OW staging-slot paint so the raw-tile
          * cache captures the incoming room. mark_stable runs when the
@@ -1718,10 +1738,11 @@ static void edge_load_or_clamp(void)
             /* H scroll within the active plane: render incoming into the
              * OTHER slot (cols 0..31 vs 32..63) and slide that plane. */
             set_room_render_target_plane(s_active_plane);
-            render_room_into_slot(s_transition_target,
-                                  target_slot_x,
-                                  s_active_row_base);
-            s_scroll_target_x = scroll_x_offset_for_slot(target_slot_x);
+            if (!ow_nes_scroll_enabled())
+                render_room_into_slot(s_transition_target, target_slot_x, s_active_row_base);
+            s_scroll_target_x = ow_nes_scroll_enabled()
+                ? (short)(s_active_scroll_x + (want == SCROLL_H_RIGHT ? -256 : 256))
+                : scroll_x_offset_for_slot(target_slot_x);
         } else {
             /* PR-2c V scroll: render incoming into adjacent rows of the
              * same 64-row plane. The room renderers wrap rows at 64, so
@@ -1742,9 +1763,8 @@ static void edge_load_or_clamp(void)
                 s_scroll_target_y = (short)(s_active_scroll_y -
                     (short)(ROOMROM_VERTICAL_STRIDE_TILES * 8));
             }
-            render_room_into_slot(s_transition_target,
-                                  s_active_slot_x,
-                                  s_transition_row_base);
+            if (!ow_nes_scroll_enabled())
+                render_room_into_slot(s_transition_target, s_active_slot_x, s_transition_row_base);
             if (s_scene == SCENE_UW) {
                 roomrom_uw_room_render_set_live_door_priority(
                     s_active_slot_x, s_active_row_base, 0u);
@@ -1762,7 +1782,11 @@ static void edge_load_or_clamp(void)
              * underlay clear at line ~1539 handles final-state opacity
              * after view stabilizes. */
         }
-        scroll_init_fixed_point_steps();
+        if (ow_nes_scroll_enabled()) {
+            players[0].x = pre_x;
+            players[0].y = pre_y;
+            ow_scroll_begin((u8)want, s_transition_target);
+        } else scroll_init_fixed_point_steps();
     }
 }
 
@@ -2070,18 +2094,45 @@ void roomrom_debug_tick(void)
             short v_scroll;
             s_joy_prev = 0u;     /* swallow input across transition */
 
-            scroll_advance_fixed_point(&h_scroll, &v_scroll);
+            u8 ow_done = 0u;
+            if (ow_nes_scroll_enabled()) {
+                u8 c;
+                short distance;
+                ow_done = ow_scroll_tick(&players[0].x, &players[0].y);
+                c = ow_scroll_column();
+                if (c < 16u) {
+                    u8 slot = s_scroll_state < SCROLL_V_DOWN
+                        ? (u8)(s_active_slot_x ^ 1u) : s_active_slot_x;
+                    roomrom_ow_room_render_fill_one_col_at(s_transition_target,
+                        c, plane_col_for_slot(c, slot), s_transition_row_base);
+                }
+                distance = (short)ow_scroll_pixels();
+                h_scroll = s_scroll_start_x;
+                v_scroll = s_scroll_start_y;
+                if (s_scroll_state == SCROLL_H_RIGHT) h_scroll -= distance;
+                if (s_scroll_state == SCROLL_H_LEFT) h_scroll += distance;
+                if (s_scroll_state == SCROLL_V_DOWN) v_scroll += distance;
+                if (s_scroll_state == SCROLL_V_UP) v_scroll -= distance;
+                enemy_render_reset_oam();
+                enemy_render_native_sweep();
+                roomrom_sprites_set_link_pose(players[0].x, players[0].y,
+                                              players[0].face, s_link_frame);
+                VDP_updateSprites(80u, DMA_QUEUE);
+            } else scroll_advance_fixed_point(&h_scroll, &v_scroll);
             set_bg_scroll(h_scroll, v_scroll);
             /* NES Z1 UW: Link is drawn behind door tiles during the
              * scroll (Z_07.asm ShowLinkSpritesBehindHorizontalDoors).
              * We approximate by hiding the sprite off-screen for the
              * scroll duration, then snapping to the new-room entry
              * position on finalize. */
-            roomrom_sprites_set_link_pose((short)-32, (short)-32,
-                                          players[0].face, 0u);
+            if (!ow_nes_scroll_enabled())
+                roomrom_sprites_set_link_pose((short)-32, (short)-32,
+                                              players[0].face, 0u);
 
-            if (s_scroll_frame >= (u8)(s_scroll_total_frames - 1u) ||
-                (h_scroll == s_scroll_target_x && v_scroll == s_scroll_target_y)) {
+            if ((ow_nes_scroll_enabled() && ow_done) ||
+                (!ow_nes_scroll_enabled() &&
+                 (s_scroll_frame >= (u8)(s_scroll_total_frames - 1u) ||
+                  (h_scroll == s_scroll_target_x && v_scroll == s_scroll_target_y)))) {
                 u8 was_v_scroll = (u8)(s_scroll_state == SCROLL_V_DOWN ||
                                        s_scroll_state == SCROLL_V_UP);
                 if (s_scroll_state == SCROLL_H_RIGHT ||
@@ -2099,6 +2150,13 @@ void roomrom_debug_tick(void)
                 s_room_id = s_transition_target;
                 players[0].x  = s_transition_link_x;
                 players[0].y  = s_transition_link_y;
+                if (ow_nes_scroll_enabled()) {
+                    s_link_grid_offset = 0;
+                    s_link_pos_frac = 0u;
+                    s_link_subx = s_link_suby = 0u;
+                    nes_ram[0x70u] = (u8)players[0].x;
+                    nes_ram[0x84u] = (u8)players[0].y;
+                }
                 if (s_scene == SCENE_UW) {
                     roomrom_uw_room_render_load_palette(s_room_id);
                     roomrom_hud_draw(roomrom_uw_room_render_get_map(), s_room_id, 1u);
@@ -2130,6 +2188,8 @@ void roomrom_debug_tick(void)
                     s_active_scroll_y = scroll_y_for_row_base(s_active_row_base);
                     set_bg_scroll(s_active_scroll_x, s_active_scroll_y);
                 } else {
+                    if (ow_nes_scroll_enabled())
+                        s_active_scroll_x = scroll_x_offset_for_slot(s_active_slot_x);
                     anchor_active_slot();
                 }
                 /* Substrate fix 2026-05-15 — spawn fresh enemies on room
@@ -3062,6 +3122,17 @@ void roomrom_debug_tick(void)
                     }
                 }
 
+                s_ow_edge = 0u;
+                if (s_scene == SCENE_OW && moving_dir != LINK_DIR_NONE) {
+                    u8 d = moving_dir == LINK_DIR_RIGHT ? 1u :
+                           moving_dir == LINK_DIR_LEFT ? 2u :
+                           moving_dir == LINK_DIR_DOWN ? 4u : 8u;
+                    s_ow_edge = ow_scroll_edge(players[0].x, players[0].y,
+                                               d, s_link_grid_offset, s_room_id);
+                    if (s_ow_edge) moving_dir = LINK_DIR_NONE;
+                    if (s_ow_edge == 0x80u) s_ow_edge = 0u;
+                }
+
                 if (moving_dir != LINK_DIR_NONE && s_link_grid_offset == 0) {
                     if (!link_walkable_at(players[0].x, players[0].y, moving_dir)) {
                         moving_dir = LINK_DIR_NONE;
@@ -3116,6 +3187,12 @@ void roomrom_debug_tick(void)
             }
 
             edge_load_or_clamp();
+            /* Publish completed movement and its grid phase for room entry.
+             * The tick-start copy alone exposed last frame's coordinates. */
+            nes_ram[0x70u] = (u8)players[0].x;
+            nes_ram[0x84u] = (u8)players[0].y;
+            nes_ram[0x394u] = (u8)s_link_grid_offset;
+            nes_ram[0x3A8u] = s_link_pos_frac;
             if (!roomrom_combat_link_locked()) {
                 /* Per APPENDIX plan revert: single SAT entry unconditional.
                  * Split-sprite removed; wide BG-prio stamp handles

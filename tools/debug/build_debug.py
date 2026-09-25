@@ -221,6 +221,7 @@ ROOMROM_C_SOURCES = [
     # Phase 12.2 family 6 partial: SGDK-1-clean world TUs promoted.
     ("src/game/world/ow_meta.c",    "world_ow_meta.o"),
     ("src/game/world/transition.c", "world_transition.o"),
+    ("src/game/world/ow_scroll.c", "ow_scroll.o"),
     ("RoomRom/data/levelinfo_start_rooms.c", "levelinfo_start_rooms.o"),
     ("RoomRom/src/probes/metadata_probe.c", "metadata_probe.o"),
     # Task 5.5: door-type expected table for L1Q1 verification

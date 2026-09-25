@@ -1,0 +1,2 @@
+t105_horizontal: PASS (1 crossings)
+  crossing 1: 128 ticks; 0 differing cells; video resume NES 225 / GEN 226

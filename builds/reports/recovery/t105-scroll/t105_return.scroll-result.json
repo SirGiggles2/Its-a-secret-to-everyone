@@ -1,0 +1,56 @@
+{
+  "scope": "nine state fields, leave/scroll/enter + 24 gameplay ticks",
+  "alignment": "last video snapshot per advancing FrameCounter",
+  "not_verified": [
+    "all RAM",
+    "sprite animation",
+    "graphics bytes",
+    "audio"
+  ],
+  "rom_sha256": {
+    "nes": "8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac",
+    "gen": "0fce0d070df52fe15d0175edf12391f098a5efdbf76aa44f041835937f8c1ab0"
+  },
+  "fields": {
+    "IsUpdatingMode": 17,
+    "GameMode": 18,
+    "GameSubmode": 19,
+    "ObjX": 112,
+    "ObjY": 132,
+    "ObjDir": 152,
+    "RoomId": 235,
+    "ObjGridOffset": 916,
+    "ObjPosFrac": 936
+  },
+  "crossings": [
+    {
+      "crossing": 1,
+      "nes_start": 90,
+      "gen_start": 90,
+      "nes_resume": 176,
+      "gen_resume": 177,
+      "transition_ticks": {
+        "nes": 84,
+        "gen": 84
+      },
+      "compared_ticks": 109,
+      "failures": [],
+      "verdict": "PASS"
+    },
+    {
+      "crossing": 2,
+      "nes_start": 177,
+      "gen_start": 178,
+      "nes_resume": 261,
+      "gen_resume": 263,
+      "transition_ticks": {
+        "nes": 82,
+        "gen": 82
+      },
+      "compared_ticks": 107,
+      "failures": [],
+      "verdict": "PASS"
+    }
+  ],
+  "verdict": "PASS"
+}

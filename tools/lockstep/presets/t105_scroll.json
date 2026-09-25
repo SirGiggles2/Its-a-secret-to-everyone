@@ -1,0 +1,20 @@
+{
+  "name": "t105_scroll",
+  "file_name": "LINK",
+  "quest": 0,
+  "items": {},
+  "script": [
+    [
+      30,
+      ""
+    ],
+    [
+      205,
+      "U"
+    ],
+    [
+      10,
+      ""
+    ]
+  ]
+}
