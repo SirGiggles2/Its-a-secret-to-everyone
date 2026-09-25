@@ -1,0 +1,13 @@
+  slot info name = LINK                        OK
+  slot info active = 1                         OK
+  slot info hearts = $22/$FF                   OK
+  cart file A name = LINK                      OK
+  cart file A hearts $22/$FF, max bombs 8      OK
+  cart file A active 1, quest 0                OK
+  cart file A markers + checksum               OK
+  gameplay reached (GameMode $05)              OK
+  profile HeartValues $22 / MaxBombs 8         OK
+  profile sword $657 = 0                       OK
+  CurSaveSlot = 0                              OK
+profile: hearts=22 partial=FF maxbombs=08 sword=00 keys=00 bombs=00
+VERDICT: PASS 11/11

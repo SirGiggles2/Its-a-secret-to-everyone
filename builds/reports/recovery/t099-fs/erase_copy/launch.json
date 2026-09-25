@@ -1,0 +1,11 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY_claude_marker\\builds\\Debug.md",
+  "rom_sha256": "87f4ed815154bb032cb46d382066fd2c1fe349372a69ce72f07c2365c0a404dd",
+  "script": "tools\\debug\\probes\\probe_fs_erase_copy.lua",
+  "script_sha256": "9b29e26d4a7d9b0d0c25d346a2db0c88c867c8a4e77680c38c8e8cb09b50da81",
+  "symbols": {},
+  "exit_code": 0,
+  "collected": [
+    "fs_erase_copy_report.txt"
+  ]
+}

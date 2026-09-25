@@ -8,6 +8,7 @@
 #include "fs_input.h"
 #include "fs_options.h"
 #include "render_abi.h"
+#include "save_game.h"   /* T-099 register / erase / copy */
 
 /* Music driver hooks — proof ROM links music_stub.c (no-op);
  * main ROM links the real audio driver. */
@@ -23,6 +24,7 @@ extern const uint8_t  fs_bg_chr_full[];        /* 242 tiles × 32 bytes = 7744 b
 extern const uint8_t  fs_link_sprite_chr[];    /* 4 tiles × 32 bytes = 128 bytes */
 extern const uint8_t  fs_heart_cursor_chr[];   /* 1 tile  × 32 bytes =  32 bytes */
 extern const uint16_t fs_palettes[4][4];       /* 4 Genesis CRAM palettes × 4 colors */
+extern const unsigned char common_chr[];       /* data/chr/common.c (ROM-extracted) */
 
 
 /* fs_init: upload CHR data and all palettes once at boot.
@@ -65,6 +67,23 @@ static void fs_init(void) {
      *     tile 0 to all-transparent makes cleared cells render as the BG color. */
     render_vram_write_zero_tile(0x0000u);
 
+    /* 1b. T-099: NES CommonMiscPatterns = BG tiles $F2..$FF (full heart $F2,
+     *     etc.), which the captured FS block stops short of. common_chr tiles
+     *     224..237 are those 14 tiles, extracted from the supplied ROM
+     *     (verified byte-equal to RoomRom/out/prg_blocks CommonMiscPatterns). */
+    render_chr_upload((unsigned short)(0xF2u * 32u), common_chr + 224u * 32u,
+                      (unsigned short)(14u * 32u));
+
+    /* 1c. T-099: NES font glyphs the captured (Redux) FS block lacks or
+     *     moved, for names typed on the NES character board: '0' (tile 0 is
+     *     blanked above), $62 '-', $63, $2B. Source: ROM CommonBackground-
+     *     Patterns = common_chr tiles 112..223 (pixel-matched 2026-09-24:
+     *     only these codes differ from fs_bg_chr_full). fs_render remaps. */
+    render_chr_upload((unsigned short)(0x105u * 32u), common_chr + (112u + 0x00u) * 32u, 32u);
+    render_chr_upload((unsigned short)(0x106u * 32u), common_chr + (112u + 0x62u) * 32u, 32u);
+    render_chr_upload((unsigned short)(0x107u * 32u), common_chr + (112u + 0x63u) * 32u, 32u);
+    render_chr_upload((unsigned short)(0x108u * 32u), common_chr + (112u + 0x2Bu) * 32u, 32u);
+
     /* 2. Upload Link sprite CHR to VRAM tile 0x100 (above BG block, no collision). */
     render_chr_upload((unsigned short)(0x100u * 32u), fs_link_sprite_chr,
                       (unsigned short)(4u * 32u));
@@ -98,12 +117,101 @@ static void fs_init(void) {
 #define FS_ROW_PLAYERS  5u
 #define FS_ROW_OPTIONS  6u
 
+/* ---- T-099: register / erase / copy --------------------------------- */
+#define FS_ROW_COPY   3u
+#define FS_ROW_ERASE  4u
+#define SPACE_TILE 0x24u
+
+static uint8_t s_reg_slot;
+static uint8_t s_reg_name[8];
+static uint8_t s_reg_pos;
+static uint8_t s_reg_board;
+static uint8_t s_copy_src;
+
+static void register_redraw(void) {
+    fs_render_name_field(s_reg_slot, s_reg_name);
+    fs_render_board_cursor(s_reg_board);
+    fs_render_name_cursor(1u, (uint8_t)(9u + s_reg_pos),
+                          (uint16_t)(fs_slot_name_row(s_reg_slot) + 1u));
+}
+
+static void register_enter(uint8_t slot) {
+    uint8_t i;
+    s_reg_slot = slot;
+    for (i = 0u; i < 8u; ++i) s_reg_name[i] = SPACE_TILE;
+    s_reg_pos = 0u;
+    s_reg_board = 0u;
+    s_fs_phase = FS_REGISTER;
+    fs_render_register_board();
+    register_redraw();
+}
+
+static void register_step(uint8_t edge) {
+    if (edge & FS_BTN_START) {
+        /* NES: a non-blank name on an inactive slot becomes a new file;
+         * a blank name leaves the slot empty. */
+        (void)save_game_register(s_reg_slot, s_reg_name);
+        s_fs_cursor = s_reg_slot;
+        s_fs_phase = FS_LOAD;
+        return;
+    }
+    if (edge & FS_BTN_LEFT)  s_reg_board = (uint8_t)((s_reg_board + 43u) % 44u);
+    if (edge & FS_BTN_RIGHT) s_reg_board = (uint8_t)((s_reg_board + 1u) % 44u);
+    if (edge & FS_BTN_UP)    s_reg_board = (uint8_t)((s_reg_board + 33u) % 44u);
+    if (edge & FS_BTN_DOWN)  s_reg_board = (uint8_t)((s_reg_board + 11u) % 44u);
+    if (edge & FS_BTN_A) {                      /* ModeE_HandleAOrB: A writes */
+        s_reg_name[s_reg_pos] = fs_board_char(s_reg_board);
+        s_reg_pos = (uint8_t)((s_reg_pos + 1u) & 7u);
+    } else if (edge & FS_BTN_B) {               /* B only moves the cursor */
+        s_reg_pos = (uint8_t)((s_reg_pos + 1u) & 7u);
+    }
+    if (edge) register_redraw();
+}
+
+/* Slot pick for COPY source/destination and ERASE. */
+static void pick_step(uint8_t edge) {
+    if (edge & FS_BTN_B) {
+        s_fs_cursor = (s_fs_phase == FS_ERASE_PICK) ? FS_ROW_ERASE : FS_ROW_COPY;
+        s_fs_phase = FS_NAV;
+        fs_render_cursor(s_fs_cursor);
+        return;
+    }
+    if ((edge & FS_BTN_UP) && s_fs_cursor > 0u)   { s_fs_cursor--; fs_render_cursor(s_fs_cursor); }
+    if ((edge & FS_BTN_DOWN) && s_fs_cursor < 2u) { s_fs_cursor++; fs_render_cursor(s_fs_cursor); }
+    if (!(edge & (FS_BTN_A | FS_BTN_START))) return;
+    if (s_fs_phase == FS_ERASE_PICK) {
+        if (save_game_slot_active(s_fs_cursor)) {
+            save_game_erase(s_fs_cursor);
+            s_fs_phase = FS_LOAD;
+        }
+    } else if (s_fs_phase == FS_COPY_SRC) {
+        if (save_game_slot_active(s_fs_cursor)) {
+            s_copy_src = s_fs_cursor;
+            s_fs_phase = FS_COPY_DST;
+        }
+    } else if (s_fs_phase == FS_COPY_DST) {
+        if (s_fs_cursor != s_copy_src) {
+            (void)save_game_copy(s_copy_src, s_fs_cursor);
+            s_fs_phase = FS_LOAD;
+        }
+    }
+}
+
 static void fs_input_dispatch(uint8_t edge) {
     if (s_fs_phase == FS_OPTIONS) {
         fs_options_step(edge);
         return;
     }
+    if (s_fs_phase == FS_REGISTER) { register_step(edge); return; }
+    if (s_fs_phase == FS_COPY_SRC || s_fs_phase == FS_COPY_DST ||
+        s_fs_phase == FS_ERASE_PICK) { pick_step(edge); return; }
     if (s_fs_phase != FS_NAV) return;
+    if ((edge & FS_BTN_A) && (s_fs_cursor == FS_ROW_COPY || s_fs_cursor == FS_ROW_ERASE)) {
+        s_fs_phase = (s_fs_cursor == FS_ROW_COPY) ? FS_COPY_SRC : FS_ERASE_PICK;
+        s_fs_cursor = 0u;
+        fs_render_cursor(s_fs_cursor);
+        return;
+    }
     /* A on OPTIONS row -> enter submenu. */
     if (s_fs_cursor == FS_ROW_OPTIONS && (edge & FS_BTN_A)) {
         s_fs_phase = FS_OPTIONS;
@@ -144,7 +252,10 @@ static void fs_input_dispatch(uint8_t edge) {
      * markers-valid @NextSlot path without writing IsSaveSlotActive,
      * so Sub6 @FindActiveSlot exits on first iteration. */
     if (s_fs_cursor <= 2u && (edge & (FS_BTN_A | FS_BTN_START))) {
-        s_fs_phase = FS_HANDOFF;
+        /* T-099: an empty slot registers a name first (NES Mode $E);
+         * an occupied slot continues that file. */
+        if (save_game_slot_active(s_fs_cursor)) s_fs_phase = FS_HANDOFF;
+        else register_enter(s_fs_cursor);
     }
 }
 

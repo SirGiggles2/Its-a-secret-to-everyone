@@ -1,0 +1,19 @@
+probe_save_persistence — Thu Sep 24 19:05:01 2026
+work domain: M68K BUS   cart domain: SRAM
+gameplay ready at frame: 131
+GameMode after save poke: $05 (want $05)
+
+Items fingerprint (first 8 of 40): 03 10 02 01 02 01 01 02 
+SRAM slot0 pre-reset  (first 10): 03 10 02 01 02 01 01 02 01 01 
+SRAM slot0 post-reset (first 10): 03 10 02 01 02 01 01 02 01 01 
+
+  gameplay reached                           OK
+  Mode $0D returned to Play ($05)            OK
+  cart file A markers+checksum BEFORE reset  OK
+  cart SRAM Items match live BEFORE reset    OK
+  core rebooted                              OK
+  cart file A markers+checksum AFTER reset   OK
+  cart SRAM Items match AFTER reset          OK
+
+VERDICT: PASS — 7/7
+A save is only real if the two AFTER-reset checks pass.

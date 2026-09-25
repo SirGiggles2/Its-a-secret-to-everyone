@@ -29,7 +29,7 @@ unsigned short save_file_a_checksum(unsigned char slot)
     return sum;
 }
 
-static void store_markers_and_checksum(unsigned char slot)
+void save_file_a_commit(unsigned char slot)
 {
     unsigned short sum = save_file_a_checksum(slot);
     nes_ram[NES_FILEB_COMMITTED(slot)] = 0xFFu;
@@ -68,7 +68,7 @@ void save_file_a_format(unsigned char slot)
     RAM(NES_SLOTINFO_ACTIVE + slot) = 0u;
     RAM(NES_SLOTINFO_QUEST + slot) = 0u;
     RAM(NES_SLOTINFO_DEATHS + slot) = 0u;
-    store_markers_and_checksum(slot);
+    save_file_a_commit(slot);
 }
 
 void save_files_boot_validate(void)
@@ -149,6 +149,6 @@ unsigned char save_file_a_save(unsigned char slot)
      * file B committed. */
     RAM(NES_SLOTINFO_QUEST + slot) = nes_ram[NES_FILEA_QUEST(slot)];
     RAM(NES_SLOTINFO_DEATHS + slot) = nes_ram[NES_FILEA_DEATHS(slot)];
-    store_markers_and_checksum(slot);
+    save_file_a_commit(slot);
     return 1u;
 }

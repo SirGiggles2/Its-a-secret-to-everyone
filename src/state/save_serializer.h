@@ -65,6 +65,10 @@ extern "C" {
 /* CalculateFileAChecksum: 16-bit sum of name, items, flags, 4 singles. */
 unsigned short save_file_a_checksum(unsigned char slot);
 
+/* Mark file B committed, write markers and the checksum of file A as it
+ * stands (tail of FormatFileA / CopyFileBToFileA). */
+void save_file_a_commit(unsigned char slot);
+
 /* 1 when markers are $5A/$A5 and the stored checksum matches. */
 unsigned char save_file_a_valid(unsigned char slot);
 

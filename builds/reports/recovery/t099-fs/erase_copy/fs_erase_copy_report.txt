@@ -1,0 +1,11 @@
+  registered slot 0 active + valid             OK
+  copy: slot 1 active                          OK
+  copy: slot 1 name LINK (info + cart)         OK
+  copy: slot 1 items == slot 0 items           OK
+  copy: slot 1 file A valid                    OK
+  copy: slot 0 still valid                     OK
+  erase: slot 1 inactive (info + cart)         OK
+  erase: slot 1 formatted file valid           OK
+  erase: slot 1 name blank                     OK
+  erase: slot 0 untouched                      OK
+VERDICT: PASS 10/10

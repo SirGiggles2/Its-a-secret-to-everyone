@@ -19,7 +19,8 @@ typedef enum {
     FS_ERASE_PICK,
     FS_ERASE_CONFIRM,
     FS_OPTIONS,
-    FS_HANDOFF
+    FS_HANDOFF,
+    FS_REGISTER      /* T-099: NES Mode $E name entry for an empty slot */
 } fs_phase_t;
 
 #define FS_CURSOR_MAX 6u   /* v3: 7 positions (slot0..OPTIONS), index range 0..6 */

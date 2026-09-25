@@ -25,4 +25,25 @@ unsigned char save_game_load_slot(unsigned char slot);
  * the whole block to cart SRAM. Returns 1 on success. */
 unsigned char save_game_save_current(void);
 
+/* T-099 File Select operations. Each commits the save block to cart.
+ *
+ * Register (NES UpdateModeERegister): name[8] in NES tile codes. An
+ * inactive slot with a non-blank name becomes a new file: items zero
+ * except HeartValues $22, HeartPartial $FF, MaxBombs 8; quest 2 when the
+ * name starts with "ZELDA". Returns 1 if a file was created. */
+unsigned char save_game_register(unsigned char slot, const unsigned char *name);
+
+/* Elimination (NES DeleteSlot): FormatFileA + blank name in slot info. */
+void save_game_erase(unsigned char slot);
+
+/* COPY SAVE (custom File Select feature, not on the NES): copies file A of
+ * src over dst, including name. Returns 0 if src is inactive or src==dst. */
+unsigned char save_game_copy(unsigned char src, unsigned char dst);
+
+/* Slot info for display: name[8] tiles, hearts value/partial, deaths. */
+const volatile unsigned char *save_game_slot_name(unsigned char slot);
+unsigned char save_game_slot_hearts(unsigned char slot);
+unsigned char save_game_slot_heart_partial(unsigned char slot);
+unsigned char save_game_slot_deaths(unsigned char slot);
+
 #endif /* SAVE_GAME_H */

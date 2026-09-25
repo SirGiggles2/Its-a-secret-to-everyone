@@ -1,6 +1,7 @@
 /* src/fs_render.c — VDP primitives for native File Select. */
 #include "fs_render.h"
 #include "render_abi.h"
+#include "save_game.h"   /* T-099 slot names / hearts / deaths */
 #include <stdint.h>
 
 /* Generated assets. */
@@ -204,7 +205,9 @@ void fs_render_slot(uint8_t slot_idx) {
     /* size_link: H=2cells,V=2cells → 0x0500; link → next sprite in SAT chain.
      * Chain: cursor (entry 0) → slot 0 (1) → slot 1 (2) → slot 2 (3) → end.
      * Slot 2 (last) terminates with link=0; others link to entry+1. */
-    uint8_t next_link = (slot_idx == 2u) ? 0u : (uint8_t)(sat_entry + 1u);
+    /* Slot 2 links to entry 4, the name-entry cursor (hidden unless the
+     * register board is open; T-099). */
+    uint8_t next_link = (slot_idx == 2u) ? 4u : (uint8_t)(sat_entry + 1u);
     uint16_t size_link = (uint16_t)(0x0500u | next_link);
 
     /* Sprite entries: use slots 1, 2, 3 (slot 0 reserved for cursor). */
@@ -252,6 +255,160 @@ void fs_render_cursor(uint8_t row) {
 
 void fs_render_all_slots(void) {
     for (uint8_t i = 0; i < 3; i++) fs_render_slot(i);
+    fs_render_name_cursor(0u, 0u, 0u);
+    for (uint8_t i = 0; i < 3; i++) fs_render_slot_text(i);
+}
+
+/* ---------------------------------------------------------------------------
+ * T-099: slot line text, from the NES slot info (Names $638, SaveSlotHearts
+ * $650, DeathCounts $630) filled at title Start by save_game_boot().
+ *
+ * NES Mode1SlotLineTransferBuf (Z_02.asm:2108) + InitMode1_FillAndTransfer-
+ * SlotTiles: slot k line starts at PPU $2109 + $60*(k+1) (the offset loop
+ * runs CurSaveSlot+1 times): name 8 chars at row 11+3k col 9, $62 at col
+ * 17, hearts top row cols 18..25 (hearts 8..15) and $2132+$60*(k+1) =
+ * row 12+3k cols 18..25 (hearts 0..7). Death count (Mode1DeathCounts-
+ * TransferBuf) at row 12+3k col 9, 3 chars. Genesis rows = NES - 3
+ * (FS_ROW_SHIFT). Palettes follow the static layout: text pal 0, LIFE
+ * (hearts) pal 1.
+ * ---------------------------------------------------------------------------
+ */
+#define SLOT_NAME_COL   9u
+#define SLOT_DASH_COL  17u
+#define SLOT_HEART_COL 18u
+#define TILE_DASH      0x2Fu   /* the FS layout's own dash glyph ($2F in this CHR) */
+#define PAL_TEXT        0u
+#define PAL_LIFE        1u
+
+static void render_side_only_row(unsigned short row);
+static uint16_t slot_row(uint8_t slot) { return (uint16_t)(8u + 3u * slot); }
+
+static void put_cell(uint16_t row, uint16_t col, uint16_t tile, uint8_t pal)
+{
+    render_vram_open_write((unsigned short)(PLANE_A_BASE + row * 64u + col * 2u));
+    render_vram_write_word((uint16_t)(((uint16_t)pal & 3u) << 13) | tile);
+}
+
+/* NES font code -> FS VRAM tile. The FS BG block is a Redux capture whose
+ * glyphs match the NES except these (fs_main.c uploads the NES ones). */
+static uint16_t glyph(uint8_t nes_code)
+{
+    switch (nes_code) {
+    case 0x00: return 0x105u;
+    case 0x62: return 0x106u;
+    case 0x63: return 0x107u;
+    case 0x2B: return 0x108u;
+    default:   return nes_code;
+    }
+}
+
+/* NES FormatHeartsInTextBuf tile rule (twin of hud_heart_tile in
+ * src/game/hud; duplicated here to keep src/frontend free of src/game). */
+static uint8_t heart_tile(uint8_t hearts, uint8_t partial, uint8_t index)
+{
+    uint8_t whole = (uint8_t)(hearts & 15u);
+    if (!hearts || index > (hearts >> 4) || index >= 16u) return 0x24u;
+    if (index < whole) return 0xF2u;
+    if (index > whole || !partial) return 0x66u;
+    return partial >= 0x80u ? 0xF2u : 0x65u;
+}
+
+void fs_render_slot_text(uint8_t slot)
+{
+    const volatile unsigned char *name = save_game_slot_name(slot);
+    uint8_t active = save_game_slot_active(slot);
+    uint8_t hv = save_game_slot_hearts(slot);
+    uint8_t hp = save_game_slot_heart_partial(slot);
+    uint16_t row = slot_row(slot);
+    uint8_t i;
+
+    for (i = 0u; i < 8u; ++i)
+        put_cell(row, (uint16_t)(SLOT_NAME_COL + i), active ? glyph(name[i]) : 0x24u, PAL_TEXT);
+    put_cell(row, SLOT_DASH_COL, TILE_DASH, PAL_TEXT);
+    for (i = 0u; i < 8u; ++i) {
+        put_cell(row, (uint16_t)(SLOT_HEART_COL + i),
+                 active ? heart_tile(hv, hp, (uint8_t)(8u + i)) : 0x24u, PAL_LIFE);
+        put_cell((uint16_t)(row + 1u), (uint16_t)(SLOT_HEART_COL + i),
+                 active ? heart_tile(hv, hp, i) : 0x24u, PAL_LIFE);
+    }
+    /* FormatDecimalByte: 3 digits, leading spaces; an inactive slot shows
+     * blanks, an active one at least "0". */
+    {
+        uint8_t d = save_game_slot_deaths(slot);
+        uint8_t h = (uint8_t)(d / 100u), t = (uint8_t)((d / 10u) % 10u), o = (uint8_t)(d % 10u);
+        put_cell((uint16_t)(row + 1u), SLOT_NAME_COL,       (active && h) ? glyph(h) : 0x24u, PAL_TEXT);
+        put_cell((uint16_t)(row + 1u), SLOT_NAME_COL + 1u,  (active && (h || t)) ? glyph(t) : 0x24u, PAL_TEXT);
+        put_cell((uint16_t)(row + 1u), SLOT_NAME_COL + 2u,  active ? glyph(o) : 0x24u, PAL_TEXT);
+    }
+}
+
+/* Name-entry cursor: SAT entry 4, heart tile under the current name
+ * character (NES ModeEandFCursorSprites uses the same $F3 heart). */
+void fs_render_name_cursor(uint8_t show, uint8_t col, uint16_t row)
+{
+    uint16_t tile_attr = (uint16_t)((uint16_t)PAL_BG_CURSOR << 13) | (uint16_t)HEART_CHR_BASE;
+    if (!show) { sat_write(4u, 0u, 0u, tile_attr, 0u); return; }
+    sat_write(4u, (uint16_t)(row * 8u + 128u), 0x0000u, tile_attr, (uint16_t)(col * 8u + 128u));
+}
+
+/* ---------------------------------------------------------------------------
+ * T-099 name registration board (NES Mode $E, ModeE_CharMap Z_02.asm:1351):
+ * 44 characters, 11 per row, 4 rows. Drawn inside the File Select border in
+ * place of the COPY/ERASE/PLAYERS/OPTIONS rows while registering.
+ * ---------------------------------------------------------------------------
+ */
+static const uint8_t k_char_map[44] = {
+    0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14,
+    0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
+    0x20, 0x21, 0x22, 0x23, 0x62, 0x63, 0x28, 0x29, 0x2A, 0x2B, 0x2C,
+    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x24
+};
+#define BOARD_TITLE_ROW 17u
+#define BOARD_ROW0      19u
+#define BOARD_COL0       6u
+static const uint8_t k_register_title[18] = {   /* REGISTER YOUR NAME */
+    0x1B, 0x0E, 0x10, 0x12, 0x1C, 0x1D, 0x0E, 0x1B, 0x24,
+    0x22, 0x18, 0x1E, 0x1B, 0x24, 0x17, 0x0A, 0x16, 0x0E
+};
+
+uint8_t fs_board_char(uint8_t idx) { return k_char_map[idx % 44u]; }
+
+void fs_board_cell(uint8_t idx, uint8_t *col, uint16_t *row)
+{
+    *col = (uint8_t)(BOARD_COL0 + 2u * (idx % 11u));
+    *row = (uint16_t)(BOARD_ROW0 + 2u * (idx / 11u));
+}
+
+void fs_render_register_board(void)
+{
+    uint16_t r;
+    uint8_t i;
+    for (r = 16u; r <= 25u; ++r) render_side_only_row(r);
+    for (i = 0u; i < 18u; ++i) put_cell(BOARD_TITLE_ROW, (uint16_t)(7u + i), k_register_title[i], PAL_TEXT);
+    for (i = 0u; i < 44u; ++i) {
+        uint8_t c; uint16_t row;
+        fs_board_cell(i, &c, &row);
+        put_cell(row, c, glyph(k_char_map[i]), PAL_TEXT);
+    }
+}
+
+/* Name field while typing: the chosen slot's name row, from a buffer. */
+void fs_render_name_field(uint8_t slot, const uint8_t *name)
+{
+    uint8_t i;
+    for (i = 0u; i < 8u; ++i)
+        put_cell(slot_row(slot), (uint16_t)(SLOT_NAME_COL + i), glyph(name[i]), PAL_TEXT);
+}
+
+uint16_t fs_slot_name_row(uint8_t slot) { return slot_row(slot); }
+
+/* Board cursor: the heart sprite (SAT entry 0) left of the character. */
+void fs_render_board_cursor(uint8_t idx)
+{
+    uint8_t c; uint16_t row;
+    uint16_t tile_attr = (uint16_t)((uint16_t)PAL_BG_CURSOR << 13) | (uint16_t)HEART_CHR_BASE;
+    fs_board_cell(idx, &c, &row);
+    sat_write(0u, (uint16_t)(row * 8u + 128u), 0x0001u, tile_attr, (uint16_t)((c - 1u) * 8u + 128u));
 }
 
 /* ---------------------------------------------------------------------------
