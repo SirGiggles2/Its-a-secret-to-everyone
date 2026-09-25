@@ -266,8 +266,12 @@ static void clear_hud_b(void)
      * Those rows are live bottom-room rows after an upward vertical scroll. */
 }
 
+/* T-118: set by any window rebuild; see the HUD draw cache below. */
+static unsigned char s_hud_force = 1u;
+
 static void clear_hud_window(void)
 {
+    s_hud_force = 1u;
     render_clear_window_rect(0, (unsigned short)HUD_WIN_ROW_BASE,
                               ROOMROM_ROOM_COLS, ROOMROM_HUD_ROWS);
 }
@@ -344,10 +348,23 @@ static void apply_transfer_macro(const unsigned char *macro)
  *
  * NES is byte-wide (0..255) for each count. RoomRom widens rupees to
  * 16-bit; clamp display to 999 so the 3-digit window stays legal. */
+/* T-118: HUD draw cache. A full HUD draw sets s_hud_force; incremental
+ * refreshes (every inventory/heart change during play) then write only the
+ * count cells and heart tiles whose value changed. Each VDP tile write here
+ * costs ~2 scanlines of 68000 time, and the old full refresh (counts +
+ * 16 heart tiles) cost ~60 lines, dropping frames in busy rooms. */
+static unsigned short s_count_drawn[4];   /* HUD rows 2..5 at col 12 */
+static unsigned char s_heart_drawn[16];
+
 static void draw_count_cell(unsigned short value, unsigned char col,
                             unsigned char row, unsigned char pal)
 {
     unsigned short v = (value > 999u) ? 999u : value;
+    if (col == 12u && row >= 2u && row <= 5u) {
+        unsigned short key = (unsigned short)(v | ((unsigned short)pal << 12));
+        if (!s_hud_force && s_count_drawn[row - 2u] == key) return;
+        s_count_drawn[row - 2u] = key;
+    }
     unsigned char hundreds = (unsigned char)(v / 100u);
     unsigned char tens     = (unsigned char)((v / 10u) % 10u);
     unsigned char ones     = (unsigned char)(v % 10u);
@@ -391,6 +408,8 @@ static void draw_hearts_row(unsigned char col, unsigned char row,
         unsigned char tile = hud_heart_tile(RAM(0x066Fu), RAM(0x0670u), i);
         if (hud_id == ROOMROM_MAP_REDUX)
             tile = hud_heart_container_anim_override_tile(i, tile);
+        if (!s_hud_force && s_heart_drawn[i] == tile) continue;
+        s_heart_drawn[i] = tile;
         if (hud_id == ROOMROM_MAP_REDUX) {
             draw_hud_tile_b(x, y, tile == HUD_TILE_SPACE ? HUD_TILE_SPACE :
                             TILE_REDUX_HEART_OUTLINE, 0);
@@ -417,9 +436,13 @@ static void draw_status_counts_original(void)
 {
     draw_count_cell(RAM(0x066Du),                12u, 2u, 0u);
     if (RAM(0x0664u)) {
-        draw_hud_tile(12u, 4u, TILE_LOW_X, 0u);
-        draw_hud_tile(13u, 4u, 0x0Au, 0u);
-        draw_hud_tile(14u, 4u, HUD_TILE_SPACE, 0u);
+        /* Magic key "XA": cache it as an out-of-range count value. */
+        if (s_hud_force || s_count_drawn[2] != 0x0FFFu) {
+            s_count_drawn[2] = 0x0FFFu;
+            draw_hud_tile(12u, 4u, TILE_LOW_X, 0u);
+            draw_hud_tile(13u, 4u, 0x0Au, 0u);
+            draw_hud_tile(14u, 4u, HUD_TILE_SPACE, 0u);
+        }
     } else {
         draw_count_cell((unsigned short)RAM(0x066Eu), 12u, 4u, 0u);
     }
@@ -535,10 +558,18 @@ static unsigned char native_hud_changed(void)
     return 0u;
 }
 
+static void draw_hud_dynamic_parts(unsigned char hud_id);
+
 static void draw_hud_dynamic(unsigned char hud_id)
 {
     unsigned char i;
     for (i = 0u; i < 8u; ++i) s_native_hud_snapshot[i] = RAM(s_native_hud_cells[i]);
+    draw_hud_dynamic_parts(hud_id);
+    s_hud_force = 0u;
+}
+
+static void draw_hud_dynamic_parts(unsigned char hud_id)
+{
     if (hud_id == ROOMROM_MAP_REDUX) {
         draw_status_counts_redux();
         /* Redux heart row anchored at col 4 of HUD row 5 (top of display). */
@@ -563,6 +594,7 @@ void roomrom_hud_draw(unsigned char hud_id, unsigned char room_id,
     clear_hud_b();
     apply_transfer_macro(macro);
     s_dungeon_map_owned = 0xFFu;
+    s_hud_force = 1u;               /* planes were rebuilt: redraw all */
     s_hud_id_cached = hud_id;
     s_last_room_id_cached = room_id;
     s_last_is_uw_cached = is_underworld;
