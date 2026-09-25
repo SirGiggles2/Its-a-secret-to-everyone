@@ -77,13 +77,17 @@ def collect_uw_per_tile_subpals(rooms):
         shift  = (((nt_row >> 1) & 1) << 2) | (((nt_col >> 1) & 1) << 1)
         sub_pal = (attr[at_idx] >> shift) & 0x03
 
-    UW room nt is 22 cols × 32 rows. Cell index = row * 32 + col.
+    UW room nt is 22 rows x 32 cols (RoomRom/src/uw_room_blob.h
+    ROOMROM_UW_BLOB_ROWS/COLS). Cell index = row * 32 + col.
     Cells render starting at nt_row = row + 8 (HUD occupies 0..7).
+    T-114: the loops were transposed (32 rows x 22 cols), so columns
+    22..31 — the east third of every room, east doors included — were
+    never collected and their (tile, sub-pal) combos drew blank.
     """
     out = defaultdict(set)
     for room_idx, nt, attr in rooms:
-        for row in range(32):
-            for col in range(22):
+        for row in range(22):
+            for col in range(32):
                 nt_offset = row * 32 + col
                 if nt_offset >= len(nt):
                     continue

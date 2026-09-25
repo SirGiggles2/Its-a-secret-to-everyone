@@ -481,10 +481,34 @@ static void write_tile_raw_at(unsigned char col, unsigned char row,
                                      ROOMROM_ROOM_FIRST_ROW)), word);
 }
 
+/* T-114: plane placement of the live (last rendered) room. Rooms are
+ * painted into scroll slots (plane col offset per metatile column, row
+ * base) by roomrom_uw_room_render_fill_one_col_at; every later single-tile
+ * edit (door patches, dark fill) must land in that same slot. A full
+ * fill_plane_a resets it to the identity slot. */
+static unsigned char s_live_dst_col[16] = {
+    0u, 1u, 2u, 3u, 4u, 5u, 6u, 7u, 8u, 9u, 10u, 11u, 12u, 13u, 14u, 15u
+};
+static unsigned char s_live_row_base = 0u;
+static unsigned char s_live_plane = 0u;
+
+static void live_slot_identity(void)
+{
+    unsigned char c;
+    for (c = 0u; c < 16u; ++c) s_live_dst_col[c] = c;
+    s_live_row_base = 0u;
+    s_live_plane = s_target_plane;
+}
+
 static void write_tile_raw(unsigned char col, unsigned char row,
                            unsigned char raw_tile, unsigned char pal)
 {
-    write_tile_raw_at(col, row, 0, raw_tile, pal);
+    unsigned char saved = s_target_plane;
+    unsigned char dst = (unsigned char)((s_live_dst_col[(col >> 1) & 0x0Fu] << 1) |
+                                        (col & 1u));
+    s_target_plane = s_live_plane;
+    write_tile_raw_at(dst, row, s_live_row_base, raw_tile, pal);
+    s_target_plane = saved;
 }
 
 static unsigned char digit_tile(unsigned char d)
@@ -617,6 +641,7 @@ static void draw_placeholder(unsigned char room_id)
 void roomrom_uw_room_render_fill_plane_a(unsigned char room_id)
 {
     int idx = find_blob_entry(s_uw_level, room_id);
+    live_slot_identity();
     if (idx >= 0) {
         blit_blob(idx);
     } else {
@@ -632,14 +657,21 @@ void roomrom_uw_room_render_fill_plane_a(unsigned char room_id)
 void roomrom_uw_room_render_fill_plane_a_dark(void)
 {
     unsigned char col, row;
+    unsigned char saved = s_target_plane;
     s_cur_attr = (const unsigned char *)0;
+    s_target_plane = s_live_plane;
     for (row = 0; row < ROOMROM_ROOM_ROWS; row++) {
         for (col = 0; col < ROOMROM_ROOM_COLS; col++) {
-            plane_write(col,
-                (unsigned short)(row + ROOMROM_ROOM_FIRST_ROW),
+            /* T-114: the live room's slot, not plane row/col 0. */
+            unsigned char dst = (unsigned char)((s_live_dst_col[(col >> 1) & 0x0Fu] << 1) |
+                                                (col & 1u));
+            plane_write(dst,
+                wrapped_plane_row((unsigned short)(s_live_row_base + row +
+                                                   ROOMROM_ROOM_FIRST_ROW)),
                 0x0000u);
         }
     }
+    s_target_plane = saved;
 }
 
 void roomrom_uw_room_render_fill_one_col(unsigned char room_id,
@@ -657,6 +689,9 @@ void roomrom_uw_room_render_fill_one_col_at(unsigned char room_id,
     unsigned char src = (unsigned char)(src_col & 0x0Fu);
     unsigned char dst = (unsigned char)(dst_col & 0x1Fu);
     int idx = find_blob_entry(s_uw_level, room_id);
+    s_live_dst_col[src] = dst;
+    s_live_row_base = dst_row_base;
+    s_live_plane = s_target_plane;
     if (src == 0u) {
         door_priority_cache_begin(dst, dst_row_base);
     }

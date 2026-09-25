@@ -75,7 +75,7 @@ Status: `TODO` · `ACTIVE` · `BLOCKED` · `REVIEW` · `DONE`. Plan ref = task I
 | T-111 | UW dark rooms: NES darkens by palette (FadeCycle/AnimateWorldFading) and the candle brightens via UpdateCandle/CandleState; Genesis darkens the plane (`fill_plane_a_dark`) and main.c relights instantly on any candle press (even when WieldCandle refuses) | TODO | | Lockstep in a dark UW room: PALRAM-vs-CRAM per frame through candle use |
 | T-112 | Rod / magic shot is Genesis-only (3 px/frame, private state, never slot `$0E`); NES UpdateSwordShotOrMagicShot + book-of-magic fire (WieldCandle with UsedCandle bypass, Z_07:3505) not ported | TODO | | Lockstep: slot `$0E` + fire slot cells equal vs NES |
 | T-113 | Link shove distance (+4 px): Genesis Link keeps grid offset / pos frac / q-speed in `RoomRom/src/main.c` statics (`s_link_grid_offset`…) and never publishes NES `$394/$3A8/$3BC` for slot 0. Drained Obj_Shove sees grid offset 0 and runs EnsureObjectAligned (+4 snap) before shoving (lockstep `t110_fire` f77-78: NES 7A→7E, GEN 79→81). Same missing mirror disables CheckTileObjectsBlocking. Fix in main.c Link movement (blocked on T-105 WIP) | TODO | | Lockstep `t110_fire`: Link Y equal through shove |
-| T-114 | Verify UW bombable wall (bomb.c `bomb_check_wall`) vs NES. Needs both consoles in the same UW room: blocked by T-105 route divergence / no NES UW staging | TODO | | Lockstep in L1 bombable-wall room: door opened bit + tiles vs NES |
+| T-114 | Verify UW bombable wall (bomb.c `bomb_check_wall`) vs NES. Needs both consoles in the same UW room: blocked by T-105 route divergence / no NES UW staging | DONE | Claude | Lockstep in L1 bombable-wall room: door opened bit + tiles vs NES |
 | T-115 | OW nametable sub-palette: `ow_render.c` forces sub-pal 2 for every OW room (2026-05-23 assumption from one probe); NES room $79 uses sub-pal 3 (brown). Genesis draws it green | DONE | Claude | `verify_plane.py t050_rock_push`: tile identity 704/704, sub-palette 0/704 → must be 704/704 exact in $76/$78/$79 + a sweep |
 
 ### S0c — Native game-mode spine (finish plan Phase 2)
@@ -131,6 +131,9 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 | T-080 | Builder: clean-staging build from user ROM, no live captures, drag-and-drop shell, reproducibility | P10 | TODO |
 
 ## Handoff log (newest first)
+
+**2026-09-25 · Claude** — T-114 done: L1 $53 bombed wall 704/704 vs NES. Fixed UW single-tile writes (slot mapping), ported
+LayOutDoors door faces, fixed transposed UW atlas collector, published $EE. Evidence `t114-uw-wall/`.
 
 **2026-09-25 · Claude** — T-115 done: OW rooms use NES outer/inner sub-palettes (LevelBlockAttrsA/B & 3); 93/128 rooms
 were wrong. BG atlas +18 secret-square combos (637->655, SPR base 656). Evidence `t115-ow-subpal/`.

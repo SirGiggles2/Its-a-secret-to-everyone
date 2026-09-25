@@ -10,6 +10,7 @@
 
 #include "door_state.h"
 #include "uw_render.h"  /* Phase 12.2 promoted */
+#include "platform_abi.h"
 
 extern const unsigned char rooms_dungeons[];
 
@@ -25,28 +26,13 @@ static unsigned char s_false_timer;                /* $18..0 countdown     */
 static unsigned char s_cur_level;                  /* 1-based, for persist */
 static unsigned char s_cur_room_id;
 
-/* -------------------------------------------------------------------------
- * Tile patch table: 4 tiles to overwrite per direction when door opens.
- * (blob_col, blob_row, open_tile_id)
- * Derived from NES CIRAM blob NT analysis of L1Q1 rooms with all door types.
- *
- * NES open-threshold tile IDs (< $78 → walkable):
- *   $24 = blank floor   $74 = H-threshold TL   $75 = H-threshold TR
- *   $76 = H-threshold BL  $77 = H-threshold BR
- * -------------------------------------------------------------------------*/
-static const unsigned char s_open_patches[DOOR_DIR_COUNT][4][3] = {
-    /* DOOR_DIR_E (0): right wall, rows 10-11, cols 28-29 */
-    {{28u, 10u, 0x74u}, {29u, 10u, 0x24u}, {28u, 11u, 0x75u}, {29u, 11u, 0x24u}},
-    /* DOOR_DIR_W (1): left wall, rows 10-11, cols 2-3 */
-    {{2u,  10u, 0x24u}, {3u,  10u, 0x76u}, {2u,  11u, 0x24u}, {3u,  11u, 0x77u}},
-    /* DOOR_DIR_S (2): bottom wall, rows 18-19, cols 15-16 */
-    {{15u, 18u, 0x76u}, {16u, 18u, 0x74u}, {15u, 19u, 0x24u}, {16u, 19u, 0x24u}},
-    /* DOOR_DIR_N (3): top wall, rows 2-3, cols 15-16 */
-    {{15u, 2u,  0x24u}, {16u, 2u,  0x24u}, {15u, 3u,  0x77u}, {16u, 3u,  0x75u}},
-};
+static void layout_door(unsigned char dir);
+static void publish_cur_opened_doors(void);
+
+/* Door faces: see layout_door (NES LayOutDoors port, T-114). */
 
 /* Legacy metatile diagnostics per direction. Real Link collision uses the
- * exact 8px door tiles in s_open_patches below, plus doorway-axis bypass in
+ * exact 8px door-face tiles (layout_door), plus doorway-axis bypass in
  * main.c to match NES DoorwayDir behavior. */
 static const unsigned char s_walk_mt_col[DOOR_DIR_COUNT]  = {14u, 1u, 8u, 8u};
 static const unsigned char s_walk_mt_row[DOOR_DIR_COUNT]  = {5u,  5u, 9u, 1u};
@@ -118,16 +104,17 @@ void uw_door_state_room_init(unsigned char level,
              * NES Z1 blob may not pre-bake all OPEN door tiles; safer
              * to always patch. */
             s_cur_opened |= bit;
-            uw_door_state_patch_open_tiles(dir);
         } else if ((t == DOOR_TYPE_KEY || t == DOOR_TYPE_KEY2 ||
                     t == DOOR_TYPE_BOMBABLE) && (persist_mask & bit)) {
             s_cur_opened |= bit;
-            /* Patch plane tiles — blob has locked/bombed art for these. */
-            uw_door_state_patch_open_tiles(dir);
         }
         /* WALL/SHUTTER/FALSE start closed; SHUTTER deferred to Phase 6. */
     }
 
+    /* T-114: NES LayOutDoors lays out every true door face (closed ones
+     * included), not only the opened ones patched above. */
+    for (dir = 0u; dir < DOOR_DIR_COUNT; dir++) layout_door(dir);
+    publish_cur_opened_doors();
     /* Override walkability based on current opened state. */
     uw_door_state_apply_walkability();
 }
@@ -232,6 +219,7 @@ void uw_door_state_open_by_mask(unsigned char dir_mask)
         any_new = 1u;
     }
     if (any_new) {
+        publish_cur_opened_doors();
         uw_door_state_apply_walkability();
         /* NES Z_05.asm:5222-5223 LDA #$04 / JSR PlaySample = door sfx
          * (DMC sample 3 in our 1-based mapping; bit 2 in NES bitmap). */
@@ -283,20 +271,106 @@ void uw_door_state_apply_walkability(void)
     }
 }
 
+/* T-114: NES LayOutDoors (Z_05.asm) door faces.
+ *
+ * Face sets per direction (DoorFaceTilesE/W/S/N, 5 x 12 tiles):
+ *   1 open / opened key / opened shutter   2 locked (key, key 2)
+ *   3 shutter closed   4 bombable (looks like wall)   5 bombed hole
+ * Type -> face (DT DFC DFO): 0 1 1, 4 4 5, 5 2 1, 6 2 1, 7 3 1; walls
+ * (1..3) keep the captured wall art. Cells from PlayAreaDoorFaceAddrs
+ * ($67A1 E col 28 row 9, $654F W col 1 row 9, $6676 S col 14 row 18,
+ * $6665 N col 14 row 1) in the LayOutDoors copy order: E/W 3 cols x 2
+ * rows per half (second half 2 rows lower), N/S 2 cols x 3 rows per half
+ * (second half 2 cols right). Indexed by DOOR_DIR_E/W/S/N. */
+static const unsigned char k_door_face_tiles[DOOR_DIR_COUNT][60] = {
+    { 0x88u, 0x74u, 0x8Au, 0x24u, 0x87u, 0x87u, 0x75u, 0x89u, 0x24u, 0x8Bu, 0x87u, 0x87u,
+      0x88u, 0xA4u, 0x8Au, 0xA6u, 0x87u, 0x87u, 0xA5u, 0x89u, 0xA7u, 0x8Bu, 0x87u, 0x87u,
+      0x88u, 0xACu, 0x8Au, 0xAEu, 0x87u, 0x87u, 0xADu, 0x89u, 0xAFu, 0x8Bu, 0x87u, 0x87u,
+      0xDFu, 0xDFu, 0xDFu, 0xDFu, 0xF5u, 0xF5u, 0xDFu, 0xDFu, 0xDFu, 0xDFu, 0xF5u, 0xF5u,
+      0xDFu, 0x24u, 0xDFu, 0x92u, 0xF5u, 0xF5u, 0x24u, 0xDFu, 0x93u, 0xDFu, 0xF5u, 0xF5u },
+    { 0x82u, 0x82u, 0x83u, 0x24u, 0x85u, 0x76u, 0x82u, 0x82u, 0x24u, 0x84u, 0x77u, 0x86u,
+      0x82u, 0x82u, 0x83u, 0xA0u, 0x85u, 0xA2u, 0x82u, 0x82u, 0xA1u, 0x84u, 0xA3u, 0x86u,
+      0x82u, 0x82u, 0x83u, 0xACu, 0x85u, 0xAEu, 0x82u, 0x82u, 0xADu, 0x84u, 0xAFu, 0x86u,
+      0xF5u, 0xF5u, 0xDEu, 0xDEu, 0xDEu, 0xDEu, 0xF5u, 0xF5u, 0xDEu, 0xDEu, 0xDEu, 0xDEu,
+      0xF5u, 0xF5u, 0xDEu, 0x90u, 0xDEu, 0x24u, 0xF5u, 0xF5u, 0x91u, 0xDEu, 0x24u, 0xDEu },
+    { 0x7Eu, 0x7Fu, 0x7Du, 0x76u, 0x24u, 0x7Du, 0x74u, 0x24u, 0x7Du, 0x80u, 0x81u, 0x7Du,
+      0x7Eu, 0x7Fu, 0x7Du, 0x9Cu, 0x9Du, 0x7Du, 0x9Eu, 0x9Fu, 0x7Du, 0x80u, 0x81u, 0x7Du,
+      0x7Eu, 0x7Fu, 0x7Du, 0xA8u, 0xA9u, 0x7Du, 0xAAu, 0xABu, 0x7Du, 0x80u, 0x81u, 0x7Du,
+      0xDDu, 0xDDu, 0xF5u, 0xDDu, 0xDDu, 0xF5u, 0xDDu, 0xDDu, 0xF5u, 0xDDu, 0xDDu, 0xF5u,
+      0xDDu, 0xDDu, 0xF5u, 0x24u, 0x8Eu, 0xF5u, 0x24u, 0x8Fu, 0xF5u, 0xDDu, 0xDDu, 0xF5u },
+    { 0x78u, 0x79u, 0x7Au, 0x78u, 0x24u, 0x77u, 0x78u, 0x24u, 0x75u, 0x78u, 0x7Bu, 0x7Cu,
+      0x78u, 0x79u, 0x7Au, 0x78u, 0x98u, 0x99u, 0x78u, 0x9Au, 0x9Bu, 0x78u, 0x7Bu, 0x7Cu,
+      0x78u, 0x79u, 0x7Au, 0x78u, 0xA8u, 0xA9u, 0x78u, 0xAAu, 0xABu, 0x78u, 0x7Bu, 0x7Cu,
+      0xF5u, 0xDCu, 0xDCu, 0xF5u, 0xDCu, 0xDCu, 0xF5u, 0xDCu, 0xDCu, 0xF5u, 0xDCu, 0xDCu,
+      0xF5u, 0xDCu, 0xDCu, 0xF5u, 0x8Cu, 0x24u, 0xF5u, 0x8Du, 0x24u, 0xF5u, 0xDCu, 0xDCu },
+};
+static const unsigned char k_door_face_origin[DOOR_DIR_COUNT][2] = {
+    { 28u, 9u }, { 1u, 9u }, { 14u, 18u }, { 14u, 1u }
+};
+
+/* Face index 1..5 for the door's type and opened state; 0 = keep wall. */
+static unsigned char door_face_index(unsigned char dir)
+{
+    unsigned char t = s_door_types[dir];
+    unsigned char opened = (s_cur_opened & DOOR_DIR_BIT(dir)) ? 1u : 0u;
+    switch (t) {
+    case DOOR_TYPE_OPEN:     return 1u;
+    case DOOR_TYPE_BOMBABLE: return opened ? 5u : 4u;
+    case DOOR_TYPE_KEY:
+    case DOOR_TYPE_KEY2:     return opened ? 1u : 2u;
+    case DOOR_TYPE_SHUTTER:  return opened ? 1u : 3u;
+    default:                 return 0u;
+    }
+}
+
+static void layout_door(unsigned char dir)
+{
+    unsigned char face = door_face_index(dir);
+    const unsigned char *src;
+    unsigned char half, c, r, k;
+    if (face == 0u) return;
+    src = &k_door_face_tiles[dir][(unsigned short)(face - 1u) * 12u];
+    k = 0u;
+    for (half = 0u; half < 2u; ++half) {
+        unsigned char cols = (dir == DOOR_DIR_E || dir == DOOR_DIR_W) ? 3u : 2u;
+        unsigned char rows = (dir == DOOR_DIR_E || dir == DOOR_DIR_W) ? 2u : 3u;
+        for (c = 0u; c < cols; ++c) {
+            for (r = 0u; r < rows; ++r) {
+                unsigned char col = k_door_face_origin[dir][0];
+                unsigned char row = k_door_face_origin[dir][1];
+                unsigned char pal;
+                if (dir == DOOR_DIR_E || dir == DOOR_DIR_W) {
+                    col = (unsigned char)(col + c);
+                    row = (unsigned char)(row + 2u * half + r);
+                } else {
+                    col = (unsigned char)(col + 2u * half + c);
+                    row = (unsigned char)(row + r);
+                }
+                pal = roomrom_uw_room_render_palette_at(col, (unsigned char)(row + 8u));
+                roomrom_uw_room_render_write_tile(col, row, src[k], pal);
+                ++k;
+            }
+        }
+    }
+}
+
+/* CurOpenedDoors ($EE) as the NES keeps it: only true doors (bombable,
+ * key, key 2, shutter) keep their bit (LayOutDoors clears the rest). */
+static void publish_cur_opened_doors(void)
+{
+    unsigned char dir, mask = 0u;
+    for (dir = 0u; dir < DOOR_DIR_COUNT; dir++) {
+        unsigned char t = s_door_types[dir];
+        if (t >= DOOR_TYPE_BOMBABLE && (s_cur_opened & DOOR_DIR_BIT(dir)))
+            mask |= DOOR_DIR_BIT(dir);
+    }
+    nes_ram[0x00EEu] = mask;
+}
+
 void uw_door_state_patch_open_tiles(unsigned char dir)
 {
-    unsigned char i;
     if (dir >= DOOR_DIR_COUNT) return;
-
-    for (i = 0u; i < 4u; i++) {
-        unsigned char col     = s_open_patches[dir][i][0];
-        unsigned char row     = s_open_patches[dir][i][1];
-        unsigned char tile_id = s_open_patches[dir][i][2];
-        /* NT row for AT lookup = blob row + 8 HUD rows. */
-        unsigned char nt_row  = (unsigned char)(row + 8u);
-        unsigned char pal     = roomrom_uw_room_render_palette_at(col, nt_row);
-        roomrom_uw_room_render_write_tile(col, row, tile_id, pal);
-    }
+    layout_door(dir);
 }
 
 unsigned char uw_door_state_has_shutters(void)
