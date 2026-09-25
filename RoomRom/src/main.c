@@ -705,6 +705,96 @@ static void link_nes_modify_dir_on_grid_line(link_dir_t input_dir)
     s_link_grid_offset = (signed char)((off < 0) ? (8 + off) : (-8 + off));
 }
 
+
+/* T-122: NES direction bits (R 1, L 2, D 4, U 8) <-> link_dir_t. */
+static unsigned char link_nes_bit_of(link_dir_t d)
+{
+    switch (d) {
+    case LINK_DIR_RIGHT: return 0x01u;
+    case LINK_DIR_LEFT:  return 0x02u;
+    case LINK_DIR_DOWN:  return 0x04u;
+    case LINK_DIR_UP:    return 0x08u;
+    default:             return 0u;
+    }
+}
+
+static link_dir_t link_dir_of_nes_bit(unsigned char b)
+{
+    if (b & 0x08u) return LINK_DIR_UP;
+    if (b & 0x04u) return LINK_DIR_DOWN;
+    if (b & 0x02u) return LINK_DIR_LEFT;
+    if (b & 0x01u) return LINK_DIR_RIGHT;
+    return LINK_DIR_NONE;
+}
+
+static unsigned char link_walkable_at(short x, short y, link_dir_t dir);
+
+/* NES Z_05.asm Link_ModifyDirAtGridPoint (grid offset 0). Input bits are
+ * scanned right, left, down, up; the last input and last walkable input
+ * win. One input: face it. No walkable input: only ObjInputDir changes
+ * (Link keeps his facing, *moving gets the input). One walkable: take it
+ * (Link_GoStraight). Two walkable: the UW doorway-centre cases keep ObjDir;
+ * otherwise turn to the perpendicular axis once and remember it in
+ * Link_GoStraightWhenDiagInput ($56), keeping ObjDir after that. */
+static void link_nes_modify_dir_at_grid_point(unsigned char in, link_dir_t *moving)
+{
+    static const unsigned char k_rev_dirs[4] = { 0x08u, 0x04u, 0x02u, 0x01u };
+    static const unsigned char k_axis_masks[4] = { 0x0Cu, 0x0Cu, 0x03u, 0x03u };
+    unsigned char count = 0u, walk = 0u, last_in = 0u, last_walk = 0u;
+    unsigned char objdir = link_nes_bit_of(s_link_dir);
+    unsigned char a, x = 0u, y;
+    s_link_go_straight = 0u;
+    for (y = 4u; y-- > 0u;) {
+        unsigned char b = (unsigned char)(in & k_rev_dirs[y]);
+        if (!b) continue;
+        last_in = b;
+        ++count;
+        if (link_walkable_at(players[0].x, players[0].y, link_dir_of_nes_bit(b))) {
+            last_walk = b;
+            ++walk;
+        }
+    }
+    if (count == 0u) { *moving = LINK_DIR_NONE; return; }
+    if (count == 1u) {
+        a = last_in;
+    } else if (walk == 0u) {
+        /* SetLinkInputDir only. */
+        nes_ram[0x03F8u] = last_in;
+        *moving = link_dir_of_nes_bit(last_in);
+        return;
+    } else {
+        s_link_go_straight = 1u;
+        a = last_walk;
+        if (walk >= 2u) {
+            unsigned char lx = (unsigned char)players[0].x, ly = (unsigned char)players[0].y;
+            if (nes_ram[0x0010u] != 0u && (lx == 0x20u || lx == 0xD0u) &&
+                ly == 0x85u && (objdir & 0x04u)) {
+                a = objdir;                             /* @SetLinkDirToObjDir */
+            } else {
+                unsigned char perpendicular = 1u;
+                a = objdir;
+                x = nes_ram[0x0056u];
+                if (x != 0u) {
+                    if (nes_ram[0x0010u] == 0u || lx != 0x78u || ly != 0x5Du ||
+                        (a & 0x03u) == 0u)
+                        perpendicular = 0u;
+                }
+                if (perpendicular) {
+                    unsigned char ridx = (objdir & 0x08u) ? 0u : (objdir & 0x04u) ? 1u :
+                                         (objdir & 0x02u) ? 2u : 3u;
+                    x = (unsigned char)(x + 1u);
+                    a = (unsigned char)(in ^ (in & k_axis_masks[ridx]));
+                }
+            }
+        }
+    }
+    /* @SetLinkDirAndSpeed / SetObjDirAndInputDir. */
+    nes_ram[0x0056u] = x;
+    nes_ram[0x03F8u] = a;
+    s_link_dir = link_dir_of_nes_bit(a);
+    *moving = s_link_dir;
+}
+
 static void link_nes_move_object(link_dir_t dir)
 {
     unsigned char q;
@@ -3105,11 +3195,14 @@ void roomrom_debug_tick(void)
 
                 if (input != 0u) {
                     if (s_link_grid_offset == 0 || s_link_dir == LINK_DIR_NONE) {
-                        /* Link_ModifyDirAtGridPoint: two input axes set
-                         * Link_GoStraight for the next grid line. */
-                        s_link_go_straight = (h_dir && v_dir) ? 1u : 0u;
-                        s_link_dir = input_dir;
-                        moving_dir = input_dir;
+                        /* T-122: NES Link_ModifyDirAtGridPoint. */
+                        unsigned char in_bits = (unsigned char)(
+                            ((input & BUTTON_RIGHT) ? 0x01u : 0u) |
+                            ((input & BUTTON_LEFT)  ? 0x02u : 0u) |
+                            ((input & BUTTON_DOWN)  ? 0x04u : 0u) |
+                            ((input & BUTTON_UP)    ? 0x08u : 0u));
+                        (void)input_dir;
+                        link_nes_modify_dir_at_grid_point(in_bits, &moving_dir);
                     } else {
                         link_nes_modify_dir_on_grid_line(input_dir);
                         moving_dir = s_link_dir;
@@ -3127,7 +3220,9 @@ void roomrom_debug_tick(void)
                 }
 
                 if (moving_dir != LINK_DIR_NONE) {
-                    switch (moving_dir) {
+                    /* NES draws Link facing ObjDir (s_link_dir), which the
+                     * no-walkable grid-point case leaves unchanged (T-122). */
+                    switch (s_link_dir) {
                     case LINK_DIR_LEFT:  players[0].face = LINK_FACE_LEFT;  break;
                     case LINK_DIR_RIGHT: players[0].face = LINK_FACE_RIGHT; break;
                     case LINK_DIR_UP:    players[0].face = LINK_FACE_UP;    break;
