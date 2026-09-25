@@ -69,6 +69,8 @@ unsigned char roomrom_uw_room_render_raw_tile_at_room(unsigned char level,
  * Call these AFTER fill_plane_a / fill_one_col_at (s_cur_attr must be set). */
 void roomrom_uw_room_render_write_tile(unsigned char col, unsigned char row,
                                        unsigned char raw_tile, unsigned char pal);
+void roomrom_uw_room_render_write_tile_nt(unsigned char col, unsigned char row,
+                                          unsigned char raw_tile, unsigned char pal);
 void roomrom_uw_room_render_set_walkable(unsigned char col, unsigned char row,
                                          unsigned char val);
 void roomrom_uw_room_render_set_walkable_tile(unsigned char col,

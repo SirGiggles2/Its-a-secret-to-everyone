@@ -788,6 +788,14 @@ void roomrom_uw_room_render_write_tile(unsigned char col, unsigned char row,
         s_uw_tile_walkable[col][row] = uw_walkable_tile_id(raw_tile);
 }
 
+/* T-119: nametable-only write (NES door animation transfer records);
+ * PlayAreaTiles and walkability unchanged. */
+void roomrom_uw_room_render_write_tile_nt(unsigned char col, unsigned char row,
+                                          unsigned char raw_tile, unsigned char pal)
+{
+    write_tile_raw(col, row, raw_tile, pal);
+}
+
 void roomrom_uw_room_render_set_walkable(unsigned char col, unsigned char row,
                                          unsigned char val)
 {

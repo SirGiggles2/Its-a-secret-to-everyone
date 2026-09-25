@@ -612,8 +612,6 @@ static void render_room_into_slot(u8 room_id, u8 slot_x, u8 row_base)
  * in place, keeping the live boss, Link and door state intact. */
 static void reveal_ganon_room_after_fade(void)
 {
-    u8 dir;
-    u8 opened;
     if (s_scene != SCENE_UW || !s_cur_room_is_dark ||
         roomrom_uw_room_lit(s_room_id) ||
         nes_ram[0x0350u] != 0x3Eu ||
@@ -622,11 +620,8 @@ static void reveal_ganon_room_after_fade(void)
 
     roomrom_uw_room_set_lit(s_room_id);
     render_room_into_slot(s_room_id, s_active_slot_x, s_active_row_base);
-    opened = uw_door_state_get_opened();
-    for (dir = 0u; dir < DOOR_DIR_COUNT; ++dir) {
-        if (opened & DOOR_DIR_BIT(dir)) uw_door_state_patch_open_tiles(dir);
-    }
-    uw_door_state_apply_walkability();
+    /* T-119: repaint every door face (LayOutDoors) over the relit plane. */
+    uw_door_state_layout_all();
 }
 u8                 s_link_frame = 0u;      /* non-static: forward-declared at top of file for cave_fade descend handler */
 static u8          s_link_anim_tick = 0u;
@@ -2164,6 +2159,9 @@ void roomrom_debug_tick(void)
                         roomrom_uw_room_render_set_live_door_priority(
                             s_active_slot_x, s_active_row_base, 1u);
                     }
+                    /* T-119: scroll entry — the doorway Link came through
+                     * starts opened (SetEnteringDoorwayAsCurOpenedDoors). */
+                    uw_door_state_set_entering(nes_ram[0x0098u]);
                     uw_door_state_room_init(roomrom_uw_room_render_get_level(),
                                             roomrom_uw_room_render_get_quest(),
                                             s_room_id);
@@ -2411,6 +2409,9 @@ void roomrom_debug_tick(void)
             if (!roomrom_pause_is_active()) {
                 enemy_loop_tick();
                 nes_ram_reconcile_sword_beam_collision();
+                /* T-119: NES UpdateMode5Play runs CheckShutters +
+                 * UpdateDoors after the object loop (Z_07.asm:1983). */
+                if (s_scene == SCENE_UW) uw_door_state_update();
             }
             /* Phase 7 root-cause fix #5b 2026-05-16 — restore GameMode
              * ($0012) before dispatch. a4_probe_main.c probe_check
@@ -3153,9 +3154,15 @@ void roomrom_debug_tick(void)
                          * c_obj_shove starts from the live position. */
                         nes_ram[0x0070u] = (unsigned char)players[0].x;
                         nes_ram[0x0084u] = (unsigned char)players[0].y;
+                        /* T-113: Obj_Shove reads and advances Link's
+                         * ObjGridOffset ($394); it must see the live
+                         * offset and its edits must survive the
+                         * end-of-tick publish below. */
+                        nes_ram[0x0394u] = (unsigned char)s_link_grid_offset;
                         c_obj_shove(0u);
                         players[0].x = (short)nes_ram[0x0070u];
                         players[0].y = (short)nes_ram[0x0084u];
+                        s_link_grid_offset = (signed char)nes_ram[0x0394u];
                         /* NES Walker_Move uses Obj_Shove instead of input
                          * while shove direction is nonzero. */
                         moving_dir = LINK_DIR_NONE;
@@ -3193,6 +3200,7 @@ void roomrom_debug_tick(void)
             nes_ram[0x84u] = (u8)players[0].y;
             nes_ram[0x394u] = (u8)s_link_grid_offset;
             nes_ram[0x3A8u] = s_link_pos_frac;
+            nes_ram[0x3BCu] = LINK_QSPEED;   /* T-113: ObjQSpeedFrac, NES $60 */
             if (!roomrom_combat_link_locked()) {
                 /* Per APPENDIX plan revert: single SAT entry unconditional.
                  * Split-sprite removed; wide BG-prio stamp handles

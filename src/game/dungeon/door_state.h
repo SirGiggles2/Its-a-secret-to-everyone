@@ -93,7 +93,16 @@ unsigned char uw_door_state_has_shutters(void);
 void uw_door_state_trigger_shutters(void);
 
 /* Clear all persisted state (call on game-reset / new-game). */
-void uw_door_state_reset_persist(void);
+/* T-119: NES door-state machine (UpdateDoors / CheckShutters), run once
+ * per UW play frame. */
+void uw_door_state_update(void);
+/* Scroll entry: Link's NES direction of travel; the next room_init sets
+ * the entering doorway as CurOpenedDoors (InitMode7_Sub1). */
+void uw_door_state_set_entering(unsigned char nes_dir);
+/* TriggerOpenDoor for a direction bit (bombable wall hit). */
+void uw_door_state_trigger_open(unsigned char dir_bit);
+/* Re-lay all door faces after the plane is repainted. */
+void uw_door_state_layout_all(void);
 
 /* Task 5.5 accessors for the state-mirror publisher. Read-only views
  * of internal state needed by BizHawk Lua probes. */

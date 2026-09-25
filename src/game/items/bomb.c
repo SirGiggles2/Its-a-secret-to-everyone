@@ -23,8 +23,8 @@
  *    is owned by the native Link update, which reads nothing from $AC for
  *    item use and would never clear a $10 there.
  *  - UW bombable wall: NES sets TriggeredDoorCmd $06 / TriggeredDoorDir
- *    for the door updater; Genesis has no consumer of those cells, so the
- *    same condition opens the door through uw_door_state_open_by_mask.
+ *    for the door updater; Genesis does the same through
+ *    uw_door_state_trigger_open and door_state.c UpdateDoors (T-119).
  *  - Sound: Tune0Request $20 and PlayEffect $10 are written to the NES
  *    request cells. Nothing consumes those yet (T-071), so the detonation
  *    also keeps the existing audible audio_sfx_play(3).
@@ -175,12 +175,14 @@ static void bomb_check_wall(unsigned char x)
         if (abs8((unsigned char)(k_wall_hotspot_y[y] - OBJ(NES_OBJ_Y, x))) >= 0x18u)
             continue;
         bit = k_reverse_dirs[y];
+        /* Already opened or a door command pending: nothing to do. */
         if (uw_door_state_get_opened() & bit) return;
+        if (nes_ram[0x0054u] != 0u) return;   /* TriggeredDoorCmd */
         dir = (bit == DOOR_BIT_E) ? DOOR_DIR_E :
               (bit == DOOR_BIT_W) ? DOOR_DIR_W :
               (bit == DOOR_BIT_S) ? DOOR_DIR_S : DOOR_DIR_N;
         if (uw_door_state_get_type(dir) != DOOR_TYPE_BOMBABLE) return;
-        uw_door_state_open_by_mask(bit);
+        uw_door_state_trigger_open(bit);   /* T-119: UpdateDoors animates */
         return;
     }
 }
