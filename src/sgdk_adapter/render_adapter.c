@@ -257,6 +257,25 @@ static void vram_dma_upload(const unsigned char *bytes, unsigned short dst,
 {
     SYS_disableInts();
 
+    /* T-118: word-aligned sources (nearly all CHR blobs) go through a
+     * real 68k->VRAM DMA (the 68000 is halted for the transfer; SGDK
+     * splits at the 128 KB source bank boundary). The byte loop below was
+     * ~7 instructions per word and, with interrupts masked, stretched a
+     * dungeon-entry CHR swap over dozens of frames. Odd-address sources
+     * keep the byte path (word reads there would address-error). */
+    if ((((unsigned long)bytes) & 1UL) == 0UL && len >= 2u) {
+        DMA_doDma(DMA_VRAM, (void *)bytes, dst, (unsigned short)(len >> 1), 2);
+        if ((len & 1u) != 0u) {
+            render_set_autoinc_word();
+            VDP_CTRL_LONG = 0x40000000UL
+                          | ((unsigned long)((dst + len - 1u) & 0x3FFFu) << 16)
+                          | (((dst + len - 1u) >> 14) & 0x0003u);
+            VDP_DATA_WORD = (unsigned short)((unsigned short)bytes[len - 1u] << 8);
+        }
+        SYS_enableInts();
+        return;
+    }
+
     render_set_autoinc_word();
 
     /* Open VRAM write at dst. */
