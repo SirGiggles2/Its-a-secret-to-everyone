@@ -44,6 +44,7 @@ void hud_format_status_bar_text(void);
  * LINK_RUPEES, drain CAVE_DOOR_REPAIR_RUPEE_DELTA into LINK_RUPEES--,
  * play sfx, refresh status bar. drain at hud_runtime.c:95-122. */
 void hud_world_change_rupees(void);
+void hud_world_fill_hearts(void);
 
 /* Native currency state only; caller owns display scheduling. */
 void hud_tick_native_rupees(unsigned char frame_counter);

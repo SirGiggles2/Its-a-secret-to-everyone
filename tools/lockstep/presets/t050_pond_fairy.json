@@ -1,0 +1,93 @@
+{
+ "name": "t050_pond_fairy",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {
+  "HeartValues": 32,
+  "HeartPartial": 128
+ },
+ "script": [
+  [
+   30,
+   ""
+  ],
+  [
+   250,
+   "R"
+  ],
+  [
+   20,
+   ""
+  ],
+  [
+   40,
+   "U"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   40,
+   "R"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   40,
+   "U"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   40,
+   "U"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   40,
+   "U"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   600,
+   ""
+  ]
+ ],
+ "stages": [
+  [
+   300,
+   "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('room %02X link %02X,%02X hearts %02X/%02X s1 %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x66F), rd(0x670), rd(0x350)))"
+  ],
+  [
+   500,
+   "wr(0x70, 240)\nwr(0x84, 141)\nwr(0x98, 1)\nwr(0x394, 0)\ngen_link_pos(240, 141, 1)\nlog(string.format('room %02X link %02X,%02X hearts %02X/%02X s1 %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x66F), rd(0x670), rd(0x350)))"
+  ],
+  [
+   700,
+   "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('room %02X link %02X,%02X hearts %02X/%02X s1 %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x66F), rd(0x670), rd(0x350)))"
+  ],
+  [
+   900,
+   "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('room %02X link %02X,%02X hearts %02X/%02X s1 %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x66F), rd(0x670), rd(0x350)))"
+  ],
+  [
+   1100,
+   "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('room %02X link %02X,%02X hearts %02X/%02X s1 %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x66F), rd(0x670), rd(0x350)))"
+  ],
+  [
+   1300,
+   "wr(0x70, 120)\nwr(0x84, 173)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(120, 173, 8)\nlog(string.format('room %02X link %02X,%02X hearts %02X/%02X s1 %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x66F), rd(0x670), rd(0x350)))"
+  ]
+ ]
+}

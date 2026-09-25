@@ -129,6 +129,8 @@ void inventory_sync_from_native(void)
 void inventory_rupee_tick(unsigned char frame_counter)
 {
     unsigned short previous = g_inventory.rupees;
+    /* UpdateHeartsAndRupees: World_FillHearts then World_ChangeRupees. */
+    hud_world_fill_hearts();
     hud_tick_native_rupees(frame_counter);
     g_inventory.rupees = nes_ram[0x066Du];
     g_inventory.rupees_to_add = nes_ram[0x067Du];

@@ -605,6 +605,14 @@ static void anim_write_static_item_sprites_with_attributes(
     anim_write_item_sprites(slot, item_slot);
 }
 
+/* T-050: Anim_WriteItemSprites entry for callers that staged [00]/[01]
+ * position, [04]/[05] attributes, [0C] frame and [0F] flip themselves
+ * (DrawFairy). */
+void draw_anim_write_item_sprites(unsigned int slot, unsigned int item_slot)
+{
+    anim_write_item_sprites(slot, item_slot);
+}
+
 void draw_item_by_slot(unsigned int item_slot, unsigned int slot)
 {
     /* drain Z_07.asm:2023-2090. */

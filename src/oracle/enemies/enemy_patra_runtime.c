@@ -301,3 +301,18 @@ void enrt_update_patra_child(unsigned int slot)
         ENEMY_Y(slot) = (unsigned char)(ENEMY_Y(1) - radius);
     }
 }
+
+/* T-050: shared with the pond fairy hearts (Z_04.asm PondFairy_MoveHearts
+ * uses the same DecreaseObjectAngle / RotateObjectLocation). */
+void enrt_decrease_object_angle(unsigned char low, unsigned char high,
+                                unsigned int slot)
+{
+    patra_decrease_object_angle(low, high, slot);
+}
+
+unsigned char enrt_rotate_object_location(unsigned char cosine_bits,
+                                          unsigned char sine_bits,
+                                          unsigned int slot)
+{
+    return patra_rotate_object_location(cosine_bits, sine_bits, slot);
+}

@@ -157,3 +157,29 @@ void hud_tick_native_rupees(unsigned char frame_counter)
     LINK_RUPEES = (uint8_t)(LINK_RUPEES - 1u);
     RAM(0x0604u) = 16u;  /* ROOM_SFX_MAIN */
 }
+
+/* NES World_FillHearts (Z_05.asm), run every play frame from
+ * UpdateHeartsAndRupees before World_ChangeRupees. Potions, fairies and
+ * the pond fairy set World_IsFillingHearts ($63). */
+void hud_world_fill_hearts(void)
+{
+    unsigned char hv;
+    if (RAM(0x0063u) == 0u) return;                /* World_IsFillingHearts */
+    RAM(0x0604u) = 0x10u;                          /* Tune0Request: heart */
+    if ((unsigned char)RAM(0x0670u) < 0xF8u) {     /* HeartPartial */
+        RAM(0x0670u) = (uint8_t)((unsigned char)RAM(0x0670u) + 6u);
+        return;
+    }
+    RAM(0x0670u) = 0u;
+    /* CompareHeartsToContainers: [00] = hearts, compare containers. */
+    hv = (unsigned char)RAM(0x066Fu);              /* HeartValues */
+    RAM(0x0000u) = (uint8_t)(hv & 0x0Fu);
+    if ((unsigned char)(hv >> 4) != (unsigned char)(hv & 0x0Fu)) {
+        RAM(0x066Fu) = (uint8_t)(hv + 1u);         /* INC HeartValues */
+        return;
+    }
+    RAM(0x0670u) = 0xFFu;                          /* DEC from 0 */
+    RAM(0x052Eu) = 0u;                             /* SwordBlocked */
+    RAM(0x0063u) = 0u;
+    RAM(0x00E0u) = 0u;                             /* Paused */
+}

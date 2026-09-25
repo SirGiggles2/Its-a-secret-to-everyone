@@ -55,6 +55,8 @@ void draw_animate_item_object(unsigned char item_id, unsigned int slot);
  * additive override for slots $00/$04/$02/$07/$0B), then writes
  * static item sprites. */
 void draw_item_by_slot(unsigned int item_slot, unsigned int slot);
+/* Anim_WriteItemSprites with caller-staged [00]/[01]/[04]/[05]/[0C]/[0F]. */
+void draw_anim_write_item_sprites(unsigned int slot, unsigned int item_slot);
 
 /* DrawItemInInventory (Z_07.asm:2011). Reads item value from
  * RAM($0657+slot) into TMP4, then DrawItemBySlot. */

@@ -108,6 +108,8 @@ static void native_init_obj_attr(unsigned int slot, unsigned char type)
  * and src/game/core/core_dispatch.c (reset). All linked into Debug.md
  * per build_debug.py ROOMROM_C_SOURCES + step-6 unblock stubs. */
 extern void enrt_init_slow_octorock_or_ghini(unsigned int slot);
+extern void enrt_init_pond_fairy(unsigned int slot);             /* T-050 */
+extern void enrt_update_pond_fairy(unsigned int slot);           /* T-050 */
 extern void enrt_init_walker(unsigned int slot);                 /* step 7 */
 extern void enrt_init_darknut(unsigned int slot);                /* step 7 */
 extern void enrt_init_fast_octorock(unsigned int slot);          /* step 7 */
@@ -484,6 +486,7 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x18] = enrt_init_walker,                   /* DigdoggerChild */
     [0x5E] = core_init_flute_secret,             /* FluteSecret NES Z_07.asm:5817 */
     /* T-050: InitObject sends types >= $5F to InitTileObjOrItem. */
+    [0x2F] = enrt_init_pond_fairy,               /* PondFairy (T-050) */
     [0x62] = room_init_tile_obj_or_item,         /* Rock */
     [0x63] = room_init_tile_obj_or_item,         /* RockWall */
     [0x64] = room_init_tile_obj_or_item,         /* Tree */
@@ -1075,6 +1078,7 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x60] = item_object_update,            /* DroppedItem */
     /* T-050 OW tile objects (NES UpdateObject_JumpTable $62-$67). The
      * dock $61 is T-056 (raft); UW block $68 is T-054. */
+    [0x2F] = enrt_update_pond_fairy,          /* PondFairy */
     [0x62] = room_update_rock_or_gravestone,  /* Rock */
     [0x63] = room_update_rock_wall,           /* RockWall */
     [0x64] = room_update_tree,                /* Tree */
@@ -1276,6 +1280,9 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id,
         OBJ(NES_OBJ_GRID_OFFSET, slot) = 0u;   /* $0394+slot */
         ENEMY_STUN_TIMER(slot)     = 0u;       /* $003D+slot */
         ENEMY_HIT_REACTION(slot)   = 0u;       /* $04F0+slot */
+        /* NES room-entry object reset (Z_05.asm, slots $B..1): default
+         * q-speed $20 before the monster list / tile object. */
+        OBJ(NES_OBJ_QSPD_FRAC, slot) = 0x20u;
     }
 
     /* Phase 7 Task 7.7 step 1+2 — wire NES InitMode_EnterRoom monster-list

@@ -108,7 +108,7 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 |---|---|---|---|---|
 | T-030 | Enemy families: one natural encounter each, per `docs/audit/enemy_parity/INDEX.md` open rows | P3.3–3.5 | TODO | |
 | T-040 | Bosses: Dodongo, Manhandla, Gleeok, Digdogger, Gohma, Patra, Moldorm/Lanmola — one real kill each + variant diffs | P6.2–6.4 | TODO | |
-| T-050 | Unwired object dispatch rows: `$2F` pond fairy, `$5E` flute secret, `$61–$68` OW objects | P4 | ACTIVE | Claude |
+| T-050 | Unwired object dispatch rows: `$2F` pond fairy, `$5E` flute secret, `$61–$68` OW objects | P4 | DONE | Claude |
 | T-051 | Ending renderer stubs (sprites, credits, finalize) | P7.4 / P8.3 | TODO | |
 | T-052 | Items/secrets table | P4.1–4.3 | TODO | |
 | T-053 | Death/continue lifecycle | P7.3 | TODO | |
@@ -131,6 +131,9 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 | T-080 | Builder: clean-staging build from user ROM, no live captures, drag-and-drop shell, reproducibility | P10 | TODO |
 
 ## Handoff log (newest first)
+
+**2026-09-25 · Claude** — T-050 done: pond fairy $2F (UpdatePondFairy + World_FillHearts + orbiting hearts) byte-matched vs NES in
+room $39; $F3 heart tile routed to the ITEM atlas; NES room-entry q-speed $20 default for slots 1-11. Next: T-115 (OW sub-palette).
 
 **2026-09-25 · Claude** — T-050 part 1: OW tile objects $62-$67 (rock/grave push, bomb wall, burnable tree), layout secret
 substitution + CheckShortcut, live square changes on the plane (DynTileBuf vertical/repeat records), ObjInputDir published.

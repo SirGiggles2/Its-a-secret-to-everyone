@@ -32,6 +32,7 @@
  * pulling unresolved symbols past --gc-sections.
  */
 
+#include <stdint.h>
 #include "platform_abi.h"               /* RAM, OBJ */
 #include "enemy_state.h"                /* ENEMY_*, CHASE_TARGET_X/Y aliases */
 #include "world/draw_dispatch.h"        /* draw_object_mirrored_with_frame */
@@ -509,4 +510,110 @@ void enrt_update_flying_ghini(unsigned int slot)
         c_move_flyer(slot);
     }
     enrt_draw_ghini_and_check_collisions(slot);
+}
+
+/* --------------------------------------------------------------- */
+/* T-050 pond fairy ($2F).                                          */
+/* NES source: Z_04.asm UpdatePondFairy, PondFairy_HandleOtherStates, */
+/*   PondFairy_MoveHearts, PondHeartStartAngles; Z_01.asm DrawFairy. */
+/* Drained C: enemy_flyer_runtime.c enrt_init_pond_fairy (init);    */
+/*   Patra DecreaseObjectAngle / RotateObjectLocation (hearts).      */
+/* Coverage: FULL except Link_EndMoveAndAnimate_Bank4 (Link draws   */
+/*   natively; NES only redraws him in place while halted).         */
+/* Stance: GREENFIELD per asm.                                      */
+/* --------------------------------------------------------------- */
+extern void enrt_decrease_object_angle(unsigned char low, unsigned char high,
+                                       unsigned int slot);
+extern unsigned char enrt_rotate_object_location(unsigned char cosine_bits,
+                                                 unsigned char sine_bits,
+                                                 unsigned int slot);
+
+#define PF_WORLD_IS_FILLING_HEARTS RAM(0x0063u)
+#define PF_LINK_STATE              RAM(0x00ACu)
+#define PF_LINK_X                  RAM(0x0070u)
+#define PF_LINK_Y                  RAM(0x0084u)
+#define PF_INPUT_DIR               RAM(0x03F8u)
+#define PF_STATE(s)                RAM(0x00ACu + (s))
+#define PF_TIMER(s)                RAM(0x0028u + (s))
+#define PF_X(s)                    RAM(0x0070u + (s))
+#define PF_Y(s)                    RAM(0x0084u + (s))
+#define PF_DIR(s)                  RAM(0x0098u + (s))
+
+static const unsigned char k_pond_heart_start_angles[7] = {
+    0x14u, 0x10u, 0x0Cu, 0x08u, 0x04u, 0x00u, 0x1Cu
+};
+
+/* DrawFairy: red row, frame = FrameCounter bit 2, item slot $14. */
+static void pond_fairy_draw(unsigned int slot)
+{
+    RAM(0x0000u) = PF_X(slot);
+    RAM(0x0001u) = PF_Y(slot);
+    RAM(0x000Fu) = 0u;
+    RAM(0x0004u) = 0x02u;
+    RAM(0x0005u) = 0x02u;
+    RAM(0x000Cu) = (uint8_t)((((unsigned char)(0x02u << 1)) &
+                              (unsigned char)RAM(0x0015u)) >> 2);
+    draw_anim_write_item_sprites(slot, 0x14u);
+}
+
+/* PondFairy_MoveHearts: hearts ride object slots 2..9. */
+static void pond_fairy_move_hearts(unsigned int fairy)
+{
+    unsigned int x;
+    for (x = 2u; x < 0x0Au; ++x) {
+        if ((unsigned char)PF_STATE(x) == 0u) {
+            if (x != 2u) {
+                if ((unsigned char)PF_STATE(2u) == 0u) continue;
+                if ((unsigned char)ENEMY_OBJ_ANGLE_WHOLE(2u) !=
+                    k_pond_heart_start_angles[x - 3u]) continue;
+            }
+            PF_STATE(x) = (uint8_t)((unsigned char)PF_STATE(x) + 1u);
+            PF_DIR(x) = 0x80u;
+            ENEMY_OBJ_ANGLE_WHOLE(x) = 0x18u;         /* N */
+            PF_X(x) = PF_X(fairy);
+            PF_Y(x) = (uint8_t)((unsigned char)PF_Y(fairy) - 0x1Cu);
+        }
+        enrt_decrease_object_angle(0x60u, 0x00u, x);
+        PF_Y(x) = enrt_rotate_object_location(0x06u, 0x06u, x);
+        RAM(0x0004u) = 0x02u;                         /* red row */
+        RAM(0x0005u) = 0x02u;
+        RAM(0x0000u) = PF_X(x);                       /* Anim_FetchObjPos */
+        RAM(0x0001u) = PF_Y(x);
+        RAM(0x000Fu) = 0u;
+        draw_object_not_mirrored(0u, fairy);          /* LDX CurObjIndex */
+    }
+}
+
+void enrt_update_pond_fairy(unsigned int slot)
+{
+    unsigned char st;
+    pond_fairy_draw(slot);
+    st = (unsigned char)PF_STATE(1u);
+    if (st == 0u) {
+        /* Link at the pond edge: Y $AD, X in [$70, $81). */
+        if ((unsigned char)PF_LINK_Y != 0xADu) return;
+        if ((unsigned char)PF_LINK_X < 0x70u) return;
+        if ((unsigned char)PF_LINK_X >= 0x81u) return;
+        PF_STATE(1u) = (uint8_t)(st + 1u);
+        PF_LINK_STATE = 0x40u;
+        PF_WORLD_IS_FILLING_HEARTS = 0x40u;
+        return;
+    }
+    if (st == 1u) {
+        if (!PF_WORLD_IS_FILLING_HEARTS) {
+            PF_STATE(1u) = 2u;
+            PF_TIMER(1u) = 0x50u;
+            return;                    /* A = $50 fails CMP #$02 */
+        }
+    } else if (st == 2u) {
+        if ((unsigned char)PF_TIMER(1u) == 0u) {
+            PF_STATE(1u) = 3u;
+            PF_LINK_STATE = 0u;
+        }
+    } else {
+        return;
+    }
+    /* @DrawLinkAndHearts. */
+    PF_INPUT_DIR = 0u;
+    pond_fairy_move_hearts(slot);
 }

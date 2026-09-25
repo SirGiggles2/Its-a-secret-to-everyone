@@ -1,4 +1,4 @@
-# T-050 OW tile objects ($62-$67) — evidence
+# T-050 OW tile objects ($62-$67) + pond fairy ($2F) — evidence
 
 ROM: `rom_sha256.txt`. Harness: `tools/lockstep` presets `t050_*`,
 verifiers `verify_play_area.py` (NES PlayAreaTiles $6530-$67DB vs Genesis
@@ -34,3 +34,22 @@ Found, not T-050 (tracker rows):
   positions differ, T-108 residue); Genesis lag frames in busy $79 at the
   hit and at the reveal frame (T-080 budget).
 - Genesis Link movement does not run CheckTileObjectsBlocking (Link port).
+
+## Pond fairy ($2F, room $39) — `t050_pond_fairy`
+
+Route $77->$78->$68->$69->$59->$49->$39 (edges from `tools/lockstep/ow_map.py`,
+Link staged at each crossing), save with 1 heart (HeartValues $20, partial
+$80), Link staged at the pond edge ($78,$AD). ROM `rom_sha256_pond.txt`.
+- UpdatePondFairy states 0->1->2->3, Link halted ($AC=$40) and released on
+  the same frames as NES (1301 / 1408 / 1488); World_FillHearts refills
+  $20/80 -> $22/FF at +6 per frame (Genesis applies each step one frame
+  later: fill runs before the object update, T-102).
+- Hearts (slots 2-9): state, X, Y, angle whole/frac identical 624/624
+  (frames 1410-1487).
+- Sprites at frame 1450: NES OAM fairy $50 + 8 hearts $F3 == Genesis SAT
+  x/y/palette (Link draws in fixed SAT slot 0); tile pixels NES $50/$51 ==
+  VRAM 1021/1022, PT1 $F2/$F3 == VRAM 1025/1026 (the $F3 heart was drawn from
+  the scene bank before this fix).
+- Regression after the room-entry q-speed $20 default: `tektite_jump`
+  motion identical (X differs by the staged per-console offset only),
+  `t050_tree` / `t050_wall` 704/704 + 704/704, `t110_bomb` unchanged.

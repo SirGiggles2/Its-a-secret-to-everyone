@@ -64,7 +64,9 @@ static inline void cycle_cur_sprite_index(void)
  * Worst case: 11 slots * 4 entries = 44 SAT writes/frame, well under
  * H32's 64-slot hardware budget. Per-tile h_flip preserved (each entry
  * stores its own attrs byte) — fixes spec gap #5. */
-#define ENEMY_RENDER_MAX_PER_SLOT  4u
+/* T-050: 20 — the pond fairy draws itself plus eight orbiting hearts
+ * through its own slot (PondFairy_MoveHearts uses CurObjIndex). */
+#define ENEMY_RENDER_MAX_PER_SLOT  20u
 
 typedef struct {
     unsigned char tile;
@@ -616,6 +618,13 @@ static inline unsigned short translate_tile(unsigned char nes_tile,
         unsigned char atlas_idx = k_nes_item_tile_to_atlas_idx[nes_tile];
         return (unsigned short)(ROOMROM_ITEM_TILE_BASE +
                                 (unsigned short)atlas_idx);
+    }
+    /* T-050: an odd 8x16 OAM tile selects PT1 on the NES; $F3 is Zelda's
+     * only one (PT1 $F2/$F3, the heart), drawn by DrawObject* paths too
+     * (pond fairy hearts). Its art is the ITEM atlas drop heart, byte-
+     * verified vs NES CHR (t050_pond_fairy). */
+    if (nes_tile == 0xF3u) {
+        return (unsigned short)(ROOMROM_ITEM_TILE_BASE + ROOMROM_ITEM_TILE_DROP_HEART);
     }
     if (nes_tile == 0x44u || nes_tile == 0x45u) {
         ensure_fireball_chr();
