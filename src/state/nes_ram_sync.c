@@ -67,6 +67,11 @@ void nes_ram_sync_input(u16 held, u16 edge_pressed)
 {
     nes_ram[NES_RAM_BUTTONS_PRESSED] = sgdk_to_nes_buttons(edge_pressed);
     nes_ram[NES_RAM_BUTTONS_DOWN]    = sgdk_to_nes_buttons(held);
+    /* ObjInputDir ($03F8): NES UpdateMode5Play sets it from ButtonsDown &
+     * $0F every play frame before UpdatePlayer (Z_05.asm, "Save current
+     * direction from input buttons"). Read by tile-object pushes (T-050)
+     * and Wallmaster. UpdatePlayer's later adjustments are Link's (T-102). */
+    nes_ram[0x03F8u] = (unsigned char)(nes_ram[NES_RAM_BUTTONS_DOWN] & 0x0Fu);
 }
 
 /* Per-frame sync: nes_ram is canonical for drained combat

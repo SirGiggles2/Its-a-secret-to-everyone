@@ -76,6 +76,7 @@ Status: `TODO` · `ACTIVE` · `BLOCKED` · `REVIEW` · `DONE`. Plan ref = task I
 | T-112 | Rod / magic shot is Genesis-only (3 px/frame, private state, never slot `$0E`); NES UpdateSwordShotOrMagicShot + book-of-magic fire (WieldCandle with UsedCandle bypass, Z_07:3505) not ported | TODO | | Lockstep: slot `$0E` + fire slot cells equal vs NES |
 | T-113 | Link shove distance: fire hit (t110_fire) — NES Link 7A→99, Genesis 7A→9D (native Link shove) | TODO | | Lockstep `t110_fire`: Link Y equal through shove |
 | T-114 | Verify UW bombable wall (bomb.c `bomb_check_wall`) vs NES. Needs both consoles in the same UW room: blocked by T-105 route divergence / no NES UW staging | TODO | | Lockstep in L1 bombable-wall room: door opened bit + tiles vs NES |
+| T-115 | OW nametable sub-palette: `ow_render.c` forces sub-pal 2 for every OW room (2026-05-23 assumption from one probe); NES room $79 uses sub-pal 3 (brown). Genesis draws it green | TODO | | `verify_plane.py t050_rock_push`: tile identity 704/704, sub-palette 0/704 → must be 704/704 exact in $76/$78/$79 + a sweep |
 
 ### S0c — Native game-mode spine (finish plan Phase 2)
 
@@ -130,6 +131,10 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 | T-080 | Builder: clean-staging build from user ROM, no live captures, drag-and-drop shell, reproducibility | P10 | TODO |
 
 ## Handoff log (newest first)
+
+**2026-09-25 · Claude** — T-050 part 1: OW tile objects $62-$67 (rock/grave push, bomb wall, burnable tree), layout secret
+substitution + CheckShortcut, live square changes on the plane (DynTileBuf vertical/repeat records), ObjInputDir published.
+Evidence `t050-tile-objects/`. Found T-115 (OW sub-palette). T-050 stays ACTIVE for pond fairy $2F (needs World_FillHearts).
 
 **2026-09-24 · Claude** — T-110 done: bombs/fire now NES objects in slots `$10/$11` (bomb.c/candle_fire.c), drawn via
 enemy_render weapon cache, bomb flash = CRAM grayscale (bg_palette.c). Byte evidence in `t110-bomb-fire/`. New rows T-111..T-114.

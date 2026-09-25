@@ -1,0 +1,32 @@
+{
+ "name": "t050_wall",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {
+  "InvBombs": 4
+ },
+ "script": [
+  [
+   30,
+   ""
+  ],
+  [
+   250,
+   "L"
+  ],
+  [
+   20,
+   ""
+  ],
+  [
+   2,
+   "B"
+  ],
+  [
+   200,
+   ""
+  ]
+ ],
+ "stage_at": 290,
+ "stage": "wr(0x656, 1)\ngen_b_item(3)\nwr(0x70, 0x60)\nwr(0x84, 0x6D)\nwr(0x98, 0x08)\nwr(0x394, 0)\ngen_link_pos(0x60, 0x6D, 0x08)\nlog(string.format('room %02X link %02X,%02X slot11 %02X at %02X,%02X flags %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x35A), rd(0x7B), rd(0x8F), rd(0x67F+0x76)))"
+}

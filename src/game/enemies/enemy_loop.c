@@ -30,6 +30,7 @@
 #include "bosses/boss_framework.h"        /* 8.1 step 3 room-item slot 19 */
 #include "combat_state.h"                 /* MON_HP for HP init */
 #include "../items/item_object.h"         /* Plan v5c $60 UpdateItem */
+#include "../world/render/ow_render.h"      /* T-050 roomrom_ow_room_tile_object */
 
 /* NES Z_07.asm:5227 ObjectTypeToHpPairs — packed HP, 2 per byte.
  * Indexed by ObjType/2. Even-type uses high nibble (AND #$F0); odd-type
@@ -38,12 +39,19 @@
  * (hearts * 16). combat_deal_damage compares raw byte against damage
  * (sword L1 = $10). Without this seed every spawned monster starts at
  * MON_HP=0 and dies/won't-die unpredictably. */
-static const unsigned char k_object_hp_pairs[38] = {
+/* T-050: InitObject indexes past the 38-byte table for types >= $4C
+ * (tile objects $62-$67 included) and reads the next ROM bytes, the start
+ * of UpdateObject (PHA / LDA #$04 / JSR SwitchBank / PLA / LDY
+ * ObjUninitialized,X / STY $0F / BEQ). Bytes copied from the ROM at file
+ * offset $1FB84; live NES: tree $64 gets HP $F0. */
+static const unsigned char k_object_hp_pairs[52] = {
     0x06, 0x43, 0x25, 0x31, 0x12, 0x24, 0x81, 0x14,
     0x22, 0x42, 0x00, 0xA9, 0x8F, 0x20, 0x00, 0x3F,
     0xF9, 0xFA, 0x46, 0x62, 0x11, 0x2F, 0xFF, 0xFF,
     0x7F, 0xF6, 0x2F, 0xFF, 0xFF, 0x22, 0x46, 0xF1,
-    0xF2, 0xAA, 0xAA, 0xFB, 0xBF, 0xF0
+    0xF2, 0xAA, 0xAA, 0xFB, 0xBF, 0xF0,
+    0x48, 0xA9, 0x04, 0x20, 0xAC, 0xFF, 0x68, 0xBC,
+    0x92, 0x04, 0x84, 0x0F, 0xF0, 0x1B
 };
 
 static void native_init_obj_hp(unsigned int slot, unsigned char type)
@@ -475,6 +483,13 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
      * MetastateAndTimer; same for $25/$26 PatraChild + $27 Wallmaster. */
     [0x18] = enrt_init_walker,                   /* DigdoggerChild */
     [0x5E] = core_init_flute_secret,             /* FluteSecret NES Z_07.asm:5817 */
+    /* T-050: InitObject sends types >= $5F to InitTileObjOrItem. */
+    [0x62] = room_init_tile_obj_or_item,         /* Rock */
+    [0x63] = room_init_tile_obj_or_item,         /* RockWall */
+    [0x64] = room_init_tile_obj_or_item,         /* Tree */
+    [0x65] = room_init_tile_obj_or_item,         /* Gravestone */
+    [0x66] = room_init_tile_obj_or_item,
+    [0x67] = room_init_tile_obj_or_item,
     [0x23] = core_reset_obj_metastate_and_timer, /* BlueWizzrobe init */
     [0x24] = core_reset_obj_metastate_and_timer, /* RedWizzrobe init */
     [0x25] = core_reset_obj_metastate_and_timer, /* PatraChild1 init */
@@ -1058,6 +1073,14 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      * this row the type-$60 slot tick is a no-op: drops appear but
      * never decay and never get picked up. */
     [0x60] = item_object_update,            /* DroppedItem */
+    /* T-050 OW tile objects (NES UpdateObject_JumpTable $62-$67). The
+     * dock $61 is T-056 (raft); UW block $68 is T-054. */
+    [0x62] = room_update_rock_or_gravestone,  /* Rock */
+    [0x63] = room_update_rock_wall,           /* RockWall */
+    [0x64] = room_update_tree,                /* Tree */
+    [0x65] = room_update_rock_or_gravestone,  /* Gravestone */
+    [0x66] = room_update_rock_or_gravestone,
+    [0x67] = room_update_rock_wall,
 };
 
 /* Internal: clear an enemy slot's scratch state per NES room-init
@@ -1134,6 +1157,38 @@ void enemy_loop_clear_all_slots(void)
  * the force-spawned probe target). */
 static unsigned char s_fix_arm_suppress_room_init = 0u;
 static unsigned char s_edge_spawn_pending[ENEMY_LOOP_SLOT_LAST + 1u];
+
+/* T-050: NES SetupTileObjectOW, run for OW rooms at room entry after
+ * AssignObjSpawnPositions (Z_05.asm, "LDA CurLevel / BNE / JSR
+ * SetupTileObjectOW"). RoomTileObjType/X/Y are what LayoutRoomOW recorded
+ * for this room (roomrom_ow_room_tile_object replays that layout scan).
+ * Slot $B then gets the common room-entry object reset (Z_05.asm, the
+ * $B..1 loop before the monster list: ObjUninitialized $FF, metastate 1,
+ * default q-speed $20) so the first tick runs InitObject ->
+ * InitTileObjOrItem, as on the NES. */
+static void ow_tile_object_room_setup(unsigned char scene_id, unsigned char level,
+                                      unsigned char room_id)
+{
+    unsigned char t, x, y;
+    if (scene_id != 0u || level != 0u) return;
+    roomrom_ow_room_tile_object(room_id, &t, &x, &y);
+    RAM(0x052Bu) = t;                    /* RoomTileObjType */
+    RAM(0x052Cu) = x;                    /* RoomTileObjX */
+    RAM(0x052Du) = y;                    /* RoomTileObjY */
+    room_setup_tile_object_ow();
+    if ((unsigned char)ENEMY_TYPE(11u) == 0u) {
+        ENEMY_ALIVE_FLAG(11u) = 0u;
+        return;
+    }
+    clear_slot_scratch(11u);
+    ENEMY_ALIVE_FLAG(11u) = 0xFFu;       /* NES ObjUninitialized $FF */
+    ENEMY_METASTATE(11u) = 1u;
+    OBJ(NES_OBJ_QSPD_FRAC, 11u) = 0x20u;
+    OBJ(0x0098u, 11u) = 0u;              /* ObjDir */
+    OBJ(NES_OBJ_GRID_OFFSET, 11u) = 0u;
+    OBJ(NES_OBJ_POS_FRAC, 11u) = 0u;
+    s_edge_spawn_pending[11u] = 0u;
+}
 
 void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id,
                           unsigned char level, unsigned char quest)
@@ -1257,6 +1312,7 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id,
     room_record_history(room_id);
 
     if (loaded == 0u && DUNGEON_ROOM_OBJ_COUNT == 0u) {
+        ow_tile_object_room_setup(scene_id, level, room_id);
         return;
     }
     for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
@@ -1299,6 +1355,7 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id,
         }
         ENEMY_ALIVE_FLAG(slot) = 1u;
     }
+    ow_tile_object_room_setup(scene_id, level, room_id);
 }
 
 /* Forward decl for arm hook (defined later in this file). */

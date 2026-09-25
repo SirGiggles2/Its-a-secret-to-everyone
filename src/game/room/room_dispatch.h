@@ -293,6 +293,13 @@ void room_update_mode11_death_sub_c(void);
 void room_update_mode11_death_sub2(void);
 void room_end_game_mode12(void);
 
+/* T-050 OW tile objects (slot $B): InitTileObjOrItem and the NES
+ * UpdateObject rows $62-$67. */
+void room_init_tile_obj_or_item(unsigned int slot);
+void room_update_rock_or_gravestone(unsigned int slot);
+void room_update_rock_wall(unsigned int slot);
+void room_update_tree(unsigned int slot);
+
 #ifdef __cplusplus
 }
 #endif

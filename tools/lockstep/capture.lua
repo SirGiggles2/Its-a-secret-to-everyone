@@ -156,21 +156,74 @@ local function slog(msg) meta:write("stage: " .. msg .. "\n") end
 -- the same selection on Genesis. No-op on NES. Written, then read back.
 local GEN_B_ITEM = tonumber("@SYM:s_b_item@")
 local stage_failed = false
+local stage_fail_why = ""
+local function stage_fail(why) stage_failed = true; stage_fail_why = why; slog(why) end
 local function gen_b_item(v)
     if sys ~= "GEN" then return end
-    if GEN_B_ITEM == nil then slog("s_b_item symbol unresolved"); stage_failed = true; return end
+    if GEN_B_ITEM == nil then stage_fail("gen_b_item: s_b_item symbol unresolved"); return end
     local a = (RAM_DOM == "M68K BUS") and GEN_B_ITEM or (GEN_B_ITEM - 0xFF0000)
     memory.write_u32_be(a, v, RAM_DOM)
     local back = memory.read_u32_be(a, RAM_DOM)
     slog(string.format("gen s_b_item @%06X = %d (read %d)", GEN_B_ITEM, v, back))
-    if back ~= v then stage_failed = true end
+    if back ~= v then stage_fail("gen_b_item write did not stick") end
+end
+-- Genesis Link position/facing live in players[0] (src/state/link_state.h
+-- LinkState: s16 x @+0, s16 y @+2, u8 dir @+6, u8 face @+7, s8 grid_offset
+-- @+13); NES $70/$84/$98 are mirrored FROM it each tick, so a stage that
+-- places Link on NES ($70/$84/$98/$394) calls gen_link_pos(x, y, nes_dir)
+-- to place him on Genesis. face: 0 down, 1 up, 2 left, 3 right
+-- (RoomRom/src/roomrom_main_state.h). No-op on NES. Read back.
+local GEN_PLAYERS = tonumber("@SYM:players@")
+-- Link's movement state proper lives in RoomRom/src/main.c statics:
+-- s_link_dir (link_dir_t, 4-byte int: 1 down, 2 up, 3 left, 4 right) and
+-- s_link_grid_offset (s8, NES ObjGridOffset $394 equivalent). A teleport
+-- must reset them as the NES stage resets $98/$394, else the next turn
+-- snaps Link toward a stale grid point.
+local GEN_LINK_DIR = tonumber("@SYM:s_link_dir@")
+local GEN_LINK_GRID = tonumber("@SYM:s_link_grid_offset@")
+local NES_DIR_TO_LINK_DIR = { [0x01] = 4, [0x02] = 3, [0x04] = 1, [0x08] = 2 }
+local NES_DIR_TO_FACE = { [0x01] = 3, [0x02] = 2, [0x04] = 0, [0x08] = 1 }
+local function gen_link_pos(x, y, nes_dir)
+    if sys ~= "GEN" then return end
+    local face = NES_DIR_TO_FACE[nes_dir]
+    if GEN_PLAYERS == nil or face == nil then
+        stage_fail("gen_link_pos: players symbol unresolved or bad dir"); return
+    end
+    local a = (RAM_DOM == "M68K BUS") and GEN_PLAYERS or (GEN_PLAYERS - 0xFF0000)
+    memory.write_u16_be(a + 0, x, RAM_DOM)
+    memory.write_u16_be(a + 2, y, RAM_DOM)
+    memory.write_u8(a + 6, nes_dir, RAM_DOM)
+    memory.write_u8(a + 7, face, RAM_DOM)
+    memory.write_u8(a + 13, 0, RAM_DOM)
+    local bx, by = memory.read_u16_be(a, RAM_DOM), memory.read_u16_be(a + 2, RAM_DOM)
+    local bd, bf = memory.read_u8(a + 6, RAM_DOM), memory.read_u8(a + 7, RAM_DOM)
+    local bg = memory.read_u8(a + 13, RAM_DOM)
+    slog(string.format("gen players[0] @%06X = %d,%d dir %02X face %d (read %d,%d dir %02X face %d grid %d)",
+        GEN_PLAYERS, x, y, nes_dir, face, bx, by, bd, bf, bg))
+    if bx ~= x or by ~= y or bd ~= nes_dir or bf ~= face or bg ~= 0 then
+        stage_fail("gen_link_pos write did not stick")
+        return
+    end
+    if GEN_LINK_DIR == nil or GEN_LINK_GRID == nil then
+        stage_fail("gen_link_pos: s_link_dir / s_link_grid_offset unresolved"); return
+    end
+    local ad = (RAM_DOM == "M68K BUS") and GEN_LINK_DIR or (GEN_LINK_DIR - 0xFF0000)
+    local ag = (RAM_DOM == "M68K BUS") and GEN_LINK_GRID or (GEN_LINK_GRID - 0xFF0000)
+    local ld = NES_DIR_TO_LINK_DIR[nes_dir]
+    memory.write_u32_be(ad, ld, RAM_DOM)
+    memory.write_u8(ag, 0, RAM_DOM)
+    local rld, rg = memory.read_u32_be(ad, RAM_DOM), memory.read_u8(ag, RAM_DOM)
+    slog(string.format("gen s_link_dir=%d (read %d) s_link_grid_offset=0 (read %d)", ld, rld, rg))
+    if rld ~= ld or rg ~= 0 then stage_fail("gen_link_pos static write did not stick") end
 end
 for f = 1, total do
-    if PRESET.stage_at == f - 1 then
-        meta:write(string.format("stage at f=%d\n", f - 1))
-        PRESET.stage(srd, swr, slog, sys, gen_b_item)
-        if stage_failed then ram:close(); fail("gen_b_item write did not stick") return end
+    for _, st in ipairs(PRESET.stages) do
+        if st.at == f - 1 then
+            meta:write(string.format("stage at f=%d\n", f - 1))
+            st.fn(srd, swr, slog, sys, gen_b_item, gen_link_pos)
+        end
     end
+    if stage_failed then ram:close(); fail(stage_fail_why) return end
     local bytes = memory.read_bytes_as_array(RAM_BASE, 0x800, RAM_DOM)
     local chunk = {}
     for i = 1, 0x800 do chunk[i] = string.char(bytes[i]) end

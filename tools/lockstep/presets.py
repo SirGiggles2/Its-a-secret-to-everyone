@@ -30,6 +30,9 @@ Spec file (JSON): {"name": "...", "file_name": "LINK", "quest": 0,
   the B item in a C static (b_item_t: 1 boomerang, 2 arrow, 3 bomb,
   4 candle, 5 rod), so a stage writing SelectedItemSlot $656 mirrors the
   selection with gen_b_item.
+  gen_link_pos(x, y, nes_dir) places Genesis Link (players[0]), whose
+  position is mirrored into $70/$84 rather than read from them; a stage
+  that moves Link on NES ($70/$84/$98, grid offset $394) calls it too.
 """
 from __future__ import annotations
 
@@ -124,9 +127,16 @@ def build(spec: dict) -> dict:
 
     return {"name": spec["name"], "nes_wram": nes, "gen_slot0": gen,
             "items": items, "script": spec.get("script", []),
-            "stage_at": int(spec.get("stage_at", -1)),
-            "stage": spec.get("stage", ""),
+            "stages": stages_of(spec),
             "gen_entry": spec.get("gen_entry", "fs")}
+
+
+def stages_of(spec: dict) -> list:
+    """[(script frame, Lua body), ...] from "stages" plus legacy stage_at/stage."""
+    out = [(int(at), body) for at, body in spec.get("stages", [])]
+    if spec.get("stage") and int(spec.get("stage_at", -1)) >= 0:
+        out.append((int(spec["stage_at"]), spec["stage"]))
+    return sorted(out, key=lambda t: t[0])
 
 
 def to_lua(p: dict) -> str:
@@ -134,11 +144,14 @@ def to_lua(p: dict) -> str:
     gen = ",".join(f"0x{b:02X}" for b in p["gen_slot0"])
     script = ",".join(f'{{{n},"{btn}"}}' for n, btn in p["script"])
     items = ",".join(f"0x{b:02X}" for b in p["items"])
-    stage = p.get("stage", "") or ""
-    return (f'PRESET={{name="{p["name"]}",nes_wram={{{nes}}},gen_slot0={{{gen}}},'
-            f'items={{{items}}},script={{{script}}},stage_at={p.get("stage_at", -1)},'
-            f'gen_entry="{p.get("gen_entry", "fs")}"}}\n'
-            f'function PRESET.stage(rd, wr, log, sys, gen_b_item)\n{stage}\nend\n')
+    out = (f'PRESET={{name="{p["name"]}",nes_wram={{{nes}}},gen_slot0={{{gen}}},'
+           f'items={{{items}}},script={{{script}}},'
+           f'gen_entry="{p.get("gen_entry", "fs")}"}}\n'
+           f'PRESET.stages = {{}}\n')
+    for i, (at, body) in enumerate(p.get("stages", []), 1):
+        out += (f'PRESET.stages[{i}] = {{at={at}, fn=function(rd, wr, log, sys, '
+                f'gen_b_item, gen_link_pos)\n{body}\nend}}\n')
+    return out
 
 
 if __name__ == "__main__":

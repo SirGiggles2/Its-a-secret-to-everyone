@@ -23,6 +23,11 @@
 #include "world/progress_dispatch.h" /* progress_update_world_curtain_effect,
                                       * progress_reset_room_tile_obj_info */
 #include "combat/collision_dispatch.h" /* collision_get_collidable_tile_still */
+#include "world/object_dispatch.h"   /* object_move_object (T-050) */
+#include "world/draw_dispatch.h"     /* draw_object_not_mirrored */
+#include "world/dyn_tile_dispatch.h" /* dyn_tile_change_tile_obj_tiles */
+#include "world/world_dispatch.h"    /* world_get_object_middle, shortcut xy */
+#include "enemies/enemy_dispatch.h"  /* enemy_play_secret_found_tune */
 #include "item_state.h"         /* LINK_PARTIAL_HEART, LINK_HEARTS, ITEM_SFX_PRIMARY,
                                  * SAVE_SLOT_INDEX */
 #include "save_state.h"         /* CONTINUE_COUNT */
@@ -1347,4 +1352,198 @@ void room_end_game_mode12(void)
     ROOM_LINK_CELLAR_FLAG = 2u;
     ROOM_SFX_MAIN = 0x80u;
     CUR_INV_TILE = (unsigned char)(CUR_INV_TILE & 0xFEu);
+}
+
+/* --------------------------------------------------------------- */
+/* T-050 OW tile objects (slot $B).                                 */
+/*                                                                  */
+/* NES source: Z_04.asm UpdateRockOrGravestone, RevealSecretTileObj, */
+/*   UpdateRockWall, UpdateTree, RevealAndFlagSecretTileObj,        */
+/*   CheckTileObjWeaponCollision, IsQuestSecretMismatch,            */
+/*   DestroyMonster_Bank4; Z_07.asm InitTileObjOrItem.              */
+/* Drained C: none (drain_coverage: no candidate); helpers drained: */
+/*   MoveObject, DrawObjectNotMirrored, ChangeTileObjTiles,         */
+/*   MarkRoomVisited, GetShortcutOrItemXYForRoom, GetObjectMiddle,  */
+/*   DoObjectsCollide, PlaySecretFoundTune.                         */
+/* Coverage: FULL for types $62-$67. Stance: GREENFIELD per asm.    */
+/* --------------------------------------------------------------- */
+
+#define TO_OBJ_X(s)          RAM(0x0070u + (s))
+#define TO_OBJ_Y(s)          RAM(0x0084u + (s))
+#define TO_OBJ_DIR(s)        RAM(0x0098u + (s))
+#define TO_OBJ_STATE(s)      RAM(0x00ACu + (s))
+#define TO_OBJ_TIMER(s)      RAM(0x0028u + (s))
+#define TO_OBJ_TYPE(s)       RAM(0x034Fu + (s))
+#define TO_OBJ_GRID(s)       RAM(0x0394u + (s))
+#define TO_OBJ_META(s)       RAM(0x0405u + (s))
+#define TO_OBJ_UNINIT(s)     RAM(0x0492u + (s))
+#define TO_OBJ_ATTR(s)       RAM(0x04BFu + (s))
+#define TO_OBJ_INV(s)        RAM(0x04F0u + (s))
+#define TO_OBJ_SHOVE_DIR(s)  RAM(0x00C0u + (s))
+#define TO_OBJ_SHOVE_DIST(s) RAM(0x00D3u + (s))
+#define TO_TILE_OBJ_ROOM(s)  RAM(0x0412u + (s))   /* TileObjRoomId */
+#define TO_OBJ_INPUT_DIR     RAM(0x03F8u)
+#define TO_INV_BRACELET      RAM(0x0665u)
+#define TO_LBA_BYTE_F        RAM(0x04CDu)         /* LevelBlockAttrsByteF */
+#define TO_QUEST_NUMBERS(i)  RAM(0x062Du + (i))
+#define TO_CUR_SAVE_SLOT     RAM(0x0016u)
+#define TO_RETURN_TO_BANK4   RAM(0x00F7u)
+
+static const unsigned char k_rock_push_dirs[2] = { 0x08u, 0x04u };
+/* SecretQuestNumbers {0,0,1}; index 3 would read the next ROM byte, the
+ * LDA-absolute opcode $AD that starts IsQuestSecretMismatch. */
+static const unsigned char k_secret_quest_numbers[4] = { 0x00u, 0x00u, 0x01u, 0xADu };
+
+/* InitTileObjOrItem: attr $81, then ResetObjMetastateAndTimer. */
+void room_init_tile_obj_or_item(unsigned int slot)
+{
+    TO_OBJ_ATTR(slot) = 0x81u;
+    TO_OBJ_TIMER(slot) = 0u;
+    TO_OBJ_META(slot) = 0u;
+}
+
+/* IsQuestSecretMismatch: 1 when the room's secret belongs to the other
+ * quest. */
+static unsigned char tile_obj_quest_mismatch(void)
+{
+    unsigned char q = (unsigned char)((unsigned char)TO_LBA_BYTE_F >> 6);
+    if (q == 0u) return 0u;
+    return (k_secret_quest_numbers[q] ==
+            (unsigned char)TO_QUEST_NUMBERS((unsigned char)TO_CUR_SAVE_SLOT))
+        ? 0u : 1u;
+}
+
+/* DestroyMonster_Bank4 (Z_04.asm). */
+static void tile_obj_destroy(unsigned int slot)
+{
+    TO_OBJ_TYPE(slot) = 0u;
+    TO_OBJ_SHOVE_DIR(slot) = 0u;             /* SetShoveInfoWith0 */
+    TO_OBJ_SHOVE_DIST(slot) = 0u;
+    TO_OBJ_TIMER(slot) = 0u;
+    TO_OBJ_STATE(slot) = 0u;
+    TO_OBJ_INV(slot) = 0u;
+    TO_OBJ_UNINIT(slot) = 0xFFu;
+    TO_OBJ_META(slot) = 0x01u;
+}
+
+/* RevealSecretTileObj. */
+static void tile_obj_reveal(unsigned char tile, unsigned int slot)
+{
+    TO_RETURN_TO_BANK4 = (uint8_t)((unsigned char)TO_RETURN_TO_BANK4 + 1u);
+    dyn_tile_change_tile_obj_tiles(tile, slot);
+    tile_obj_destroy(slot);
+    enemy_play_secret_found_tune();
+}
+
+/* RevealAndFlagSecretTileObj: reveal, then room flags |= $80. */
+static void tile_obj_reveal_and_flag(unsigned char tile, unsigned int slot)
+{
+    unsigned char flags;
+    unsigned short ptr;
+    tile_obj_reveal(tile, slot);
+    flags = room_get_room_flags();
+    ptr = (unsigned short)(((unsigned short)(unsigned char)SAVEFILE_PTR_HI << 8) |
+                           (unsigned char)SAVEFILE_PTR_LO);
+    nes_ram[ptr + (unsigned char)CUR_ROOM_ID] = (uint8_t)(flags | 0x80u);
+}
+
+/* CheckTileObjWeaponCollision: weapon middle -> [04]/[05], tile object
+ * middle -> [02]/[03], threshold $10. */
+static unsigned char tile_obj_weapon_collides(unsigned int slot, unsigned char weapon)
+{
+    RAM(0x0000u) = weapon;
+    RAM(0x0004u) = (uint8_t)((unsigned char)TO_OBJ_X(weapon) + 8u);
+    RAM(0x0005u) = (uint8_t)((unsigned char)TO_OBJ_Y(weapon) + 8u);
+    world_get_object_middle(slot);
+    return collision_do_objects_collide(0x10u);
+}
+
+/* UpdateRockOrGravestone ($62 rock, $65 gravestone, $66). */
+void room_update_rock_or_gravestone(unsigned int slot)
+{
+    if ((unsigned char)TO_OBJ_STATE(slot) == 0u) {
+        unsigned char y = 0u;
+        unsigned char dist;
+        unsigned char in;
+        if ((unsigned char)TO_OBJ_TYPE(slot) != 0x65u &&
+            (unsigned char)TO_INV_BRACELET == 0u) return;
+        if (tile_obj_quest_mismatch()) return;
+        /* Pushed only vertically: X must match Link's. */
+        if ((unsigned char)TO_OBJ_X(0) != (unsigned char)TO_OBJ_X(slot)) return;
+        dist = (unsigned char)((unsigned char)TO_OBJ_Y(0) + 3u -
+                               (unsigned char)TO_OBJ_Y(slot));
+        if (dist & 0x80u) {                 /* Link is above the object */
+            y = 1u;
+            dist = (unsigned char)(0u - dist);
+        }
+        if (dist >= 0x11u) return;
+        in = (unsigned char)((unsigned char)TO_OBJ_INPUT_DIR & 0x0Cu);
+        if (in == 0u) return;
+        if (in != k_rock_push_dirs[y]) return;
+        TO_OBJ_DIR(slot) = in;
+        TO_OBJ_STATE(slot) = (uint8_t)((unsigned char)TO_OBJ_STATE(slot) + 1u);
+        TO_TILE_OBJ_ROOM(slot) = (unsigned char)CUR_ROOM_ID;
+        /* Gravestone / rock square -> gray floor; the object draws above. */
+        TO_RETURN_TO_BANK4 = (uint8_t)((unsigned char)TO_RETURN_TO_BANK4 + 1u);
+        dyn_tile_change_tile_obj_tiles(0x26u, slot);
+        return;
+    }
+
+    /* State 1: move, draw one pixel above the object. */
+    RAM(NES_OBJ_DIR) = (unsigned char)TO_OBJ_DIR(slot);
+    object_move_object((unsigned short)slot);
+    RAM(0x0000u) = (unsigned char)TO_OBJ_X(slot);      /* Anim_FetchObjPos... */
+    RAM(0x0001u) = (uint8_t)((unsigned char)TO_OBJ_Y(slot) - 1u);   /* DEC $01 */
+    RAM(0x000Fu) = 0u;
+    draw_object_not_mirrored(0u, slot);
+    {
+        unsigned char g = (unsigned char)TO_OBJ_GRID(slot);
+        unsigned char save_room;
+        unsigned char tile;
+        unsigned char type;
+        unsigned int xy;
+        if (g != 0x10u && g != 0xF0u) return;
+        save_room = (unsigned char)CUR_ROOM_ID;
+        CUR_ROOM_ID = (uint8_t)TO_TILE_OBJ_ROOM(slot);
+        room_mark_room_visited();
+        CUR_ROOM_ID = save_room;
+        type = (unsigned char)TO_OBJ_TYPE(slot);
+        tile = (type == 0x62u) ? 0xC8u : (type == 0x65u) ? 0xBCu : 0xC0u;
+        TO_RETURN_TO_BANK4 = (uint8_t)((unsigned char)TO_RETURN_TO_BANK4 + 1u);
+        dyn_tile_change_tile_obj_tiles(tile, slot);
+        xy = world_get_shortcut_or_item_xy_for_room(
+            (unsigned int)(unsigned char)TO_TILE_OBJ_ROOM(slot));
+        TO_OBJ_X(slot) = (uint8_t)(xy >> 8);
+        TO_OBJ_Y(slot) = (uint8_t)(xy & 0xFFu);
+        tile_obj_reveal(0x70u, slot);
+    }
+}
+
+/* UpdateRockWall ($63, $67): a detonating bomb reveals a cave. */
+void room_update_rock_wall(unsigned int slot)
+{
+    unsigned char w;
+    if (tile_obj_quest_mismatch()) return;
+    w = 0x10u;
+    if ((unsigned char)TO_OBJ_STATE(w) != 0x13u) {
+        w = 0x11u;
+        if ((unsigned char)TO_OBJ_STATE(w) != 0x13u) return;
+    }
+    if (!tile_obj_weapon_collides(slot, w)) return;
+    tile_obj_reveal_and_flag(0x24u, slot);
+}
+
+/* UpdateTree ($64): a standing fire about to go out reveals stairs. */
+void room_update_tree(unsigned int slot)
+{
+    unsigned char w;
+    if (tile_obj_quest_mismatch()) return;
+    w = 0x10u;
+    if ((unsigned char)TO_OBJ_STATE(w) != 0x22u) {
+        w = 0x11u;
+        if ((unsigned char)TO_OBJ_STATE(w) != 0x22u) return;
+    }
+    if ((unsigned char)TO_OBJ_TIMER(w) >= 0x02u) return;
+    if (!tile_obj_weapon_collides(slot, w)) return;
+    tile_obj_reveal_and_flag(0x70u, slot);
 }

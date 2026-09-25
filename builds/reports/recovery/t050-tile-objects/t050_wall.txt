@@ -1,0 +1,3 @@
+t050_wall: room 76 PlayAreaTiles 704/704 equal -> PASS
+NES NT0 -> plane $C000 offsets row 7 col 32
+t050_wall: plane playfield 704/704 exact; tile identity 704/704; sub-palette mismatches 0 -> PASS

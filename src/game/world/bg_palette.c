@@ -156,6 +156,12 @@ static void build_gray_table(void)
     s_gray_table_ready = 1u;
 }
 
+void roomrom_ppu_mask_grayscale_init(void)
+{
+    /* Built outside gameplay frames: the first flash must not pay for it. */
+    if (!s_gray_table_ready) build_gray_table();
+}
+
 void roomrom_ppu_mask_grayscale_sync(void)
 {
     unsigned char want = (unsigned char)(nes_ram[NES_CUR_PPU_MASK] & 0x01u);

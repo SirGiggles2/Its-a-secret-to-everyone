@@ -114,4 +114,18 @@ void roomrom_ow_room_render_fill_one_col_at(unsigned char room_id,
  * staging during V scroll). Caller must reset to 0 after staging. */
 void roomrom_ow_room_render_set_target_plane(unsigned char plane);
 
+/* T-050: tile object recorded by NES LayoutRoomOW / CheckTileObject for
+ * an OW room (type $62-$67, X = col*$10, Y = row*$10 + $40; type 0 if
+ * none), after the secret ($80) substitution and CheckShortcut. Reads the
+ * live world flags. */
+void roomrom_ow_room_tile_object(unsigned char room_id, unsigned char *type,
+                                 unsigned char *x, unsigned char *y);
+
+/* T-050: write one NES BG tile of the active room (the last full fill
+ * marked stable) at play-area tile (col 0..31, row 0..21): plane cell,
+ * raw-tile cache and walkability. Returns 0 if no room is active. */
+unsigned char roomrom_ow_room_render_set_tile(unsigned char tile_col,
+                                              unsigned char tile_row,
+                                              unsigned char raw_tile);
+
 #endif

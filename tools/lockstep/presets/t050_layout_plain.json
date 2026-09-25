@@ -1,0 +1,20 @@
+{
+ "name": "t050_layout_plain",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {},
+ "script": [
+  [
+   30,
+   ""
+  ],
+  [
+   250,
+   "R"
+  ],
+  [
+   60,
+   ""
+  ]
+ ]
+}

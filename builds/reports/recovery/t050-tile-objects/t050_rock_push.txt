@@ -1,0 +1,4 @@
+t050_rock_push: room 79 PlayAreaTiles 704/704 equal -> PASS
+NES NT0 -> plane $C000 offsets row 7 col 0
+t050_rock_push: plane playfield 0/704 exact; tile identity 704/704; sub-palette mismatches 704 -> FAIL
+  col  0 row  0 NES tile D8 pal 3 exp 538 got 537 (palette)

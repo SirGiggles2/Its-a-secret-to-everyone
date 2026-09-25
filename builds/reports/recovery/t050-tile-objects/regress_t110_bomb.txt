@@ -1,0 +1,3 @@
+t110_bomb: FAIL (240 ticks, gen_lag 1, 2 differing cells, lag frames {'nes': 0, 'gen': 0})
+  ObjState+16: tick 141 nes=00 gen=11
+  InvBombs: tick 141 nes=03 gen=02

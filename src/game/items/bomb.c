@@ -115,6 +115,7 @@ void roomrom_bomb_init(void)
     roomrom_sprites_clear_bomb();
     roomrom_sprites_clear_explosion();
     roomrom_sprites_clear_candle_fire();
+    roomrom_ppu_mask_grayscale_init();
 }
 
 /* WieldBomb. */

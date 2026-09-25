@@ -7,6 +7,7 @@
 #include "platform_abi.h"         /* RAM macro */
 #include "../../../RoomRom/src/roomrom_vram_map.h" /* ROOMROM_BG_TILE_BASE */
 #include "../../../RoomRom/src/roomrom_main_state.h" /* roomrom_main_current_scene */
+#include "render/ow_render.h"    /* roomrom_ow_room_render_set_tile */
 
 /* Plane-bridge: NES PPU nametable ($2000-$2FFF) writes mapped to
  * Genesis Plane A cells. Uses bg_sparse_tile_lut[nes_tile_id][sub_pal]
@@ -115,16 +116,24 @@ static void emit_palette_record(unsigned char lo,
  * via bg_sparse_tile_lut[nes_tile][0]; 0xFFFF sentinel = unmapped tile
  * → write blank tile (slot 0).
  *
- * Step direction: NES PPUCTRL bit 2 selects $01 (horizontal, +1 col)
- * vs $20 (vertical, +1 row). For text streams we assume horizontal;
- * vertical writes are rare in NES Z1 gameplay text path. */
+ * Count byte (NES Z_07.asm ContinueTransferTileBuf): bit 7 set = VRAM
+ * increment 32 (vertical, +1 row per tile); bit 6 set = one source byte
+ * repeated `count` times. ChangeTileObjTiles records use $82 (vertical).
+ *
+ * T-050: OW playfield cells (NT rows 8..29) go through
+ * roomrom_ow_room_render_set_tile, which knows the active room's plane
+ * slot, attribute palette, raw-tile cache and walkability. */
 static void emit_nametable_record(unsigned char hi,
                                   unsigned char lo,
+                                  unsigned char ctrl,
                                   unsigned char count,
                                   const unsigned char *src,
                                   unsigned char src_off,
                                   unsigned char src_end)
 {
+    const unsigned char vertical = (unsigned char)(ctrl & 0x80u);
+    const unsigned char repeat   = (unsigned char)(ctrl & 0x40u);
+    const unsigned char ow = (roomrom_main_current_scene() == ROOMROM_MAIN_SCENE_OW);
     /* PPU addr = ((hi & 0x0F) << 8) | lo; range $0000..$03FF = NT0 cells. */
     unsigned short ppu_off = (unsigned short)(((hi & 0x0Fu) << 8) | lo);
     /* Only NT0 cells (offset 0..$3BF) addressable here; attribute table
@@ -148,11 +157,23 @@ static void emit_nametable_record(unsigned char hi,
 
     unsigned char src_avail = (unsigned char)((src_off < src_end)
                                               ? (src_end - src_off) : 0u);
-    if (count > src_avail) count = src_avail;
+    if (repeat) {
+        if (src_avail == 0u) return;
+    } else if (count > src_avail) {
+        count = src_avail;
+    }
 
     unsigned char i;
     for (i = 0u; i < count; i++) {
-        unsigned char nes_tile = src[src_off + i];
+        unsigned char nes_tile = src[src_off + (repeat ? 0u : i)];
+        unsigned char cell_row = (unsigned char)(nes_row + (vertical ? i : 0u));
+        unsigned char cell_col = (unsigned char)(nes_col + (vertical ? 0u : i));
+        if (ow && cell_row >= 8u && cell_row < 30u && cell_col < 32u &&
+            roomrom_ow_room_render_set_tile(cell_col,
+                                            (unsigned char)(cell_row - 8u),
+                                            nes_tile)) {
+            continue;
+        }
         unsigned short raw_slot = bg_sparse_tile_lut[nes_tile][0];
         /* Mirror tile_word() (ow_render.c): VRAM tile = ROOMROM_BG_TILE_BASE
          * + sparse slot; unmapped (0xFFFF) -> blank tile 0. The original
@@ -164,11 +185,11 @@ static void emit_nametable_record(unsigned char hi,
         unsigned short tile = (raw_slot == 0xFFFFu)
             ? (unsigned short)PLANE_BRIDGE_BLANK_TILE
             : (unsigned short)(ROOMROM_BG_TILE_BASE + raw_slot);
-        unsigned short col = (unsigned short)(nes_col + i);
-        /* Horizontal step: wrap col within plane width (64). */
+        unsigned short col = (unsigned short)cell_col;
+        /* Wrap col within plane width (64). */
         col = (unsigned short)(col & 0x3Fu);
         render_set_plane_a_word(col,
-                                (unsigned short)plane_row,
+                                (unsigned short)(plane_row + (vertical ? i : 0u)),
                                 tile);
     }
 }
@@ -195,10 +216,10 @@ static void drain_record_buffer(const unsigned char *buf, unsigned char len)
             emit_palette_record(lo, count, buf,
                                 (unsigned char)(pos + 3u), len);
         } else if (hi >= 0x20u && hi <= 0x2Fu) {
-            emit_nametable_record(hi, lo, count, buf,
+            emit_nametable_record(hi, lo, ctrl, count, buf,
                                   (unsigned char)(pos + 3u), len);
         }
-        pos = (unsigned char)(pos + 3u + count);
+        pos = (unsigned char)(pos + 3u + ((ctrl & 0x40u) ? 1u : count));
     }
 }
 
@@ -234,7 +255,7 @@ static void drain_dynamic_buffer(void)
              * and static drain paths). */
             unsigned char payload[64];
             unsigned char i;
-            unsigned char copy_len = count;
+            unsigned char copy_len = (ctrl & 0x40u) ? 1u : count;
             unsigned char avail = (unsigned char)((pos + 3u < end)
                                                    ? (end - pos - 3u) : 0u);
             if (copy_len > avail) copy_len = avail;
@@ -242,12 +263,16 @@ static void drain_dynamic_buffer(void)
                 payload[i] = (unsigned char)TRANSFER_BUF_BYTE(pos + 3u + i);
             }
             if (hi == 0x3Fu) {
+                if ((ctrl & 0x40u) && copy_len == 1u) {
+                    for (i = 1u; i < count; i++) payload[i] = payload[0];
+                    copy_len = count;
+                }
                 emit_palette_record(lo, copy_len, payload, 0u, copy_len);
             } else {
-                emit_nametable_record(hi, lo, copy_len, payload, 0u, copy_len);
+                emit_nametable_record(hi, lo, ctrl, count, payload, 0u, copy_len);
             }
         }
-        pos = (unsigned char)(pos + 3u + count);
+        pos = (unsigned char)(pos + 3u + ((ctrl & 0x40u) ? 1u : count));
     }
     TRANSFER_BUF_POS     = 0u;
     TRANSFER_BUF_BYTE(0) = 0xFFu;

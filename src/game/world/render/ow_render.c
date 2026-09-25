@@ -5,6 +5,7 @@
 #include "../ow_palette.h"  /* Phase 12.2 promoted */
 #include "../../../../RoomRom/src/bg_sparse_chr.h"  /* Phase J: sparse atlas + LUT */
 #include "platform_abi.h"  /* nes_ram, NES_PLAY_AREA_BASE, NES_TILE_COL_STRIDE */
+#include "../world_dispatch.h"  /* world_get_shortcut_or_item_xy_for_room */
 
 extern const unsigned char rooms_overworld[];
 extern const unsigned char rooms_overworld_redux[];
@@ -385,42 +386,13 @@ static void write_square_at(unsigned char src_col, unsigned char dst_col,
  * without colliding with real OW room $44. */
 static unsigned char s_rendering_cave = 0u;
 
-static void render_one_metatile_col(unsigned char room_id,
-                                    unsigned char src_col,
-                                    unsigned char dst_col,
-                                    unsigned char dst_row_base,
-                                    const unsigned char *col_dirs_override)
+/* T-050: NES LayoutRoomOrCaveOW column walk (Z_05.asm:5775). Fills the
+ * $B square indexes (descriptor & $3F) of source column `src_col`. */
+static void column_squares(const unsigned char *col_dirs, unsigned char src_col,
+                           unsigned char out[11])
 {
     const unsigned char *rooms = roomrom_rooms();
     const unsigned short *heap_offsets = roomrom_heap_offsets();
-    const unsigned char *secondary_squares = roomrom_secondary_squares();
-    /* 2026-05-23 — v6-B iter 3: NES OW PlayAreaAttrs is ALWAYS $AA
-     * (sub-pal 2) confirmed by Link-walk probe (probe_nes_walk.lua).
-     * NES LBA_A NEVER populated during OW play — FillPlayAreaAttrs
-     * doesn't run with valid data. Per-room color variation comes from
-     * PALRAM sub-pal 2 colors being patched per-room (already handled
-     * by roomrom_ow_palette_patch_bg_per_room).
-     *
-     * Original code used rooms[OW_ATTRS_A/B + room_id] & 3 which gave
-     * wrong sub-pal selection vs NES live state. Forcing sub-pal 2
-     * uniform matches NES OW attr-table layout. */
-    /* OW: NES PlayAreaAttrs uniformly $AA (sub-pal 2) — see above.
-     * CAVE: NES cave attr (byte-verified, nes_6A CIRAM $3C0) puts the
-     * border WALL tiles ($D8-$DB) on sub-pal 3 and the interior FLOOR
-     * ($24) on sub-pal 2. ow_tile_palette() routes the attr-block border
-     * region -> outer_pal and the interior -> inner_pal, so the cave sets
-     * outer=3 / inner=2 to paint orange/brown walls + dark floor. OW is
-     * untouched (outer=inner=2). The sparse atlas already carries the
-     * sub-pal-3 wall copies (bg_sparse_tile_lut[$D8..$DB][3] = $213/$216/
-     * $219/$21C), so no atlas regen is needed. The cave flag is set by
-     * roomrom_cave_room_render_fill_plane_a (CAVE_PALETTE_ROOM_ID $44
-     * collides with real OW room $44, so we cannot gate on room_id). */
-    unsigned char outer_pal = s_rendering_cave ? 3u : 2u;
-    unsigned char inner_pal = 2u;
-    unsigned char unique_id = rooms[OW_ATTRS_D_OFFSET + room_id] & 0x7F;
-    const unsigned char *col_dirs = col_dirs_override
-        ? col_dirs_override
-        : &rooms[OW_LAYOUTS_OFFSET + (unsigned short)unique_id * 16];
     unsigned char desc        = col_dirs[src_col];
     unsigned char heap_idx    = (desc >> 4) & 0x0F;
     unsigned char col_in_heap = desc & 0x0F;
@@ -441,19 +413,206 @@ static void render_one_metatile_col(unsigned char room_id,
 
     while (row < 11) {
         unsigned char sq_byte = heap_ptr[0];
-        unsigned char sq_idx  = sq_byte & 0x3F;
+        out[row] = (unsigned char)(sq_byte & 0x3F);
+        row++;
+        if (sq_byte & 0x40) {
+            repeat_state ^= 0x40;
+            if (repeat_state != 0) continue;
+        }
+        heap_ptr++;
+    }
+}
+
+static const unsigned char *ow_col_dirs(unsigned char room_id)
+{
+    const unsigned char *rooms = roomrom_rooms();
+    unsigned char unique_id = rooms[OW_ATTRS_D_OFFSET + room_id] & 0x7F;
+    return &rooms[OW_LAYOUTS_OFFSET + (unsigned short)unique_id * 16];
+}
+
+/* NES OW world flags (LevelInfo_WorldFlagsAddr = $067F for the OW):
+ * bit $80 = secret found, bit $20 = visited / shortcut seen. */
+#define NES_OW_WORLD_FLAGS 0x067Fu
+static unsigned char ow_room_flags(unsigned char room_id)
+{
+    return nes_ram[NES_OW_WORLD_FLAGS + (room_id & 0x7Fu)];
+}
+
+/* LayoutRoomOW @LoopSquareOW secret substitution. In: square index `sq`.
+ * Out: final square index ($0D) and the primary A that CheckTileObject
+ * sees. A secret found in the room turns a tree ($E7) or special armos
+ * ($EA) into stairs (square $10, primary $70) and a rock wall ($E6) into
+ * a cave entrance (square $0C; A stays $E6). */
+static void resolve_layout_square(unsigned char flags, unsigned char sq,
+                                  unsigned char *out_sq, unsigned char *out_a)
+{
+    unsigned char a = s_primary_squares[sq];
+    if (flags & 0x80u) {
+        if (a == 0xE7u || a == 0xEAu) {
+            sq = 0x10u;
+            a = 0x70u;
+        } else if (a == 0xE6u) {
+            sq = 0x0Cu;
+        }
+    }
+    *out_sq = sq;
+    *out_a = a;
+}
+
+/* NES TileObjectTypes (Z_05.asm, CheckTileObject), indexed by A - $E5. */
+static const unsigned char s_tile_object_types[6] = {
+    0x62u, 0x63u, 0x64u, 0x65u, 0x66u, 0x67u
+};
+
+/* Result of LayoutRoomOW + CheckShortcut for one OW room: the tile
+ * object CheckTileObject recorded (last $E5-$EA primary in column-major
+ * order), and the square CheckShortcut writes, if any. */
+typedef struct {
+    unsigned char room_id;
+    unsigned char valid;
+    unsigned char obj_type, obj_x, obj_y;
+    unsigned char shortcut;          /* 1 = CheckShortcut writes a square */
+    unsigned char sc_col, sc_row;    /* metatile position */
+    unsigned char sc_sq, sc_primary; /* WriteSquareOW $0D / A */
+} ow_room_layout_t;
+static ow_room_layout_t s_layout_cache;
+
+static unsigned char layout_tile_tl(unsigned char sq, unsigned char a)
+{
+    if (sq >= 0x10u) return normalize_primary_tile(a);
+    return roomrom_secondary_squares()[(unsigned char)(sq * 4u)];
+}
+
+static const ow_room_layout_t *ow_room_layout(unsigned char room_id)
+{
+    const unsigned char *col_dirs;
+    unsigned char flags;
+    unsigned char col, row;
+    unsigned char sqs[11];
+    ow_room_layout_t *L = &s_layout_cache;
+    if (L->valid && L->room_id == room_id) return L;
+    L->room_id = room_id;
+    L->obj_type = L->obj_x = L->obj_y = 0u;
+    L->shortcut = 0u;
+    col_dirs = ow_col_dirs(room_id);
+    flags = ow_room_flags(room_id);
+    for (col = 0u; col < 16u; ++col) {
+        column_squares(col_dirs, col, sqs);
+        for (row = 0u; row < 11u; ++row) {
+            unsigned char sq, a;
+            resolve_layout_square(flags, sqs[row], &sq, &a);
+            if (a >= 0xE5u && a <= 0xEAu) {
+                L->obj_type = s_tile_object_types[a - 0xE5u];
+                L->obj_x = (unsigned char)(col << 4);
+                L->obj_y = (unsigned char)((row << 4) + 0x40u);
+            }
+        }
+    }
+    /* CheckShortcut (Z_05.asm, after LayoutRoomOW): secret not found but
+     * the room was visited -> stairs where the shortcut lies, unless a
+     * gravestone is there. */
+    if (!(flags & 0x80u) && (flags & 0x20u)) {
+        unsigned int xy = world_get_shortcut_or_item_xy_for_room(room_id);
+        unsigned char sx = (unsigned char)(xy >> 8);
+        unsigned char sy = (unsigned char)(xy & 0xFFu);
+        unsigned char c = (unsigned char)(sx >> 4);
+        unsigned char r = (unsigned char)((unsigned char)(sy - 0x40u) >> 4);
+        unsigned char sq, a, tile;
+        column_squares(col_dirs, c, sqs);
+        resolve_layout_square(flags, sqs[r], &sq, &a);
+        tile = layout_tile_tl(sq, a);
+        L->sc_col = c;
+        L->sc_row = r;
+        L->sc_sq = 0x10u;
+        L->sc_primary = 0x70u;
+        L->shortcut = 1u;
+        if (tile == 0xBCu) {
+            L->shortcut = 0u;                     /* gravestone stays */
+        } else if (tile == 0xD8u && L->obj_type != 0x62u) {
+            L->obj_type = 0u;                     /* black square */
+            L->sc_sq = 0x0Cu;
+            L->sc_primary = a;
+        }
+    }
+    L->valid = 1u;
+    return L;
+}
+
+void roomrom_ow_room_tile_object(unsigned char room_id, unsigned char *type,
+                                 unsigned char *x, unsigned char *y)
+{
+    const ow_room_layout_t *L;
+    s_layout_cache.valid = 0u;     /* world flags may have changed */
+    L = ow_room_layout(room_id);
+    *type = L->obj_type;
+    *x = L->obj_x;
+    *y = L->obj_y;
+}
+
+/* Slot mapping of the room the tile cache describes: recorded while a
+ * full fill is capturing, committed when the fill is marked stable.
+ * roomrom_ow_room_render_set_tile uses it to edit the live room. */
+static unsigned char s_fill_dst_col[16];
+static unsigned char s_fill_row_base, s_fill_plane, s_fill_cave;
+static unsigned char s_act_dst_col[16];
+static unsigned char s_act_row_base, s_act_plane, s_act_cave, s_act_valid;
+
+static void render_one_metatile_col(unsigned char room_id,
+                                    unsigned char src_col,
+                                    unsigned char dst_col,
+                                    unsigned char dst_row_base,
+                                    const unsigned char *col_dirs_override)
+{
+    const unsigned char *secondary_squares = roomrom_secondary_squares();
+    /* 2026-05-23 — v6-B iter 3: NES OW PlayAreaAttrs is ALWAYS $AA
+     * (sub-pal 2) confirmed by Link-walk probe (probe_nes_walk.lua).
+     * Per-room color variation comes from PALRAM sub-pal 2 colors being
+     * patched per-room (roomrom_ow_palette_patch_bg_per_room).
+     * CAVE: NES cave attr (byte-verified, nes_6A CIRAM $3C0) puts the
+     * border WALL tiles ($D8-$DB) on sub-pal 3 and the interior FLOOR
+     * ($24) on sub-pal 2; ow_tile_palette() routes border -> outer_pal and
+     * interior -> inner_pal. The cave flag is set by
+     * roomrom_cave_room_render_fill_plane_a (CAVE_PALETTE_ROOM_ID $44
+     * collides with real OW room $44, so we cannot gate on room_id). */
+    unsigned char outer_pal = s_rendering_cave ? 3u : 2u;
+    unsigned char inner_pal = 2u;
+    const unsigned char *col_dirs = col_dirs_override
+        ? col_dirs_override
+        : ow_col_dirs(room_id);
+    /* Secrets and shortcuts are OW-room layout only (caves have none). */
+    const ow_room_layout_t *L = col_dirs_override ? (const ow_room_layout_t *)0
+                                                  : ow_room_layout(room_id);
+    unsigned char flags = col_dirs_override ? 0u : ow_room_flags(room_id);
+    unsigned char sqs[11];
+    unsigned char row;
+
+    if (s_raw_tile_capture_active) {
+        s_fill_dst_col[src_col & 0x0F] = dst_col;
+        s_fill_row_base = dst_row_base;
+        s_fill_plane = s_target_plane;
+        s_fill_cave = s_rendering_cave;
+    }
+    column_squares(col_dirs, src_col, sqs);
+
+    for (row = 0; row < 11; row++) {
+        unsigned char sq, a;
         unsigned char tile_tl, tile_bl, tile_tr, tile_br;
         unsigned char primary_for_walk;
 
-        if (sq_idx >= 0x10) {
-            unsigned char p = normalize_primary_tile(s_primary_squares[sq_idx]);
+        resolve_layout_square(flags, sqs[row], &sq, &a);
+        if (L && L->shortcut && L->sc_col == src_col && L->sc_row == row) {
+            sq = L->sc_sq;
+            a = L->sc_primary;
+        }
+        if (sq >= 0x10) {
+            unsigned char p = normalize_primary_tile(a);
             tile_tl = p;
             tile_bl = p + 1;
             tile_tr = p + 2;
             tile_br = p + 3;
             primary_for_walk = p;
         } else {
-            unsigned char b = (unsigned char)(sq_idx * 4);
+            unsigned char b = (unsigned char)(sq * 4);
             tile_tl = secondary_squares[b];
             tile_bl = secondary_squares[b + 1];
             tile_tr = secondary_squares[b + 2];
@@ -465,14 +624,40 @@ static void render_one_metatile_col(unsigned char room_id,
                         tile_tl, tile_bl, tile_tr, tile_br,
                         outer_pal, inner_pal);
         s_walkable[dst_col & 0x0F][row] = ow_walkable_primary(primary_for_walk);
-        row++;
-
-        if (sq_byte & 0x40) {
-            repeat_state ^= 0x40;
-            if (repeat_state != 0) continue;
-        }
-        heap_ptr++;
     }
+}
+
+static void commit_fill_mapping(void)
+{
+    unsigned char c;
+    for (c = 0u; c < 16u; ++c) s_act_dst_col[c] = s_fill_dst_col[c];
+    s_act_row_base = s_fill_row_base;
+    s_act_plane = s_fill_plane;
+    s_act_cave = s_fill_cave;
+    s_act_valid = 1u;
+}
+
+unsigned char roomrom_ow_room_render_set_tile(unsigned char tile_col,
+                                              unsigned char tile_row,
+                                              unsigned char raw_tile)
+{
+    unsigned char dst_col, saved_plane;
+    if (!s_act_valid || tile_col >= ROOMROM_OW_RAW_TILE_COLS ||
+        tile_row >= ROOMROM_OW_RAW_TILE_ROWS) {
+        return 0u;
+    }
+    dst_col = s_act_dst_col[tile_col >> 1];
+    saved_plane = s_target_plane;
+    s_target_plane = s_act_plane;
+    write_tile_at(tile_col, tile_row,
+                  (unsigned char)((dst_col << 1) | (tile_col & 1u)), tile_row,
+                  s_act_row_base, raw_tile, s_act_cave ? 3u : 2u, 2u);
+    s_target_plane = saved_plane;
+    s_raw_tiles[tile_col][tile_row] = raw_tile;
+    if (((tile_col | tile_row) & 1u) == 0u) {
+        s_walkable[dst_col & 0x0F][tile_row >> 1] = ow_walkable_primary(raw_tile);
+    }
+    return 1u;
 }
 
 void roomrom_ow_room_render_fill_one_col(unsigned char room_id,
@@ -504,6 +689,7 @@ void roomrom_ow_room_render_fill_plane_a(unsigned char room_id)
     }
     s_raw_tile_capture_active = 0u;
     s_raw_tiles_stable = 1u;
+    commit_fill_mapping();
 }
 
 /* NES cave column-desc tables (Z_05.asm RoomLayoutOWCave0/1 @ 4198/4202).
@@ -554,6 +740,7 @@ void roomrom_cave_room_render_fill_plane_a(unsigned char cave_id)
     s_rendering_cave = 0u;
     s_raw_tile_capture_active = 0u;
     s_raw_tiles_stable = 1u;
+    commit_fill_mapping();
 }
 
 unsigned char roomrom_ow_room_render_raw_tile_at(unsigned char tile_col,
@@ -582,12 +769,14 @@ void roomrom_ow_room_render_begin_full_fill(void)
 {
     s_raw_tiles_stable = 0u;
     s_raw_tile_capture_active = 1u;
+    s_layout_cache.valid = 0u;     /* re-read world flags for this room */
 }
 
 void roomrom_ow_room_render_mark_stable(void)
 {
     s_raw_tile_capture_active = 0u;
     s_raw_tiles_stable = 1u;
+    commit_fill_mapping();
 }
 
 /* Task 5.4 cache export for BizHawk Lua probes.

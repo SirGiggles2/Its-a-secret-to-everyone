@@ -1,0 +1,72 @@
+{
+ "name": "t050_rock_push",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {
+  "InvBracelet": 1
+ },
+ "script": [
+  [
+   30,
+   ""
+  ],
+  [
+   250,
+   "R"
+  ],
+  [
+   10,
+   ""
+  ],
+  [
+   60,
+   "R"
+  ],
+  [
+   170,
+   ""
+  ],
+  [
+   60,
+   "U"
+  ],
+  [
+   60,
+   ""
+  ],
+  [
+   60,
+   "L"
+  ],
+  [
+   170,
+   ""
+  ],
+  [
+   60,
+   "R"
+  ],
+  [
+   200,
+   ""
+  ]
+ ],
+ "stages": [
+  [
+   290,
+   "wr(0x70, 232)\nwr(0x84, 141)\nwr(0x98, 1)\nwr(0x394, 0)\ngen_link_pos(232, 141, 1)\nlog(string.format('room %02X link %02X,%02X slot11 %02X at %02X,%02X st %02X flags79 %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x35A), rd(0x7B), rd(0x8F), rd(0xB7), rd(0x67F+0x79)))"
+  ],
+  [
+   520,
+   "wr(0x70, 128)\nwr(0x84, 157)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(128, 157, 8)\nlog(string.format('room %02X link %02X,%02X slot11 %02X at %02X,%02X st %02X flags79 %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x35A), rd(0x7B), rd(0x8F), rd(0xB7), rd(0x67F+0x79)))"
+  ],
+  [
+   640,
+   "wr(0x70, 8)\nwr(0x84, 141)\nwr(0x98, 2)\nwr(0x394, 0)\ngen_link_pos(8, 141, 2)\nlog(string.format('room %02X link %02X,%02X slot11 %02X at %02X,%02X st %02X flags79 %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x35A), rd(0x7B), rd(0x8F), rd(0xB7), rd(0x67F+0x79)))"
+  ],
+  [
+   870,
+   "wr(0x70, 232)\nwr(0x84, 141)\nwr(0x98, 1)\nwr(0x394, 0)\ngen_link_pos(232, 141, 1)\nlog(string.format('room %02X link %02X,%02X slot11 %02X at %02X,%02X st %02X flags79 %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x35A), rd(0x7B), rd(0x8F), rd(0xB7), rd(0x67F+0x79)))"
+  ]
+ ]
+}
