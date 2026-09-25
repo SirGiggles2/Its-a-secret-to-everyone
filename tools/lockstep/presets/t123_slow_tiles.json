@@ -1,0 +1,122 @@
+{
+ "name": "t123_slow_tiles",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {},
+ "script": [
+  [
+   30,
+   ""
+  ],
+  [
+   40,
+   "R"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   40,
+   "U"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   40,
+   "U"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   40,
+   "U"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   40,
+   "U"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   40,
+   "U"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   40,
+   "L"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   40,
+   "U"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   70,
+   "U"
+  ],
+  [
+   20,
+   ""
+  ]
+ ],
+ "stages": [
+  [
+   30,
+   "wr(0x70, 240)\nwr(0x84, 141)\nwr(0x98, 1)\nwr(0x394, 0)\ngen_link_pos(240, 141, 1)\nlog(string.format('cross 77->78 room %02X link %02X,%02X spd %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x3BC)))"
+  ],
+  [
+   230,
+   "wr(0x70, 48)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(48, 61, 8)\nlog(string.format('cross 78->68 room %02X link %02X,%02X spd %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x3BC)))"
+  ],
+  [
+   430,
+   "wr(0x70, 48)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(48, 61, 8)\nlog(string.format('cross 68->58 room %02X link %02X,%02X spd %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x3BC)))"
+  ],
+  [
+   630,
+   "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('cross 58->48 room %02X link %02X,%02X spd %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x3BC)))"
+  ],
+  [
+   830,
+   "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('cross 48->38 room %02X link %02X,%02X spd %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x3BC)))"
+  ],
+  [
+   1030,
+   "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('cross 38->28 room %02X link %02X,%02X spd %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x3BC)))"
+  ],
+  [
+   1230,
+   "wr(0x70, 0)\nwr(0x84, 93)\nwr(0x98, 2)\nwr(0x394, 0)\ngen_link_pos(0, 93, 2)\nlog(string.format('cross 28->27 room %02X link %02X,%02X spd %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x3BC)))"
+  ],
+  [
+   1430,
+   "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('cross 27->17 room %02X link %02X,%02X spd %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x3BC)))"
+  ],
+  [
+   1630,
+   "wr(0x70, 64)\nwr(0x84, 141)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(64, 141, 8)\nlog(string.format('slow tiles room %02X link %02X,%02X spd %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x3BC)))"
+  ]
+ ]
+}

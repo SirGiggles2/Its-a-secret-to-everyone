@@ -637,9 +637,27 @@ static unsigned char link_nes_grid_at_limit(void)
             s_link_grid_offset == -LINK_GRID_SIZE) ? 1u : 0u;
 }
 
+/* T-123: NES InitLinkSpeed. Link's q-speed is $60 except on the OW
+ * stair / slow tiles $74 / $75 (ObjCollidedTile $49E) where it is $30;
+ * switching to $30 resets the position fraction. */
+static u8 s_link_qspeed = LINK_QSPEED;
+
+static void link_nes_init_speed(void)
+{
+    u8 q = LINK_QSPEED;
+    if (nes_ram[0x0010u] == 0u) {
+        u8 t = nes_ram[0x049Eu];
+        if (t == 0x74u || t == 0x75u) {
+            q = 0x30u;
+            if (s_link_qspeed != 0x30u) s_link_pos_frac = 0u;
+        }
+    }
+    s_link_qspeed = q;
+}
+
 static unsigned char link_nes_add_qspeed(void)
 {
-    unsigned short sum = (unsigned short)s_link_pos_frac + LINK_QSPEED;
+    unsigned short sum = (unsigned short)s_link_pos_frac + s_link_qspeed;
     s_link_pos_frac = (u8)(sum & 0xFFu);
     if (link_nes_grid_at_limit()) return 0u;
     if (sum >= 0x100u) {
@@ -651,7 +669,7 @@ static unsigned char link_nes_add_qspeed(void)
 
 static unsigned char link_nes_sub_qspeed(void)
 {
-    int diff = (int)s_link_pos_frac - (int)LINK_QSPEED;
+    int diff = (int)s_link_pos_frac - (int)s_link_qspeed;
     s_link_pos_frac = (u8)(diff & 0xFF);
     if (link_nes_grid_at_limit()) return 0u;
     if (diff < 0) {
@@ -693,12 +711,13 @@ static void link_nes_modify_dir_on_grid_line(link_dir_t input_dir)
     unsigned char mag = (unsigned char)(off < 0 ? -off : off);
     unsigned char neg_facing;
 
-    if (input_dir == s_link_dir) return;
+    if (input_dir == s_link_dir) { link_nes_init_speed(); return; }   /* T-123 */
     if (input_dir == link_nes_opposite(s_link_dir)) {
         s_link_dir = input_dir;
         return;
     }
-    if (s_link_go_straight || mag >= 4u) return;
+    if (s_link_go_straight) { link_nes_init_speed(); return; }       /* T-123 */
+    if (mag >= 4u) return;
     neg_facing = (s_link_dir == LINK_DIR_LEFT || s_link_dir == LINK_DIR_UP) ? 1u : 0u;
     if (neg_facing ? (off >= 0) : (off < 0)) return;
     s_link_dir = link_nes_opposite(s_link_dir);
@@ -749,6 +768,10 @@ static void link_nes_modify_dir_at_grid_point(unsigned char in, link_dir_t *movi
         if (!b) continue;
         last_in = b;
         ++count;
+        /* NES GetCollidingTileMoving for Link: keeps ObjCollidedTile
+         * ($49E) for InitLinkSpeed (T-123). */
+        nes_ram[NES_OBJ_DIR] = b;
+        (void)collision_get_colliding_tile_moving(0u);
         if (link_walkable_at(players[0].x, players[0].y, link_dir_of_nes_bit(b))) {
             last_walk = b;
             ++walk;
@@ -793,6 +816,7 @@ static void link_nes_modify_dir_at_grid_point(unsigned char in, link_dir_t *movi
     nes_ram[0x03F8u] = a;
     s_link_dir = link_dir_of_nes_bit(a);
     *moving = s_link_dir;
+    link_nes_init_speed();                       /* T-123 */
 }
 
 static void link_nes_move_object(link_dir_t dir)
@@ -2503,6 +2527,7 @@ void roomrom_debug_tick(void)
                 nes_ram_reconcile_sword_beam_collision();
                 /* T-119: NES UpdateMode5Play runs CheckShutters +
                  * UpdateDoors after the object loop (Z_07.asm:1983). */
+                enemy_loop_play_tail(s_scene == SCENE_UW ? 1u : 0u);
                 if (s_scene == SCENE_UW) uw_door_state_update();
             }
             /* Phase 7 root-cause fix #5b 2026-05-16 — restore GameMode
@@ -3313,7 +3338,7 @@ void roomrom_debug_tick(void)
             nes_ram[0x84u] = (u8)players[0].y;
             nes_ram[0x394u] = (u8)s_link_grid_offset;
             nes_ram[0x3A8u] = s_link_pos_frac;
-            nes_ram[0x3BCu] = LINK_QSPEED;   /* T-113: ObjQSpeedFrac, NES $60 */
+            nes_ram[0x3BCu] = s_link_qspeed; /* T-113/T-123: ObjQSpeedFrac */
             if (!roomrom_combat_link_locked()) {
                 /* Per APPENDIX plan revert: single SAT entry unconditional.
                  * Split-sprite removed; wide BG-prio stamp handles

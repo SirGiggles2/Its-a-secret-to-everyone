@@ -60,6 +60,10 @@ void enemy_loop_clear_all_slots(void);
  * enemy_update_fns[ENEMY_TYPE(slot)] when alive + non-NULL. */
 void enemy_loop_tick(void);
 
+/* NES UpdateMode5Play tail after the object loop: heart warning; in the
+ * OW (in_uw == 0) the sea sound and CheckZora. */
+void enemy_loop_play_tail(unsigned char in_uw);
+
 /* Test hook (Phase 7 first probe — Q4=c overworld $7C):
  * Forcibly spawn one slow octorok in slot N at (x,y) with a fixed
  * direction. Used by tools/debug/probe_walker_parity.lua to seed a

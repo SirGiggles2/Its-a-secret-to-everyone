@@ -22,6 +22,9 @@
 
 #include "enemy_loop.h"
 #include "../room/room_dispatch.h"
+#include "../core/core_dispatch.h"          /* ClearRam0300UpTo, SetTypeAndClearObject */
+#include "../combat/collision_dispatch.h"  /* GetCollidableTileStill */
+#include "enemy_dispatch.h"                /* FindEmptyMonsterSlot */
 #include "roomrom_enemy_state.h"          /* still in RoomRom/src/ pre-WT-5 */
 #include "platform_abi.h"
 #include "probes/enemy_loop_probe.h"      /* step 4 live-tick publish */
@@ -1198,6 +1201,24 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id,
                           unsigned char level, unsigned char quest)
 {
     unsigned int slot;
+    static unsigned char s_last_room_id  = 0xFFu;
+    static unsigned char s_last_scene_id = 0xFFu;
+    static unsigned char s_last_level = 0xFFu;
+    static unsigned char s_last_quest = 0xFFu;
+    unsigned char same_room = (s_last_room_id == room_id &&
+                               s_last_scene_id == scene_id &&
+                               s_last_level == level &&
+                               s_last_quest == quest);
+    /* NES InitMode_EnterRoom (Z_05.asm:1546): ClearRam0300UpTo $051F
+     * before any room object setup (ZoraActive $514, object q-speeds,
+     * counters, ...). Only on a real entry: the repeat-entry guard below
+     * returns without touching room state. */
+    if (!same_room && !s_fix_arm_suppress_room_init)
+        core_clear_ram0300_up_to(5u, 0x1Fu);
+    /* NES SetupObjRoomBounds (Z_05.asm:6409), run by InitMode_EnterRoom
+     * after placing Link and by RunCrossRoomTasks: RoomBoundLeft/Right/
+     * Up/Down ($346-$349) + ObjectFirstUnwalkableTile ($34A). */
+    room_setup_obj_room_bounds();
     /* T-116: Link's part of the NES room-entry object setup (Z_05.asm,
      * after AssignObjSpawnPositions / SetupTileObjectOW): stun timer and
      * shove cleared, animation counter 4, InitLinkSpeed q-speed $60. NES
@@ -1222,14 +1243,6 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id,
      * build/probes/track_all.lua captured Link X-wrap $00->$F0 that
      * re-triggers room_init without room_id change, smashing enemy
      * slot types + replaying spawn-cloud. Skip whole init on repeat. */
-    static unsigned char s_last_room_id  = 0xFFu;
-    static unsigned char s_last_scene_id = 0xFFu;
-    static unsigned char s_last_level = 0xFFu;
-    static unsigned char s_last_quest = 0xFFu;
-    unsigned char same_room = (s_last_room_id == room_id &&
-                               s_last_scene_id == scene_id &&
-                               s_last_level == level &&
-                               s_last_quest == quest);
     s_last_level = level;
     s_last_quest = quest;
     s_last_room_id  = room_id;
@@ -1511,6 +1524,48 @@ static void enemy_loop_combat_force_kill_hook(void)
     arm[1] = 0u;
 }
 
+/* NES CheckZora (Z_04.asm:1760): in a room with the Zora attribute
+ * (LevelBlockAttrsA bit 3) and no Zora active, put one on a random water
+ * square ($8D..$98) in the first empty monster slot. */
+static void enemy_loop_check_zora(void)
+{
+    unsigned char room = RAM(0x00EBu);
+    unsigned char slot, y;
+    if ((RAM(0x687Eu + room) & 0x08u) == 0u) return;
+    if (RAM(0x0514u) != 0u) return;                 /* ZoraActive */
+    slot = (unsigned char)enemy_find_empty_monster_slot();
+    if (slot == 0u) return;
+    for (y = 0x0Du; y != 0u; --y) {
+        unsigned char r = RAM(0x0018u + y);         /* Random, Y */
+        unsigned char x = (unsigned char)(r & 0xF0u);
+        unsigned char py = (unsigned char)(r << 4);
+        unsigned char t;
+        OBJ(0x0070u, slot) = x;
+        if (x == 0u || x == 0xF0u) continue;
+        if (py < 0x50u || py >= 0xE0u) continue;
+        OBJ(0x0084u, slot) = (unsigned char)(py | 0x0Du);
+        t = collision_get_collidable_tile_still(slot);
+        if (t < 0x8Du || t >= 0x99u) continue;
+        RAM(0x0514u) = (unsigned char)(RAM(0x0514u) + 1u);
+        core_set_type_and_clear_object(0x11u, slot);
+        return;
+    }
+}
+
+/* NES UpdateMode5Play after the object loop (Z_07.asm:1955): heart
+ * warning, then in the OW the sea sound and CheckZora. The UW tail
+ * (statues, secrets, shutters, doors) is run by the caller. */
+void enemy_loop_play_tail(unsigned char in_uw)
+{
+    if ((RAM(0x066Fu) & 0x0Fu) == 0u)               /* HeartValues full */
+        RAM(0x0604u) = (unsigned char)(RAM(0x0604u) | 0x40u);
+    if (in_uw) return;
+    if (RAM(0x0012u) == 0x05u)                      /* sea sound effect */
+        RAM(0x0603u) = (unsigned char)(RAM(0x0603u) |
+            ((RAM(0x687Eu + RAM(0x00EBu)) & 0x04u) << 3));
+    enemy_loop_check_zora();
+}
+
 void enemy_loop_tick(void)
 {
     unsigned int slot;
@@ -1590,7 +1645,10 @@ void enemy_loop_tick(void)
         }
     }
 
-    for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
+    /* NES @LoopObject (Z_07.asm:1915) updates objects from $B down to 1:
+     * a shot a monster spawns into a lower free slot (FindEmptyMonsterSlot
+     * scans down from $B) is initialised later in the same frame. */
+    for (slot = ENEMY_LOOP_SLOT_LAST; slot >= ENEMY_LOOP_SLOT_FIRST; --slot) {
         unsigned char t;
         enemy_update_fn fn;
         if (ENEMY_ALIVE_FLAG(slot) == 0u) continue;

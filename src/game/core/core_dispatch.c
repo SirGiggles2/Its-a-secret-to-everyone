@@ -569,6 +569,21 @@ void core_clear_ram0300_up_to(unsigned int end_hi, unsigned int start_off)
      * clear of nes_ram[$0300+] until hi < $03. */
     unsigned char hi  = (unsigned char)end_hi;
     unsigned char off = (unsigned char)start_off;
+    if (hi >= 0x03u) {
+        /* Same result as the byte loop below ($0300..end inclusive, then
+         * the $0301 terminator), with long-word stores: the room-entry
+         * clear of $0300-$051F is 544 bytes and the byte loop through the
+         * volatile nes_ram pointer cost a lag frame on busy entries. */
+        unsigned char *p = (unsigned char *)nes_ram;
+        unsigned short i = 0x0300u;
+        unsigned short n = (unsigned short)((((unsigned short)hi << 8) | off) + 1u);
+        while ((i & 3u) != 0u && i < n) p[i++] = 0u;
+        for (; (unsigned short)(i + 4u) <= n; i = (unsigned short)(i + 4u))
+            *(unsigned long *)(p + i) = 0u;
+        while (i < n) p[i++] = 0u;
+        RAM(0x0301u) = 0xFFu;
+        return;
+    }
     for (;;) {
         nes_ram[((unsigned short)hi << 8) | off] = 0u;
         off = (unsigned char)(off - 1u);
