@@ -49,7 +49,7 @@ static unsigned char s_entering;                   /* entering doorway bit  */
 static unsigned char s_cur_level;                  /* 1-based               */
 static unsigned char s_cur_room_id;
 
-static void layout_door(unsigned char dir);
+static void layout_door(unsigned char dir, unsigned char plane);
 static void publish_cur_opened_doors(void);
 static const unsigned char k_door_face_tiles[DOOR_DIR_COUNT][60];
 static const unsigned char k_door_face_origin[DOOR_DIR_COUNT][2];
@@ -99,7 +99,7 @@ static void reset_door_flag(unsigned char room_id, unsigned char dir)
 /* LayOutDoors: clear CurOpenedDoors bits of doorways that are not true
  * doors, set the door flag of every opened key / bombable door, and copy
  * each door face into the play area (plane + PlayAreaTiles). */
-static void lay_out_doors(void)
+static void lay_out_doors(unsigned char plane)
 {
     unsigned char dir;
     for (dir = 0u; dir < DOOR_DIR_COUNT; dir++) {
@@ -111,7 +111,7 @@ static void lay_out_doors(void)
             set_door_flag(s_cur_room_id, dir);
         }
     }
-    for (dir = 0u; dir < DOOR_DIR_COUNT; dir++) layout_door(dir);
+    for (dir = 0u; dir < DOOR_DIR_COUNT; dir++) layout_door(dir, plane);
     publish_cur_opened_doors();
     uw_door_state_apply_walkability();
 }
@@ -178,7 +178,7 @@ void uw_door_state_room_init(unsigned char level,
     s_cur_opened = entering;
     flags_at = room_flags_addr(room_id);
     if (flags_at) s_cur_opened |= (unsigned char)(nes_ram[flags_at] & 0x0Fu);
-    lay_out_doors();
+    lay_out_doors(1u);
 
     /* InitMode4 @Method2 (room to room): if Link came through an opened
      * door, command it to close (only shutters change; UpdateDoors). */
@@ -193,7 +193,7 @@ void uw_door_state_room_init(unsigned char level,
 void uw_door_state_layout_all(void)
 {
     unsigned char dir;
-    for (dir = 0u; dir < DOOR_DIR_COUNT; dir++) layout_door(dir);
+    for (dir = 0u; dir < DOOR_DIR_COUNT; dir++) layout_door(dir, 1u);
     uw_door_state_apply_walkability();
 }
 
@@ -375,7 +375,7 @@ static void update_doors(void)
     if (cmd < 0x05u && t != DOOR_TYPE_SHUTTER) {
         /* Closing a key door or bombable wall does nothing. */
         nes_ram[NES_TRIG_DOOR_CMD] = 0u;
-        lay_out_doors();
+        lay_out_doors(0u);
         return;
     }
     door_anim_step(dir, open);
@@ -398,7 +398,10 @@ static void update_doors(void)
         s_cur_opened |= bit;
     }
     nes_ram[NES_TRIG_DOOR_CMD] = 0u;
-    lay_out_doors();
+    /* NES LayOutDoors writes PlayAreaTiles only; the nametable already
+     * shows the final face (door_anim_step wrote its middle 2x2, the only
+     * cells any door state change alters). */
+    lay_out_doors(0u);
 }
 
 /* Per UW play frame: CheckShutters then UpdateDoors. */
@@ -429,7 +432,7 @@ void uw_door_state_open_by_mask(unsigned char dir_mask)
         any_new = 1u;
     }
     if (any_new) {
-        lay_out_doors();
+        lay_out_doors(1u);
         audio_sfx_play(3u);
     }
 }
@@ -539,7 +542,9 @@ static unsigned char door_face_index(unsigned char dir)
     }
 }
 
-static void layout_door(unsigned char dir)
+/* plane: 1 = nametable + PlayAreaTiles (room layout), 0 = PlayAreaTiles
+ * and walkability only (door command completion). */
+static void layout_door(unsigned char dir, unsigned char plane)
 {
     unsigned char face = door_face_index(dir);
     const unsigned char *src;
@@ -562,8 +567,12 @@ static void layout_door(unsigned char dir)
                     col = (unsigned char)(col + 2u * half + c);
                     row = (unsigned char)(row + r);
                 }
-                pal = roomrom_uw_room_render_palette_at(col, (unsigned char)(row + 8u));
-                roomrom_uw_room_render_write_tile(col, row, src[k], pal);
+                if (plane) {
+                    pal = roomrom_uw_room_render_palette_at(col, (unsigned char)(row + 8u));
+                    roomrom_uw_room_render_write_tile(col, row, src[k], pal);
+                } else {
+                    roomrom_uw_room_render_write_tile_pat(col, row, src[k]);
+                }
                 ++k;
             }
         }
@@ -581,7 +590,7 @@ static void publish_cur_opened_doors(void)
 void uw_door_state_patch_open_tiles(unsigned char dir)
 {
     if (dir >= DOOR_DIR_COUNT) return;
-    layout_door(dir);
+    layout_door(dir, 1u);
 }
 
 unsigned char uw_door_state_has_shutters(void)
