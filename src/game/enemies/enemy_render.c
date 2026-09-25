@@ -711,6 +711,53 @@ static inline unsigned short translate_attrs(unsigned char nes_attrs,
     return sat;
 }
 
+/* T-118: lookup tables for the per-sprite translate_tile/translate_attrs
+ * work in emit_native_entries (PC profile, busy UW room: ~100 68000
+ * instructions per sprite, 11% of the frame). s_xlat_tile holds
+ * translate_tile(t, 0) for the current (boss bank, OW/UW) state and is
+ * rebuilt when that state changes; XLAT_SLOW keeps the full function for
+ * the cases that depend on attrs or have side effects (fireball lazy CHR
+ * upload, boss sub-pal 3 split). Marker attrs (META/ITEM) always take the
+ * full function. s_xlat_attr holds translate_attrs(a, 0): the tile only
+ * matters for the boss sub-pal 3 range, patched in xlat_sat. */
+#define XLAT_SLOW 0xFFFFu
+static unsigned short s_xlat_tile[256];
+static unsigned short s_xlat_attr[256];
+static unsigned char s_xlat_key = 0xFFu;
+
+static void xlat_refresh(void)
+{
+    unsigned char key = (unsigned char)((s_boss_bank_active ? 1u : 0u) |
+                                        (nes_ram[0x0010u] ? 2u : 0u));
+    unsigned int t;
+    if (key == s_xlat_key) return;
+    if (s_xlat_key == 0xFFu) {
+        for (t = 0u; t < 256u; ++t)
+            s_xlat_attr[t] = translate_attrs((unsigned char)t, 0u);
+    }
+    s_xlat_key = key;
+    for (t = 0u; t < 256u; ++t) {
+        if (t == 0x44u || t == 0x45u || (s_boss_bank_active && t >= 0xC0u))
+            s_xlat_tile[t] = XLAT_SLOW;
+        else
+            s_xlat_tile[t] = translate_tile((unsigned char)t, 0u);
+    }
+}
+
+/* == translate_attrs(attrs, translate_tile(tile, attrs)). */
+static inline unsigned short xlat_sat(unsigned char tile, unsigned char attrs)
+{
+    unsigned short tid = s_xlat_tile[tile];
+    unsigned short sat;
+    if ((attrs & (META_ATTR_MARKER | ITEM_ATTR_MARKER)) || tid == XLAT_SLOW)
+        tid = translate_tile(tile, attrs);
+    sat = (unsigned short)(s_xlat_attr[attrs] | (tid & 0x07FFu));
+    if (tid >= ROOMROM_BOSS_SUBPAL3_TILE_BASE &&
+        tid < ROOMROM_BOSS_SUBPAL3_TILE_BASE + ROOMROM_BOSS_SUBPAL3_TILE_COUNT)
+        sat = (unsigned short)((sat & 0x9FFFu) | (RENDER_PAL1 << 13));
+    return sat;
+}
+
 /* NES source: Z_01.asm:Anim_WriteSprite / Z_04.asm:WriteBossSprite.
  * Drained C: enemy_render_native_sweep and draw_write_boss_sprite.
  * Coverage: PARTIAL (shared submission of existing per-frame producers).
@@ -719,6 +766,7 @@ static inline unsigned short translate_attrs(unsigned char nes_attrs,
 static unsigned int emit_native_entries(unsigned int sat_slot)
 {
     unsigned int slot;
+    xlat_refresh();
     for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
         unsigned char n = s_enemy_count[slot];
         unsigned char ei;
@@ -745,8 +793,7 @@ static unsigned int emit_native_entries(unsigned int sat_slot)
             if (inv_active) {
                 render_attrs = (unsigned char)((render_attrs & 0xFCu) | fc_pal);
             }
-            unsigned short tile_id   = translate_tile(e->tile, render_attrs);
-            unsigned short sat_attrs = translate_attrs(render_attrs, tile_id);
+            unsigned short sat_attrs = xlat_sat(e->tile, render_attrs);
             /* Phase E: each cache entry = one NES OAM (8x16). Render
              * as Genesis SIZE(1,2) for exact 1:1 mapping. Per-tile
              * h_flip preserved because each entry's attrs byte was
@@ -773,8 +820,7 @@ static unsigned int emit_native_entries(unsigned int sat_slot)
                 if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
                 enemy_render_entry_t *e = &s_weapon_entries[wi][ei];
                 if (e->y == 0xF0u) continue;
-                unsigned short tile_id   = translate_tile(e->tile, e->attrs);
-                unsigned short sat_attrs = translate_attrs(e->attrs, tile_id);
+                unsigned short sat_attrs = xlat_sat(e->tile, e->attrs);
                 unsigned char link = (sat_slot < ENEMY_RENDER_SLOT_LAST)
                                          ? (unsigned char)(sat_slot + 1u) : 0u;
                 render_set_sprite_inline((unsigned short)sat_slot,
@@ -797,8 +843,7 @@ static unsigned int emit_native_entries(unsigned int sat_slot)
             enemy_render_entry_t *e = &s_gleeok_entries[gi];
             if (e->y == 0xF0u) continue;
 
-            unsigned short tile_id   = translate_tile(e->tile, e->attrs);
-            unsigned short sat_attrs = translate_attrs(e->attrs, tile_id);
+            unsigned short sat_attrs = xlat_sat(e->tile, e->attrs);
             unsigned short size      = RENDER_SPRITE_SIZE(1, 2);
             unsigned char  link      = (sat_slot < ENEMY_RENDER_SLOT_LAST)
                                           ? (unsigned char)(sat_slot + 1u) : 0u;
