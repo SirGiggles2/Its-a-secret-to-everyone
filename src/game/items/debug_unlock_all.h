@@ -13,5 +13,6 @@
  * the NES RAM mirror cells ($657-$67E) so any drained gameplay code that
  * reads via OBJ(NES_*) macros sees the unlocked state immediately. */
 void debug_unlock_all_items(void);
+extern unsigned char g_debug_session;   /* T-090 */
 
 #endif /* DEBUG_UNLOCK_ALL_H */

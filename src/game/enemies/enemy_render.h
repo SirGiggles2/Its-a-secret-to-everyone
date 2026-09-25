@@ -110,4 +110,5 @@ void enemy_render_weapon_add_cloud(unsigned char slot, unsigned char frame,
                                    unsigned char attrs, unsigned char x,
                                    unsigned char y);
 
+unsigned short enemy_render_item_sat(unsigned char nes_tile, unsigned char nes_attrs);
 #endif

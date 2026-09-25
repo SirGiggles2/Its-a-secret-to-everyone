@@ -22,6 +22,9 @@
  * minimization in call sites; new code should call
  * roomrom_spr_subpal_to_pal() directly. */
 #include "subpal_routing.h"
+#include "platform_abi.h"                   /* nes_ram: CurLevel, RoomId */
+#include "../../dungeon/uw_render.h"        /* level / quest of the UW room */
+#include "../../dungeon/cellar_meta.h"      /* roomrom_uw_room_is_cellar */
 #define ROOMROM_SUBPAL_PAL(s) roomrom_spr_subpal_to_pal((unsigned char)(s))
 
 /* Compile-time dispatch size checks. NES Z1 PPU runs in 8x16 sprite mode
@@ -328,6 +331,21 @@ void roomrom_sprites_load_palette(void)
      * existing call sites. */
 }
 
+/* T-092: NES Link_EndMoveAndAnimate @Animate (Z_07.asm) draws Link two
+ * pixels lower in the overworld (CurLevel 0, caves included) and in
+ * cellars (GameMode 9); normal dungeon rooms use ObjY as is. Lockstep OW
+ * captures: NES OAM Y = ObjY + 2 (t050_pond_fairy $AD/$AF, newgame
+ * $5D/$5F). Genesis cellars run in mode 5, so ask the cellar table. */
+static short link_draw_y(short y)
+{
+    if (nes_ram[0x0010u] == 0u ||
+        roomrom_uw_room_is_cellar(roomrom_uw_room_render_get_level(),
+                                  roomrom_uw_room_render_get_quest(),
+                                  nes_ram[0x00EBu]))
+        return (short)(y + 2);
+    return y;
+}
+
 void roomrom_sprites_set_link_pose(short x, short y,
                                    link_face_t face, unsigned char frame)
 {
@@ -343,7 +361,7 @@ void roomrom_sprites_set_link_pose_pal(short x, short y,
     if (pal_index > 3u) pal_index = RENDER_PAL1;
     VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_LINK,
                       (signed short)x,
-                      (signed short)y,
+                      (signed short)link_draw_y(y),
                       RENDER_SPRITE_SIZE(2, 2),
                       RENDER_TILE_ATTR_FULL(pal_index, 0, 0, 0, tile),
                       1);
@@ -355,7 +373,7 @@ void roomrom_sprites_set_link_attack_pose(short x, short y, link_face_t face)
     unsigned short tile = ATTACK_VRAM_TILE + pose_idx * LINK_TILES_PER_POSE;
     VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_LINK,
                       (signed short)x,
-                      (signed short)y,
+                      (signed short)link_draw_y(y),
                       RENDER_SPRITE_SIZE(2, 2),
                       RENDER_TILE_ATTR_FULL(RENDER_PAL1,0, 0, 0, tile),
                       1);

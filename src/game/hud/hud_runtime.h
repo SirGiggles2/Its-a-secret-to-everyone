@@ -5,6 +5,8 @@ void roomrom_hud_upload_chr(void);
 /* T-118: force the next roomrom_hud_draw to rebuild the whole window
  * (call after writing the Window plane outside this module). */
 void roomrom_hud_invalidate(void);
+/* T-092: NES status-bar B selection; see hud_runtime.c. */
+unsigned char hud_status_bar_b_item(unsigned char *slot_out);
 void roomrom_hud_draw(unsigned char hud_id, unsigned char room_id,
                       unsigned char is_underworld);
 

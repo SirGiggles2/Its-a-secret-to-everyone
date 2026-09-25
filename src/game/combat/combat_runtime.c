@@ -296,6 +296,7 @@ static unsigned char sword_blocked_by_bubble(void)
 void roomrom_combat_try_swing(link_face_t face, short link_x, short link_y)
 {
     (void)link_x; (void)link_y;
+    if (nes_ram[0x0657u] == 0u) return;   /* T-092: NES WieldSword, no sword */
     if (s_state != COMBAT_IDLE) return;
     if (sword_blocked_by_bubble() != 0u) return;
     s_state = COMBAT_ACTIVE;

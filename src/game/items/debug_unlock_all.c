@@ -38,6 +38,11 @@
 #define NES_INV_MAX_BOMBS     0x067Cu
 #define NES_INV_SELECTED_B    0x0656u
 
+/* T-090: 1 only for a gameplay session entered by the title debug chord
+ * (A+B+C / X+Y+Z); 0 on the File Select path. Gates every gameplay debug
+ * input and debug seed (RoomRom/src/main.c). */
+unsigned char g_debug_session = 0u;
+
 void debug_unlock_all_items(void)
 {
     /* Populate inventory_t. All counts/tiers maxed; per-dungeon

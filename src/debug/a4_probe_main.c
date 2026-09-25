@@ -202,6 +202,7 @@ static void debug_poll_title(void)
     {
         /* X+Y+Z (6-button pad) boots into 2nd quest; A+B+C boots 1st. */
         roomrom_main_set_quest(xyz_edge ? 2u : 1u);
+        g_debug_session = 1u;   /* T-090: debug chord entry */
         s_state = COMBINED_STATE_ROOMROM;
         probe_publish();
         roomrom_debug_enter();
@@ -300,6 +301,7 @@ int debug_main_after_a4(bool hardReset)
                                         save_game_slot_quest(slot)) ? 1u : 0u;
                     roomrom_main_set_quest(q2 ? 2u : 1u);
                 }
+                g_debug_session = 0u;   /* T-090: real game, no debug */
                 s_state = COMBINED_STATE_ROOMROM;
                 probe_publish();
                 roomrom_debug_enter();

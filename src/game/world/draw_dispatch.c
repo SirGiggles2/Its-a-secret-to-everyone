@@ -613,6 +613,28 @@ void draw_anim_write_item_sprites(unsigned int slot, unsigned int item_slot)
     anim_write_item_sprites(slot, item_slot);
 }
 
+/* T-092: DrawItemBySlot's frame-0 tile and sprite attributes for an item
+ * slot and inventory value, computed without writing sprites (status-bar
+ * A/B boxes). Same rules as draw_item_by_slot below. */
+unsigned char draw_item_icon(unsigned char item_slot, unsigned char item_value,
+                             unsigned char *attr_out)
+{
+    unsigned char slot = item_slot;
+    unsigned char attrs = k_item_slot_to_palette_offsets_or_values[item_slot & 0x1Fu];
+    if (item_slot == 0x16u || item_slot == 0x1Au ||
+        item_slot == 0x1Bu || item_slot == 0x19u) {
+        attrs = options_consumer_get_no_reduced_flashing()
+            ? 1u
+            : (unsigned char)((((unsigned char)FRAME_COUNTER >> 3) & 0x01u) + 1u);
+    } else if (item_slot == 0x00u || item_slot == 0x04u || item_slot == 0x02u ||
+               item_slot == 0x07u || item_slot == 0x0Bu) {
+        attrs = (unsigned char)(attrs + item_value);
+        if (item_slot == 0u && attrs == 0x02u) slot = 32u;
+    }
+    *attr_out = attrs;
+    return k_anim_item_frame_tiles[k_anim_item_frame_offsets[slot & 0x3Fu] & 0x3Fu];
+}
+
 void draw_item_by_slot(unsigned int item_slot, unsigned int slot)
 {
     /* drain Z_07.asm:2023-2090. */

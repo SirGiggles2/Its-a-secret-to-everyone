@@ -7,6 +7,7 @@
 #include "../../src/game/dungeon/uw_render.h"        /* Phase 12.2 promoted */
 #include "../../src/game/hud/hud_runtime.h"  /* Phase 12.2 promoted */
 #include "../../src/game/world/render/sprite_render.h"
+#include "../../src/game/world/draw_dispatch.h"  /* T-092 HUD A/B boxes */
 #include "../../src/game/world/render/sprite_slots.h"  /* Phase 8 W0c HUD slot 10 */
 #include "../../src/game/combat/combat_runtime.h"  /* Phase 12.2 promoted */
 #include "../../src/game/items/boomerang.h"      /* Phase 12.2 promoted */
@@ -129,8 +130,9 @@ static u8 s_in_gameplay = 0u;
 /* Phase 6 Task 6.1: Link position/facing now lives in `players[0]`.
  * Boot defaults are seeded in `init_player_state()` below before any
  * scene/render code runs. */
-/* Ph5.3: key inventory for UW door gating. Start with 3 for dev testing. */
-static unsigned char s_link_keys = 99u;  /* Task 5.5 debug: full L1 traversal */
+/* T-092: keys are NES InvKeys ($66E), loaded from the save (debug
+ * sessions get theirs from debug_unlock_all_items). */
+#define s_link_keys (*(unsigned char *)&nes_ram[0x066Eu])
 
 /* S7 B-item slot (cycle with Z, fire with B). Order roughly matches
  * Z1 inventory grid: boomerang -> bombs -> arrow -> candle -> rod. */
@@ -146,6 +148,10 @@ typedef enum {
     B_ITEM_COUNT     = 8
 } b_item_t;
 static b_item_t s_b_item = B_ITEM_BOOMERANG;
+
+/* T-090: set only by the title A+B+C / X+Y+Z debug chords
+ * (src/debug/a4_probe_main.c); gates every gameplay debug input and seed. */
+extern unsigned char g_debug_session;
 
 /* Phase 8 W0 (2026-05-20): inventory subscreen A-press setter. NES cursor
  * slot 0..8 (per SubmenuCursorXs Z_05.asm:7909) maps to s_b_item enum:
@@ -174,33 +180,29 @@ void roomrom_set_b_item_from_inv_cursor(unsigned char cursor_slot)
  * SGDK adds +128 to (x, y) internally, pass NES pixel coords directly. */
 static void roomrom_hud_b_item_update(void)
 {
-    unsigned char slot = g_inventory.selected_b_item;
-    unsigned short vram = inventory_get_vram_tile_for_slot(slot);
-    s16 px_x, px_y;
-    unsigned short attr;
-    if (vram == 0xFFFFu) {
-        px_x = (s16)-32;
-        px_y = (s16)-32;
-        attr = 0;
-    } else {
-        /* NES OAM evidence: HUD B-item at NES X=$80 Y=$1F tile pal=1.
-         * SGDK display formula: SAT-128 = pixel. NES Y=$1F=31 displays
-         * at scanline 32 (Y+1). Genesis HUD area starts at pixel 16
-         * (8-line top-crop offset between NES PPU and Genesis VDP). */
-        px_x = (s16)0x80;
-        px_y = (s16)(0x1Fu - 7u);   /* -8 top-crop + 1 user nudge = -7 */
-        unsigned char pal = inventory_get_pal_for_slot(slot);
-        attr = RENDER_TILE_ATTR_FULL(pal, 1, 0, 0, vram);
+    /* T-092: NES DrawStatusBarItemsAndEnsureItemSelected (Z_07.asm). B box
+     * at ($7C,$1F), A box (sword) at ($94,$1F); DrawItemBySlot tile/attr,
+     * narrow item tiles get X+4 (Anim_WriteSpecificItemSprites). Lockstep
+     * captures: no sword -> no A sprite; sword 1/2/3 -> $20/$00, $20/$01,
+     * $48/$02 at X $98; wooden boomerang -> $36/$00 at X $80. */
+    unsigned char slot, attr, tile;
+    s16 bx = (s16)-32, ax = (s16)-32;
+    unsigned short battr = 0u, aattr = 0u;
+    const s16 hud_y = (s16)(0x1Fu - 7u);   /* -8 top-crop + 1 user nudge = -7 */
+    if (hud_status_bar_b_item(&slot)) {
+        tile = draw_item_icon(slot, nes_ram[0x0657u + slot], &attr);
+        battr = enemy_render_item_sat(tile, attr);
+        bx = (s16)(0x7Cu + ((tile == 0xF3u || (tile >= 0x20u && tile < 0x62u)) ? 4u : 0u));
     }
-    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_HUD_B_ITEM, px_x, px_y,
-        RENDER_SPRITE_SIZE(1, 2), attr, ROOMROM_SPRITE_SLOT_HUD_B_ITEM_R);
-
-    /* HUD A-item (sword). Per NES OAM probe slot 49: Y=$1F X=$98 tile=$20
-     * pal=2 hflip=1. NES sword tile $20 -> Genesis VRAM SPR_BASE+$20=565. */
-    unsigned short sword_vram = (unsigned short)(ROOMROM_SPR_TILE_BASE + 0x20u);
-    unsigned short sword_attr = RENDER_TILE_ATTR_FULL(RENDER_PAL3, 1, 0, 1, sword_vram);
-    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_HUD_B_ITEM_R, (s16)0x98, (s16)(0x1Fu - 7u),
-        RENDER_SPRITE_SIZE(1, 2), sword_attr, ROOMROM_SPRITE_SLOT_HUD_PLAYER);
+    if (nes_ram[0x0657u] != 0u) {
+        tile = draw_item_icon(0u, nes_ram[0x0657u], &attr);
+        aattr = enemy_render_item_sat(tile, attr);
+        ax = (s16)(0x94u + ((tile == 0xF3u || (tile >= 0x20u && tile < 0x62u)) ? 4u : 0u));
+    }
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_HUD_B_ITEM, bx, (bx < 0) ? (s16)-32 : hud_y,
+        RENDER_SPRITE_SIZE(1, 2), battr, ROOMROM_SPRITE_SLOT_HUD_B_ITEM_R);
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_HUD_B_ITEM_R, ax, (ax < 0) ? (s16)-32 : hud_y,
+        RENDER_SPRITE_SIZE(1, 2), aattr, ROOMROM_SPRITE_SLOT_HUD_PLAYER);
     /* Phase 8 W0c safeguard: invalidate sprite cache so beam / weapon slots
      * downstream of HUD always re-write fresh SAT next frame (prevents
      * cache-stale direction reverts after HUD overlay activates). */
@@ -1941,7 +1943,7 @@ void roomrom_debug_enter(void)
      * OBJ_STATE(13)=2 each swing but combat_deal_damage rolls 0 dmg,
      * leaving every enemy unkillable. RoomRom has no inventory UI
      * yet so the level is seeded directly into the NES cell. */
-    nes_ram_seed_sword_level(1u);
+    if (g_debug_session) nes_ram_seed_sword_level(1u);   /* T-092: debug only */
 
     /* Plan v5b — seed nes_ram[$066F/$0670] hearts from g_inventory ONCE
      * here. Per-frame sync flipped to pull-direction so combat's
@@ -2538,7 +2540,7 @@ void roomrom_debug_tick(void)
          * swallowed (handled by combat_link_locked check below). */
         if (s_scene == SCENE_CAVE) {
             cave_tick();
-            if ((pressed & BUTTON_START) && (joy & BUTTON_C)) {
+            if (g_debug_session && (pressed & BUTTON_START) && (joy & BUTTON_C)) {
                 cave_fade_set_callbacks(&k_cave_fade_callbacks);
                 cave_fade_begin_exit(s_cave_return_room);
                 return;
@@ -2560,12 +2562,12 @@ void roomrom_debug_tick(void)
             }
         }
 
-        if (pressed & BUTTON_X) {
+        if (g_debug_session && (pressed & BUTTON_X)) {
             s_mode = (s_mode == MODE_WALK) ? MODE_TELEPORT : MODE_WALK;
             return;
         }
 
-        if (pressed & BUTTON_Y) {
+        if (g_debug_session && (pressed & BUTTON_Y)) {
             s_move_style = (s_move_style == MOVE_STYLE_NES)
                          ? MOVE_STYLE_ALTTP : MOVE_STYLE_NES;
             /* Reset sub-pixel/grid state so style switch is clean. */
@@ -2586,13 +2588,13 @@ void roomrom_debug_tick(void)
          *     Link's facing direction via uw_door_state_open_by_mask.
          * Chords pre-empt other handlers; explicit returns skip cave/
          * scene/variant toggles. */
-        if (s_scene == SCENE_UW && (pressed & BUTTON_START) &&
+        if (g_debug_session && s_scene == SCENE_UW && (pressed & BUTTON_START) &&
             (joy & BUTTON_A) && (joy & BUTTON_B) && (joy & BUTTON_C)) {
             uw_door_state_trigger_shutters();
             if (s_uw_shutter_trigger_count < 0xFFu) s_uw_shutter_trigger_count++;
             return;
         }
-        if (s_scene == SCENE_UW && (pressed & BUTTON_C) &&
+        if (g_debug_session && s_scene == SCENE_UW && (pressed & BUTTON_C) &&
             (joy & BUTTON_B) && (joy & BUTTON_Z)) {
             unsigned char dir;
             switch (players[0].face) {
@@ -2611,7 +2613,7 @@ void roomrom_debug_tick(void)
          * regular OW<->UW toggle. cave_id 0x6A is the first valid NES
          * cave room type per Z_01.asm:80 — pick something deterministic
          * for the harness. */
-        if ((pressed & BUTTON_START) && (joy & BUTTON_C)) {
+        if (g_debug_session && (pressed & BUTTON_START) && (joy & BUTTON_C)) {
             if (s_scene == SCENE_OW) {
                 const cave_id_t cid_toggle = (cave_id_t)0x6A;
                 (void)cave_init(cid_toggle);
@@ -2644,7 +2646,7 @@ void roomrom_debug_tick(void)
          * Frees START to behave like NES Start (pause/inventory/etc).
          * Z held + START = quest toggle (handled below). C held + START
          * handled above. */
-        if ((pressed & BUTTON_MODE) && !(joy & BUTTON_Z) && !(joy & BUTTON_C)) {
+        if (g_debug_session && (pressed & BUTTON_MODE) && !(joy & BUTTON_Z) && !(joy & BUTTON_C)) {
             /* DEBUG SENTINEL — count how many times the Mode handler enters. */
             DBG_SENTINEL(0x14u) = (unsigned char)(DBG_SENTINEL(0x14u) + 1u);
             s_scene = (s_scene == SCENE_OW) ? SCENE_UW : SCENE_OW;
@@ -2745,7 +2747,7 @@ void roomrom_debug_tick(void)
             return;
         }
 
-        if (pressed & BUTTON_C) {
+        if (g_debug_session && (pressed & BUTTON_C)) {
             if (s_scene == SCENE_UW) {
                 u8 map_id = roomrom_uw_room_render_get_map();
                 roomrom_uw_room_render_set_map(map_id ^ 1u);
@@ -2776,12 +2778,20 @@ void roomrom_debug_tick(void)
          *   Z press (alone)   = cycle B-item forward
          *   Z held + START    = quest toggle (handled below; suppress cycle)
          *   B press           = use current B-item */
-        if ((pressed & BUTTON_Z) && !(joy & BUTTON_START)) {
+        if (g_debug_session && (pressed & BUTTON_Z) && !(joy & BUTTON_START)) {
             unsigned char nxt = (unsigned char)(s_b_item + 1u);
             if (nxt >= (unsigned char)B_ITEM_COUNT) nxt = (unsigned char)B_ITEM_BOOMERANG;
             s_b_item = (b_item_t)nxt;
         }
         if (pressed & BUTTON_B) {
+            /* T-092: NES WieldItem uses SelectedItemSlot ($656), which the
+             * pause subscreen sets; the debug Z cycle only overrides it in a
+             * debug session. */
+            if (!g_debug_session) {
+                unsigned char slot = nes_ram[0x0656u];
+                s_b_item = (slot < 9u) ? (b_item_t)k_inv_cursor_to_b_item[slot]
+                                       : B_ITEM_NONE;
+            }
             switch (s_b_item) {
             case B_ITEM_BOOMERANG:
                 if (!roomrom_boomerang_active()) {
@@ -2847,7 +2857,7 @@ void roomrom_debug_tick(void)
 
         /* Z held + START press = quest toggle (UW only). Z-held suppresses
          * the item-cycle path above so the press is unambiguous. */
-        if ((pressed & BUTTON_START) && (joy & BUTTON_Z) && s_scene == SCENE_UW) {
+        if (g_debug_session && (pressed & BUTTON_START) && (joy & BUTTON_Z) && s_scene == SCENE_UW) {
             u8 q = roomrom_uw_room_render_get_quest();
             q = (q == ROOMROM_UW_QUEST_MIN) ? ROOMROM_UW_QUEST_MAX
                                              : ROOMROM_UW_QUEST_MIN;

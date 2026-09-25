@@ -47,6 +47,12 @@ TEXT_HASH_SUFFIXES = frozenset({
 # rooted at REPO_ROOT), outputs (list of paths or globs).
 GEN_SPECS: list[dict] = [
     {
+        "name": "item_tile_atlas_idx",
+        "script": "tools/atlas/gen_item_tile_atlas_idx.py",
+        "inputs": ["RoomRom/data/item_chr_manifest.json"],
+        "outputs": ["src/game/enemies/item_tile_atlas_idx.h"],
+    },
+    {
         "name": "uw_collision",
         "script": "tools/builder/gen_uw_collision_c.py",
         "inputs": [

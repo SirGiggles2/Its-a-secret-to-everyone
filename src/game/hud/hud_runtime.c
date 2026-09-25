@@ -624,6 +624,85 @@ void roomrom_hud_draw(unsigned char hud_id, unsigned char room_id,
     s_hud_level_cached = RAM(0x0010u);
 }
 
+/* ---- T-092: status-bar item selection (Z_07.asm
+ * DrawStatusBarItemsAndEnsureItemSelected, Z_05.asm
+ * FindAndSelectOccupiedItemSlot / Cycle9InDirection). Items[] = $657,
+ * indexed by item slot (bow +3, potion +7, letter +$0F, boomerangs +$1D /
+ * +$1E); SelectedItemSlot = $656. */
+#define HUD_ITEMS(slot)       RAM((unsigned short)(0x0657u + (slot)))
+#define HUD_SELECTED_SLOT     RAM(0x0656u)
+
+static unsigned char cycle9(unsigned char y, unsigned char dir)
+{
+    if ((dir & 0x03u) == 0u) return y;
+    y = (unsigned char)(y + 1u);
+    if ((dir & 0x01u) == 0u) y = (unsigned char)(y - 2u);
+    if (y == 0xFFu) y = 8u;
+    if (y == 9u) y = 0u;
+    return y;
+}
+
+/* FindAndSelectOccupiedItemSlot: dir 1 forward, 2 backward, from y. */
+static void find_and_select_occupied_item_slot(unsigned char dir, unsigned char y)
+{
+    signed char x = 9;
+    RAM(0x00EFu) = dir;
+    for (;;) {
+        y = cycle9(y, dir);
+        if (y == 0u) {
+            /* CheckBoomerangs: magic first, then wooden. */
+            if (HUD_ITEMS(0x1Eu) != 0u || HUD_ITEMS(0x1Du) != 0u) goto found;
+            y = 0u;
+        } else if (y != 3u) {
+            if (HUD_ITEMS(y) != 0u) goto found;
+            if (y == 7u) {
+                /* CheckLetter. */
+                if (HUD_ITEMS(0x0Fu) != 0u) {
+                    y = (HUD_ITEMS(7u) != 0u) ? 7u : 0x0Fu;
+                    HUD_SELECTED_SLOT = y;
+                    return;
+                }
+                y = 7u;
+            }
+        }
+        if (--x < 0) { y = 0u; goto found; }
+        continue;
+found:
+        if (y == 2u && HUD_ITEMS(3u) == 0u) continue;   /* arrows need the bow */
+        HUD_SELECTED_SLOT = y;
+        return;
+    }
+}
+
+/* Returns 1 and the item slot to draw in the B box this frame, 0 when the
+ * NES draws no B item this frame (empty slot re-selected, or nothing). */
+unsigned char hud_status_bar_b_item(unsigned char *slot_out)
+{
+    unsigned char x = HUD_SELECTED_SLOT;
+    if (x == 0u) {
+        /* DrawStatusBarBoomerang. */
+        if (HUD_ITEMS(0x1Eu) != 0u) { *slot_out = 0x1Eu; return 1u; }
+        if (HUD_ITEMS(0x1Du) != 0u) { *slot_out = 0x1Du; return 1u; }
+        find_and_select_occupied_item_slot(2u, 0u);
+        return 0u;
+    }
+    if (HUD_ITEMS(x) == 0u) {
+        /* CheckMissingItem. */
+        if (x == 7u && HUD_ITEMS(0x0Fu) != 0u) {
+            HUD_SELECTED_SLOT = 0x0Fu;
+            return 0u;             /* FindItemOrDrawSword: letter found */
+        }
+        find_and_select_occupied_item_slot(2u, x);
+        return 0u;
+    }
+    if (x == 0x0Fu && HUD_ITEMS(7u) != 0u) {
+        HUD_SELECTED_SLOT = 7u;    /* DrawStatusBarPotion */
+        x = 7u;
+    }
+    *slot_out = x;
+    return 1u;
+}
+
 void roomrom_hud_invalidate(void)
 {
     s_hud_built = 0u;
