@@ -1,123 +1,220 @@
+#include "../combat/combat_runtime.h"   /* T-116 Link item-use state */
 #include "boomerang.h"
 #include "../world/render/sprite_render.h"
+#include "../world/object_dispatch.h"      /* object_move_shot / object_move_object */
+#include "../world/draw_dispatch.h"        /* draw_item_frame_tile */
+#include "../combat/targeting_dispatch.h"  /* GetDirectionsAndDistancesToTarget */
+#include "../enemies/enemy_render.h"       /* enemy_render_item_sat */
 #include "../../state/inventory.h"
 #include "../../abi/platform_abi.h"
 
 extern void audio_sfx_play(unsigned char sfx);
 
-/* NES: DrawBoomerangAndCheckCollision (Z_07.asm:3437) -> base attr 0
- * (RDirectionToWeaponBaseAttribute = 0 for all dirs).
+/* T-116: Link's boomerang as the NES object in slot $0F.
  *
- * NES Z_05.asm WieldBoomerang: ownership = items bit ITEMS_BIT_BOOMERANG
- * ($0656 bit 2). Tier upgrade (wood→magic) also lives in items bitfield;
- * boomerang range/speed parity deferred until tier-aware atlas lands. */
-#define ROOMROM_BOOMERANG_SUBPAL 0u
+ * NES source: Z_05.asm WieldBoomerang, Z_07.asm UpdateArrowOrBoomerang
+ * ($1x out, $2x spark, $3x slow down, $4x/$5x return),
+ * AnimateBoomerangAndCheckCollision / CalcBoomerangFrame, Z_01.asm
+ * SetBoomerangSpeed, PlayBoomerangSfx, MoveShot.
+ * Drained C: MoveShot / MoveObject (object_dispatch.c), targeting
+ * (GetDirectionsAndDistancesToTarget, CalcDiagonalSpeedIndex). The
+ * monster-boomerang drain (enrt_update_arrow_or_boomerang) serves slots
+ * below $0D only. Stance: REPLACE the Genesis-native 64-frame boomerang.
+ * State lives in the NES cells for slot $0F, which the drained
+ * CheckMonsterBoomerangOrFoodCollision reads. */
+#define BM          0x0Fu
+#define BM_STATE    OBJ(0x00ACu, BM)
+#define BM_X        OBJ(0x0070u, BM)
+#define BM_Y        OBJ(0x0084u, BM)
+#define BM_DIR      OBJ(0x0098u, BM)
+#define BM_GRID     OBJ(0x0394u, BM)
+#define BM_QSPEED   OBJ(0x03BCu, BM)
+#define BM_CNT      OBJ(0x03D0u, BM)
+#define BM_LIMIT    OBJ(0x0380u, BM)       /* ObjMovingLimit */
 
-/* See roomrom_boomerang.h for NES disasm references. */
+#define NES_INV_BOOMERANG        0x0674u
+#define NES_INV_MAGIC_BOOMERANG  0x0675u
+#define NES_ITEM_OBJ_TIMER       0x003Bu   /* ObjTimer+19 (sfx throttle) */
 
-#define BOOMERANG_OUT_FRAMES     32u
-#define BOOMERANG_RETURN_FRAMES  32u
-#define BOOMERANG_TOTAL_FRAMES   (BOOMERANG_OUT_FRAMES + BOOMERANG_RETURN_FRAMES)
-#define BOOMERANG_SPEED_PX       3
-#define BOOMERANG_PHASE_FRAMES   2u   /* 2 frames per spin phase */
-#define BOOMERANG_OBJ_SLOT       15u
-
-typedef enum {
-    BOOMERANG_IDLE = 0,
-    BOOMERANG_OUT,
-    BOOMERANG_RETURN
-} boomerang_state_t;
-
-static boomerang_state_t s_state = BOOMERANG_IDLE;
-static unsigned char     s_frame = 0u;        /* 0..BOOMERANG_TOTAL_FRAMES-1 */
-static unsigned char     s_phase_idx = 0u;    /* 0..7 */
-static unsigned char     s_phase_tick = 0u;   /* 0..BOOMERANG_PHASE_FRAMES-1 */
-static link_face_t       s_face = LINK_FACE_DOWN;
-static short             s_x = 0;
-static short             s_y = 0;
-
-static void boomerang_publish_object(unsigned char active)
-{
-    OBJ(0x00ACu, BOOMERANG_OBJ_SLOT) = active ? 0x10u : 0u;
-    if (active) {
-        OBJ(0x0070u, BOOMERANG_OBJ_SLOT) = (unsigned char)s_x;
-        OBJ(0x0084u, BOOMERANG_OBJ_SLOT) = (unsigned char)s_y;
-    }
-}
+static const unsigned char k_limits[2] = { 0x31u, 0xFFu };          /* BoomerangLimits */
+static const unsigned char k_frame_cycle[9] = {
+    0x00u, 0x01u, 0x02u, 0x01u, 0x00u, 0x01u, 0x02u, 0x01u, 0x03u
+};
+static const unsigned char k_attr_cycle[9] = {
+    0x00u, 0x00u, 0x00u, 0x40u, 0x40u, 0xC0u, 0x80u, 0x80u, 0x01u
+};
+static const unsigned char k_qspeed_y[9] = {
+    0x00u, 0x20u, 0x36u, 0x4Cu, 0x60u, 0x68u, 0x70u, 0x78u, 0x80u
+};
+static const unsigned char k_qspeed_x[9] = {
+    0x80u, 0x78u, 0x70u, 0x68u, 0x60u, 0x4Cu, 0x36u, 0x20u, 0x00u
+};
 
 void roomrom_boomerang_init(void)
 {
-    if (s_state != BOOMERANG_IDLE) boomerang_publish_object(0u);
-    s_state = BOOMERANG_IDLE;
-    s_frame = 0u;
-    s_phase_idx = 0u;
-    s_phase_tick = 0u;
+    BM_STATE = 0u;
     roomrom_sprites_clear_boomerang();
 }
 
+/* WieldBoomerang. */
 void roomrom_boomerang_throw(link_face_t face, short link_x, short link_y)
 {
-    if (s_state != BOOMERANG_IDLE) return;
-    if ((g_inventory.items & ITEMS_BIT_BOOMERANG) == 0u) return;
-    s_state = BOOMERANG_OUT;
-    s_frame = 0u;
-    s_phase_idx = 0u;
-    s_phase_tick = 0u;
-    s_face = face;
-    s_x = link_x;
-    s_y = link_y;
-    /* NES Z_05.asm:2964-2965 LDA #$02 / JSR PlayEffect = boomerang/arrow
-     * sound (bit 1 in NES bitmap; DMC sample 2 in our 1-based mapping). */
-    audio_sfx_play(2u);
+    unsigned char st = BM_STATE;
+    unsigned char d;
+    (void)face; (void)link_x; (void)link_y;
+    if ((nes_ram[NES_INV_BOOMERANG] | nes_ram[NES_INV_MAGIC_BOOMERANG]) == 0u) return;
+    if (st != 0u && (st & 0x80u) == 0u) return;
+    BM_STATE = 0x10u;
+    BM_LIMIT = k_limits[nes_ram[NES_INV_MAGIC_BOOMERANG] ? 1u : 0u];
+    /* PlaceWeaponForPlayerState, then Link's counter = 1 (same effect as
+     * the AndAnim form). */
+    link_place_weapon_for_player_state(1u);
+    d = nes_ram[0x0098u];                         /* PlaceWeapon */
+    BM_DIR = d;
+    BM_X = (unsigned char)(nes_ram[0x0070u] + ((d & 0x01u) ? 0x10u : (d & 0x02u) ? 0xF0u : 0u));
+    BM_Y = (unsigned char)(nes_ram[0x0084u] + ((d & 0x04u) ? 0x10u : (d & 0x08u) ? 0xF0u : 0u));
+    BM_QSPEED = 0xC0u;
+    BM_CNT = 3u;
+    /* Input direction (maybe diagonal), else Link's facing. */
+    BM_DIR = (nes_ram[0x03F8u] & 0x0Fu) ? (unsigned char)(nes_ram[0x03F8u] & 0x0Fu)
+                                         : nes_ram[0x0098u];
+    /* This frame's weapon update (see roomrom_arrow_fire, T-102). */
+    roomrom_boomerang_update(0, 0);
 }
 
 unsigned char roomrom_boomerang_active(void)
 {
-    return s_state != BOOMERANG_IDLE;
+    return BM_STATE != 0u ? 1u : 0u;
 }
 
-static void advance_phase(void)
+/* CalcBoomerangFrame -> Anim_WriteItemSprites, item slot $1D. */
+static void draw_boomerang_nes(void)
 {
-    s_phase_tick++;
-    if (s_phase_tick >= BOOMERANG_PHASE_FRAMES) {
-        s_phase_tick = 0u;
-        s_phase_idx = (unsigned char)((s_phase_idx + 1u) & 0x7u);
+    unsigned char y = (unsigned char)(BM_STATE & 0x0Fu);
+    unsigned char frame, attr, tile;
+    if (y > 8u) y = 8u;
+    frame = k_frame_cycle[y];
+    attr = k_attr_cycle[y];
+    if (attr != 0x08u) attr = (unsigned char)(attr + nes_ram[NES_INV_MAGIC_BOOMERANG]);
+    if ((BM_STATE & 0xF0u) == 0x20u) attr = 0x01u;
+    tile = draw_item_frame_tile(0x1Du, frame);
+    /* Narrow item tiles ($36/$38/$3A/$3C): X+4. */
+    roomrom_sprites_set_boomerang_nes((short)(BM_X + 4u), (short)BM_Y,
+                                      enemy_render_item_sat(tile, attr));
+}
+
+/* AnimateBoomerangAndCheckCollision (player slot: no Link test). */
+static void animate_and_draw(void)
+{
+    BM_CNT = (unsigned char)(BM_CNT - 1u);
+    if (BM_CNT == 0u) {
+        BM_CNT = 2u;
+        BM_STATE = (unsigned char)((BM_STATE + 1u) & 0x77u);
+        /* PlayBoomerangSfx: throttled by ObjTimer+19. */
+        if (nes_ram[NES_ITEM_OBJ_TIMER] == 0u) {
+            audio_sfx_play(2u);
+            nes_ram[NES_ITEM_OBJ_TIMER] = 0x0Au;
+        }
     }
+    draw_boomerang_nes();
+}
+
+/* HandleArrowOrBoomerangBlocked -> DrawBoomerangAndCheckCollision. */
+static void handle_blocked(void)
+{
+    BM_CNT = 3u;
+    BM_STATE = (unsigned char)(BM_STATE + 0x10u);
+    draw_boomerang_nes();
+}
+
+/* SetBoomerangSpeed. */
+static void set_speed(unsigned char q)
+{
+    BM_QSPEED = q;
+    if ((BM_STATE & 0xF0u) != 0x40u) return;
+    BM_QSPEED = (unsigned char)(BM_QSPEED >> 1);
+    BM_LIMIT = (unsigned char)(BM_LIMIT - 1u);
+    if (BM_LIMIT == 0u) BM_STATE = 0x50u;
 }
 
 void roomrom_boomerang_update(short link_x, short link_y)
 {
-    if (s_state == BOOMERANG_IDLE) {
+    unsigned char st = BM_STATE;
+    unsigned char hi = (unsigned char)(st & 0xF0u);
+    (void)link_x; (void)link_y;
+    if (st == 0u) {
+        roomrom_sprites_clear_boomerang();
         return;
     }
-
-    if (s_state == BOOMERANG_OUT) {
-        switch (s_face) {
-        case LINK_FACE_UP:    s_y = (short)(s_y - BOOMERANG_SPEED_PX); break;
-        case LINK_FACE_DOWN:  s_y = (short)(s_y + BOOMERANG_SPEED_PX); break;
-        case LINK_FACE_LEFT:  s_x = (short)(s_x - BOOMERANG_SPEED_PX); break;
-        case LINK_FACE_RIGHT: s_x = (short)(s_x + BOOMERANG_SPEED_PX); break;
+    RAM(0x0000u) = 0u;
+    if (hi == 0x10u) {
+        unsigned char d = BM_DIR;
+        unsigned char grid, mag;
+        RAM(NES_SHOT_COLLISION_FLAG) = 0u;
+        if (d & 0x03u) {
+            RAM(NES_OBJ_DIR) = d;
+            object_move_shot((unsigned char)(d & 0x03u), BM);
+            RAM(NES_SHOT_COLLISION_FLAG) = (unsigned char)(RAM(NES_SHOT_COLLISION_FLAG) + 1u);
         }
-    } else {
-        /* RETURN: chase Link's current position. */
-        if      (s_x < link_x) s_x = (short)(s_x + BOOMERANG_SPEED_PX);
-        else if (s_x > link_x) s_x = (short)(s_x - BOOMERANG_SPEED_PX);
-        if      (s_y < link_y) s_y = (short)(s_y + BOOMERANG_SPEED_PX);
-        else if (s_y > link_y) s_y = (short)(s_y - BOOMERANG_SPEED_PX);
+        if (RAM(NES_SHOT_COLLISION_FLAG) & 0x80u) { handle_blocked(); return; }
+        if (d & 0x0Cu) {
+            RAM(NES_OBJ_DIR) = d;
+            object_move_shot((unsigned char)(d & 0x0Cu), BM);
+        }
+        if (RAM(NES_SHOT_COLLISION_FLAG) & 0x80u) { handle_blocked(); return; }
+        grid = BM_GRID;
+        mag = (grid & 0x80u) ? (unsigned char)(0u - grid) : grid;
+        if (mag < BM_LIMIT) { animate_and_draw(); return; }
+        BM_LIMIT = 0x10u;
+        BM_STATE = 0x20u;
+        handle_blocked();                       /* -> $30 */
+        return;
     }
-
-    roomrom_sprites_set_boomerang(s_x, s_y, s_phase_idx, ROOMROM_BOOMERANG_SUBPAL);
-    boomerang_publish_object(1u);
-    advance_phase();
-
-    s_frame++;
-    if (s_frame >= BOOMERANG_OUT_FRAMES && s_state == BOOMERANG_OUT) {
-        s_state = BOOMERANG_RETURN;
+    if (hi == 0x20u) {                          /* CheckState20 */
+        BM_STATE = 0x28u;
+        BM_CNT = (unsigned char)(BM_CNT - 1u);
+        if (BM_CNT != 0u) { draw_boomerang_nes(); return; }
+        BM_STATE = 0x40u;
+        handle_blocked();                       /* -> $50, fast return */
+        return;
     }
-    if (s_frame >= BOOMERANG_TOTAL_FRAMES) {
-        s_state = BOOMERANG_IDLE;
-        s_frame = 0u;
-        boomerang_publish_object(0u);
+    if (hi == 0x30u) {                          /* CheckState30: slow down */
+        BM_GRID = 0u;
+        BM_QSPEED = 0x40u;
+        RAM(NES_OBJ_DIR) = BM_DIR;
+        if (!((BM_DIR & 0x02u) && BM_X < 0x02u)) {
+            object_move_object((unsigned short)BM);
+            BM_LIMIT = (unsigned char)(BM_LIMIT - 1u);
+            if (BM_LIMIT != 0u) { animate_and_draw(); return; }
+        }
+        BM_LIMIT = 0x20u;
+        BM_STATE = 0x40u;
+        animate_and_draw();
+        return;
+    }
+    /* $4x / $5x: return to Link. */
+    BM_GRID = 0u;
+    targeting_get_directions_and_distances_to_target(0u, BM);
+    if (RAM(0x0000u) == 0x02u) {
+        /* Caught: Link enters the catching state. */
+        BM_LIMIT = 0u;
+        nes_ram[0x00ACu] = (unsigned char)(nes_ram[0x00ACu] | 0x20u);
+        nes_ram[0x03D0u] = 1u;
+        BM_STATE = 0u;
         roomrom_sprites_clear_boomerang();
+        return;
     }
+    {
+        unsigned char idx = (unsigned char)targeting_calc_diagonal_speed_index(4u);
+        if (idx > 8u) idx = 8u;
+        set_speed(k_qspeed_y[idx]);
+        RAM(NES_OBJ_DIR) = RAM(0x000Au);
+        BM_DIR = RAM(0x000Au);
+        object_move_object((unsigned short)BM);
+        set_speed(k_qspeed_x[idx]);
+        RAM(NES_OBJ_DIR) = RAM(0x000Bu);
+        BM_DIR = RAM(0x000Bu);
+        object_move_object((unsigned short)BM);
+    }
+    animate_and_draw();
 }

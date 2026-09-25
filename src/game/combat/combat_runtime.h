@@ -33,6 +33,11 @@ void roomrom_combat_init(void);
 void roomrom_combat_try_swing(link_face_t face, short link_x, short link_y);
 void roomrom_combat_update(short link_x, short link_y, link_face_t face);
 unsigned char roomrom_combat_link_locked(void);
+/* T-116: NES Link item-use state (see combat_runtime.c). */
+void link_place_weapon_for_player_state(unsigned char and_anim);
+void link_anim_state_step(void);
+void link_step_after_wield(void);
+unsigned char link_item_use_blocks_move(void);
 
 /* Recompute sword visual Y bias for overworld vs. dungeon sprite baselines.
  * The beam keeps NES object coordinates; only renderer-local draw offsets

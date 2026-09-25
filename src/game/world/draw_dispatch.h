@@ -61,6 +61,7 @@ void draw_anim_write_item_sprites(unsigned int slot, unsigned int item_slot);
 /* DrawItemInInventory (Z_07.asm:2011). Reads item value from
  * RAM($0657+slot) into TMP4, then DrawItemBySlot. */
 void draw_item_in_inventory(unsigned int item_slot, unsigned int slot);
+unsigned char draw_item_frame_tile(unsigned char item_slot, unsigned char frame);
 unsigned char draw_item_icon(unsigned char item_slot, unsigned char item_value,
                              unsigned char *attr_out);
 

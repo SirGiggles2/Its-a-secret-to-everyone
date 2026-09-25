@@ -1198,6 +1198,17 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id,
                           unsigned char level, unsigned char quest)
 {
     unsigned int slot;
+    /* T-116: Link's part of the NES room-entry object setup (Z_05.asm,
+     * after AssignObjSpawnPositions / SetupTileObjectOW): stun timer and
+     * shove cleared, animation counter 4, InitLinkSpeed q-speed $60. NES
+     * then animates Link once in mode 4 (AnimateLinkBase); Genesis has no
+     * mode-4 frame (T-096), so store the result: NES captures show $3D0 = 3
+     * at every mode 4 -> 5 transition (t105_scroll, t105_horizontal, t114). */
+    RAM(0x003Du) = 0u;       /* ObjStunTimer */
+    RAM(0x00C0u) = 0u;       /* ObjShoveDir */
+    RAM(0x00D3u) = 0u;       /* ObjShoveDistance */
+    RAM(0x03D0u) = 3u;       /* ObjAnimCounter after the mode-4 step */
+    RAM(0x03BCu) = 0x60u;    /* ObjQSpeedFrac */
     /* enemy_fix arm hook: bail this room_init pass exactly once. */
     if (s_fix_arm_suppress_room_init) {
         s_fix_arm_suppress_room_init = 0u;

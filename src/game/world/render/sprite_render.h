@@ -67,6 +67,11 @@ void roomrom_sprites_set_sword_vertical(short x, short y, unsigned char vflip,
                                         unsigned char sub_pal);
 void roomrom_sprites_set_sword_horizontal(short x, short y, unsigned char hflip,
                                           unsigned char sub_pal);
+void roomrom_sprites_set_sword_nes(short x, short y, unsigned char wide,
+                                   unsigned short sat_attr);
+void roomrom_sprites_set_arrow_nes(short x, short y, unsigned char wide,
+                                   unsigned short sat_attr);
+void roomrom_sprites_set_boomerang_nes(short x, short y, unsigned short sat_attr);
 void roomrom_sprites_clear_sword(void);
 /* Redux ALttP-style diagonal sword (16x16). Used in Redux arc swing.
  * sub_pal: same NES @CalcSwordAttrs derivation as above. */

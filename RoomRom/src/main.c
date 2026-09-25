@@ -2783,7 +2783,8 @@ void roomrom_debug_tick(void)
             if (nxt >= (unsigned char)B_ITEM_COUNT) nxt = (unsigned char)B_ITEM_BOOMERANG;
             s_b_item = (b_item_t)nxt;
         }
-        if (pressed & BUTTON_B) {
+        /* T-116: Link_HandleInput reads A/B only while Link is idle ($AC 0). */
+        if ((pressed & BUTTON_B) && nes_ram[0x00ACu] == 0u) {
             /* T-092: NES WieldItem uses SelectedItemSlot ($656), which the
              * pause subscreen sets; the debug Z cycle only overrides it in a
              * debug session. */
@@ -2853,6 +2854,8 @@ void roomrom_debug_tick(void)
                 break;
             default:             break;
             }
+            /* NES steps Link's item-use state later in the same frame (T-102). */
+            link_step_after_wield();
         }
 
         /* Z held + START press = quest toggle (UW only). Z-held suppresses
@@ -3180,10 +3183,15 @@ void roomrom_debug_tick(void)
                 }
 
                 if (moving_dir != LINK_DIR_NONE) {
-                    if (++s_link_anim_tick >= LINK_ANIM_PERIOD) {
-                        s_link_frame ^= 1u;
-                        s_link_anim_tick = 0u;
-                    }
+                    /* T-116: NES ObjAnimFrame ($3E4), advanced by the NES
+                     * AnimateObjectWalking cadence (6 frames) in
+                     * link_anim_state_step, not a private 8-frame timer.
+                     * The baked left/right poses are stored in the other
+                     * order (pose frame 0 = NES frame 1, tiles $04/$06;
+                     * verify_sprites newgame f128-137), up/down match. */
+                    s_link_frame = (u8)((nes_ram[0x03E4u] & 1u) ^
+                        ((players[0].face == LINK_FACE_LEFT ||
+                          players[0].face == LINK_FACE_RIGHT) ? 1u : 0u));
                     link_nes_move_object(moving_dir);
                 } else {
                     /* NES AnimateObjectWalking (Z_07.asm:5045) advances

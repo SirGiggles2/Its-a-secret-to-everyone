@@ -30,6 +30,7 @@
  *    also keeps the existing audible audio_sfx_play(3).
  */
 
+#include "../combat/combat_runtime.h"   /* T-116 Link item-use state */
 #include "bomb.h"
 #include "candle_fire.h"
 #include "platform_abi.h"
@@ -142,6 +143,8 @@ void roomrom_bomb_place(link_face_t face, short link_x, short link_y)
     nes_ram[NES_TUNE0_REQUEST] = 0x20u;
     OBJ_TIMER_(x) = 0u;
     OBJ_STATE_(x) = 0x11u;
+    /* PlaceWeaponForPlayerStateAndAnimAndWeaponState (T-116). */
+    link_place_weapon_for_player_state(1u);
     bomb_fire_place_weapon(x, bomb_fire_nes_dir_for_face(face),
                            (unsigned char)link_x, (unsigned char)link_y);
 }

@@ -20,6 +20,7 @@
  * not palette-faded, and main.c relights on candle use (T-111).
  */
 
+#include "../combat/combat_runtime.h"   /* T-116 Link item-use state */
 #include "candle_fire.h"
 #include "bomb.h"
 #include <stdint.h>
@@ -85,6 +86,7 @@ void roomrom_candle_fire_spawn(link_face_t face, short link_x, short link_y)
     OBJ_STATE_(x) = 0x21u;
     nes_ram[NES_EFFECT_REQUEST] |= 0x04u;
     nes_ram[NES_OBJ_ANIM_COUNTER + x] = 0x04u;
+    link_place_weapon_for_player_state(0u);   /* PlaceWeaponForPlayerState (T-116) */
     bomb_fire_place_weapon(x, bomb_fire_nes_dir_for_face(face),
                            (unsigned char)link_x, (unsigned char)link_y);
 }

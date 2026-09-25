@@ -534,6 +534,45 @@ void roomrom_sprites_set_sword_horizontal(short x, short y, unsigned char hflip,
                       2);
 }
 
+/* T-116: vanilla sword from the NES item path: sat_attr from
+ * enemy_render_item_sat (tile + palette + flips + priority), wide = 16x16
+ * horizontal frame ($82 pair), else one 8x16 narrow sprite. x/y are the
+ * NES sprite coordinates. */
+void roomrom_sprites_set_sword_nes(short x, short y, unsigned char wide,
+                                   unsigned short sat_attr)
+{
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_SWORD,
+                      (signed short)x,
+                      (signed short)y,
+                      wide ? RENDER_SPRITE_SIZE(2, 2) : RENDER_SPRITE_SIZE(1, 2),
+                      sat_attr,
+                      2);
+}
+
+/* T-116: Link's arrow (slot $12) from the NES item path; see
+ * roomrom_sprites_set_sword_nes. */
+void roomrom_sprites_set_arrow_nes(short x, short y, unsigned char wide,
+                                   unsigned short sat_attr)
+{
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_ARROW,
+                      (signed short)x,
+                      (signed short)y,
+                      wide ? RENDER_SPRITE_SIZE(2, 2) : RENDER_SPRITE_SIZE(1, 2),
+                      sat_attr,
+                      5);
+}
+
+/* T-116: Link's boomerang (slot $0F), one narrow 8x16 item sprite. */
+void roomrom_sprites_set_boomerang_nes(short x, short y, unsigned short sat_attr)
+{
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_BOOMERANG,
+                      (signed short)x,
+                      (signed short)y,
+                      RENDER_SPRITE_SIZE(1, 2),
+                      sat_attr,
+                      4);
+}
+
 void roomrom_sprites_clear_sword(void)
 {
     VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_SWORD,

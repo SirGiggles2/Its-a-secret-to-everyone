@@ -613,6 +613,14 @@ void draw_anim_write_item_sprites(unsigned int slot, unsigned int item_slot)
     anim_write_item_sprites(slot, item_slot);
 }
 
+/* T-116: Anim_WriteSpecificItemSprites left tile for an item slot and
+ * frame image ([0C]). */
+unsigned char draw_item_frame_tile(unsigned char item_slot, unsigned char frame)
+{
+    unsigned char i = (unsigned char)(k_anim_item_frame_offsets[item_slot & 0x3Fu] + frame);
+    return k_anim_item_frame_tiles[i & 0x3Fu];
+}
+
 /* T-092: DrawItemBySlot's frame-0 tile and sprite attributes for an item
  * slot and inventory value, computed without writing sprites (status-bar
  * A/B boxes). Same rules as draw_item_by_slot below. */
