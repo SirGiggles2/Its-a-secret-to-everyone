@@ -45,7 +45,7 @@ def main():
 
 def score(bad):
     """Tile-identity mismatches weigh far more than sub-palette ones."""
-    return sum(1000 if b[6] == "TILE" else 1 for b in bad)
+    return sum(1000 if b[6] in ("TILE", "UNMAPPED") else 1 for b in bad)
 
 
 def compare(L, nt, v, row_off, col_off, plane):
@@ -60,6 +60,11 @@ def compare(L, nt, v, row_off, col_off, plane):
             exp = 0 if slot == 0xFFFF else 1 + slot
             a = plane + 2 * ((row_off + tr) % 64 * 64 + (col_off + tc) % 64)
             got = ((v[a] << 8) | v[a + 1]) & 0x7FF
+            if slot == 0xFFFF:
+                # The atlas has no copy of this (tile, sub-pal): Genesis can
+                # only draw blank here, which is never a match.
+                bad.append((tc, tr, tile, pal, exp, got, "UNMAPPED"))
+                continue
             if got != exp:
                 same_tile = any(L[tile][q] != 0xFFFF and got == 1 + L[tile][q] for q in range(4))
                 bad.append((tc, tr, tile, pal, exp, got, "palette" if same_tile else "TILE"))
@@ -67,7 +72,7 @@ def compare(L, nt, v, row_off, col_off, plane):
 
 
 def report(d, bad):
-    tiles = sum(1 for b in bad if b[6] == "TILE")
+    tiles = sum(1 for b in bad if b[6] in ("TILE", "UNMAPPED"))
     pals = len(bad) - tiles
     print(f"{d.name}: plane playfield {704 - len(bad)}/704 exact; tile identity "
           f"{704 - tiles}/704; sub-palette mismatches {pals} -> "

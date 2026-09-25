@@ -228,6 +228,15 @@ def main():
     for tid in HUD_FORCE_TILES:
         combined[tid].update([0, 1, 2])  # HUD pal context varies (white/yellow/red)
 
+    # T-050/T-115: OW squares written only after a secret or a push, which
+    # the room-layout audit never sees: stairs $70-$73 (tree / armos /
+    # shortcut), the pushed rock $C8-$CB and gravestone $BC-$BF at their
+    # new position, cave $24/$F3 and gray floor $26. OW playfields use
+    # sub-pals 0, 2 and 3 (LevelBlockAttrsA/B & 3 over all 128 rooms).
+    for tid in list(range(0x70, 0x74)) + list(range(0xC8, 0xCC)) \
+             + list(range(0xBC, 0xC0)) + [0x24, 0x26, 0xF3]:
+        combined[tid].update([0, 2, 3])
+
     # Original dungeon map transfer records use common misc glyphs absent
     # from room nametables (Z_06 LevelInfo_StatusBarMapTransferBuf).
     for tid in range(0xFB, 0x100):

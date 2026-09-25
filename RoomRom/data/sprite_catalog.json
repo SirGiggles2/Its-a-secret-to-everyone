@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
   "generated_by": "tools/atlas/gen_sprite_catalog.py",
-  "verifier_output": "verify_vram_budget: OK  BG=tiles 1..637  SPR=tiles 638..924  ITEM=tiles 925..1028  BOSS=SCENE_OBJ-shared (NES parity)  BOSS_PAL3=tiles 1029..1092  CLOUD=tiles 1300..1305  FIREBALL=tiles 1306..1307  SPARK=tiles 1308..1311  HUD_MARKER=tiles 1312..1313  SUBSCREEN_SPRITE=tiles 1280..1295  contiguous_tail_headroom=222 tiles before VDP tables\n  hscroll_table_unused=1020 bytes (HSCROLL_PLANE mode uses 4 B of 1 KB allocated; available as SAT-extension scratch only)",
+  "verifier_output": "verify_vram_budget: OK  BG=tiles 1..655  SPR=tiles 656..942  ITEM=tiles 943..1046  BOSS=SCENE_OBJ-shared (NES parity)  BOSS_PAL3=tiles 1047..1110  CLOUD=tiles 1300..1305  FIREBALL=tiles 1306..1307  SPARK=tiles 1308..1311  HUD_MARKER=tiles 1312..1313  SUBSCREEN_SPRITE=tiles 1280..1295  contiguous_tail_headroom=222 tiles before VDP tables\n  hscroll_table_unused=1020 bytes (HSCROLL_PLANE mode uses 4 B of 1 KB allocated; available as SAT-extension scratch only)",
   "vram_map": {
     "BG_TILE_BASE": 1,
-    "BG_TILE_COUNT_PER_PAL": 637,
+    "BG_TILE_COUNT_PER_PAL": 655,
     "BG_SUBPAL_COUNT": 1,
-    "SPR_TILE_BASE": 638,
+    "SPR_TILE_BASE": 656,
     "SPR_TILE_COUNT_PER_PAL": 287,
     "SPR_SUBPAL_COUNT": 1,
     "ITEM_SUBPAL_COUNT": 1,
@@ -17,39 +17,39 @@
   "banks": {
     "BG": {
       "tile_base": 1,
-      "tiles_resident": 637,
+      "tiles_resident": 655,
       "tile_range": [
         1,
-        637
+        655
       ],
       "subpal_count": 1,
-      "bytes_resident": 20384,
+      "bytes_resident": 20960,
       "source": "data/chr/overworld_bg.c + data/chr/underworld_bg.c (via RoomRom/tools/expand_bg_chr.py)",
       "replication": "4x pixel-bias (Phase J selective dedup planned)"
     },
     "SPR": {
-      "tile_base": 638,
+      "tile_base": 656,
       "tiles_resident": 287,
       "tile_range": [
-        638,
-        924
+        656,
+        942
       ],
       "subpal_count": 1,
       "bytes_resident": 9184,
       "source": "data/chr/common.c (Link / sword / common sprites)",
       "replication": "1x (sub-pal 0); future sub-pal 1+ via OAM pal field",
       "scene_obj_slot": {
-        "tile_base": 682,
+        "tile_base": 700,
         "slot_size": 136,
         "occupants": "UWSP (34), OWSP (114), BOSS (64) \u2014 one at a time"
       }
     },
     "ITEM": {
-      "tile_base": 925,
+      "tile_base": 943,
       "tiles_resident": 104,
       "tile_range": [
-        925,
-        1028
+        943,
+        1046
       ],
       "subpal_count": 1,
       "bytes_resident": 1109,
@@ -57,7 +57,7 @@
       "replication": "1x (Phase B collapsed from 3x on 2026-05-18)"
     },
     "BOSS": {
-      "tile_base": 682,
+      "tile_base": 700,
       "tile_count": 64,
       "subpal_count": 1,
       "residence": "transient (SCENE_OBJ slot, shared with UWSP/OWSP)",

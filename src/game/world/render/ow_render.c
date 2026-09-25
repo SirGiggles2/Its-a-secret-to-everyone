@@ -556,6 +556,7 @@ static unsigned char s_fill_dst_col[16];
 static unsigned char s_fill_row_base, s_fill_plane, s_fill_cave;
 static unsigned char s_act_dst_col[16];
 static unsigned char s_act_row_base, s_act_plane, s_act_cave, s_act_valid;
+static unsigned char s_fill_outer, s_fill_inner, s_act_outer, s_act_inner;
 
 static void render_one_metatile_col(unsigned char room_id,
                                     unsigned char src_col,
@@ -564,18 +565,21 @@ static void render_one_metatile_col(unsigned char room_id,
                                     const unsigned char *col_dirs_override)
 {
     const unsigned char *secondary_squares = roomrom_secondary_squares();
-    /* 2026-05-23 — v6-B iter 3: NES OW PlayAreaAttrs is ALWAYS $AA
-     * (sub-pal 2) confirmed by Link-walk probe (probe_nes_walk.lua).
-     * Per-room color variation comes from PALRAM sub-pal 2 colors being
-     * patched per-room (roomrom_ow_palette_patch_bg_per_room).
+    /* T-115: NES FillPlayAreaAttrs: outer = LevelBlockAttrsA & 3, inner =
+     * LevelBlockAttrsB & 3 per OW room (NES attribute tables byte-checked:
+     * $76/$78 2/2, $79 3/3, $39 3/2). The 2026-05-23 "always $AA" rule
+     * came from rooms that happen to be 2/2.
      * CAVE: NES cave attr (byte-verified, nes_6A CIRAM $3C0) puts the
      * border WALL tiles ($D8-$DB) on sub-pal 3 and the interior FLOOR
      * ($24) on sub-pal 2; ow_tile_palette() routes border -> outer_pal and
      * interior -> inner_pal. The cave flag is set by
      * roomrom_cave_room_render_fill_plane_a (CAVE_PALETTE_ROOM_ID $44
      * collides with real OW room $44, so we cannot gate on room_id). */
-    unsigned char outer_pal = s_rendering_cave ? 3u : 2u;
-    unsigned char inner_pal = 2u;
+    const unsigned char *rooms = roomrom_rooms();
+    unsigned char outer_pal = s_rendering_cave
+        ? 3u : (unsigned char)(rooms[OW_ATTRS_A_OFFSET + room_id] & 0x03u);
+    unsigned char inner_pal = s_rendering_cave
+        ? 2u : (unsigned char)(rooms[OW_ATTRS_B_OFFSET + room_id] & 0x03u);
     const unsigned char *col_dirs = col_dirs_override
         ? col_dirs_override
         : ow_col_dirs(room_id);
@@ -591,6 +595,8 @@ static void render_one_metatile_col(unsigned char room_id,
         s_fill_row_base = dst_row_base;
         s_fill_plane = s_target_plane;
         s_fill_cave = s_rendering_cave;
+        s_fill_outer = outer_pal;
+        s_fill_inner = inner_pal;
     }
     column_squares(col_dirs, src_col, sqs);
 
@@ -634,6 +640,8 @@ static void commit_fill_mapping(void)
     s_act_row_base = s_fill_row_base;
     s_act_plane = s_fill_plane;
     s_act_cave = s_fill_cave;
+    s_act_outer = s_fill_outer;
+    s_act_inner = s_fill_inner;
     s_act_valid = 1u;
 }
 
@@ -651,7 +659,7 @@ unsigned char roomrom_ow_room_render_set_tile(unsigned char tile_col,
     s_target_plane = s_act_plane;
     write_tile_at(tile_col, tile_row,
                   (unsigned char)((dst_col << 1) | (tile_col & 1u)), tile_row,
-                  s_act_row_base, raw_tile, s_act_cave ? 3u : 2u, 2u);
+                  s_act_row_base, raw_tile, s_act_outer, s_act_inner);
     s_target_plane = saved_plane;
     s_raw_tiles[tile_col][tile_row] = raw_tile;
     if (((tile_col | tile_row) & 1u) == 0u) {

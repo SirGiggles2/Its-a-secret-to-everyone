@@ -76,7 +76,7 @@ Status: `TODO` · `ACTIVE` · `BLOCKED` · `REVIEW` · `DONE`. Plan ref = task I
 | T-112 | Rod / magic shot is Genesis-only (3 px/frame, private state, never slot `$0E`); NES UpdateSwordShotOrMagicShot + book-of-magic fire (WieldCandle with UsedCandle bypass, Z_07:3505) not ported | TODO | | Lockstep: slot `$0E` + fire slot cells equal vs NES |
 | T-113 | Link shove distance: fire hit (t110_fire) — NES Link 7A→99, Genesis 7A→9D (native Link shove) | TODO | | Lockstep `t110_fire`: Link Y equal through shove |
 | T-114 | Verify UW bombable wall (bomb.c `bomb_check_wall`) vs NES. Needs both consoles in the same UW room: blocked by T-105 route divergence / no NES UW staging | TODO | | Lockstep in L1 bombable-wall room: door opened bit + tiles vs NES |
-| T-115 | OW nametable sub-palette: `ow_render.c` forces sub-pal 2 for every OW room (2026-05-23 assumption from one probe); NES room $79 uses sub-pal 3 (brown). Genesis draws it green | ACTIVE | Claude | `verify_plane.py t050_rock_push`: tile identity 704/704, sub-palette 0/704 → must be 704/704 exact in $76/$78/$79 + a sweep |
+| T-115 | OW nametable sub-palette: `ow_render.c` forces sub-pal 2 for every OW room (2026-05-23 assumption from one probe); NES room $79 uses sub-pal 3 (brown). Genesis draws it green | DONE | Claude | `verify_plane.py t050_rock_push`: tile identity 704/704, sub-palette 0/704 → must be 704/704 exact in $76/$78/$79 + a sweep |
 
 ### S0c — Native game-mode spine (finish plan Phase 2)
 
@@ -131,6 +131,9 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 | T-080 | Builder: clean-staging build from user ROM, no live captures, drag-and-drop shell, reproducibility | P10 | TODO |
 
 ## Handoff log (newest first)
+
+**2026-09-25 · Claude** — T-115 done: OW rooms use NES outer/inner sub-palettes (LevelBlockAttrsA/B & 3); 93/128 rooms
+were wrong. BG atlas +18 secret-square combos (637->655, SPR base 656). Evidence `t115-ow-subpal/`.
 
 **2026-09-25 · Claude** — T-050 done: pond fairy $2F (UpdatePondFairy + World_FillHearts + orbiting hearts) byte-matched vs NES in
 room $39; $F3 heart tile routed to the ITEM atlas; NES room-entry q-speed $20 default for slots 1-11. Next: T-115 (OW sub-palette).
