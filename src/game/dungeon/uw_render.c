@@ -3,6 +3,7 @@
 #include "uw_render.h"
 #include "../../../RoomRom/src/uw_room_blob.h"
 #include "render_abi.h"
+#include "platform_abi.h"  /* nes_ram, NES_PLAY_AREA_BASE (T-117) */
 #include "../../../RoomRom/src/roomrom_vram_map.h"
 #include "../world/bg_palette.h"  /* Phase 12.2 promoted */
 #include "../../../RoomRom/src/bg_sparse_chr.h"  /* Phase J: sparse atlas + LUT */
@@ -66,6 +67,18 @@ static unsigned char s_door_priority_cache_next = 0u;
 static unsigned char uw_walkable_tile_id(unsigned char t)
 {
     return (t < 0x78u) ? 1u : 0u;
+}
+
+/* T-117: NES PlayAreaTiles ($6530, column-major, 22 rows per column).
+ * NES LayoutRoomUW fills it with the room's 32x22 play-area tiles and
+ * LayOutDoors / door updates write door faces into it; the drained
+ * collision code (GetCollidableTile) reads it. Every raw UW tile write
+ * for the current room's source cell mirrors here. */
+static void play_area_set(unsigned char col, unsigned char row,
+                          unsigned char raw)
+{
+    if (col >= 32u || row >= 22u) return;
+    nes_ram[NES_PLAY_AREA_BASE + (unsigned short)col * NES_TILE_COL_STRIDE + row] = raw;
 }
 
 static void set_collision_metatile(unsigned char col,
@@ -544,6 +557,7 @@ static void blit_blob(int idx)
             unsigned char nt_row = (unsigned char)(row + 8u);
             unsigned char pal = attr_palette_for(attr, col, nt_row);
             write_tile_raw(col, row, raw, pal);
+            play_area_set(col, row, raw);
             s_uw_tile_walkable[col][row] = uw_walkable_tile_id(raw);
         }
     }
@@ -594,6 +608,8 @@ static void blit_blob_one_metacol_at(int idx, unsigned char src_col,
          * cache. */
         s_uw_tile_walkable[src_p0][row] = uw_walkable_tile_id(raw0);
         s_uw_tile_walkable[src_p1][row] = uw_walkable_tile_id(raw1);
+        play_area_set(src_p0, row, raw0);
+        play_area_set(src_p1, row, raw1);
     }
     /* Legacy 16x11 metatile summary — also keyed by SOURCE col now so
      * the metatile-grain query matches BG-grain in slot 1 scroll. */
@@ -767,6 +783,7 @@ void roomrom_uw_room_render_write_tile(unsigned char col, unsigned char row,
                                        unsigned char raw_tile, unsigned char pal)
 {
     write_tile_raw(col, row, raw_tile, pal);
+    play_area_set(col, row, raw_tile);
     if (col < 32u && row < 22u)
         s_uw_tile_walkable[col][row] = uw_walkable_tile_id(raw_tile);
 }
