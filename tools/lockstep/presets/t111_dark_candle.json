@@ -1,0 +1,248 @@
+{
+ "name": "t111_dark_candle",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {
+  "InvCandle": 1
+ },
+ "script": [
+  [
+   30,
+   ""
+  ],
+  [
+   40,
+   "R"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   40,
+   "R"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   40,
+   "R"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   40,
+   "R"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   40,
+   "U"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   40,
+   "U"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   40,
+   "U"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   40,
+   "U"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   40,
+   "U"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   40,
+   "R"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   40,
+   "U"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   40,
+   "L"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   100,
+   "U"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   100,
+   "U"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   100,
+   "U"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   100,
+   "U"
+  ],
+  [
+   160,
+   ""
+  ],
+  [
+   200,
+   ""
+  ],
+  [
+   80,
+   "U"
+  ],
+  [
+   320,
+   ""
+  ],
+  [
+   100,
+   "U"
+  ],
+  [
+   200,
+   ""
+  ],
+  [
+   2,
+   "B"
+  ],
+  [
+   200,
+   ""
+  ]
+ ],
+ "stages": [
+  [
+   30,
+   "wr(0x70, 240)\nwr(0x84, 141)\nwr(0x98, 1)\nwr(0x394, 0)\ngen_link_pos(240, 141, 1)\nlog(string.format('cross 77->78 #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
+  ],
+  [
+   230,
+   "wr(0x70, 240)\nwr(0x84, 93)\nwr(0x98, 1)\nwr(0x394, 0)\ngen_link_pos(240, 93, 1)\nlog(string.format('cross 78->79 #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
+  ],
+  [
+   430,
+   "wr(0x70, 240)\nwr(0x84, 141)\nwr(0x98, 1)\nwr(0x394, 0)\ngen_link_pos(240, 141, 1)\nlog(string.format('cross 79->7A #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
+  ],
+  [
+   630,
+   "wr(0x70, 240)\nwr(0x84, 141)\nwr(0x98, 1)\nwr(0x394, 0)\ngen_link_pos(240, 141, 1)\nlog(string.format('cross 7A->7B #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
+  ],
+  [
+   830,
+   "wr(0x70, 176)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(176, 61, 8)\nlog(string.format('cross 7B->6B #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
+  ],
+  [
+   1030,
+   "wr(0x70, 16)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(16, 61, 8)\nlog(string.format('cross 6B->5B #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
+  ],
+  [
+   1230,
+   "wr(0x70, 16)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(16, 61, 8)\nlog(string.format('cross 5B->4B #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
+  ],
+  [
+   1430,
+   "wr(0x70, 192)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(192, 61, 8)\nlog(string.format('cross 4B->3B #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
+  ],
+  [
+   1630,
+   "wr(0x70, 16)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(16, 61, 8)\nlog(string.format('cross 3B->2B #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
+  ],
+  [
+   1830,
+   "wr(0x70, 240)\nwr(0x84, 93)\nwr(0x98, 1)\nwr(0x394, 0)\ngen_link_pos(240, 93, 1)\nlog(string.format('cross 2B->2C #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
+  ],
+  [
+   2030,
+   "wr(0x70, 48)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(48, 61, 8)\nlog(string.format('cross 2C->1C #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
+  ],
+  [
+   2230,
+   "wr(0x70, 0)\nwr(0x84, 141)\nwr(0x98, 2)\nwr(0x394, 0)\ngen_link_pos(0, 141, 2)\nlog(string.format('cross 1C->1B #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
+  ],
+  [
+   2430,
+   "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('cross 1B->0B #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
+  ],
+  [
+   2690,
+   "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('cross 1B->0B #1 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
+  ],
+  [
+   2950,
+   "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('cross 1B->0B #2 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
+  ],
+  [
+   3210,
+   "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('cross 1B->0B #3 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
+  ],
+  [
+   3670,
+   "wr(0x70, 112)\nwr(0x84, 141)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 141, 8)\nlog(string.format('L5 entrance room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
+  ],
+  [
+   4070,
+   "wr(0x70, 120)\nwr(0x84, 109)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(120, 109, 8)\nlog(string.format('L5 $76 north door room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
+  ],
+  [
+   4370,
+   "wr(0x656, 4)\ngen_b_item(4)\nwr(0x70, 120)\nwr(0x84, 157)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(120, 157, 8)\nlog(string.format('candle room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
+  ]
+ ]
+}

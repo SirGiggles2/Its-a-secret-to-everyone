@@ -40,6 +40,8 @@
 #include "../../src/abi/audio_abi.h"                     /* Phase 8 W6/W7: audio_sfx_play */
 #include "../../src/game/world/transfer_buf_drain.h"     /* Plan v5b: TRANSFER_BUF -> CRAM bridge (unblocks Mode 11 palette cycle) */
 #include "../../src/game/world/progress_dispatch.h"      /* Tier 2: triforce fanfare driver */
+#include "../../src/game/world/world_dispatch.h"     /* world_animate_world_fading */
+#include "../../src/game/dungeon/uw_dark.h"              /* T-111: dark rooms by palette */
 #include "../../src/game/cave/uw_person_dispatch.h"    /* T-120: CheckPersonBlocking */
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
 #include "atlas/level_chr_swap.h"        /* PR-4a: scene-bank DMA state machine */
@@ -235,6 +237,11 @@ static u8          s_current_quest = 1u;
  * of full master-table linear scan (uw_dark_rooms 261 rows +
  * uw_item_rooms 969 rows would otherwise burn ~80% of frame budget). */
 static u8          s_cur_room_is_dark   = 0u;
+/* T-111: NES fades that hold the game: InitMode7 Sub6 (fade to black
+ * before scrolling into a dark room) and InitMode4 Sub3 (fade to light
+ * after entering a light room from an unlit dark one). */
+enum { UW_FADE_NONE = 0, UW_FADE_BEFORE_SCROLL, UW_FADE_AFTER_SCROLL };
+static u8          s_uw_fade_phase      = UW_FADE_NONE;
 static u8          s_cur_room_is_cellar = 0u;
 static u8          s_cur_room_has_item  = 0u;
 static struct uw_item_room_meta s_cur_room_item_meta;
@@ -607,24 +614,6 @@ static void render_room_into_slot(u8 room_id, u8 slot_x, u8 row_base)
     }
 }
 
-/* NES Z_04.asm:Ganon_ScenePhase0 -> UpdateCandle finishes the room
- * brightening at CandleState $02 / FadeCycle low nibble $04. The native
- * dark-room renderer blanked Plane A on entry; the palette transfer alone
- * cannot reveal tiles that are no longer there. Restore the current room
- * in place, keeping the live boss, Link and door state intact. */
-static void reveal_ganon_room_after_fade(void)
-{
-    if (s_scene != SCENE_UW || !s_cur_room_is_dark ||
-        roomrom_uw_room_lit(s_room_id) ||
-        nes_ram[0x0350u] != 0x3Eu ||
-        nes_ram[0x051Fu] != 0x02u ||
-        (nes_ram[0x051Cu] & 0x0Fu) != 0x04u) return;
-
-    roomrom_uw_room_set_lit(s_room_id);
-    render_room_into_slot(s_room_id, s_active_slot_x, s_active_row_base);
-    /* T-119: repaint every door face (LayOutDoors) over the relit plane. */
-    uw_door_state_layout_all();
-}
 u8                 s_link_frame = 0u;      /* non-static: forward-declared at top of file for cave_fade descend handler */
 static u8          s_link_anim_tick = 0u;
 #define LINK_ANIM_PERIOD 8u
@@ -880,7 +869,7 @@ static void refresh_room_metadata(u8 room_id)
     if (s_scene == SCENE_UW) {
         u8 lvl = roomrom_uw_room_render_get_level();
         u8 q = roomrom_uw_room_render_get_quest();
-        s_cur_room_is_dark   = roomrom_uw_room_is_dark(lvl, q, room_id);
+        s_cur_room_is_dark   = uw_dark_is_dark_room(room_id);   /* IsDarkRoom */
         s_cur_room_is_cellar = roomrom_uw_room_is_cellar(lvl, q, room_id);
         s_cur_room_has_item  = roomrom_uw_item_for_room(
                                    lvl, q, room_id, &s_cur_room_item_meta);
@@ -962,10 +951,11 @@ static void load_room(u8 room_id)
         u8 q   = roomrom_uw_room_render_get_quest();
         uw_door_state_room_init(lvl, q, room_id);
         roomrom_pushblock_room_load(lvl, q, room_id);
-        /* Task 5.8: dark-room render override. */
-        if (s_cur_room_is_dark && !roomrom_uw_room_lit(room_id)) {
-            roomrom_uw_room_render_fill_plane_a_dark();
-        }
+        /* T-111: a dark room shows the last fade-to-black palette row
+         * (cycle $43) until a candle brightens it; CandleState resets on
+         * every room entry (InitMode4_GoToSub0). */
+        nes_ram[0x051Fu] = 0u;
+        if (s_cur_room_is_dark) uw_dark_apply_cycle_row(0x43u);
     }
     /* NES Z_01.asm:3967 UsedCandle clears on room transition — blue candle
      * regains its 1-shot per new room. Red candle ignores the flag. */
@@ -1798,6 +1788,18 @@ static void edge_load_or_clamp(void)
         if (s_scene == SCENE_UW) room_save_kill_count_uw();
         else if (s_scene == SCENE_OW) room_save_kill_count_ow(s_room_id);
         s_transition_target = (u8)((row << 4) | col);
+        /* NES CalculateNextRoomForDoor (Z_05.asm:7483): in the OW,
+         * CheckMazes may send Link back into the same room (Lost Woods
+         * $61, Lost Hills $1B) until the direction sequence is walked. */
+        if (s_scene == SCENE_OW) {
+            nes_ram[0x00EBu] = s_room_id;
+            nes_ram[0x00ECu] = s_transition_target;
+            nes_ram[0x0098u] = (u8)(want == SCROLL_H_RIGHT ? 0x01u :
+                                    want == SCROLL_H_LEFT  ? 0x02u :
+                                    want == SCROLL_V_DOWN  ? 0x04u : 0x08u);
+            world_check_mazes();
+            s_transition_target = nes_ram[0x00ECu];
+        }
         s_transition_link_x = players[0].x;
         s_transition_link_y = players[0].y;
         /* Pre-edge screen pos clamped to playfield bounds, used as scroll
@@ -1831,8 +1833,22 @@ static void edge_load_or_clamp(void)
          * room reference whatever's in PAL0..PAL2 at render time. Old
          * room briefly shows in new palette during scroll; acceptable
          * trade vs new room wrong throughout. */
-        if (s_scene == SCENE_UW)
+        if (s_scene == SCENE_UW) {
+            u8 next_dark = uw_dark_is_dark_room(s_transition_target);
             roomrom_uw_room_render_load_palette(s_transition_target);
+            /* T-111: the reload must not change the current room's BG
+             * rows 2-3: dark unlit -> fade row $43, else the bright row $40.
+             * InitMode7_Sub5: going into a dark room from a light or
+             * candle-lit room fades to black first (cycle $40). */
+            uw_dark_apply_cycle_row((s_cur_room_is_dark && nes_ram[0x051Fu] == 0u)
+                                    ? 0x43u : 0x40u);
+            nes_ram[0x051Cu] = 0u;
+            if (next_dark && (!s_cur_room_is_dark || nes_ram[0x051Fu] != 0u)) {
+                nes_ram[0x051Fu] = 0u;
+                nes_ram[0x051Cu] = 0x40u;
+                s_uw_fade_phase = UW_FADE_BEFORE_SCROLL;
+            }
+        }
         else if (!ow_nes_scroll_enabled())
             roomrom_ow_room_render_load_palette(s_transition_target);
         /* Original OW palette handoff follows the completed staged fill. */
@@ -2332,7 +2348,6 @@ static void play_finish(void)
      * branch, never resolves to gameplay song. */
     audio_dispatch_tick((unsigned char)s_scene, s_room_id);
     mode_dispatch_update();
-    reveal_ganon_room_after_fade();
     /* 2026-05-15 perf: switched from enemy_render_sweep_oam_to_sat
      * (iterated 64 NES OAM entries → up to ~50 SAT writes/frame,
      * costing ~30% frame budget) to enemy_render_native_sweep
@@ -2468,6 +2483,16 @@ void roomrom_debug_tick(void)
         level_chr_boss_tick();
         if (s_scene == SCENE_UW) uw_door_state_tick();
 
+        /* T-111: InitMode7 Sub6 / InitMode4 Sub3 fades hold everything. */
+        if (s_uw_fade_phase != UW_FADE_NONE) {
+            if (world_animate_world_fading() == 0u) {
+                if (s_uw_fade_phase == UW_FADE_AFTER_SCROLL) nes_ram[0x051Fu] = 0u;
+                s_uw_fade_phase = UW_FADE_NONE;
+            }
+            transfer_buf_drain();
+            return;
+        }
+
         /* S6.6 transition state machine. */
         if (s_scroll_state != SCROLL_NONE) {
             short h_scroll;
@@ -2556,7 +2581,19 @@ void roomrom_debug_tick(void)
                     nes_ram[0x84u] = (u8)players[0].y;
                 }
                 if (s_scene == SCENE_UW) {
+                    u8 prev_dark = s_cur_room_is_dark;
                     roomrom_uw_room_render_load_palette(s_room_id);
+                    /* T-111: entering a dark room keeps it dark (row $43);
+                     * a light room entered from an unlit dark room fades to
+                     * light (InitMode4 Sub2/Sub3, cycle $C0). */
+                    if (uw_dark_is_dark_room(s_room_id)) {
+                        uw_dark_apply_cycle_row(0x43u);
+                    } else if (prev_dark && nes_ram[0x051Fu] == 0u) {
+                        uw_dark_apply_cycle_row(0x43u);
+                        nes_ram[0x051Cu] = 0xC0u;
+                        s_uw_fade_phase = UW_FADE_AFTER_SCROLL;
+                    }
+                    nes_ram[0x051Fu] = 0u;
                     roomrom_hud_draw(roomrom_uw_room_render_get_map(), s_room_id, 1u);
                     if (was_v_scroll) {
                         roomrom_uw_room_render_set_live_door_priority(
@@ -2607,6 +2644,15 @@ void roomrom_debug_tick(void)
             } else {
                 s_scroll_frame++;
             }
+            return;
+        }
+
+        /* T-111: UpdateMode5Play runs only UpdateCandle while the room
+         * brightens (BrighteningRoom). */
+        if (s_scene == SCENE_UW && uw_dark_brightening() &&
+            !roomrom_pause_is_active()) {
+            uw_dark_update_candle();
+            transfer_buf_drain();
             return;
         }
 
@@ -2954,14 +3000,10 @@ void roomrom_debug_tick(void)
                 }
                 break;
             case B_ITEM_CANDLE:
+                /* The room brightens when the fire stands (UpdateFire ->
+                 * UpdateCandle, T-111), not on the button press. */
                 roomrom_candle_fire_spawn(players[0].face,
                                           players[0].x, players[0].y);
-                if (s_scene == SCENE_UW && s_cur_room_is_dark &&
-                    !roomrom_uw_room_lit(s_room_id)) {
-                    roomrom_uw_room_set_lit(s_room_id);
-                    roomrom_uw_dark_note_candle_used();
-                    load_room(s_room_id);
-                }
                 break;
             case B_ITEM_ROD:
                 roomrom_combat_wield_rod();      /* T-116: NES WieldRod */

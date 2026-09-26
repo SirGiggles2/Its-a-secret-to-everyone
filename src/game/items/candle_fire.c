@@ -15,9 +15,7 @@
  * ObjAnimAttrHeap[$08] = $02, h-flip = ObjAnimFrame toggled every 4
  * frames. A fire touching Link shoves him and deals $0080.
  *
- * Documented divergence: UW UpdateCandle (CandleState / FadeCycle
- * brightening) is not run here. Genesis dark rooms are plane-darkened,
- * not palette-faded, and main.c relights on candle use (T-111).
+ * UW: a standing fire runs UpdateCandle (T-111, src/game/dungeon/uw_dark.c).
  */
 
 #include "../combat/combat_runtime.h"   /* T-116 Link item-use state */
@@ -32,6 +30,7 @@
 #include "../world/object_dispatch.h"
 #include "../combat/collision_dispatch.h"
 #include "../combat/link_collision_dispatch.h"
+#include "../dungeon/uw_dark.h"             /* T-111 UpdateCandle */
 
 #define NES_OBJ_TIMER_BASE      0x0028u
 #define NES_OBJ_DIR_BASE        0x0098u
@@ -187,5 +186,7 @@ void bomb_fire_update_fire(unsigned char x)
         OBJ_STATE_(x) = 0u;                /* ResetObjState */
         return;
     }
+    /* In the UW a standing fire brightens a dark room (UpdateCandle). */
+    if (nes_ram[0x0010u] != 0u) uw_dark_update_candle();
     draw_fire_and_check_link(x);
 }
