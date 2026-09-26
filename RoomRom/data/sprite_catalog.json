@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generated_by": "tools/atlas/gen_sprite_catalog.py",
-  "verifier_output": "verify_vram_budget: OK  BG=tiles 1..663  SPR=tiles 664..950  ITEM=tiles 951..1054  BOSS=SCENE_OBJ-shared (NES parity)  BOSS_PAL3=tiles 1055..1118  CLOUD=tiles 1300..1305  FIREBALL=tiles 1306..1307  SPARK=tiles 1308..1311  HUD_MARKER=tiles 1312..1313  SUBSCREEN_SPRITE=tiles 1280..1295  contiguous_tail_headroom=222 tiles before VDP tables\n  hscroll_table_unused=1020 bytes (HSCROLL_PLANE mode uses 4 B of 1 KB allocated; available as SAT-extension scratch only)",
+  "verifier_output": "verify_vram_budget: OK  BG=tiles 1..663  SPR=tiles 664..950  ITEM=tiles 951..1060  BOSS=SCENE_OBJ-shared (NES parity)  BOSS_PAL3=tiles 1061..1124  CLOUD=tiles 1300..1305  FIREBALL=tiles 1306..1307  SPARK=tiles 1308..1311  HUD_MARKER=tiles 1312..1313  SUBSCREEN_SPRITE=tiles 1280..1295  contiguous_tail_headroom=222 tiles before VDP tables\n  hscroll_table_unused=1020 bytes (HSCROLL_PLANE mode uses 4 B of 1 KB allocated; available as SAT-extension scratch only)",
   "vram_map": {
     "BG_TILE_BASE": 1,
     "BG_TILE_COUNT_PER_PAL": 663,
@@ -46,13 +46,13 @@
     },
     "ITEM": {
       "tile_base": 951,
-      "tiles_resident": 104,
+      "tiles_resident": 110,
       "tile_range": [
         951,
-        1054
+        1060
       ],
       "subpal_count": 1,
-      "bytes_resident": 1109,
+      "bytes_resident": 1173,
       "source": "RoomRom/data/item_chr_manifest.json + RoomRom/tools/gen_atlas.py",
       "replication": "1x (Phase B collapsed from 3x on 2026-05-18)"
     },
@@ -603,6 +603,38 @@
       "tile_ids": [
         "0x66",
         "0x67"
+      ],
+      "sprite_size": [
+        1,
+        2
+      ],
+      "draw_rule": "narrow_8x16"
+    },
+    {
+      "name": "rod_horz",
+      "item": "rod",
+      "direction_class": "horizontal",
+      "nes_frame_tile": "0x8A",
+      "tile_ids": [
+        "0x8A",
+        "0x8B",
+        "0x8C",
+        "0x8D"
+      ],
+      "sprite_size": [
+        2,
+        2
+      ],
+      "draw_rule": "wide_16x16_hflippable"
+    },
+    {
+      "name": "sword_shot_spread",
+      "item": "sword_shot",
+      "direction_class": "static",
+      "nes_frame_tile": "0x30",
+      "tile_ids": [
+        "0x30",
+        "0x31"
       ],
       "sprite_size": [
         1,

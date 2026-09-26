@@ -22,6 +22,10 @@ unsigned char roomrom_candle_fire_used_this_room(void);
 void          roomrom_candle_fire_mark_used(void);
 void          roomrom_candle_fire_room_reset(void);
 
+/* HandleShotBlocked book fire: WieldCandle's slot search + fire setup
+ * without Link's state change; returns the slot left in X. */
+unsigned char candle_fire_wield_from_shot(void);
+
 /* UpdateFire for slot x (state $21 moving / $22 standing). */
 void bomb_fire_update_fire(unsigned char x);
 

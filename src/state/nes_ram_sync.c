@@ -118,18 +118,7 @@ void nes_ram_sync_link_face(void)
 #define NES_OBJ_TYPE_BASE   0x034Fu
 #endif
 #define NES_SWORD_SLOT      13u
-#define NES_BEAM_SLOT       14u
-#define NES_SWORD_SHOT_STATE_FLYING 0x10u
 #define NES_ITEM_SWORD_LEVEL 0x0657u
-
-static void nes_ram_clear_sword_beam_slot(void)
-{
-    nes_ram[NES_OBJ_DIR_BASE   + NES_BEAM_SLOT] = 0u;
-    nes_ram[NES_OBJ_X_BASE     + NES_BEAM_SLOT] = 0u;
-    nes_ram[NES_OBJ_Y_BASE     + NES_BEAM_SLOT] = 0u;
-    nes_ram[NES_OBJ_STATE_BASE + NES_BEAM_SLOT] = 0u;
-    nes_ram[NES_OBJ_TYPE_BASE + NES_BEAM_SLOT] = 0u;
-}
 
 void nes_ram_sync_sword(void)
 {
@@ -149,36 +138,6 @@ void nes_ram_sync_sword(void)
         nes_ram[NES_OBJ_STATE_BASE + NES_SWORD_SLOT] = st;
     }
 
-    if (!roomrom_combat_get_beam_active()) {
-        nes_ram_clear_sword_beam_slot();
-        return;
-    }
-
-    {
-        unsigned char fi = (unsigned char)roomrom_combat_get_beam_face();
-        if (fi > 3u) {
-            fi = 0u;
-        }
-        nes_ram[NES_OBJ_DIR_BASE + NES_BEAM_SLOT] = k_face_to_nes_dir[fi];
-    }
-    nes_ram[NES_OBJ_X_BASE + NES_BEAM_SLOT] =
-        (unsigned char)roomrom_combat_get_beam_x();
-    nes_ram[NES_OBJ_Y_BASE + NES_BEAM_SLOT] =
-        (unsigned char)roomrom_combat_get_beam_y();
-    nes_ram[NES_OBJ_TYPE_BASE + NES_BEAM_SLOT] = 0u;
-    nes_ram[NES_OBJ_STATE_BASE + NES_BEAM_SLOT] = NES_SWORD_SHOT_STATE_FLYING;
-}
-
-void nes_ram_reconcile_sword_beam_collision(void)
-{
-    if (!roomrom_combat_get_beam_active()) {
-        return;
-    }
-    if (nes_ram[NES_OBJ_STATE_BASE + NES_BEAM_SLOT] == NES_SWORD_SHOT_STATE_FLYING) {
-        return;
-    }
-    roomrom_combat_cancel_beam();
-    nes_ram_clear_sword_beam_slot();
 }
 
 void nes_ram_seed_sword_level(unsigned char level)

@@ -263,7 +263,7 @@ ROOMROM_C_SOURCES = [
     # Task 5.8.1: candle fire projectile (slot 8)
     # Phase 12.2 family 3: items promoted to src/game/items/.
     ("src/game/items/candle_fire.c", "items_candle_fire.o"),
-    ("src/game/items/magic_shot.c",  "items_magic_shot.o"),
+    ("src/game/items/sword_shot.c",  "items_sword_shot.o"),
     ("src/game/world/ow_palette.c", "world_ow_palette.o"),  # Phase 12.2 promoted
     ("src/game/world/ow_subpal3_table.c", "world_ow_subpal3_table.o"),  # Plan v5: NES per-room sub-pal 3 capture
     ("src/game/world/ow_bg_palram_table.c", "world_ow_bg_palram_table.o"),  # Plan v5: NES per-room BG palram capture

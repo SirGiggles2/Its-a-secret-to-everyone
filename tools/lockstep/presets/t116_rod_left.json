@@ -1,0 +1,32 @@
+{
+ "name": "t116_rod_left",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {
+  "0x65F": 1
+ },
+ "script": [
+  [
+   36,
+   ""
+  ],
+  [
+   4,
+   "L"
+  ],
+  [
+   10,
+   ""
+  ],
+  [
+   2,
+   "B"
+  ],
+  [
+   100,
+   ""
+  ]
+ ],
+ "stage_at": 20,
+ "stage": "wr(0x15, 0x40)\nwr(0x656, 8)\ngen_b_item(5)"
+}

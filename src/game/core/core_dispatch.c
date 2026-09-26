@@ -13,6 +13,7 @@
 #include "sprite_state.h"      /* OAM_BYTE */
 #include "progress_state.h"    /* SUBMODE_VALUE, PROG_ITEMS_BY_LEVEL */
 #include "combat_state.h"      /* LINK_HEARTS */
+#include "../items/candle_fire.h"  /* candle_fire_wield_from_shot (T-116) */
 
 /* T5.2 plan v5b — DMC SFX dispatch from core tune writers. NES bitmap
  * → sample index per src/nes_io.asm:2547 DMC_SAMPLE_LOOKUP. */
@@ -614,27 +615,23 @@ void core_handle_shot_blocked(unsigned int slot)
         core_deactivate_shot(slot);
         return;
     }
-    /* TODO Phase 4: native equivalent of c_wield_candle (item subsystem
-     * cross-port). Currently stage-1 stub: skip the candle-relight side
-     * effect; downstream OBJ_STATE 0x21 -> 0x22 promotion still runs
-     * because saved_link_state and saved_candle_used round-trip via
-     * c_wield_candle which we elide. Marking as STAGE-1: light-but-
-     * functional, may diverge from NES on candle-shot-block scenes. */
-    /* saved_link_state = OBJ_STATE(0);   -- NES side-effect preservation */
-    /* saved_candle_used = CANDLE_LIT_FLAG; */
-    /* CANDLE_LIT_FLAG = 0; c_wield_candle(); CANDLE_LIT_FLAG = saved_candle_used; */
-    /* OBJ_STATE(0) = saved_link_state; */
-
-    if (OBJ_STATE(slot) != 0x21u) {
-        core_deactivate_link_shot();
-        return;
+    /* T-116 book fire: WieldCandle with UsedCandle cleared and Link's
+     * state restored (both round-trip in NES), leaving X = the fire slot.
+     * A moving fire ($21) becomes a standing one ($22) at the shot's
+     * position and direction for $4F frames; the shot is deactivated
+     * either way (DeactivateLinkShot). */
+    {
+        unsigned int x = candle_fire_wield_from_shot();
+        if (OBJ_STATE(x) == 0x21u) {
+            OBJ_STATE(x) = 0x22u;
+            OBJ_TILE_X(x) = (uint8_t)OBJ_TILE_X(14);
+            OBJ_TILE_Y(x) = (uint8_t)OBJ_TILE_Y(14);
+            RAM(NES_OBJ_FLAG_BASE + x) =
+                (uint8_t)RAM(NES_OBJ_FLAG_BASE + 14u);
+            RAM(0x0028 + x) = 0x4Fu;
+        }
     }
-    OBJ_STATE(slot) = 0x22u;
-    OBJ_TILE_X(slot) = (uint8_t)OBJ_TILE_X(14);
-    OBJ_TILE_Y(slot) = (uint8_t)OBJ_TILE_Y(14);
-    RAM(NES_OBJ_FLAG_BASE + slot) =
-        (uint8_t)RAM(NES_OBJ_FLAG_BASE + 14u);
-    RAM(0x0028 + slot) = 79u;
+    core_deactivate_link_shot();
 }
 
 void core_set_up_common_cave_objects(unsigned int x, unsigned int slot,

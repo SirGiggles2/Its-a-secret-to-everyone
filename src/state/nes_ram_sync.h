@@ -98,17 +98,11 @@ void nes_ram_sync_link_face(void);
  *   nes_ram[$00AC + 13]  = swing state (0 idle / 2 full-extend)
  *   nes_ram[$0070 + 13]  = sword X
  *   nes_ram[$0084 + 13]  = sword Y
- *   nes_ram[$034F + 14]  = sword-shot ObjType clear ($00, like live NES)
- *   nes_ram[$00AC + 14]  = sword-shot active state $10
- *   nes_ram[$0098/$0070/$0084 + 14] = beam dir/X/Y
+ * The sword shot (slot 14) is an NES object (src/game/items/sword_shot.c).
  *
  * Idle/inactive frames clear the corresponding weapon slots. */
 void nes_ram_sync_sword(void);
 
-/* Slot 14 collision mutates OBJ_STATE(14) away from $10 during
- * enemy_loop_tick(). Reconcile immediately afterward so the native beam
- * vanishes and damages only once, matching the NES sword-shot path. */
-void nes_ram_reconcile_sword_beam_collision(void);
 
 /* Plan v5 — seed ITEM_SWORD_LEVEL ($0657 ITEMS_BY_LEVEL[0]) to wood-
  * sword tier on gameplay enter. Without a non-zero value the damage

@@ -4,7 +4,7 @@
  * gen_atlas.py FU2 items_blob_legacy mode.
  *
  * Byte layout per row: pal0_bytes || pal1_bytes || pal2_bytes || pal3_bytes
- * Per-pal stride = 3328 bytes (104 Genesis tiles).
+ * Per-pal stride = 3520 bytes (110 Genesis tiles).
  * Pixel bias rule: out = (in==0) ? 0 : (sub_pal*4 + in).
  * Byte-identical to expand_sprite_chr.py -> roomrom_item_chr_x4.
  */
@@ -12,9 +12,9 @@
 #define ROOMROM_ATLAS_ITEMS_X4_H
 
 #define ROOMROM_ATLAS_ITEMS_X4_VARIANT_COUNT    2u
-#define ROOMROM_ATLAS_ITEMS_X4_TILE_COUNT       104u
-#define ROOMROM_ATLAS_ITEMS_X4_PER_PAL_BYTES    3328u
-#define ROOMROM_ATLAS_ITEMS_X4_BYTES            3328u
+#define ROOMROM_ATLAS_ITEMS_X4_TILE_COUNT       110u
+#define ROOMROM_ATLAS_ITEMS_X4_PER_PAL_BYTES    3520u
+#define ROOMROM_ATLAS_ITEMS_X4_BYTES            3520u
 
 /* Tile-index constants: byte_offset = TILE_INDEX * 32
  * These supersede the legacy ROOMROM_ITEM_TILE_* constants from
@@ -52,6 +52,8 @@
 #define ROOMROM_ITEM_TILE_FAIRY_SPARK_F1 98u
 #define ROOMROM_ITEM_TILE_DROP_HEART 100u
 #define ROOMROM_ITEM_TILE_DROP_CLOCK 102u
+#define ROOMROM_ITEM_TILE_ROD_HORZ 104u
+#define ROOMROM_ITEM_TILE_SWORD_SHOT_SPREAD 108u
 
 extern const unsigned char roomrom_atlas_items_x4
     [ROOMROM_ATLAS_ITEMS_X4_VARIANT_COUNT][ROOMROM_ATLAS_ITEMS_X4_BYTES];

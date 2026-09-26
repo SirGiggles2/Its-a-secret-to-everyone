@@ -9,6 +9,8 @@
 #include "platform_abi.h"
 #include "render_abi.h"
 #include "../enemies/enemy_render.h"   /* T-116 item SAT */
+#include "../items/sword_shot.h"        /* T-116 slot $0E */
+#include "../world/draw_dispatch.h"     /* draw_item_frame_tile */
 
 /* RoomRom S7 v4 combat — sword swing.
  *
@@ -74,55 +76,8 @@ short         roomrom_combat_get_swing_x(void)     { return s_pub_x; }
 short         roomrom_combat_get_swing_y(void)     { return s_pub_y; }
 link_face_t   roomrom_combat_get_swing_face(void)  { return s_pub_face; }
 
-/* S7 v5 sword beam (Z_07.asm UpdateSwordShotOrMagicShot, MakeSwordShot
- * at Z_07:4581). Beam spawns at sword state 3 transition (frame 13 of
- * 16). Travels at q-speed $C0 = 3 px/frame in facing direction.
- * Lifetime: until off-screen. RoomRom OW playfield rough bounds:
- * x in [0, 256), y in [HUD_BOTTOM, 224). Use generous bounds for
- * v5 (x in [-16, 272), y in [-16, 240)). */
-#define BEAM_FRAME_SPAWN     (COMBAT_STATE1_FRAMES + COMBAT_STATE2_FRAMES)  /* 13 */
-#define BEAM_SPEED_PX        3
-#define BEAM_BOUND_X_MIN     ((short)(-16))
-#define BEAM_BOUND_X_MAX     ((short)272)
-#define BEAM_BOUND_Y_MIN     ((short)(-16))
-#define BEAM_BOUND_Y_MAX     ((short)240)
-
-static unsigned char  s_beam_active        = 0u;
-static link_face_t    s_beam_face          = LINK_FACE_DOWN;
-static short          s_beam_x             = 0;
-static short          s_beam_y             = 0;
-/* NES color flash counter. Cycles 0..3, indexes which sprite sub-palette
- * the beam renders with this frame (Z_07.asm:3459 ATTR = base |
- * (FrameCounter & 3)). */
-static unsigned char  s_beam_palette_phase = 0u;
-
-unsigned char roomrom_combat_get_beam_active(void) { return s_beam_active; }
-short         roomrom_combat_get_beam_x(void)      { return s_beam_x; }
-short         roomrom_combat_get_beam_y(void)      { return s_beam_y; }
-link_face_t   roomrom_combat_get_beam_face(void)   { return s_beam_face; }
-
-void roomrom_combat_cancel_beam(void)
-{
-    s_beam_active = 0u;
-    s_beam_palette_phase = 0u;
-    roomrom_sprites_clear_beam();
-}
-
 /* Sword visual Y bias; see recompute_y_bias (0 except Redux UW). */
 static short s_uw_y_bias = 0;
-
-/* NES PlaceWeapon seeds sword-shot object coordinates 16 px from Link in
- * the firing axis. The first update moves it by 3 px before the visible
- * draw, yielding the live-NES +/-19 capture. Renderer-only item draw
- * offsets are applied in roomrom_sprites_set_beam(). */
-static const signed char beam_spawn_x[4] = {
-    /* DOWN UP LEFT RIGHT */
-      0,   0, -16, +16
-};
-static const signed char beam_spawn_y[4] = {
-    /* DOWN UP LEFT RIGHT */
-    +16, -16,   0,   0
-};
 
 /* RoomRom currently boots with wood sword (Items=1). NES
  * @CalcSwordAttrs (Z_07.asm:4471) computes sub-pal = base_attr +
@@ -260,9 +215,8 @@ void roomrom_combat_init(void)
     RAM(0x00ACu + 0x0Du) = 0u;   /* T-116: sword slot $0D */
     s_state = COMBAT_IDLE;
     s_frame = 0u;
-    s_beam_active = 0u;
     roomrom_sprites_clear_sword();
-    roomrom_sprites_clear_beam();
+    sword_shot_init();           /* T-116: shot slot $0E */
 }
 
 extern void audio_sfx_play(unsigned char sfx);
@@ -381,7 +335,7 @@ unsigned char link_item_use_blocks_move(void)
     return (major == 0x10u || major == 0x20u) ? 1u : 0u;
 }
 
-static void update_sword_nes(void);
+static void update_sword_or_rod(unsigned char x);
 
 void roomrom_combat_try_swing(link_face_t face, short link_x, short link_y)
 {
@@ -420,7 +374,46 @@ void roomrom_combat_try_swing(link_face_t face, short link_x, short link_y)
      * frame; the Genesis tick already ran combat_update before input
      * (T-102), so do this frame's steps now. */
     link_step_after_wield();
-    update_sword_nes();
+    update_sword_or_rod(SW_SLOT);
+}
+
+/* WieldRod (Z_05.asm:3028): rod slot $12, state $31 for 5 frames, then
+ * UpdateRodOrArrow runs the sword's state machine on it. */
+#define ROD_SLOT 0x12u
+void roomrom_combat_wield_rod(void)
+{
+    unsigned char d;
+    if (RAM(0x00ACu + ROD_SLOT) != 0u) return;
+    RAM(0x03D0u + ROD_SLOT) = 5u;
+    /* WieldWeapon($31). */
+    RAM(0x00ACu + ROD_SLOT) = 0x31u;
+    RAM(0x03BCu + ROD_SLOT) = 0xC0u;
+    link_place_weapon_for_player_state(1u);
+    d = L_DIR;
+    RAM(0x0098u + ROD_SLOT) = d;
+    RAM(0x0070u + ROD_SLOT) = (unsigned char)(RAM(0x0070u) + ((d & 0x01u) ? 0x10u : (d & 0x02u) ? 0xF0u : 0u));
+    RAM(0x0084u + ROD_SLOT) = (unsigned char)(RAM(0x0084u) + ((d & 0x04u) ? 0x10u : (d & 0x08u) ? 0xF0u : 0u));
+    if (d & 0x0Cu) RAM(0x0070u + ROD_SLOT) = (unsigned char)(RAM(0x0070u + ROD_SLOT) + 3u);
+    /* This frame's Link step and rod update (see try_swing, T-102). */
+    link_step_after_wield();
+    update_sword_or_rod(ROD_SLOT);
+}
+
+/* UpdateRodOrArrow for rod states $3x. */
+void roomrom_combat_update_rod(void)
+{
+    update_sword_or_rod(ROD_SLOT);
+}
+
+/* DrawLink for the item-use states ($1x/$2x): the attack pose facing
+ * ObjDir. combat_update draws it each tick; a wield during input (after
+ * combat_update, T-102) redraws it the same frame. */
+void roomrom_combat_draw_item_pose(short link_x, short link_y, link_face_t face)
+{
+    unsigned char major = (unsigned char)(L_STATE & 0x30u);
+    if (s_redux) return;
+    if (major == 0x10u || major == 0x20u)
+        roomrom_sprites_set_link_attack_pose(link_x, link_y, face);
 }
 
 unsigned char roomrom_combat_link_locked(void)
@@ -442,53 +435,6 @@ static unsigned char compute_state(unsigned char frame)
     acc = (unsigned char)(acc + COMBAT_STATE4_FRAMES);
     if (frame < acc) return 4u;
     return 5u;
-}
-
-/* Tick the beam: move it BEAM_SPEED_PX in s_beam_face direction, redraw,
- * and despawn if it leaves the playfield. Called every frame regardless
- * of sword swing state — beam outlives the swing. */
-static void update_beam(void)
-{
-    if (!s_beam_active) {
-        return;
-    }
-
-    switch (s_beam_face) {
-    case LINK_FACE_UP:    s_beam_y = (short)(s_beam_y - BEAM_SPEED_PX); break;
-    case LINK_FACE_DOWN:  s_beam_y = (short)(s_beam_y + BEAM_SPEED_PX); break;
-    case LINK_FACE_LEFT:  s_beam_x = (short)(s_beam_x - BEAM_SPEED_PX); break;
-    case LINK_FACE_RIGHT: s_beam_x = (short)(s_beam_x + BEAM_SPEED_PX); break;
-    }
-
-    if (s_beam_x < BEAM_BOUND_X_MIN || s_beam_x > BEAM_BOUND_X_MAX
-        || s_beam_y < BEAM_BOUND_Y_MIN || s_beam_y > BEAM_BOUND_Y_MAX) {
-        s_beam_active = 0u;
-        roomrom_sprites_clear_beam();
-        return;
-    }
-
-    /* NES color flash (Z_07.asm:3459 ATTR = base | FrameCounter & 3):
-     * Genesis pal-cycle reproduction. Each frame the beam sprite's OAM
-     * pal field rotates through RENDER_PAL1/PAL2/PAL3, which hold NES
-     * SPR sub-pals 0/1/2 at indices [0..3] (loaded by
-     * roomrom_bg_palette_load_palram_full). Beam tile pixel values 1..3
-     * therefore sample sub-pal 0/1/2 colors per frame. NES cycled 4
-     * sub-pals; we cycle 3 because sub-pal 3 was dropped (2026-05-08
-     * 8x16 fix) — same 3-pal sequence the static items_chr atlas
-     * supports.
-     *
-     * Phase-B migration (2026-05-18): previously this path called
-     * render_cram_subrange_upload(2u * 16u, subpal, 4u) to rewrite
-     * PAL2[0..3] each frame. That blocked PAL2 from holding sub-pal 1
-     * colors permanently (needed by bomb/explosion). Pal-cycle costs 0
-     * CRAM writes per frame. */
-    {
-        unsigned char pal_index =
-            (unsigned char)(RENDER_PAL1 + s_beam_palette_phase);
-        s_beam_palette_phase =
-            (unsigned char)((s_beam_palette_phase + 1u) % 3u);
-        roomrom_sprites_set_beam(s_beam_x, s_beam_y, s_beam_face, pal_index);
-    }
 }
 
 /* Phase 9 Task 9.4 OPTION_ID_SWORD_STYLE gate.
@@ -516,28 +462,14 @@ static unsigned char sword_style_allows_beam(void)
     }
 }
 
-/* Spawn the beam at NES sword-shot object coordinates. Object coords are
- * also mirrored into NES RAM for collision; sprite draw offsets are kept
- * renderer-local to match DrawSwordShotOrMagicShot. */
-static void spawn_beam(short link_x, short link_y)
-{
-    unsigned char face_idx = (unsigned char)s_face;
-    s_beam_face          = s_face;
-    s_beam_x             = (short)(link_x + beam_spawn_x[face_idx]);
-    s_beam_y             = (short)(link_y + beam_spawn_y[face_idx]);
-    s_beam_palette_phase = 0u;
-    s_beam_active        = 1u;
-}
-
 void roomrom_combat_update(short link_x, short link_y, link_face_t face)
 {
     unsigned char st;
     short sx, sy;
-    (void)face;
 
     if (s_redux && s_state == COMBAT_IDLE) {
         s_pub_state = 0u;
-        update_beam();
+        sword_shot_update();
         return;
     }
 
@@ -579,11 +511,9 @@ void roomrom_combat_update(short link_x, short link_y, link_face_t face)
             break;
         }
 
-        if (s_frame == REDUX_BEAM_SPAWN && !s_beam_active &&
-            sword_style_allows_beam()) {
-            spawn_beam(link_x, link_y);
-        }
-        update_beam();
+        if (s_frame == REDUX_BEAM_SPAWN)
+            sword_shot_make(sword_style_allows_beam());
+        sword_shot_update();
 
         s_pub_state = 2u;
         s_pub_x     = sx;
@@ -608,66 +538,80 @@ void roomrom_combat_update(short link_x, short link_y, link_face_t face)
     link_anim_state_step();
     {
         unsigned char major = (unsigned char)(L_STATE & 0x30u);
+        /* DrawLink faces ObjDir for every item use (sword, rod, ...). */
         if (major == 0x10u || major == 0x20u)
-            roomrom_sprites_set_link_attack_pose(link_x, link_y, s_face);
+            roomrom_sprites_set_link_attack_pose(link_x, link_y, face);
     }
-    update_sword_nes();
-    update_beam();
+    update_sword_or_rod(SW_SLOT);
+    sword_shot_update();          /* NES order: $0D then $0E */
     s_pub_state = (unsigned char)(SW_STATE & 0x0Fu);
     s_pub_x     = (short)SW_X;
     s_pub_y     = (short)SW_Y;
     s_pub_face  = s_face;
 }
 
-/* UpdateSwordOrRod for the sword (Z_07.asm). */
-static void update_sword_nes(void)
+/* UpdateSwordOrRod (Z_07.asm:4351) for the sword ($0D) or the rod ($12).
+ * The rod draws item slot 8 with base attribute | 1 (palette row 5) and
+ * makes a magic shot at state 3; the sword makes a sword shot. */
+static void update_sword_or_rod(unsigned char x)
 {
-    unsigned char st = (unsigned char)(SW_STATE & 0x0Fu);
-    unsigned char idx, dir, attr, tile;
+    unsigned char st = (unsigned char)(RAM(0x00ACu + x) & 0x0Fu);
+    unsigned char idx, dir, attr, tile, wide;
+    short dx;
     if (st == 0u) return;
-    SW_CNT = (unsigned char)(SW_CNT - 1u);
-    if (SW_CNT == 0u) {
+    RAM(0x03D0u + x) = (unsigned char)(RAM(0x03D0u + x) - 1u);
+    if (RAM(0x03D0u + x) == 0u) {
         /* State 2 lasts 8 frames, the later ones 1; Link's counter too. */
         unsigned char c = (st == 1u) ? 8u : 1u;
         L_ANIMCNT = c;
-        SW_CNT = c;
-        SW_STATE = (unsigned char)(SW_STATE + 1u);
-        if ((SW_STATE & 0x0Fu) >= 6u) {
-            SW_STATE = 0u;               /* ResetObjState */
-            roomrom_sprites_clear_sword();
+        RAM(0x03D0u + x) = c;
+        RAM(0x00ACu + x) = (unsigned char)(RAM(0x00ACu + x) + 1u);
+        if ((RAM(0x00ACu + x) & 0x0Fu) >= 6u) {
+            RAM(0x00ACu + x) = 0u;       /* ResetObjState */
+            if (x == SW_SLOT) roomrom_sprites_clear_sword();
+            else              roomrom_sprites_clear_arrow();
             return;
         }
     }
-    st = (unsigned char)(SW_STATE & 0x0Fu);
+    st = (unsigned char)(RAM(0x00ACu + x) & 0x0Fu);
     if (st == 5u) {                      /* not drawn */
-        roomrom_sprites_clear_sword();
+        if (x == SW_SLOT) roomrom_sprites_clear_sword();
+        else              roomrom_sprites_clear_arrow();
         return;
     }
-    SW_DIR = L_DIR;
-    idx = (unsigned char)((st - 1u) * 4u + rdir_index(SW_DIR));
-    SW_X = (unsigned char)(RAM(0x0070u) + k_pw_off_x[idx]);
-    SW_Y = (unsigned char)(RAM(0x0084u) + k_pw_off_y[idx]);
-    dir = (st == 1u) ? 0x08u : SW_DIR;
+    RAM(0x0098u + x) = L_DIR;
+    idx = (unsigned char)((st - 1u) * 4u + rdir_index(L_DIR));
+    RAM(0x0070u + x) = (unsigned char)(RAM(0x0070u) + k_pw_off_x[idx]);
+    RAM(0x0084u + x) = (unsigned char)(RAM(0x0084u) + k_pw_off_y[idx]);
+    dir = (st == 1u) ? 0x08u : RAM(0x0098u + x);
     idx = rdir_index(dir);
-    /* @CalcSwordAttrs: base attribute + sword level - 1; left flips. */
-    attr = (unsigned char)(k_rdir_base_attr[idx] + nes_ram[0x0657u] - 1u);
+    /* @CalcSwordAttrs: base attribute + sword level - 1; the rod uses
+     * base attribute | 1. Left flips. */
+    if (x == SW_SLOT)
+        attr = (unsigned char)(k_rdir_base_attr[idx] + nes_ram[0x0657u] - 1u);
+    else
+        attr = (unsigned char)(k_rdir_base_attr[idx] | 0x01u);
     if (idx == 2u) attr = (unsigned char)(attr | 0x40u);
     if (st == 1u) {                      /* windup: not shown */
-        roomrom_sprites_clear_sword();
+        if (x == SW_SLOT) roomrom_sprites_clear_sword();
+        else              roomrom_sprites_clear_arrow();
         return;
     }
-    /* Anim_WriteItemSprites, item slot 0 (sword): frame 0 vertical ($20,
-     * narrow, X+4) or 1 horizontal ($82, wide pair). */
-    tile = k_rdir_frame[idx] ? 0x82u : 0x20u;
-    if (k_rdir_frame[idx]) {
-        roomrom_sprites_set_sword_nes((short)SW_X, (short)((short)SW_Y + s_uw_y_bias), 1u,
+    /* Anim_WriteItemSprites, item slot 0 (sword) / 8 (rod): frame 0
+     * vertical (narrow, X+4) or 1 horizontal (wide pair). */
+    tile = draw_item_frame_tile((x == SW_SLOT) ? 0u : 8u, k_rdir_frame[idx]);
+    wide = k_rdir_frame[idx];
+    dx = wide ? 0 : 4;
+    if (x == SW_SLOT)
+        roomrom_sprites_set_sword_nes((short)(RAM(0x0070u + x) + dx),
+                                      (short)((short)RAM(0x0084u + x) + s_uw_y_bias), wide,
                                       enemy_render_item_sat(tile, attr));
-    } else {
-        roomrom_sprites_set_sword_nes((short)(SW_X + 4), (short)((short)SW_Y + s_uw_y_bias), 0u,
+    else
+        roomrom_sprites_set_arrow_nes((short)(RAM(0x0070u + x) + dx),
+                                      (short)RAM(0x0084u + x), wide,
                                       enemy_render_item_sat(tile, attr));
-    }
-    if (st == 3u && !s_beam_active && sword_style_allows_beam()) {
-        /* MakeSwordShot: beam slot $0E free. */
-        spawn_beam((short)RAM(0x0070u), (short)RAM(0x0084u));
+    if (st == 3u) {
+        if (x == SW_SLOT) sword_shot_make(sword_style_allows_beam());   /* MakeSwordShot */
+        else              magic_shot_make();                            /* @MakeMagicShot */
     }
 }

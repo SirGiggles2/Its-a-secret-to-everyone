@@ -637,6 +637,42 @@
       "draw_rule": "narrow_8x16",
       "atlas_alias_note": "NES OAM $66 appears twice at x and x+7; the renderer emits two 8x16 sprites and uses the second OAM H-flip bit.",
       "sprite_size_override_reason": "Z_01.asm Anim_WriteSpecificItemSprites @Wide_Slim emits two 8x16 OAM entries, each Genesis SIZE(1,2); the second uses hardware H-flip."
+    },
+    {
+      "name": "rod_horz",
+      "item": "rod",
+      "direction_class": "horizontal",
+      "nes_frame_tile": "0x8A",
+      "sprite_size": [
+        2,
+        2
+      ],
+      "tile_ids": [
+        "0x8A",
+        "0x8B",
+        "0x8C",
+        "0x8D"
+      ],
+      "draw_rule": "wide_16x16_hflippable",
+      "nes_dispatch_note": "UpdateSwordOrRod (Z_07.asm:4351) for the rod slot $12 -> Anim_WriteItemSprites item slot $08, frame 1 -> ItemFrameTiles[$10] = $8A (horizontal); frame 0 = $4A (vertical, shared with potion).",
+      "sprite_size_override_reason": "Same as sword_horz: Flippable pair $8A+$8C, full 2x2 NES CHR block stored."
+    },
+    {
+      "name": "sword_shot_spread",
+      "item": "sword_shot",
+      "direction_class": "static",
+      "nes_frame_tile": "0x30",
+      "sprite_size": [
+        1,
+        2
+      ],
+      "tile_ids": [
+        "0x30",
+        "0x31"
+      ],
+      "draw_rule": "narrow_8x16",
+      "nes_dispatch_note": "SpreadShot (Z_07.asm:3577) -> Anim_WriteItemSprites item slot $23, frame 2 -> ItemFrameTiles[$2D] = $30. Tile $30 in [$20,$62) -> @Narrow path.",
+      "sprite_size_override_reason": "NES 8x16 sprite mode: tile $30 renders $30 + $31."
     }
   ],
   "variants": [
@@ -1280,6 +1316,48 @@
           "sha256": "9c810185477ace9a9ff8a8a2634dddabe21d31e00357ef4481820abe6d9ece95",
           "flat_pattern": false,
           "bytes": "3F2F3F3F1F1F0E071D1E1F0F0F070300"
+        },
+        "0x30": {
+          "ppu_addr": "0x0300",
+          "source": "common_sprite_live_chr",
+          "sha256": "e0b5e2728cf30514105b240ee82df09f024beac879477bc1a2f259edc939468e",
+          "flat_pattern": false,
+          "bytes": "00000078FCFCE6C300000078FCFCFEFF"
+        },
+        "0x31": {
+          "ppu_addr": "0x0310",
+          "source": "common_sprite_live_chr",
+          "sha256": "4f95a76449fd2e38ede104a4a0fd8930671b20989c14034441efb05a666f8614",
+          "flat_pattern": false,
+          "bytes": "DBC8607030000000E7F0707030000000"
+        },
+        "0x8A": {
+          "ppu_addr": "0x08A0",
+          "source": "runtime_gap_live_chr",
+          "sha256": "8c485bae3f6391396a25e84f8d5f98da77f1235718c6915c7a4e0d32081400ea",
+          "flat_pattern": false,
+          "bytes": "000000000000000000000000000000FF"
+        },
+        "0x8B": {
+          "ppu_addr": "0x08B0",
+          "source": "runtime_gap_live_chr",
+          "sha256": "3c03a4ed06216d55d36dc6483f5d2b49efc1d7eea741e6ee4ef01a3415e973a9",
+          "flat_pattern": false,
+          "bytes": "0000000000000000FF00000000000000"
+        },
+        "0x8C": {
+          "ppu_addr": "0x08C0",
+          "source": "runtime_gap_live_chr",
+          "sha256": "f59d80db97deb38fbbddf40f6c48f369200bb51d6b7623919ed3d5ad36fad1a5",
+          "flat_pattern": false,
+          "bytes": "0000000000000E5F00000000000008F2"
+        },
+        "0x8D": {
+          "ppu_addr": "0x08D0",
+          "source": "runtime_gap_live_chr",
+          "sha256": "56ebb5746ed16bb5a2af68f7fd474b9d990d370db5a2f790299d7b503100facd",
+          "flat_pattern": false,
+          "bytes": "5F0E000000000000F008000000000000"
         }
       }
     },
@@ -1923,6 +2001,48 @@
           "sha256": "9c810185477ace9a9ff8a8a2634dddabe21d31e00357ef4481820abe6d9ece95",
           "flat_pattern": false,
           "bytes": "3F2F3F3F1F1F0E071D1E1F0F0F070300"
+        },
+        "0x30": {
+          "ppu_addr": "0x0300",
+          "source": "common_sprite_live_chr",
+          "sha256": "e0b5e2728cf30514105b240ee82df09f024beac879477bc1a2f259edc939468e",
+          "flat_pattern": false,
+          "bytes": "00000078FCFCE6C300000078FCFCFEFF"
+        },
+        "0x31": {
+          "ppu_addr": "0x0310",
+          "source": "common_sprite_live_chr",
+          "sha256": "4f95a76449fd2e38ede104a4a0fd8930671b20989c14034441efb05a666f8614",
+          "flat_pattern": false,
+          "bytes": "DBC8607030000000E7F0707030000000"
+        },
+        "0x8A": {
+          "ppu_addr": "0x08A0",
+          "source": "runtime_gap_live_chr",
+          "sha256": "8c485bae3f6391396a25e84f8d5f98da77f1235718c6915c7a4e0d32081400ea",
+          "flat_pattern": false,
+          "bytes": "000000000000000000000000000000FF"
+        },
+        "0x8B": {
+          "ppu_addr": "0x08B0",
+          "source": "runtime_gap_live_chr",
+          "sha256": "3c03a4ed06216d55d36dc6483f5d2b49efc1d7eea741e6ee4ef01a3415e973a9",
+          "flat_pattern": false,
+          "bytes": "0000000000000000FF00000000000000"
+        },
+        "0x8C": {
+          "ppu_addr": "0x08C0",
+          "source": "runtime_gap_live_chr",
+          "sha256": "f59d80db97deb38fbbddf40f6c48f369200bb51d6b7623919ed3d5ad36fad1a5",
+          "flat_pattern": false,
+          "bytes": "0000000000000E5F00000000000008F2"
+        },
+        "0x8D": {
+          "ppu_addr": "0x08D0",
+          "source": "runtime_gap_live_chr",
+          "sha256": "56ebb5746ed16bb5a2af68f7fd474b9d990d370db5a2f790299d7b503100facd",
+          "flat_pattern": false,
+          "bytes": "5F0E000000000000F008000000000000"
         }
       }
     }

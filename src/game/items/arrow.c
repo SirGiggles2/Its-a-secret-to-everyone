@@ -104,8 +104,12 @@ void roomrom_arrow_update(void)
     unsigned char st = AR_STATE;
     unsigned char hi = (unsigned char)(st & 0xF0u);
     unsigned char ridx, attr;
-    if (st == 0u || hi >= 0x30u) {                 /* rod states $3x: not an arrow */
-        if (st == 0u) roomrom_sprites_clear_arrow();
+    if (hi >= 0x30u) {                             /* UpdateRodOrArrow: rod */
+        roomrom_combat_update_rod();
+        return;
+    }
+    if (st == 0u) {
+        roomrom_sprites_clear_arrow();
         return;
     }
     if (hi == 0x10u) {

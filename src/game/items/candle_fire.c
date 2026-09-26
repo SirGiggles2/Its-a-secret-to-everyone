@@ -91,6 +91,28 @@ void roomrom_candle_fire_spawn(link_face_t face, short link_x, short link_y)
                            (unsigned char)link_x, (unsigned char)link_y);
 }
 
+/* HandleShotBlocked's book fire: WieldCandle with UsedCandle cleared and
+ * Link's state saved/restored around it (Z_07.asm), so only the slot
+ * search matters. Returns the slot WieldCandle leaves in X: the new fire
+ * (state $21), or $11 when both fire slots are busy. */
+unsigned char candle_fire_wield_from_shot(void)
+{
+    unsigned char x = 0x10u;
+    if (OBJ_STATE_(x) != 0u) {
+        x = 0x11u;
+        if (OBJ_STATE_(x) != 0u) return x;
+    }
+    OBJ(NES_OBJ_GRID_OFFSET, x) = 0u;
+    OBJ(NES_OBJ_POS_FRAC, x) = 0u;
+    OBJ(NES_OBJ_QSPD_FRAC, x) = 0x20u;
+    OBJ_STATE_(x) = 0x21u;
+    nes_ram[NES_EFFECT_REQUEST] |= 0x04u;
+    nes_ram[NES_OBJ_ANIM_COUNTER + x] = 0x04u;
+    bomb_fire_place_weapon(x, nes_ram[NES_OBJ_DIR_BASE],
+                           nes_ram[NES_OBJ_X], nes_ram[NES_OBJ_Y]);
+    return x;
+}
+
 unsigned char roomrom_candle_fire_active(void)
 {
     return (unsigned char)(((OBJ_STATE_(0x10u) & 0xF0u) == 0x20u) ||

@@ -1,0 +1,33 @@
+{
+ "name": "t116_book_fire",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {
+  "0x65F": 1,
+  "InvBook": 1
+ },
+ "script": [
+  [
+   36,
+   ""
+  ],
+  [
+   4,
+   "R"
+  ],
+  [
+   10,
+   ""
+  ],
+  [
+   2,
+   "B"
+  ],
+  [
+   160,
+   ""
+  ]
+ ],
+ "stage_at": 20,
+ "stage": "wr(0x15, 0x40)\nwr(0x656, 8)\ngen_b_item(5)"
+}

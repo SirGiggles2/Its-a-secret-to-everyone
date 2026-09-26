@@ -1,0 +1,32 @@
+{
+ "name": "t116_shot_left",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {
+  "Items": 1
+ },
+ "script": [
+  [
+   36,
+   ""
+  ],
+  [
+   4,
+   "L"
+  ],
+  [
+   10,
+   ""
+  ],
+  [
+   2,
+   "A"
+  ],
+  [
+   90,
+   ""
+  ]
+ ],
+ "stage_at": 20,
+ "stage": "wr(0x15, 0x40)"
+}

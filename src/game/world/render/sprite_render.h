@@ -80,33 +80,6 @@ void roomrom_sprites_set_sword_diagonal(short x, short y,
                                         unsigned char vflip,
                                         unsigned char sub_pal);
 
-/* S7 v5 beam: sword shot projectile (slot 2). NES Z1 draws sword shot
- * via Anim_WriteItemSprites with the same tile pattern as the sword
- * itself (Z_07.asm:3437 DrawSwordShotOrMagicShot, item slot $22 →
- * ItemFrameTiles offset $29 = $20 vertical / $82 horizontal). Per
- * Z_07.asm:3459 the only frame-to-frame variation is a palette-index
- * rotation (FrameCounter & 3) — the sprite SHAPE does not flip or
- * rotate. NES base attribute per direction (RDirectionToWeaponBase
- * Attribute, Z_07.asm:3804): UP=$00, DOWN=$80 (vflip), LEFT=$00 (set
- * via [0F] hflip in DrawSwordShotOrMagicShot:3469), RIGHT=$00.
- *
- * Earlier Genesis impl approximated the palette flash by cycling
- * vflip+hflip each frame; that creates a visible orientation flicker
- * not present on NES. Drop the flicker and apply the NES per-direction
- * flip exactly. Vertical beam = single 8x16 (matches NES @Narrow path
- * for tile $20 in 8x16 sprite mode). Horizontal beam is 16x16: two NES
- * 8x16 OAM entries side by side, with draw offsets applied from object
- * coordinates in the renderer.
- *
- * Phase B (2026-05-18 VRAM cleanup): pal_index cycles RENDER_PAL1/PAL2/
- * PAL3 across frames so the beam color flashes through NES SPR sub-pals
- * 0..2 via OAM pal field. Previous scheme rewrote PAL2[0..3] per frame
- * via CRAM subrange upload, which blocked PAL2 from holding sub-pal 1
- * colors permanently (needed for bomb/explosion routing). */
-void roomrom_sprites_set_beam(short x, short y, link_face_t face,
-                              unsigned char pal_index);
-void roomrom_sprites_clear_beam(void);
-
 /* S7 v6 boomerang (slot 3). 8-phase rotation cycle from
  * BoomerangFrameCycle / BoomerangBaseSpriteAttrCycle. phase_idx is
  * masked to bottom 3 bits.
@@ -164,15 +137,6 @@ void roomrom_sprites_set_candle_fire(short x, short y,
                                      unsigned char sub_pal,
                                      unsigned char frame_index);
 void roomrom_sprites_clear_candle_fire(void);
-
-/* Magic rod shot (slot 9). Vertical 8x16 (UP/DOWN) or horizontal 16x16
- * (LEFT/RIGHT, hflip on LEFT). sub_pal: 0..2 (NES "flash" cycles 0..3
- * via FrameCounter & 3; Genesis 3-pal atlas wraps to 0..2). Per NES
- * UpdateSwordShotOrMagicShot (Z_07.asm:3437) item slot $23 — frame 0
- * = tile $7A, frame 1 = tile $7C. */
-void roomrom_sprites_set_magic_shot(short x, short y, link_face_t face,
-                                    unsigned char sub_pal);
-void roomrom_sprites_clear_magic_shot(void);
 
 /* Phase 1: select item-atlas variant (orig vs redux). Affects the next
  * call to roomrom_sprites_upload_chr (item CHR is variant-selected at

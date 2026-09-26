@@ -308,30 +308,39 @@ static void cloud_chr_ensure_uploaded(void)
     s_cloud_chr_uploaded = 1u;
 }
 
-/* T-110: weapon-slot ($10/$11) sprite cache. Owned by the bomb / fire
+/* T-110 / T-116: weapon-slot ($0E, $10, $11) sprite cache. Owned by the
+ * shot object (src/game/items/sword_shot.c) and the bomb / fire
  * object (src/game/items/bomb.c), which resets and refills its slot on
  * every update, so entries survive enemy_render_reset_oam (that runs
  * later in the frame than the weapon update). Entries hold NES OAM
  * fields; item tiles carry ITEM_ATTR_MARKER, cloud frames use the same
  * biased cloud bank as enemy_render_publish_meta (DrawCloud is the one
  * NES routine behind both). */
-#define ENEMY_RENDER_WEAPON_SLOT_FIRST 0x10u
-#define ENEMY_RENDER_WEAPON_SLOTS      2u
+#define ENEMY_RENDER_WEAPON_SLOTS      3u
 #define ENEMY_RENDER_WEAPON_MAX        8u   /* 4 clouds x mirrored pair */
 static enemy_render_entry_t
     s_weapon_entries[ENEMY_RENDER_WEAPON_SLOTS][ENEMY_RENDER_WEAPON_MAX];
 static unsigned char s_weapon_count[ENEMY_RENDER_WEAPON_SLOTS];
 
+/* Cache index, in NES weapon update order: $0E, $10, $11. */
+static unsigned char weapon_index(unsigned char slot)
+{
+    if (slot == 0x0Eu) return 0u;
+    if (slot == 0x10u) return 1u;
+    if (slot == 0x11u) return 2u;
+    return 0xFFu;
+}
+
 void enemy_render_weapon_reset(unsigned char slot)
 {
-    unsigned char w = (unsigned char)(slot - ENEMY_RENDER_WEAPON_SLOT_FIRST);
+    unsigned char w = weapon_index(slot);
     if (w < ENEMY_RENDER_WEAPON_SLOTS) s_weapon_count[w] = 0u;
 }
 
 static void weapon_add(unsigned char slot, unsigned char tile,
                        unsigned char attrs, unsigned char x, unsigned char y)
 {
-    unsigned char w = (unsigned char)(slot - ENEMY_RENDER_WEAPON_SLOT_FIRST);
+    unsigned char w = weapon_index(slot);
     unsigned char n;
     if (w >= ENEMY_RENDER_WEAPON_SLOTS) return;
     n = s_weapon_count[w];
@@ -794,8 +803,8 @@ static unsigned int emit_native_entries(unsigned int sat_slot)
         }
     }
 
-    /* T-110: bomb / fire weapon slots $10/$11, emitted after the
-     * monsters in NES update order (Z_07.asm UpdateMode5Play). */
+    /* T-110 / T-116: shot $0E and bomb / fire $10/$11, emitted after
+     * the monsters in NES weapon update order (Z_07.asm UpdateMode5Play). */
     {
         unsigned char wi, ei;
         for (wi = 0u; wi < ENEMY_RENDER_WEAPON_SLOTS; ++wi) {

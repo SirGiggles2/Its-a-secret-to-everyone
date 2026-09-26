@@ -899,14 +899,22 @@ extern void enrt_set_up_fairy_object(unsigned int slot);
  * NES sets ObjType=0, SetShoveInfoWith0, ObjTimer=0, ObjState=0,
  * ObjInvincibilityTimer=0, ObjUninitialized=$FF, ObjMetastate=1.
  * Our codebase ALIVE_FLAG semantics inverse of NES uninit: 0=dead/free. */
+/* DestroyMonster -> SetTypeAndClearObject -> DestroyObject_WRAM (Z_01.asm):
+ * type, shove dir/distance, ObjTimer, ObjState and ObjInvincibilityTimer
+ * ($4F0) cleared (lockstep tmp_shotHit: NES clears $C0/$D3/$4F0 when the
+ * killed tektite is destroyed). ObjUninitialized ($492) is $FF on NES; the
+ * Genesis loop uses the cell as an alive flag (0 = empty). The metastate
+ * ends at 0 either way (@Reset after SetUpDroppedItem). */
 static void native_destroy_monster(unsigned int slot)
 {
-    ENEMY_TYPE(slot)         = 0u;
-    ENEMY_MOVE_TIMER(slot)   = 0u;
-    OBJ_STATE(slot)          = 0u;
-    ENEMY_INVINCIBILITY(slot) = 0u;
-    ENEMY_ALIVE_FLAG(slot)   = 0u;
-    ENEMY_METASTATE(slot)    = 0u;
+    ENEMY_TYPE(slot)          = 0u;
+    ENEMY_OBJ_SHOVE_DIR(slot) = 0u;
+    OBJ(0x00D3u, slot)        = 0u;     /* ObjShoveDistance */
+    ENEMY_MOVE_TIMER(slot)    = 0u;
+    OBJ_STATE(slot)           = 0u;
+    ENEMY_HIT_REACTION(slot)  = 0u;     /* ObjInvincibilityTimer $4F0 */
+    ENEMY_ALIVE_FLAG(slot)    = 0u;
+    ENEMY_METASTATE(slot)     = 0u;
 }
 
 /* SetUpDroppedItem (NES Z_04.asm:11103) — drop-item id lookup + fairy gate +

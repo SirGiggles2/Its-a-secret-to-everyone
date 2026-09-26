@@ -63,14 +63,9 @@ short         roomrom_combat_get_swing_x(void);
 short         roomrom_combat_get_swing_y(void);
 link_face_t   roomrom_combat_get_swing_face(void);
 
-/* Sword beam native state. The Genesis-side beam owns sprite motion, while
- * nes_ram_sync_sword publishes it into NES weapon slot 14 so the drained
- * enemy collision path can apply damage through the original sword-shot
- * handler. */
-unsigned char roomrom_combat_get_beam_active(void);
-short         roomrom_combat_get_beam_x(void);
-short         roomrom_combat_get_beam_y(void);
-link_face_t   roomrom_combat_get_beam_face(void);
-void roomrom_combat_cancel_beam(void);
+/* T-116: WieldRod (rod slot $12) and its UpdateRodOrArrow states $3x. */
+void roomrom_combat_wield_rod(void);
+void roomrom_combat_draw_item_pose(short link_x, short link_y, link_face_t face);
+void roomrom_combat_update_rod(void);
 
 #endif

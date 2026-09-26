@@ -13,7 +13,6 @@
 #include "../../src/game/items/boomerang.h"      /* Phase 12.2 promoted */
 #include "../../src/game/items/arrow.h"          /* Phase 12.2 promoted */
 #include "../../src/game/items/bomb.h"           /* Phase 12.2 promoted */
-#include "../../src/game/items/magic_shot.h"     /* Phase 12.2 promoted */
 #include "../../src/game/world/scene_load.h"  /* Phase 12.2 promoted */
 #include "../../src/game/world/palette_tick_runtime.h"  /* Phase 12.2 promoted */
 #include "cave_dispatch.h"  /* debate 006 D2: native cave gamemode entry */
@@ -2007,7 +2006,6 @@ void roomrom_debug_enter(void)
     roomrom_world_transition_init();       /* Task 5.4: warp coordinator */
     roomrom_pushblock_init();              /* Task 5.7: push-block state machine */
     roomrom_candle_fire_init();            /* Task 5.8.1: candle fire slot 8 */
-    roomrom_magic_shot_init();             /* magic rod shot slot 9 */
     enemy_render_reset_oam();              /* Phase 7: clear NES OAM mirror */
     enemy_loop_room_init(s_room_id, (unsigned char)s_scene,
                 s_scene == SCENE_UW ? roomrom_uw_room_render_get_level() : 0u,
@@ -2353,7 +2351,6 @@ void roomrom_debug_tick(void)
             roomrom_arrow_update();
             roomrom_bomb_update();
             roomrom_candle_fire_update();
-            roomrom_magic_shot_update();
             roomrom_link_damage_tick((unsigned char)s_frame_counter);
             /* Decrement LINK_STUN_TIMER ($04F0) on even frames per NES
              * Z_07.asm:5756 DecrementInvincibilityTimer. NES drained
@@ -2524,7 +2521,6 @@ void roomrom_debug_tick(void)
              * = death-while-paused bug. */
             if (!roomrom_pause_is_active()) {
                 enemy_loop_tick();
-                nes_ram_reconcile_sword_beam_collision();
                 /* T-119: NES UpdateMode5Play runs CheckShutters +
                  * UpdateDoors after the object loop (Z_07.asm:1983). */
                 enemy_loop_play_tail(s_scene == SCENE_UW ? 1u : 0u);
@@ -2938,10 +2934,7 @@ void roomrom_debug_tick(void)
                 }
                 break;
             case B_ITEM_ROD:
-                if (!roomrom_magic_shot_active()) {
-                    roomrom_magic_shot_fire(players[0].face,
-                                            players[0].x, players[0].y);
-                }
+                roomrom_combat_wield_rod();      /* T-116: NES WieldRod */
                 break;
             case B_ITEM_FLUTE:
                 /* Phase 8 W6 LITE: SFX-only feedback. NES WieldFlute
@@ -3303,15 +3296,6 @@ void roomrom_debug_tick(void)
                 }
 
                 if (moving_dir != LINK_DIR_NONE) {
-                    /* T-116: NES ObjAnimFrame ($3E4), advanced by the NES
-                     * AnimateObjectWalking cadence (6 frames) in
-                     * link_anim_state_step, not a private 8-frame timer.
-                     * The baked left/right poses are stored in the other
-                     * order (pose frame 0 = NES frame 1, tiles $04/$06;
-                     * verify_sprites newgame f128-137), up/down match. */
-                    s_link_frame = (u8)((nes_ram[0x03E4u] & 1u) ^
-                        ((players[0].face == LINK_FACE_LEFT ||
-                          players[0].face == LINK_FACE_RIGHT) ? 1u : 0u));
                     link_nes_move_object(moving_dir);
                 } else {
                     /* NES AnimateObjectWalking (Z_07.asm:5045) advances
@@ -3332,6 +3316,16 @@ void roomrom_debug_tick(void)
             }
 
             edge_load_or_clamp();
+            /* T-116: DrawLink uses NES ObjAnimFrame ($3E4) every frame, not
+             * only while moving: the item-use states set it to 1
+             * (AnimateLinkObjState). It advances on the NES
+             * AnimateObjectWalking cadence in link_anim_state_step. The baked
+             * left/right poses are stored in the other order (pose frame 0 =
+             * NES frame 1, tiles $04/$06; verify_sprites newgame f128-137),
+             * up/down match. */
+            s_link_frame = (u8)((nes_ram[0x03E4u] & 1u) ^
+                ((players[0].face == LINK_FACE_LEFT ||
+                  players[0].face == LINK_FACE_RIGHT) ? 1u : 0u));
             /* Publish completed movement and its grid phase for room entry.
              * The tick-start copy alone exposed last frame's coordinates. */
             nes_ram[0x70u] = (u8)players[0].x;
@@ -3354,6 +3348,9 @@ void roomrom_debug_tick(void)
                     roomrom_sprites_set_link_pose(players[0].x, players[0].y,
                                                   players[0].face, s_link_frame);
                 }
+            } else {
+                roomrom_combat_draw_item_pose(players[0].x, players[0].y,
+                                              players[0].face);
             }
         }
 
