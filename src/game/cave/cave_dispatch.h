@@ -13,7 +13,7 @@
  *
  * Scope (first iteration):
  *   cave_init   — populate CaveState + upload cave palette
- *   cave_tick   — per-frame logic (stub for now; NPC/shop ports later)
+ *   (cave person: cave_update_cave_person from the enemy object loop)
  *   cave_exit   — restore overworld state
  *
  * Phase 12 promotion target: this file becomes Debug.md's primary
@@ -47,7 +47,6 @@ int cave_init(cave_id_t cave_id);
 /* Per-frame cave tick. Called once per VBlank from gameplay loop.
  * Currently stub (returns immediately). NPC/shop/text logic ports
  * per-function from oracle reference in subsequent commits. */
-void cave_tick(void);
 
 /* Cave exit handler. Saves any persistent state to the typed CaveState
  * + signals scene transition back to overworld. Caller (RoomRom main

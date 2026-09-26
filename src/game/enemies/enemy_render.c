@@ -167,6 +167,9 @@ void c_anim_write_sprite(unsigned int tile, unsigned int slot)
  * slot). Per-tile h_flip preserved: each entry stores its own attrs.
  * Function name kept as _pair_left for ABI stability — it now publishes
  * BOTH halves via separate calls. */
+static void weapon_add(unsigned char slot, unsigned char tile,
+                       unsigned char attrs, unsigned char x, unsigned char y);
+
 void enemy_render_publish_pair_left(unsigned char tile,
                                     unsigned char attrs,
                                     unsigned char x,
@@ -183,6 +186,10 @@ void enemy_render_publish_pair_left(unsigned char tile,
             e->y     = y;
             s_enemy_count[cur_slot] = (unsigned char)(n + 1u);
         }
+    } else {
+        /* T-130: item objects above the monster slots (the room item $13)
+         * draw through the same NES writers into the weapon cache. */
+        weapon_add(cur_slot, tile, attrs, x, y);
     }
 }
 
@@ -316,7 +323,7 @@ static void cloud_chr_ensure_uploaded(void)
  * fields; item tiles carry ITEM_ATTR_MARKER, cloud frames use the same
  * biased cloud bank as enemy_render_publish_meta (DrawCloud is the one
  * NES routine behind both). */
-#define ENEMY_RENDER_WEAPON_SLOTS      3u
+#define ENEMY_RENDER_WEAPON_SLOTS      4u
 #define ENEMY_RENDER_WEAPON_MAX        8u   /* 4 clouds x mirrored pair */
 static enemy_render_entry_t
     s_weapon_entries[ENEMY_RENDER_WEAPON_SLOTS][ENEMY_RENDER_WEAPON_MAX];
@@ -328,6 +335,7 @@ static unsigned char weapon_index(unsigned char slot)
     if (slot == 0x0Eu) return 0u;
     if (slot == 0x10u) return 1u;
     if (slot == 0x11u) return 2u;
+    if (slot == 0x13u) return 3u;              /* room item (T-130) */
     return 0xFFu;
 }
 
@@ -797,7 +805,8 @@ static unsigned int emit_native_entries(unsigned int sat_slot)
             unsigned char link = (sat_slot < ENEMY_RENDER_SLOT_LAST)
                                      ? (unsigned char)(sat_slot + 1u) : 0u;
             render_set_sprite_inline((unsigned short)sat_slot,
-                                     (signed short)e->x, (signed short)y,
+                                     (signed short)e->x,
+                                     (signed short)(y + ROOMROM_PLAY_SPRITE_DY),
                                      size, sat_attrs, link);
             ++sat_slot;
         }
@@ -816,7 +825,8 @@ static unsigned int emit_native_entries(unsigned int sat_slot)
                 unsigned char link = (sat_slot < ENEMY_RENDER_SLOT_LAST)
                                          ? (unsigned char)(sat_slot + 1u) : 0u;
                 render_set_sprite_inline((unsigned short)sat_slot,
-                                         (signed short)e->x, (signed short)e->y,
+                                         (signed short)e->x,
+                                         (signed short)(e->y + ROOMROM_PLAY_SPRITE_DY),
                                          RENDER_SPRITE_SIZE(1, 2), sat_attrs, link);
                 ++sat_slot;
             }
@@ -840,7 +850,8 @@ static unsigned int emit_native_entries(unsigned int sat_slot)
             unsigned char  link      = (sat_slot < ENEMY_RENDER_SLOT_LAST)
                                           ? (unsigned char)(sat_slot + 1u) : 0u;
             render_set_sprite_inline((unsigned short)sat_slot,
-                                     (signed short)e->x, (signed short)e->y,
+                                     (signed short)e->x,
+                                     (signed short)(e->y + ROOMROM_PLAY_SPRITE_DY),
                                      size, sat_attrs, link);
             ++sat_slot;
         }
@@ -908,7 +919,7 @@ void enemy_render_sweep_oam_to_sat(void)
          * The HUD on Window plane covers rows 0..31 like the NES HUD
          * — no extra offset needed since NES OAM Y already accounts
          * for HUD region. */
-        signed short gy = (signed short)y;
+        signed short gy = (signed short)(y + ROOMROM_PLAY_SPRITE_DY);
         signed short gx = (signed short)x;
 
         unsigned char link = (sat_slot < ENEMY_RENDER_SLOT_LAST)

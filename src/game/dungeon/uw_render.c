@@ -511,14 +511,15 @@ static unsigned short tile_word(unsigned char raw_tile, unsigned char pal)
     return (unsigned short)(pri | tile_index);
 }
 
-static void write_tile_raw_at(unsigned char col, unsigned char row,
-                           unsigned char dst_row_base,
-                           unsigned char raw_tile, unsigned char pal)
+/* T-131: NES ShowLinkSpritesBehindHorizontalDoors puts a Link half whose
+ * X is below $10 or at $E9 and above behind the background, so it shows
+ * only over BG colour 0 there (lockstep t131_uw_doors f2145-2151: Link
+ * hidden by the W wall bricks, visible in the black door opening). Such a
+ * half covers play columns 0..2 or 29..31; those BG tiles are high
+ * priority, the Link half low priority (sprite_render.c link_half_prio). */
+static unsigned short edge_priority(unsigned char src_col)
 {
-    plane_write(col, wrapped_plane_row(
-                    (unsigned short)(dst_row_base + row +
-                                     ROOMROM_ROOM_FIRST_ROW)),
-                tile_word(raw_tile, pal));
+    return (src_col < 3u || src_col > 28u) ? 0x8000u : 0u;
 }
 
 /* T-114: plane placement of the live (last rendered) room. Rooms are
@@ -547,7 +548,9 @@ static void write_tile_raw(unsigned char col, unsigned char row,
     unsigned char dst = (unsigned char)((s_live_dst_col[(col >> 1) & 0x0Fu] << 1) |
                                         (col & 1u));
     s_target_plane = s_live_plane;
-    write_tile_raw_at(dst, row, s_live_row_base, raw_tile, pal);
+    plane_write(dst, wrapped_plane_row((unsigned short)(s_live_row_base + row +
+                                                        ROOMROM_ROOM_FIRST_ROW)),
+                (unsigned short)(tile_word(raw_tile, pal) | edge_priority(col)));
     s_target_plane = saved;
 }
 
@@ -632,8 +635,8 @@ static void blit_blob_one_metacol_at(int idx, unsigned char src_col,
         unsigned char cls1 = s_uw_cls[raw1];
         if ((row & 1u) == 0u)
             words = s_uw_word[attr_palette_for(attr, src_p0, (unsigned char)(row + 8u))];
-        col0[row] = words[raw0];
-        col1[row] = words[raw1];
+        col0[row] = (unsigned short)(words[raw0] | edge_priority(src_p0));
+        col1[row] = (unsigned short)(words[raw1] | edge_priority(src_p1));
         if (cls0 & UW_CLS_DOOR) door_priority_cache_record(dst_p0, row);
         if (cls1 & UW_CLS_DOOR) door_priority_cache_record(dst_p1, row);
         /* Task 5.5 fix: BG-tile walkability cache is keyed on SOURCE

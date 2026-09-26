@@ -13,6 +13,7 @@
  * surface the bring-up path.
  */
 
+#include "../combat/collision_dispatch.h"   /* GetCollidableTileStill (T-128) */
 #include "transition.h"
 #include "platform_abi.h"  /* nes_ram for audio cell writes */
 #include "../../../RoomRom/src/roomrom_main_state.h"
@@ -244,46 +245,27 @@ static unsigned char detect_warp_ow(unsigned char source_room_id,
         return 0u;
     }
 
-    /* Rule 3: NES gates ObjX on $10 except for room $22. RoomRom's
-     * projected Level 1 tree ($37) exposes two adjacent $24 warp tiles,
-     * so accept the visible half-tile lane while still requiring the
-     * NES grid/Y/raw-tile gates below. */
-    if (source_room_id == 0x22u || source_room_id == 0x37u) {
-        if (((unsigned)link_x & 0x07u) != 0u) {
-            return 0u;
-        }
-    } else {
-        if (((unsigned)link_x & 0x0Fu) != 0u) {
-            return 0u;
-        }
-    }
-
-    /* Rule 4: NES uses ObjY & $0F == $0D, anchored to NES playfield top
-     * Y = $5D (93). RoomRom playfield top = ROOMROM_HUD_ROWS*8 = 56.
-     * Translating the alignment: foot_y = link_y + $0B must land on the
-     * bottom BG row of a metatile in playfield-relative space, which
-     * with PLAYFIELD_TOP_PX = 56 reduces to link_y & 0x0F == 0x05.
-     * Verified against NES OW $37 entrance at metatile (7,4) sq=$0C
-     * (BG tiles F3/24/F3/24): link_y=117 -> foot_y=128 -> playfield BG
-     * row 9 -> $24 tile_bl. NES equivalent ObjY=$9D=157 ($0D & $0F).
-     * Difference 157-117 = 40 = NES_top(93)-RoomRom_top(56)+3 sprite. */
-    if (((unsigned)link_y & 0x0Fu) != 0x05u) {
+    /* Rules 3-5: NES CheckWarps (Z_05.asm): ObjX a multiple of $10 (room
+     * $22: of 8, the wide Level 6 entrance), ObjY & $0F = $0D, then
+     * GetCollidableTileStill on PlayAreaTiles (T-128: Link now stops where
+     * NES stops, on the $24 square below the entrance, so the old shifted
+     * Y rule ($x5), the room $37 X exception and the Genesis tile cache no
+     * longer matched). */
+    if (source_room_id == 0x22u) {
+        if (((unsigned)link_x & 0x07u) != 0u) return 0u;
+    } else if (((unsigned)link_x & 0x0Fu) != 0u) {
         return 0u;
     }
-
-    /* Rule 5: query raw-tile cache only if it is stable. NES samples
-     * at foot center = (ObjX, ObjY + $0B); link_walkable_at uses the
-     * same offset, so the warp tile-id check matches the collision
-     * check Link's movement uses to step onto the entrance. */
+    if (((unsigned)link_y & 0x0Fu) != 0x0Du) {
+        return 0u;
+    }
     if (!roomrom_ow_room_render_is_stable()) {
         return 0u;
     }
-    if (!y_in_playfield(link_y, &y_in_play)) {
-        return 0u;
-    }
-    tile_col = (unsigned char)((link_x >> 3) & 0x1Fu);
-    tile_row = (unsigned char)((y_in_play >> 3) & 0x1Fu);
-    raw_tile = roomrom_ow_room_render_raw_tile_at(tile_col, tile_row);
+    (void)tile_col; (void)tile_row; (void)y_in_play;
+    nes_ram[0x0070u] = (unsigned char)link_x;
+    nes_ram[0x0084u] = (unsigned char)link_y;
+    raw_tile = collision_get_collidable_tile_still(0u);
     if (raw_tile != 0x24u && raw_tile != 0x88u &&
         !(raw_tile >= 0x70u && raw_tile <= 0x73u)) {
         return 0u;

@@ -17,7 +17,7 @@
  *   cave_init  — populate CaveState typed struct from cave_id; upload
  *                cave palette via render adapter. NO transpile shim
  *                calls (z01_set_up_common_cave_objects et al deferred).
- *   cave_tick  — stub (real NPC/shop logic ports per-function later).
+ *   (the cave person updates in the enemy object loop, T-133).
  *   cave_exit  — clears CaveState + bumps generation.
  */
 
@@ -149,7 +149,15 @@ int cave_init(cave_id_t cave_id)
     RAM(0x0070u + 1u) = 0x78u;            /* ObjX+1  = slot 1 X */
     RAM(0x0084u + 1u) = 0x80u;            /* ObjY+1  = slot 1 Y */
     RAM(0x0485u + 1u) = 0x00u;            /* ObjHP+1 = 0 */
-    RAM(0x03A4u + 1u) = 0x81u;            /* ObjAttr+1 = $81 */
+    /* ObjAttr $4BF (was written to $3A5). NES RAM in a cave: $81 on the
+     * person and both bonfires, metastate 0 (t120_cave_person); attr bit 0
+     * keeps the object loop from drawing the fires a second time (T-133). */
+    RAM(0x04BFu + 1u) = 0x81u;            /* ObjAttr+1 = $81 */
+    RAM(0x04BFu + 2u) = 0x81u;
+    RAM(0x04BFu + 3u) = 0x81u;
+    RAM(0x0405u + 1u) = 0u;               /* ObjMetastate */
+    RAM(0x0405u + 2u) = 0u;
+    RAM(0x0405u + 3u) = 0u;
     RAM(0x00ACu)     = 0x40u;             /* ObjState (Link) = $40 (halt) */
     /* Bonfires slot 2/3 — fixed positions flanking the NPC. */
     RAM(0x034Fu + 2u) = 0x40u;            /* ObjType+2 = $40 (StandingFire) */
@@ -203,20 +211,6 @@ int cave_init(cave_id_t cave_id)
 
     g_active_cave = cave_id;
     return 0;
-}
-
-void cave_tick(void)
-{
-    /* Stub. Per Phase 3 task list: cavert_update_cave_person dispatch
-     * table (9 states) ports here per-state. First port: state 0 =
-     * cavert_update_transfer_prices. Subsequent commits add states
-     * 1-8 + draw_cave_person + draw_cave_items.
-     *
-     * As of Phase 4 native cave_update_cave_person port, cave_tick
-     * runs the full top-level dispatch (5/9 state arms native, 4
-     * deferred to text rendering pipeline). Slot 1 is NES convention
-     * for the cave person object slot. */
-    cave_update_cave_person(1u);
 }
 
 void cave_exit(void)

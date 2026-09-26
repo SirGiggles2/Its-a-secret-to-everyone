@@ -261,6 +261,7 @@ ROOMROM_C_SOURCES = [
     ("RoomRom/data/uw_dark_rooms.c", "uw_dark_rooms.o"),
     ("src/game/dungeon/dark_meta.c", "dungeon_dark_meta.o"),  # Phase 12.2 promoted
     ("src/game/dungeon/uw_dark.c", "dungeon_uw_dark.o"),  # T-111 dark rooms by palette
+    ("src/game/dungeon/link_doorway.c", "dungeon_link_doorway.o"),  # T-131 NES Link_FilterInput + CheckDoorway
     # Task 5.9: item-room manifest + accessor + pickup wrapper
     ("RoomRom/data/uw_item_rooms.c", "uw_item_rooms.o"),
     ("src/game/dungeon/item_room_meta.c", "dungeon_item_room_meta.o"),  # Phase 12.2 promoted

@@ -22,6 +22,7 @@
 
 #include "enemy_loop.h"
 #include "../room/room_dispatch.h"
+#include "../cave/cave_dispatch.h"          /* cave_update_cave_person (T-133) */
 #include "../core/core_dispatch.h"          /* ClearRam0300UpTo, SetTypeAndClearObject */
 #include "../combat/collision_dispatch.h"  /* GetCollidableTileStill */
 #include "enemy_dispatch.h"                /* FindEmptyMonsterSlot */
@@ -1651,8 +1652,16 @@ void enemy_loop_tick(void)
     for (slot = ENEMY_LOOP_SLOT_LAST; slot >= ENEMY_LOOP_SLOT_FIRST; --slot) {
         unsigned char t;
         enemy_update_fn fn;
-        if (ENEMY_ALIVE_FLAG(slot) == 0u) continue;
+        /* NES UpdateObject (Z_07.asm:5285): object types >= $6A are cave
+         * people, updated here by UpdateCavePerson (T-133; the person was
+         * drawn before the object phase cleared the sprite cache). */
         t = (unsigned char)ENEMY_TYPE(slot);
+        if (t >= 0x6Au && t < ENEMY_LOOP_TYPE_MAX) {
+            ENEMY_THROWER_SLOT = (unsigned char)slot;
+            cave_update_cave_person(slot);
+            continue;
+        }
+        if (ENEMY_ALIVE_FLAG(slot) == 0u) continue;
         if (t == 0u || t >= ENEMY_LOOP_TYPE_MAX) continue;
         ENEMY_THROWER_SLOT = (unsigned char)slot;
         /* NES source: Z_07.asm:@InitMonsterFromEdge. Drained C:

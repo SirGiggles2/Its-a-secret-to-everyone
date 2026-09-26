@@ -42,6 +42,7 @@
 #include "../../src/game/world/progress_dispatch.h"      /* Tier 2: triforce fanfare driver */
 #include "../../src/game/world/world_dispatch.h"     /* world_animate_world_fading */
 #include "../../src/game/dungeon/uw_dark.h"
+#include "../../src/game/dungeon/link_doorway.h"  /* T-131 */
 #include "../../src/game/audio/audio_requests.h"         /* T-127: NES sound request cells */              /* T-111: dark rooms by palette */
 #include "../../src/game/cave/uw_person_dispatch.h"    /* T-120: CheckPersonBlocking */
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
@@ -206,10 +207,18 @@ static void roomrom_hud_b_item_update(void)
         RENDER_SPRITE_SIZE(1, 2), battr, ROOMROM_SPRITE_SLOT_HUD_B_ITEM_R);
     VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_HUD_B_ITEM_R, ax, (ax < 0) ? (s16)-32 : hud_y,
         RENDER_SPRITE_SIZE(1, 2), aattr, ROOMROM_SPRITE_SLOT_HUD_PLAYER);
-    /* Phase 8 W0c safeguard: invalidate sprite cache so beam / weapon slots
-     * downstream of HUD always re-write fresh SAT next frame (prevents
-     * cache-stale direction reverts after HUD overlay activates). */
-    roomrom_sprites_invalidate_cache();
+    /* Phase 8 W0c safeguard: the pause subscreen writes the SAT directly,
+     * so the gameplay sprite cache is stale when it opens or closes.
+     * Invalidate on that edge only (T-131: invalidating every frame made
+     * every cached SAT write go through, a busy-room lag cost). */
+    {
+        static unsigned char s_prev_paused = 0xFFu;
+        unsigned char paused = roomrom_pause_is_active() ? 1u : 0u;
+        if (paused != s_prev_paused) {
+            s_prev_paused = paused;
+            roomrom_sprites_invalidate_cache();
+        }
+    }
 }
 static link_dir_t  s_link_dir  = LINK_DIR_NONE;  /* NES ObjDir: last active axis */
 static unsigned char s_doorway_dir = UW_WALK_DOOR_NONE; /* active UW doorway */
@@ -280,6 +289,8 @@ typedef enum {
 
 static scroll_state_t s_scroll_state    = SCROLL_NONE;
 static u8             s_ow_edge = 0u;
+/* T-131: UW CheckScreenEdge / false-wall exit direction (NES bit). */
+static u8             s_uw_edge = 0u;
 static u8             s_scroll_frame    = 0u;     /* counts up during scroll */
 static u8             s_scroll_total_frames = SCROLL_TOTAL_FRAMES_SMOOTH;
 static u8             s_active_slot_x   = 0u;     /* 0 = cols 0..31, 1 = cols 32..63 */
@@ -332,6 +343,13 @@ static short scroll_x_offset_for_slot(u8 slot)
 static u8 ow_nes_scroll_enabled(void)
 {
     return s_scene == SCENE_OW && s_move_style == MOVE_STYLE_NES;
+}
+
+/* T-131: NES modes 6/7/4 (ow_scroll.c) run the OW and UW room scrolls. */
+static u8 nes_scroll_enabled(void)
+{
+    return (s_scene == SCENE_OW || s_scene == SCENE_UW) &&
+           s_move_style == MOVE_STYLE_NES;
 }
 
 static u8 transition_scroll_total_frames(void)
@@ -736,6 +754,17 @@ static link_dir_t link_dir_of_nes_bit(unsigned char b)
     return LINK_DIR_NONE;
 }
 
+/* Z_01.asm GetOppositeDir's single direction: the lowest set bit wins
+ * (right, left, down, up). */
+static link_dir_t link_dir_of_lowest_bit(unsigned char b)
+{
+    if (b & 0x01u) return LINK_DIR_RIGHT;
+    if (b & 0x02u) return LINK_DIR_LEFT;
+    if (b & 0x04u) return LINK_DIR_DOWN;
+    if (b & 0x08u) return LINK_DIR_UP;
+    return LINK_DIR_NONE;
+}
+
 static unsigned char link_walkable_at(short x, short y, link_dir_t dir);
 
 /* NES Z_05.asm Link_ModifyDirAtGridPoint (grid offset 0). Input bits are
@@ -809,7 +838,9 @@ static void link_nes_modify_dir_at_grid_point(unsigned char in, link_dir_t *movi
     link_nes_init_speed();                       /* T-123 */
 }
 
-static void link_nes_move_object(link_dir_t dir)
+/* MoveObject for Link without the mode-5 grid truncation
+ * (UpdateMode4and6EnterLeave walks to ObjGridOffset 0 / +-8). */
+static void link_nes_move_object_raw(link_dir_t dir)
 {
     unsigned char q;
     for (q = 0u; q < 4u; q++) {
@@ -830,6 +861,11 @@ static void link_nes_move_object(link_dir_t dir)
                 return;
         }
     }
+}
+
+static void link_nes_move_object(link_dir_t dir)
+{
+    link_nes_move_object_raw(dir);
     link_nes_finish_grid_cell();
 }
 
@@ -874,17 +910,9 @@ static void refresh_room_metadata(u8 room_id)
         s_cur_room_is_cellar = roomrom_uw_room_is_cellar(lvl, q, room_id);
         s_cur_room_has_item  = roomrom_uw_item_for_room(
                                    lvl, q, room_id, &s_cur_room_item_meta);
-        /* Task 5.9.1: spawn room-item sprite if active + not taken. */
-        if (s_cur_room_has_item &&
-            s_cur_room_item_meta.active_at_spawn &&
-            !roomrom_uw_item_taken(room_id)) {
-            short ix = (short)s_cur_room_item_meta.item_x;
-            short iy = (short)s_cur_room_item_meta.item_y;
-            roomrom_sprites_set_room_item(ix, iy,
-                                          s_cur_room_item_meta.item_id, 0u);
-        } else {
-            roomrom_sprites_clear_room_item();
-        }
+        /* The room item is drawn each frame by the NES item writers
+         * (play_update_objects, T-130); the old fixed sprite stays hidden. */
+        roomrom_sprites_clear_room_item();
     } else {
         s_cur_room_is_dark = 0u;
         s_cur_room_is_cellar = 0u;
@@ -1545,65 +1573,6 @@ static unsigned char link_door_touch_latched(unsigned char dir,
     return result;
 }
 
-static unsigned char uw_doorway_passable(link_dir_t dir, short x, short y)
-{
-    unsigned char door_dir;
-    unsigned char toward;
-
-    if (!uw_walk_find_doorway(s_doorway_dir, (unsigned char)doorway_search_dir(dir),
-                              x, y, &door_dir)) {
-        s_doorway_dir = UW_WALK_DOOR_NONE;
-        return 0u;
-    }
-    if (!uw_walk_door_axis_matches(door_dir, (unsigned char)dir)) return 0u;
-
-    toward = uw_walk_dir_for_door(door_dir);
-    if ((unsigned char)dir == toward &&
-        !link_door_touch_latched(door_dir, &s_link_keys)) {
-        return 0u;
-    }
-
-    s_doorway_dir = door_dir;
-    return 1u;
-}
-
-static unsigned char uw_doorway_adjust_nes_dir(u16 input, link_dir_t *dir)
-{
-    unsigned char door_dir;
-    unsigned char next_dir;
-
-    if (s_scene != SCENE_UW ||
-        !uw_walk_find_doorway(s_doorway_dir,
-                              (unsigned char)doorway_search_dir(*dir),
-                              players[0].x, players[0].y, &door_dir)) {
-        s_doorway_dir = UW_WALK_DOOR_NONE;
-        return 0u;
-    }
-
-    /* Task 5.5 fix: axis-match guard so Link doesn't get snapped to a
-     * perpendicular door's centerline when his coords happen to land
-     * inside that door's region. uw_doorway_passable already has this
-     * guard (returns 0 without clearing s_doorway_dir); same shape
-     * here. Without the guard, Link at (link_x in N-door-axis-range,
-     * link_y == V centerline) with motion LEFT/RIGHT teleports to the
-     * N-door X centerline. */
-    if (!uw_walk_door_axis_matches(door_dir, (unsigned char)*dir)) {
-        return 0u;
-    }
-
-    uw_walk_snap_to_doorway_axis(door_dir, &players[0].x, &players[0].y);
-    s_doorway_dir = door_dir;
-    next_dir = uw_walk_modify_dir_in_doorway(
-        door_dir, (unsigned char)doorway_search_dir(*dir),
-        input_mask_from_buttons(input));
-    if (next_dir == UW_WALK_DIR_NONE) {
-        *dir = LINK_DIR_NONE;
-    } else {
-        *dir = (link_dir_t)next_dir;
-    }
-    return 1u;
-}
-
 static void uw_doorway_adjust_velocity(s8 *vx, s8 *vy)
 {
     unsigned char door_dir;
@@ -1646,24 +1615,23 @@ static void uw_doorway_adjust_velocity(s8 *vx, s8 *vy)
  * OW keeps the existing direction-dependent metatile probe. */
 static unsigned char link_walkable_at(short x, short y, link_dir_t dir)
 {
-    uw_walk_probe_t probe;
-
-    if (s_scene == SCENE_UW) {
-        if (uw_doorway_passable(dir, x, y)) return 1u;
-        uw_walk_collidable_probe((unsigned char)dir, x, y, &probe);
-        return uw_walk_tile_passable(&probe,
-                                     roomrom_uw_room_render_walkable_tile_at);
-    }
-
-    /* NES Z_07.asm:GetCollidingTileMoving/GetCollidableTile is one routine
-     * for OW and UW: playfield origin NES Y $40 and, for vertical moves,
-     * both 8px columns under Link. The previous OW-only copy used the
-     * Genesis HUD origin (7 rows = $38) and one column, so moving up it
-     * sampled one row low: lockstep newgame f227 NES stops at Y $5D on
-     * tile $DE, Genesis walked on to $55. Walkable map row 0 = NES Y $40
-     * (22 rows x 8px, same as the UW cache). */
-    uw_walk_collidable_probe((unsigned char)dir, x, y, &probe);
-    return uw_walk_tile_passable(&probe, roomrom_ow_room_render_walkable_tile_at);
+    /* T-128: NES Walker_CheckTileCollision for Link: in a doorway the tile
+     * test is skipped; otherwise GetCollidingTileMoving (drained: hotspots,
+     * the second column for vertical moves, OW WalkableTiles, room $1F)
+     * on PlayAreaTiles, walkable below ObjectFirstUnwalkableTile ($34A).
+     * Replaces the Genesis walk-cache probe, which let Link step partly onto
+     * UW blocks. */
+    unsigned char sx = nes_ram[0x0070u], sy = nes_ram[0x0084u];
+    unsigned char sdir = nes_ram[NES_OBJ_DIR];
+    unsigned char tile;
+    nes_ram[0x0070u] = (unsigned char)x;
+    nes_ram[0x0084u] = (unsigned char)y;
+    nes_ram[NES_OBJ_DIR] = link_nes_bit_of(dir);
+    tile = collision_get_colliding_tile_moving(0u);
+    nes_ram[0x0070u] = sx;
+    nes_ram[0x0084u] = sy;
+    nes_ram[NES_OBJ_DIR] = sdir;
+    return (tile < nes_ram[0x034Au]) ? 1u : 0u;
 }
 
 /* S4: edge-triggered room transition. Both OW and UW use the same 16x8 grid
@@ -1724,6 +1692,17 @@ static void edge_load_or_clamp(void)
         if (want == SCROLL_H_RIGHT) { ++col; players[0].x = 0; }
         if (want == SCROLL_V_UP) { --row; players[0].y = 0xDD; }
         if (want == SCROLL_V_DOWN) { ++row; players[0].y = 0x3D; }
+    } else if (s_scene == SCENE_UW && s_move_style == MOVE_STYLE_NES) {
+        /* T-131: NES CheckScreenEdge / open false or bombable wall. */
+        want = s_uw_edge == 0x01u ? SCROLL_H_RIGHT :
+               s_uw_edge == 0x02u ? SCROLL_H_LEFT :
+               s_uw_edge == 0x04u ? SCROLL_V_DOWN :
+               s_uw_edge == 0x08u ? SCROLL_V_UP : SCROLL_NONE;
+        s_uw_edge = 0u;
+        if (want == SCROLL_H_LEFT)  { --col; players[0].x = 0xF0; }
+        if (want == SCROLL_H_RIGHT) { ++col; players[0].x = 0x00; }
+        if (want == SCROLL_V_UP)    { --row; players[0].y = 0xDD; }
+        if (want == SCROLL_V_DOWN)  { ++row; players[0].y = 0x3D; }
     } else {
         if (players[0].x < UW_WALK_EDGE_WEST_X) {
             if (col > 0u && (s_scene != SCENE_UW ||
@@ -1808,7 +1787,7 @@ static void edge_load_or_clamp(void)
          * H_LEFT pre_x is just past 0 (clamp to 0). Y is unchanged. */
         if (pre_x < UW_WALK_EDGE_WEST_X)  pre_x = UW_WALK_EDGE_WEST_X;
         if (pre_x > UW_WALK_EDGE_EAST_X)  pre_x = UW_WALK_EDGE_EAST_X;
-        if (!ow_nes_scroll_enabled()) {
+        if (!nes_scroll_enabled()) {
             if (pre_y < UW_WALK_EDGE_NORTH_Y) pre_y = UW_WALK_EDGE_NORTH_Y;
             if (pre_y > UW_WALK_EDGE_SOUTH_Y) pre_y = UW_WALK_EDGE_SOUTH_Y;
         }
@@ -1818,10 +1797,11 @@ static void edge_load_or_clamp(void)
         s_scroll_frame = 0u;
         s_scroll_total_frames = transition_scroll_total_frames();
         /* Reset sub-pixel/grid so motion starts clean post-transition. */
-        if (!ow_nes_scroll_enabled()) s_link_pos_frac = 0u;
+        if (!nes_scroll_enabled()) s_link_pos_frac = 0u;
         s_link_subx        = 0u;
         s_link_suby        = 0u;
-        s_link_grid_offset = 0;
+        /* The UW mode 6 walk-out sets ObjGridOffset itself (T-131). */
+        if (!(nes_scroll_enabled() && s_scene == SCENE_UW)) s_link_grid_offset = 0;
         s_link_anim_tick   = 0u;
 
         s_scroll_start_x = s_active_scroll_x;
@@ -1844,7 +1824,9 @@ static void edge_load_or_clamp(void)
             uw_dark_apply_cycle_row((s_cur_room_is_dark && nes_ram[0x051Fu] == 0u)
                                     ? 0x43u : 0x40u);
             nes_ram[0x051Cu] = 0u;
-            if (next_dark && (!s_cur_room_is_dark || nes_ram[0x051Fu] != 0u)) {
+            /* NES mode 7 (ow_scroll.c) fades at InitMode7 Sub5/6. */
+            if (!nes_scroll_enabled() &&
+                next_dark && (!s_cur_room_is_dark || nes_ram[0x051Fu] != 0u)) {
                 nes_ram[0x051Fu] = 0u;
                 nes_ram[0x051Cu] = 0x40u;
                 s_uw_fade_phase = UW_FADE_BEFORE_SCROLL;
@@ -1866,9 +1848,9 @@ static void edge_load_or_clamp(void)
             /* H scroll within the active plane: render incoming into the
              * OTHER slot (cols 0..31 vs 32..63) and slide that plane. */
             set_room_render_target_plane(s_active_plane);
-            if (!ow_nes_scroll_enabled())
+            if (!nes_scroll_enabled())
                 render_room_into_slot(s_transition_target, target_slot_x, s_active_row_base);
-            s_scroll_target_x = ow_nes_scroll_enabled()
+            s_scroll_target_x = nes_scroll_enabled()
                 ? (short)(s_active_scroll_x + (want == SCROLL_H_RIGHT ? -256 : 256))
                 : scroll_x_offset_for_slot(target_slot_x);
         } else {
@@ -1891,7 +1873,7 @@ static void edge_load_or_clamp(void)
                 s_scroll_target_y = (short)(s_active_scroll_y -
                     (short)(ROOMROM_VERTICAL_STRIDE_TILES * 8));
             }
-            if (!ow_nes_scroll_enabled())
+            if (!nes_scroll_enabled())
                 render_room_into_slot(s_transition_target, s_active_slot_x, s_transition_row_base);
             if (s_scene == SCENE_UW) {
                 roomrom_uw_room_render_set_live_door_priority(
@@ -1910,12 +1892,104 @@ static void edge_load_or_clamp(void)
              * underlay clear at line ~1539 handles final-state opacity
              * after view stabilizes. */
         }
-        if (ow_nes_scroll_enabled()) {
+        if (nes_scroll_enabled()) {
             players[0].x = pre_x;
             players[0].y = pre_y;
+            nes_ram[0x0394u] = (u8)s_link_grid_offset;
             ow_scroll_begin((u8)want, s_transition_target);
         } else scroll_init_fixed_point_steps();
     }
+}
+
+/* Make the scroll's target room current: camera anchor, room id, palette,
+ * HUD, doors, room metadata and objects (scroll end; the UW NES path runs it
+ * at mode 4 InitMode_EnterRoom, T-131). */
+static void scroll_finalize_room(void)
+{
+    u8 was_v_scroll = (u8)(s_scroll_state == SCROLL_V_DOWN ||
+                           s_scroll_state == SCROLL_V_UP);
+    if (s_scroll_state == SCROLL_H_RIGHT ||
+        s_scroll_state == SCROLL_H_LEFT) {
+        s_active_slot_x ^= 1u;
+        s_active_scroll_x = s_scroll_target_x;
+        s_active_scroll_y = s_scroll_target_y;
+    } else {
+        s_active_row_base = s_transition_row_base;
+        s_active_scroll_x = s_scroll_target_x;
+        s_active_scroll_y = s_scroll_target_y;
+        s_active_plane = 0u;
+        set_room_render_target_plane(s_active_plane);
+    }
+    s_room_id = s_transition_target;
+    players[0].x  = s_transition_link_x;
+    players[0].y  = s_transition_link_y;
+    if (ow_nes_scroll_enabled()) {
+        s_link_grid_offset = 0;
+        s_link_pos_frac = 0u;
+        s_link_subx = s_link_suby = 0u;
+        nes_ram[0x70u] = (u8)players[0].x;
+        nes_ram[0x84u] = (u8)players[0].y;
+    }
+    if (s_scene == SCENE_UW) {
+        u8 prev_dark = s_cur_room_is_dark;
+        roomrom_uw_room_render_load_palette(s_room_id);
+        /* T-111: entering a dark room keeps it dark (row $43);
+         * a light room entered from an unlit dark room fades to
+         * light (InitMode4 Sub2/Sub3, cycle $C0). */
+        if (uw_dark_is_dark_room(s_room_id)) {
+            uw_dark_apply_cycle_row(0x43u);
+        } else if (!nes_scroll_enabled() && prev_dark && nes_ram[0x051Fu] == 0u) {
+            uw_dark_apply_cycle_row(0x43u);
+            nes_ram[0x051Cu] = 0xC0u;
+            s_uw_fade_phase = UW_FADE_AFTER_SCROLL;
+        }
+        nes_ram[0x051Fu] = 0u;
+        roomrom_hud_draw(roomrom_uw_room_render_get_map(), s_room_id, 1u);
+        if (was_v_scroll) {
+            roomrom_uw_room_render_set_live_door_priority(
+                s_active_slot_x, s_active_row_base, 1u);
+        }
+        /* T-119: scroll entry — the doorway Link came through
+         * starts opened (SetEnteringDoorwayAsCurOpenedDoors). */
+        uw_door_state_set_entering(nes_ram[0x0098u]);
+        uw_door_state_room_init(roomrom_uw_room_render_get_level(),
+                                roomrom_uw_room_render_get_quest(),
+                                s_room_id);
+    } else {
+        roomrom_ow_room_render_load_palette(s_room_id);
+        roomrom_hud_draw(roomrom_ow_room_render_get_map(), s_room_id, 0u);
+        /* Task 5.4: scroll-staging populated the raw-tile
+         * cache during edge_load_or_clamp. Cache was keyed
+         * by src col so it now reflects the new active
+         * room. Mark it stable so the warp coordinator's
+         * rule-5 check can fire. */
+        roomrom_ow_room_render_mark_stable();
+        /* T0.1: republish PlayAreaTiles after scroll so the
+         * collision drain sees the new active room's tiles. */
+        roomrom_ow_room_render_publish_play_area_tiles();
+    }
+    roomrom_sprites_load_palette();
+    refresh_room_metadata(s_room_id);
+    clear_hud_underlay_for_row_base(s_active_row_base);
+    if (was_v_scroll) {
+        set_room_render_target_plane(s_active_plane);
+        s_active_scroll_y = scroll_y_for_row_base(s_active_row_base);
+        set_bg_scroll(s_active_scroll_x, s_active_scroll_y);
+    } else {
+        if (nes_scroll_enabled())
+            s_active_scroll_x = scroll_x_offset_for_slot(s_active_slot_x);
+        anchor_active_slot();
+    }
+    /* Substrate fix 2026-05-15 — spawn fresh enemies on room
+     * scroll. NES Z1 fires AssignObjSpawnPositions on every
+     * room enter (mode 4); we mirror that here so adjacent
+     * OW/UW rooms populate enemy slots when Link scrolls in.
+     * Without this, ObjType[1..count] stays zero across
+     * room transitions and the world appears empty. */
+    enemy_loop_room_init(s_room_id, (unsigned char)s_scene,
+    s_scene == SCENE_UW ? roomrom_uw_room_render_get_level() : 0u,
+    s_scene == SCENE_UW ? roomrom_uw_room_render_get_quest() : 0u);
+    request_boss_chr_if_boss_room();
 }
 
 void roomrom_debug_enter(void)
@@ -2313,6 +2387,39 @@ static unsigned char play_update_objects(void)
         enemy_loop_play_tail(s_scene == SCENE_UW ? 1u : 0u);
         if (s_scene == SCENE_UW) uw_door_state_update();
     }
+    /* NES source: Z_04.asm:Ganon_Dying; Z_01.asm:TryTakeRoomItem;
+     * Z_07.asm AnimateItemObject (drained draw_animate_item_object).
+     * Slot 19 owns live state/position; Ganon moves the Power Triforce to
+     * his ashes after room entry. T-130: drawn by the NES item writers
+     * (ItemIdToSlot -> frame tile -> Anim_WriteSpecificItemSprites) into the
+     * render cache instead of a per-item-id Genesis table (the key, $19,
+     * fell back to a boomerang placeholder there). */
+    enemy_render_weapon_reset(0x13u);
+    /* Z_07.asm MoveAndDrawRoomItem: not taken, ObjState[$13] active and
+     * RoomItemId $AB != $3F. A like-like ($17), stalfos ($2A) or gibdo
+     * ($30) in object slot 1 carries the item: it takes that monster's
+     * position and draws as object 1 (t131_uw_doors room $74: the key
+     * follows the stalfos from ($50,$BD)). */
+    if (s_scene == SCENE_UW && !roomrom_uw_item_taken(s_room_id) &&
+        (nes_ram[0x00BFu] & 0x80u) == 0u && nes_ram[0x00ABu] != 0x3Fu) {
+        unsigned char saved_cur = nes_ram[0x0340u];
+        unsigned char t1 = nes_ram[0x0350u];     /* ObjType+1 */
+        unsigned char obj = 0x13u;
+        if (t1 == 0x17u || t1 == 0x2Au || t1 == 0x30u) {
+            nes_ram[0x0083u] = nes_ram[0x0071u]; /* ObjX+19 = ObjX+1 */
+            nes_ram[0x0097u] = nes_ram[0x0085u]; /* ObjY+19 = ObjY+1 */
+            obj = 0x01u;
+        }
+        nes_ram[0x0340u] = obj;                  /* CurObjIndex */
+        draw_animate_item_object(nes_ram[0x00ABu], obj);
+        nes_ram[0x0340u] = saved_cur;
+        if (roomrom_uw_item_try_pickup(
+                roomrom_uw_room_render_get_level(),
+                s_room_id, (unsigned char)players[0].x,
+                (unsigned char)players[0].y)) {
+            enemy_render_weapon_reset(0x13u);
+        }
+    }
     return 0u;
 }
 
@@ -2504,7 +2611,7 @@ void roomrom_debug_tick(void)
             s_joy_prev = 0u;     /* swallow input across transition */
 
             u8 ow_done = 0u;
-            if (ow_nes_scroll_enabled()) {
+            if (nes_scroll_enabled()) {
                 u8 c;
                 short distance;
                 /* NES Link_EndMoveAndAnimate[BetweenRooms] calls in the
@@ -2517,18 +2624,57 @@ void roomrom_debug_tick(void)
                 u8 gm = nes_ram[0x0012u], sub = nes_ram[0x0013u], upd = nes_ram[0x0011u];
                 u8 grid = nes_ram[0x0394u];
                 u8 anims = 0u;
-                if (gm == 0x06u)
+                u8 r;
+                if (s_scene == SCENE_UW) {
+                    /* UW Link_EndMoveAndAnimateBetweenRooms returns; only
+                     * the mode 6/4 walk frames animate (below). */
+                } else if (gm == 0x06u)
                     anims = upd ? ((grid == 0u || grid == 0x08u || grid == 0xF8u) ? 0u : 1u) : 2u;
                 else if (gm == 0x07u)
                     anims = upd ? 1u : (sub == 1u ? 2u : 0u);
-                ow_done = ow_scroll_tick(&players[0].x, &players[0].y);
+                (void)sub;
+                r = ow_scroll_tick(&players[0].x, &players[0].y);
+                ow_done = (u8)(r == OW_SCROLL_PLAY);
                 while (anims--) roomrom_combat_end_move_and_animate();
+                if (r == OW_SCROLL_WALK) {
+                    /* UpdateMode4and6EnterLeave: MoveObject along ObjDir,
+                     * then Link_EndMoveAndAnimate (no grid truncation
+                     * outside mode 5). */
+                    link_dir_t d = link_dir_of_lowest_bit(nes_ram[0x0098u]);
+                    nes_ram[0x03F8u] = nes_ram[0x0098u];
+                    s_link_grid_offset = (signed char)nes_ram[0x0394u];
+                    s_link_pos_frac = nes_ram[0x03A8u];
+                    s_link_dir = d;
+                    link_nes_move_object_raw(d);
+                    nes_ram[0x0394u] = (u8)s_link_grid_offset;
+                    nes_ram[0x03A8u] = s_link_pos_frac;
+                    nes_ram[0x0070u] = (u8)players[0].x;
+                    nes_ram[0x0084u] = (u8)players[0].y;
+                    roomrom_combat_end_move_and_animate();
+                } else if (r == OW_SCROLL_ENTER) {
+                    scroll_finalize_room();
+                    if (s_scene == SCENE_UW) {
+                        ow_scroll_enter_room_uw(&players[0].x);
+                        s_link_grid_offset = (signed char)nes_ram[0x0394u];
+                        s_link_pos_frac = 0u;
+                        /* UW InitMode_EnterRoom leaves Link's ObjAnimCounter
+                         * at 4 (its BetweenRooms draw does not animate); the
+                         * walk-in frames animate it. The OW draw animates
+                         * once: room_init's 3. */
+                        nes_ram[0x03D0u] = 4u;
+                        nes_ram[0x0070u] = (u8)players[0].x;
+                    }
+                }
                 c = ow_scroll_column();
                 if (c < 16u) {
                     u8 slot = s_scroll_state < SCROLL_V_DOWN
                         ? (u8)(s_active_slot_x ^ 1u) : s_active_slot_x;
-                    roomrom_ow_room_render_fill_one_col_at(s_transition_target,
-                        c, plane_col_for_slot(c, slot), s_transition_row_base);
+                    if (s_scene == SCENE_UW)
+                        roomrom_uw_room_render_fill_one_col_at(s_transition_target,
+                            c, plane_col_for_slot(c, slot), s_transition_row_base);
+                    else
+                        roomrom_ow_room_render_fill_one_col_at(s_transition_target,
+                            c, plane_col_for_slot(c, slot), s_transition_row_base);
                 }
                 distance = (short)ow_scroll_pixels();
                 h_scroll = s_scroll_start_x;
@@ -2537,14 +2683,25 @@ void roomrom_debug_tick(void)
                 if (s_scroll_state == SCROLL_H_LEFT) h_scroll += distance;
                 if (s_scroll_state == SCROLL_V_DOWN) v_scroll += distance;
                 if (s_scroll_state == SCROLL_V_UP) v_scroll -= distance;
+                /* After the room is entered (mode 4) the camera rests on
+                 * the new room. */
+                if (nes_ram[0x0012u] != 0x06u && nes_ram[0x0012u] != 0x07u) {
+                    h_scroll = s_active_scroll_x;
+                    v_scroll = s_active_scroll_y;
+                }
                 enemy_render_reset_oam();
                 enemy_render_native_sweep();
                 s_link_frame = (u8)((nes_ram[0x03E4u] & 1u) ^
                     ((players[0].face == LINK_FACE_LEFT ||
                       players[0].face == LINK_FACE_RIGHT) ? 1u : 0u));
-                roomrom_sprites_set_link_pose(players[0].x, players[0].y,
-                                              players[0].face, s_link_frame);
+                if (s_scene == SCENE_UW && ow_scroll_link_hidden())
+                    roomrom_sprites_set_link_pose((short)-32, (short)-32,
+                                                  players[0].face, 0u);
+                else
+                    roomrom_sprites_set_link_pose(players[0].x, players[0].y,
+                                                  players[0].face, s_link_frame);
                 VDP_updateSprites(80u, DMA_QUEUE);
+                transfer_buf_drain();            /* mode 7/4 fade palettes */
             } else scroll_advance_fixed_point(&h_scroll, &v_scroll);
             set_bg_scroll(h_scroll, v_scroll);
             /* NES Z1 UW: Link is drawn behind door tiles during the
@@ -2552,98 +2709,26 @@ void roomrom_debug_tick(void)
              * We approximate by hiding the sprite off-screen for the
              * scroll duration, then snapping to the new-room entry
              * position on finalize. */
-            if (!ow_nes_scroll_enabled())
+            if (!nes_scroll_enabled())
                 roomrom_sprites_set_link_pose((short)-32, (short)-32,
                                               players[0].face, 0u);
 
-            if ((ow_nes_scroll_enabled() && ow_done) ||
-                (!ow_nes_scroll_enabled() &&
+            if (nes_scroll_enabled() && ow_done) {
+                /* T-131: the room was made current at mode 4 entry
+                 * (InitMode_EnterRoom); the UW walk-in has ended. */
+                /* ObjPosFrac carries over from the walk-in (NES). */
+                s_link_grid_offset = 0;
+                s_link_pos_frac = nes_ram[0x03A8u];
+                s_link_subx = s_link_suby = 0u;
+                nes_ram[0x0394u] = 0u;
+                nes_ram[0x70u] = (u8)players[0].x;
+                nes_ram[0x84u] = (u8)players[0].y;
+                s_scroll_state = SCROLL_NONE;
+            } else if ((nes_scroll_enabled() && ow_done) ||
+                (!nes_scroll_enabled() &&
                  (s_scroll_frame >= (u8)(s_scroll_total_frames - 1u) ||
                   (h_scroll == s_scroll_target_x && v_scroll == s_scroll_target_y)))) {
-                u8 was_v_scroll = (u8)(s_scroll_state == SCROLL_V_DOWN ||
-                                       s_scroll_state == SCROLL_V_UP);
-                if (s_scroll_state == SCROLL_H_RIGHT ||
-                    s_scroll_state == SCROLL_H_LEFT) {
-                    s_active_slot_x ^= 1u;
-                    s_active_scroll_x = s_scroll_target_x;
-                    s_active_scroll_y = s_scroll_target_y;
-                } else {
-                    s_active_row_base = s_transition_row_base;
-                    s_active_scroll_x = s_scroll_target_x;
-                    s_active_scroll_y = s_scroll_target_y;
-                    s_active_plane = 0u;
-                    set_room_render_target_plane(s_active_plane);
-                }
-                s_room_id = s_transition_target;
-                players[0].x  = s_transition_link_x;
-                players[0].y  = s_transition_link_y;
-                if (ow_nes_scroll_enabled()) {
-                    s_link_grid_offset = 0;
-                    s_link_pos_frac = 0u;
-                    s_link_subx = s_link_suby = 0u;
-                    nes_ram[0x70u] = (u8)players[0].x;
-                    nes_ram[0x84u] = (u8)players[0].y;
-                }
-                if (s_scene == SCENE_UW) {
-                    u8 prev_dark = s_cur_room_is_dark;
-                    roomrom_uw_room_render_load_palette(s_room_id);
-                    /* T-111: entering a dark room keeps it dark (row $43);
-                     * a light room entered from an unlit dark room fades to
-                     * light (InitMode4 Sub2/Sub3, cycle $C0). */
-                    if (uw_dark_is_dark_room(s_room_id)) {
-                        uw_dark_apply_cycle_row(0x43u);
-                    } else if (prev_dark && nes_ram[0x051Fu] == 0u) {
-                        uw_dark_apply_cycle_row(0x43u);
-                        nes_ram[0x051Cu] = 0xC0u;
-                        s_uw_fade_phase = UW_FADE_AFTER_SCROLL;
-                    }
-                    nes_ram[0x051Fu] = 0u;
-                    roomrom_hud_draw(roomrom_uw_room_render_get_map(), s_room_id, 1u);
-                    if (was_v_scroll) {
-                        roomrom_uw_room_render_set_live_door_priority(
-                            s_active_slot_x, s_active_row_base, 1u);
-                    }
-                    /* T-119: scroll entry — the doorway Link came through
-                     * starts opened (SetEnteringDoorwayAsCurOpenedDoors). */
-                    uw_door_state_set_entering(nes_ram[0x0098u]);
-                    uw_door_state_room_init(roomrom_uw_room_render_get_level(),
-                                            roomrom_uw_room_render_get_quest(),
-                                            s_room_id);
-                } else {
-                    roomrom_ow_room_render_load_palette(s_room_id);
-                    roomrom_hud_draw(roomrom_ow_room_render_get_map(), s_room_id, 0u);
-                    /* Task 5.4: scroll-staging populated the raw-tile
-                     * cache during edge_load_or_clamp. Cache was keyed
-                     * by src col so it now reflects the new active
-                     * room. Mark it stable so the warp coordinator's
-                     * rule-5 check can fire. */
-                    roomrom_ow_room_render_mark_stable();
-                    /* T0.1: republish PlayAreaTiles after scroll so the
-                     * collision drain sees the new active room's tiles. */
-                    roomrom_ow_room_render_publish_play_area_tiles();
-                }
-                roomrom_sprites_load_palette();
-                refresh_room_metadata(s_room_id);
-                clear_hud_underlay_for_row_base(s_active_row_base);
-                if (was_v_scroll) {
-                    set_room_render_target_plane(s_active_plane);
-                    s_active_scroll_y = scroll_y_for_row_base(s_active_row_base);
-                    set_bg_scroll(s_active_scroll_x, s_active_scroll_y);
-                } else {
-                    if (ow_nes_scroll_enabled())
-                        s_active_scroll_x = scroll_x_offset_for_slot(s_active_slot_x);
-                    anchor_active_slot();
-                }
-                /* Substrate fix 2026-05-15 — spawn fresh enemies on room
-                 * scroll. NES Z1 fires AssignObjSpawnPositions on every
-                 * room enter (mode 4); we mirror that here so adjacent
-                 * OW/UW rooms populate enemy slots when Link scrolls in.
-                 * Without this, ObjType[1..count] stays zero across
-                 * room transitions and the world appears empty. */
-                enemy_loop_room_init(s_room_id, (unsigned char)s_scene,
-                s_scene == SCENE_UW ? roomrom_uw_room_render_get_level() : 0u,
-                s_scene == SCENE_UW ? roomrom_uw_room_render_get_quest() : 0u);
-                request_boss_chr_if_boss_room();
+                scroll_finalize_room();
                 s_scroll_state = SCROLL_NONE;
             } else {
                 s_scroll_frame++;
@@ -2730,7 +2815,7 @@ void roomrom_debug_tick(void)
          * allow walking + pause/inventory, only sword swing is
          * swallowed (handled by combat_link_locked check below). */
         if (s_scene == SCENE_CAVE) {
-            cave_tick();
+            /* The cave person updates in the object loop (T-133). */
             if (g_debug_session && (pressed & BUTTON_START) && (joy & BUTTON_C)) {
                 cave_fade_set_callbacks(&k_cave_fade_callbacks);
                 cave_fade_begin_exit(s_cave_return_room);
@@ -2961,7 +3046,10 @@ void roomrom_debug_tick(void)
         /* S7: A swings sword (NES-faithful single A-press). UW level cycle
          * moved to MODE button below. Movement is suppressed during the
          * swing so Link snaps to the swing pose for COMBAT_EXTEND_FRAMES. */
-        if ((pressed & BUTTON_A) && !roomrom_combat_link_locked()) {
+        /* T-131: NES Link_HandleInput filters A/B and the input
+         * directions at the room border first (Link_FilterInput). */
+        link_filter_input();
+        if ((nes_ram[0x00F8u] & 0x80u) && !roomrom_combat_link_locked()) {
             roomrom_combat_try_swing(players[0].face, players[0].x, players[0].y);
         }
 
@@ -2975,7 +3063,7 @@ void roomrom_debug_tick(void)
             s_b_item = (b_item_t)nxt;
         }
         /* T-116: Link_HandleInput reads A/B only while Link is idle ($AC 0). */
-        if ((pressed & BUTTON_B) && nes_ram[0x00ACu] == 0u) {
+        if ((nes_ram[0x00F8u] & 0x40u) && nes_ram[0x00ACu] == 0u) {
             /* T-092: NES WieldItem uses SelectedItemSlot ($656), which the
              * pause subscreen sets; the debug Z cycle only overrides it in a
              * debug session. */
@@ -3288,29 +3376,22 @@ void roomrom_debug_tick(void)
                     input_dir = (v_dir == 1u) ? LINK_DIR_UP : LINK_DIR_DOWN;
                 }
 
+                /* T-131: ObjInputDir ($3F8, ButtonsDown & $0F, masked by
+                 * Link_FilterInput) after Link_ModifyDirInDoorway (UW). */
+                unsigned char in_bits = 0u;
                 if (input != 0u) {
+                    nes_ram[0x0098u] = link_nes_bit_of(s_link_dir);
+                    link_modify_dir_in_doorway();
+                    in_bits = (unsigned char)(nes_ram[0x03F8u] & 0x0Fu);
+                    input_dir = link_dir_of_lowest_bit(in_bits);
+                }
+                if (in_bits != 0u) {
                     if (s_link_grid_offset == 0 || s_link_dir == LINK_DIR_NONE) {
                         /* T-122: NES Link_ModifyDirAtGridPoint. */
-                        unsigned char in_bits = (unsigned char)(
-                            ((input & BUTTON_RIGHT) ? 0x01u : 0u) |
-                            ((input & BUTTON_LEFT)  ? 0x02u : 0u) |
-                            ((input & BUTTON_DOWN)  ? 0x04u : 0u) |
-                            ((input & BUTTON_UP)    ? 0x08u : 0u));
-                        (void)input_dir;
                         link_nes_modify_dir_at_grid_point(in_bits, &moving_dir);
                     } else {
                         link_nes_modify_dir_on_grid_line(input_dir);
                         moving_dir = s_link_dir;
-                    }
-                }
-
-                if (input != 0u) {
-                    link_dir_t doorway_dir = moving_dir;
-                    if (uw_doorway_adjust_nes_dir(input, &doorway_dir)) {
-                        moving_dir = doorway_dir;
-                        if (doorway_dir != LINK_DIR_NONE) {
-                            s_link_dir = doorway_dir;
-                        }
                     }
                 }
 
@@ -3355,7 +3436,40 @@ void roomrom_debug_tick(void)
                     if (s_ow_edge == 0x80u) s_ow_edge = 0u;
                 }
 
-                if (moving_dir != LINK_DIR_NONE && s_link_grid_offset == 0) {
+                if (s_scene == SCENE_UW && nes_ram[0x00C0u] == 0u) {
+                    /* T-131: NES Walker_Move for Link in the UW:
+                     * BoundByRoom outside doorways, CheckDoorway, then
+                     * Walker_CheckTileCollision (in a doorway the tile test
+                     * is skipped; CheckScreenEdge starts the next room). */
+                    unsigned char edge;
+                    nes_ram[0x0070u] = (unsigned char)players[0].x;
+                    nes_ram[0x0084u] = (unsigned char)players[0].y;
+                    nes_ram[0x0394u] = (unsigned char)s_link_grid_offset;
+                    if (s_link_dir != LINK_DIR_NONE)
+                        nes_ram[0x0098u] = link_nes_bit_of(s_link_dir);
+                    nes_ram[0x000Fu] = link_nes_bit_of(moving_dir);
+                    if (link_uw_walker_checks())
+                        edge = nes_ram[0x0098u];
+                    else
+                        edge = link_walker_check_tile_collision(s_link_grid_offset);
+                    if (nes_ram[0x0098u] != link_nes_bit_of(s_link_dir)) {
+                        s_link_dir = link_dir_of_lowest_bit(nes_ram[0x0098u]);
+                        switch (s_link_dir) {
+                        case LINK_DIR_LEFT:  players[0].face = LINK_FACE_LEFT;  break;
+                        case LINK_DIR_RIGHT: players[0].face = LINK_FACE_RIGHT; break;
+                        case LINK_DIR_UP:    players[0].face = LINK_FACE_UP;    break;
+                        case LINK_DIR_DOWN:  players[0].face = LINK_FACE_DOWN;  break;
+                        default: break;
+                        }
+                    }
+                    moving_dir = link_dir_of_lowest_bit(nes_ram[0x000Fu]);
+                    if (edge) {
+                        s_uw_edge = edge;
+                        moving_dir = LINK_DIR_NONE;
+                        /* The Genesis UW scroll still runs in Play mode. */
+                        nes_ram[0x0012u] = 0x05u;
+                    }
+                } else if (moving_dir != LINK_DIR_NONE && s_link_grid_offset == 0) {
                     if (!link_walkable_at(players[0].x, players[0].y, moving_dir)) {
                         moving_dir = LINK_DIR_NONE;
                     }
@@ -3483,25 +3597,6 @@ void roomrom_debug_tick(void)
          * via the room-change reset). Internally guards on UW + WALK. */
         roomrom_pushblock_tick();
 
-        /* NES source: Z_04.asm:Ganon_Dying; Z_01.asm:TryTakeRoomItem.
-         * Drained C: cave_dispatch.c:cave_try_take_room_item.
-         * Coverage: PARTIAL native room reward rendering/pickup.
-         * Stance: EXTEND. Slot 19 owns live state/position; Ganon moves
-         * the Power Triforce to his ashes after room entry. */
-        if (s_scene == SCENE_UW && s_cur_room_has_item &&
-            (nes_ram[0x00BFu] & 0x80u) == 0u &&
-            !roomrom_uw_item_taken(s_room_id)) {
-            short ix = (short)nes_ram[0x0083u]; /* ObjX + 19 */
-            short iy = (short)nes_ram[0x0097u]; /* ObjY + 19 */
-            roomrom_sprites_set_room_item(ix, iy,
-                                          nes_ram[0x00ABu], 0u);
-            if (roomrom_uw_item_try_pickup(
-                    roomrom_uw_room_render_get_level(),
-                    s_room_id, (unsigned char)players[0].x,
-                    (unsigned char)players[0].y)) {
-                roomrom_sprites_clear_room_item();
-            }
-        }
 
         /* 2026-05-15 perf: DMA only the SAT slots actually in use this
          * frame. native sweep publishes g_enemy_render_last_sat_slot =
@@ -3514,8 +3609,9 @@ void roomrom_debug_tick(void)
 
         {
             unsigned short dma_count = g_enemy_render_last_sat_slot;
-            /* Floor 12: slots 0..9 + slot 10/11 HUD_B_ITEM pair. */
-            if (dma_count < 12u) dma_count = 12u;
+            /* Floor: every gameplay slot (masks, Link, items, HUD). */
+            if (dma_count < ROOMROM_SPRITE_SLOT_ENEMY_FIRST)
+                dma_count = ROOMROM_SPRITE_SLOT_ENEMY_FIRST;
             VDP_updateSprites(dma_count, DMA_QUEUE);
         }
 
