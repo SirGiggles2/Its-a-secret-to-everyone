@@ -19,6 +19,7 @@ import argparse
 import ctypes
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -37,6 +38,78 @@ def short(path: Path) -> str:
     if not ctypes.windll.kernel32.GetShortPathNameW(str(path), buf, 520):
         raise OSError(f"no short path for {path}")
     return buf.value
+
+
+# EmuHawk (WinForms) activates its main window even when started hidden, which
+# steals keyboard focus from whatever the user is doing. It runs on its own
+# Win32 desktop instead: windows there are never shown and cannot take the
+# foreground on the user's desktop. CLAUDE_PROBE_VISIBLE=1 restores the old
+# on-screen launch.
+PROBE_DESKTOP = "claude_probe"
+
+
+def run_on_hidden_desktop(cmd: list[str], cwd: Path, log_path: Path,
+                          timeout: float) -> "int | str":
+    from ctypes import wintypes
+    k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    u32 = ctypes.WinDLL("user32", use_last_error=True)
+    u32.CreateDesktopW.restype = wintypes.HANDLE
+    GENERIC_ALL = 0x10000000
+    if not u32.CreateDesktopW(PROBE_DESKTOP, None, None, 0, GENERIC_ALL, None):
+        raise OSError(f"CreateDesktopW failed ({ctypes.get_last_error()})")
+
+    class SA(ctypes.Structure):
+        _fields_ = [("nLength", wintypes.DWORD), ("lpSecurityDescriptor", wintypes.LPVOID),
+                    ("bInheritHandle", wintypes.BOOL)]
+
+    class SI(ctypes.Structure):
+        _fields_ = [("cb", wintypes.DWORD), ("lpReserved", wintypes.LPWSTR),
+                    ("lpDesktop", wintypes.LPWSTR), ("lpTitle", wintypes.LPWSTR),
+                    ("dwX", wintypes.DWORD), ("dwY", wintypes.DWORD),
+                    ("dwXSize", wintypes.DWORD), ("dwYSize", wintypes.DWORD),
+                    ("dwXCountChars", wintypes.DWORD), ("dwYCountChars", wintypes.DWORD),
+                    ("dwFillAttribute", wintypes.DWORD), ("dwFlags", wintypes.DWORD),
+                    ("wShowWindow", wintypes.WORD), ("cbReserved2", wintypes.WORD),
+                    ("lpReserved2", wintypes.LPVOID), ("hStdInput", wintypes.HANDLE),
+                    ("hStdOutput", wintypes.HANDLE), ("hStdError", wintypes.HANDLE)]
+
+    class PI(ctypes.Structure):
+        _fields_ = [("hProcess", wintypes.HANDLE), ("hThread", wintypes.HANDLE),
+                    ("dwProcessId", wintypes.DWORD), ("dwThreadId", wintypes.DWORD)]
+
+    k32.CreateFileW.restype = wintypes.HANDLE
+    sa = SA(ctypes.sizeof(SA), None, True)
+    log = k32.CreateFileW(str(log_path), 0x40000000, 3, ctypes.byref(sa), 2, 0x80, None)
+    if log in (None, wintypes.HANDLE(-1).value):
+        raise OSError(f"CreateFileW failed ({ctypes.get_last_error()})")
+    si = SI()
+    si.cb = ctypes.sizeof(SI)
+    si.lpDesktop = PROBE_DESKTOP
+    si.dwFlags = 0x100 | 0x1          # STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW
+    si.wShowWindow = 0
+    si.hStdInput = None
+    si.hStdOutput = log
+    si.hStdError = log
+    pi = PI()
+    cmdline = ctypes.create_unicode_buffer(subprocess.list2cmdline(cmd))
+    if not k32.CreateProcessW(None, cmdline, None, None, True, 0x08000000, None,
+                              str(cwd), ctypes.byref(si), ctypes.byref(pi)):
+        err = ctypes.get_last_error()
+        k32.CloseHandle(log)
+        raise OSError(f"CreateProcessW failed ({err})")
+    try:
+        r = k32.WaitForSingleObject(pi.hProcess, int(timeout * 1000))
+        if r == 0x102:                # WAIT_TIMEOUT: kill only our process
+            k32.TerminateProcess(pi.hProcess, 1)
+            k32.WaitForSingleObject(pi.hProcess, 10000)
+            return "timeout"
+        code = wintypes.DWORD()
+        k32.GetExitCodeProcess(pi.hProcess, ctypes.byref(code))
+        return int(code.value)
+    finally:
+        k32.CloseHandle(pi.hThread)
+        k32.CloseHandle(pi.hProcess)
+        k32.CloseHandle(log)
 
 
 def sha(path: Path) -> str:
@@ -109,14 +182,17 @@ def main() -> int:
     rom_copy = rom_dir / ("game" + a.rom.suffix)  # space/comma-free name for EmuHawk argv
     shutil.copy2(a.rom, rom_copy)
     cmd = [short(EMU), "--gdi", f"--config={config}", f"--lua={probe}", str(rom_copy)]
-    with (out / "emuhawk.log").open("w", encoding="utf-8") as log:
-        p = subprocess.Popen(cmd, cwd=EMU.parent, stdout=log, stderr=subprocess.STDOUT, startupinfo=si)
-        try:
-            code: int | str = p.wait(timeout=a.timeout)
-        except subprocess.TimeoutExpired:
-            p.kill()
-            p.wait(timeout=10)
-            code = "timeout"
+    if os.environ.get("CLAUDE_PROBE_VISIBLE") == "1":
+        with (out / "emuhawk.log").open("w", encoding="utf-8") as log:
+            p = subprocess.Popen(cmd, cwd=EMU.parent, stdout=log, stderr=subprocess.STDOUT, startupinfo=si)
+            try:
+                code: int | str = p.wait(timeout=a.timeout)
+            except subprocess.TimeoutExpired:
+                p.kill()
+                p.wait(timeout=10)
+                code = "timeout"
+    else:
+        code = run_on_hidden_desktop(cmd, EMU.parent, out / "emuhawk.log", a.timeout)
 
     collected = []
     for c in a.collect:
