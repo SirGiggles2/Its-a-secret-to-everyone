@@ -1,0 +1,22 @@
+{
+ "name": "t121_ring1",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {
+  "InvRing": 1
+ },
+ "script": [
+  [
+   40,
+   ""
+  ],
+  [
+   2,
+   "S"
+  ],
+  [
+   150,
+   ""
+  ]
+ ]
+}

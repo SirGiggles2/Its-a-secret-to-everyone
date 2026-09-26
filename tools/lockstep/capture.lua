@@ -231,6 +231,33 @@ end
 local function pc_stop()
     if pc_id then event.unregisterbyid(pc_id); pc_id = nil end
 end
+-- Full video-domain dump (RULE V3: every domain, full range).
+local function dump_domain(dom, suffix)
+    if not names[dom] then meta:write("nodomain " .. dom .. "\n"); return end
+    local size = memory.getmemorydomainsize(dom)
+    local bytes = memory.read_bytes_as_array(0, size, dom)
+    local chunk = {}
+    for i = 1, size do chunk[i] = string.char(bytes[i]) end
+    local fh = io.open(OUT .. suffix, "wb"); fh:write(table.concat(chunk)); fh:close()
+    meta:write(string.format("dump %s -> %s (%d bytes)\n", dom, suffix, size))
+end
+-- Optional mid-run snapshots: PRESET.snap = {script frames}. At frame f
+-- (same point as RAM row f: after stages, before that frame's input) dump
+-- NES OAM / PALRAM / CIRAM / CHR-RAM or Genesis VRAM (SAT $F400) / CRAM / VSRAM to
+-- <OUT>.fNNNNN.<ext> (T-131 door sprite captures).
+local SNAP = {}
+if PRESET.snap then for _, sf in ipairs(PRESET.snap) do SNAP[sf] = true end end
+local function snap_video(tag)
+    client.screenshot(OUT .. tag .. ".png")   -- rendered frame (sprite masking/priority)
+    if sys == "NES" then
+        dump_domain("OAM", tag .. ".oam"); dump_domain("PALRAM", tag .. ".pal")
+        dump_domain("CIRAM (nametables)", tag .. ".nt")
+        dump_domain("VRAM", tag .. ".chr")   -- CHR-RAM patterns at this frame
+    else
+        dump_domain("VRAM", tag .. ".vram"); dump_domain("CRAM", tag .. ".cram")
+        dump_domain("VSRAM", tag .. ".vsram")
+    end
+end
 for f = 1, total do
     if PCP and f - 1 == PCP[1] then
         pc_id = event.onmemoryexecuteany(pc_hook, "t118_pc", "M68K BUS")
@@ -248,6 +275,7 @@ for f = 1, total do
     local chunk = {}
     for i = 1, 0x800 do chunk[i] = string.char(bytes[i]) end
     ram:write(table.concat(chunk))
+    if SNAP[f - 1] then snap_video(string.format(".f%05d", f - 1)) end
     meta:write(string.format("f=%d in=%s gm=%02X sub=%02X fc=%02X room=%02X\n",
         f - 1, seq[f], bytes[0x13], bytes[0x14], bytes[0x16], bytes[0xEC]))
     joypad.set(btns(seq[f]), 1)
@@ -271,15 +299,6 @@ client.screenshot(OUT .. ".png")
 -- NES: OAM (256), PALRAM (32), VRAM = CHR-RAM patterns (8 KB), CIRAM.
 -- GEN: VRAM (64 KB; gameplay SAT at $F400 per RoomRom/src/main.c
 -- init_video VDP_setSpriteListAddress), CRAM, VSRAM.
-local function dump_domain(dom, suffix)
-    if not names[dom] then meta:write("nodomain " .. dom .. "\n"); return end
-    local size = memory.getmemorydomainsize(dom)
-    local bytes = memory.read_bytes_as_array(0, size, dom)
-    local chunk = {}
-    for i = 1, size do chunk[i] = string.char(bytes[i]) end
-    local fh = io.open(OUT .. suffix, "wb"); fh:write(table.concat(chunk)); fh:close()
-    meta:write(string.format("dump %s -> %s (%d bytes)\n", dom, suffix, size))
-end
 if sys == "NES" then
     dump_domain("Battery RAM", ".wram")   -- NES $6000-$7FFF (LevelBlock/Info)
     dump_domain("OAM", ".oam"); dump_domain("PALRAM", ".pal")

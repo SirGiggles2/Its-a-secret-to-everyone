@@ -32,12 +32,17 @@ def main() -> int:
     ap.add_argument("--pc-profile", metavar="FIRST:LAST",
                     help="Genesis 68K PC histogram over script frames FIRST..LAST "
                          "(writes gen.pcprof; report with pc_profile.py)")
+    ap.add_argument("--snap", metavar="F1,F2,...",
+                    help="also dump the video domains at these script frames "
+                         "(<plat>.fNNNNN.<oam|nt|pal|vram|cram|vsram>)")
     a = ap.parse_args()
 
     spec = json.loads(a.preset.read_text(encoding="utf-8"))
     p = presets.build(spec)
     if a.pc_profile:
         p["pc_profile"] = [int(x) for x in a.pc_profile.split(":")]
+    if a.snap:
+        p["snap"] = [int(x) for x in a.snap.split(",")]
     out = ROOT / "builds" / "reports" / "lockstep" / p["name"]
     out.mkdir(parents=True, exist_ok=True)
     for f in out.glob("*"):

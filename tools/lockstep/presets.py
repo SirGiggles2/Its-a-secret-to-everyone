@@ -154,6 +154,8 @@ def to_lua(p: dict) -> str:
     if p.get("pc_profile"):
         a, b = p["pc_profile"]
         out += f'PRESET.pc_profile = {{{int(a)}, {int(b)}}}\n'
+    if p.get("snap"):
+        out += "PRESET.snap = {" + ",".join(str(int(f)) for f in p["snap"]) + "}\n"
     return out
 
 
