@@ -40,6 +40,7 @@
 #include "../../src/abi/audio_abi.h"                     /* Phase 8 W6/W7: audio_sfx_play */
 #include "../../src/game/world/transfer_buf_drain.h"     /* Plan v5b: TRANSFER_BUF -> CRAM bridge (unblocks Mode 11 palette cycle) */
 #include "../../src/game/world/progress_dispatch.h"      /* Tier 2: triforce fanfare driver */
+#include "../../src/game/cave/uw_person_dispatch.h"    /* T-120: CheckPersonBlocking */
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
 #include "atlas/level_chr_swap.h"        /* PR-4a: scene-bank DMA state machine */
 #include "player_state.h"                 /* Phase 6 Task 6.1: typed players[] */
@@ -3278,6 +3279,24 @@ void roomrom_debug_tick(void)
                     case LINK_DIR_DOWN:  players[0].face = LINK_FACE_DOWN;  break;
                     default: break;
                     }
+                }
+
+                /* T-120: Walker_Move for Link (Z_07.asm:2632): tile objects
+                 * (block/rock/gravestone/armos in state 1) within $10 px
+                 * and, with a person or grumble moblin in slot 1, the
+                 * person line reset the movement direction [0F]. */
+                if (moving_dir != LINK_DIR_NONE) {
+                    unsigned char t1 = nes_ram[0x0350u];
+                    nes_ram[0x000Fu] = link_nes_bit_of(moving_dir);
+                    progress_check_tile_objects_blocking();
+                    if (t1 == 0x36u || (t1 >= 0x4Bu && t1 < 0x53u))
+                        uw_person_check_person_blocking();
+                    /* Caves (modes $B/$C): CheckSubroom always runs
+                     * CheckPersonBlocking (Z_05.asm:3113), so Link stops
+                     * below the cave person's row. */
+                    if (s_scene == SCENE_CAVE)
+                        uw_person_check_person_blocking();
+                    if (nes_ram[0x000Fu] == 0u) moving_dir = LINK_DIR_NONE;
                 }
 
                 s_ow_edge = 0u;

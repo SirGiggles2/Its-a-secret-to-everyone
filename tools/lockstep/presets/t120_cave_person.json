@@ -1,0 +1,30 @@
+{
+ "name": "t120_cave_person",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {},
+ "script": [
+  [
+   30,
+   ""
+  ],
+  [
+   20,
+   ""
+  ],
+  [
+   400,
+   "U"
+  ],
+  [
+   30,
+   ""
+  ]
+ ],
+ "stages": [
+  [
+   40,
+   "wr(0x70, 64)\nwr(0x84, 93)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(64, 93, 8)\nlog(string.format('room %02X link %02X,%02X', rd(0xEB), rd(0x70), rd(0x84)))"
+  ]
+ ]
+}
