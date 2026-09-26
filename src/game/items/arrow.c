@@ -74,9 +74,6 @@ void roomrom_arrow_fire(link_face_t face, short link_x, short link_y)
     AR_X = (unsigned char)(nes_ram[0x0070u] + ((d & 0x01u) ? 0x10u : (d & 0x02u) ? 0xF0u : 0u));
     AR_Y = (unsigned char)(nes_ram[0x0084u] + ((d & 0x04u) ? 0x10u : (d & 0x08u) ? 0xF0u : 0u));
     if (d & 0x0Cu) AR_X = (unsigned char)(AR_X + 3u);
-    /* NES updates the weapon later in the wield frame; the Genesis tick
-     * already ran this frame's weapon updates before input (T-102). */
-    roomrom_arrow_update();
 }
 
 unsigned char roomrom_arrow_active(void)

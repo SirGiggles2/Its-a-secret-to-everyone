@@ -2101,6 +2101,276 @@ short roomrom_debug_get_link_y(void)
     return players[0].y;
 }
 
+/* T-102: NES UpdateMode5Play after UpdatePlayer: chase target, weapons,
+ * objects and the object-loop tail (Z_07.asm:1855-1990). Returns 1
+ * when the frame ends early (cave entry started). */
+/* Task 6.10.2: NES Z_07.asm:472 gates per-frame gameplay update on
+ * `Paused != 0`. Mirror that here — projectile/combat ticks freeze
+ * while paused (voluntary or involuntary). Cave + scroll handling
+ * already returned above; only the in-room update path is gated.
+ *
+ * Tier 1: also gate on !cave_fade_is_active so cave-entry/exit
+ * animations don't get bombed by combat updates or by
+ * cave-entrance re-detection on the very tile that triggered
+ * the fade. */
+static unsigned char play_update_objects(void)
+{
+    roomrom_combat_update(players[0].x, players[0].y, players[0].face);
+    roomrom_boomerang_update(players[0].x, players[0].y);
+    roomrom_arrow_update();
+    roomrom_bomb_update();
+    roomrom_candle_fire_update();
+    roomrom_link_damage_tick((unsigned char)s_frame_counter);
+    /* Decrement LINK_STUN_TIMER ($04F0) on even frames per NES
+     * Z_07.asm:5756 DecrementInvincibilityTimer. NES drained
+     * link_collision_link_be_harmed sets this cell to 24 on hit;
+     * without per-frame decrement, Link stays permanently
+     * invincible after first hit and damage path skips all
+     * subsequent collisions. */
+    if (nes_ram[0x04F0u] != 0u &&
+        ((unsigned char)s_frame_counter & 1u) == 0u) {
+        nes_ram[0x04F0u]--;
+    }
+    inventory_rupee_tick((unsigned char)s_frame_counter);
+    /* Tier 2: drive Power Triforce fanfare. core_take_power_triforce
+     * (item_dispatch.c:48) sets POWER_TRIFORCE_FANFARE_FLAG +
+     * CURTAIN_TIMER on pickup; this check ticks the curtain +
+     * palette ash-replace + ITEM_SFX_SECONDARY each frame until
+     * the timer expires. Without this call the fanfare flag
+     * never clears and triforce pickup has no visible/audible
+     * effect. */
+    progress_check_power_triforce_fanfare();
+    /* Phase 7 substrate fix 2026-05-15 — clear NES OAM mirror
+     * + reset RollingSpriteIndex AT FRAME START. NES Z1 NMI
+     * resets RollingSpriteIndex per frame; without that
+     * reset, sprite writes accumulate across frames + the
+     * cumulative OAM eats SAT slot budget after 1-2 frames.
+     * Each enemy then renders as the LEFT half only (right
+     * halves bumped beyond SAT slot 79 by stale records).
+     * Clear-before-draw mirrors the NES NMI sentinel pass. */
+    enemy_render_reset_oam();
+    roomrom_hud_refresh_dynamic();
+    /* Plan v5c T6.5 — mini-map position marker flash + room
+     * change refresh. Per NES Z_01.asm:4095-4146 the marker
+     * flashes every 16 frames keyed on FrameCounter ($0015). */
+    roomrom_hud_refresh_marker(s_room_id,
+                               (unsigned char)(s_scene == SCENE_UW),
+                               nes_ram[0x0015u]);
+    /* Phase 7 root-cause fix #6 2026-05-16 — sync C-side
+     * players[0] and s_room_id into NES_RAM cells before
+     * gameplay tick. NES Z1 native code reads these cells
+     * directly; without the sync collision detection thinks
+     * Link is at (0,0), enemy AI sees RoomId=0 (overworld
+     * starting room) regardless of where the player is, and
+     * room-specific behaviors all key off wrong room.
+     *
+     * NES Variables.inc: ObjX[0]=$0070, ObjY[0]=$0084 (Link
+     * is slot 0 in the per-slot arrays), RoomId=$00EB.
+     * CurLevel ($0010) and Link face ($008C ObjDir[0]) are
+     * already seeded by roomrom_debug_enter; refresh here
+     * each frame in case they get out-of-sync with the C
+     * source-of-truth. */
+    nes_ram[0x0070u] = (unsigned char)players[0].x;
+    nes_ram[0x0084u] = (unsigned char)players[0].y;
+    /* SENTINEL $07F9 = s_room_id at tick-start sync (each tick) */
+    DBG_SENTINEL(0x19u) = s_room_id;
+    nes_ram[0x00EBu] = s_room_id;
+
+    /* Tier 0 (plan v6) cave-entrance detection. Only fires in
+     * SCENE_OW. Looks up tile under Link via existing collision
+     * primitive (collision_get_collidable_tile_still slot 0 =
+     * Link). NES Z_05.asm:7320-7327 entrance tile set: $24
+     * armos warp, $88 rock-pile, $70-$73 stairs. On positive
+     * hit: save OW return state, transition to SCENE_CAVE,
+     * call cave_init. cave_exit (existing C+START chord)
+     * restores OW + return position. */
+    /* NES Z_05.asm:7240-7244 alignment gate: only check cave-
+     * entrance tile when (ObjY & $0F) == $0D. Link must be
+     * sub-tile-aligned (Y low nibble = $D = 13 px into a
+     * 16-px row) before warp-tile check runs. Without this
+     * gate, Genesis triggers at first row=3 frame (Y=$54,
+     * low nibble $4 = off-center, Link beside arch) instead
+     * of waiting until Y=$4D (low nibble $D = centered under
+     * arch entrance metatile). Verified via NES probe: NES
+     * triggers at Y=$4D, Genesis was triggering at Y=$54.
+     *
+     * APPENDIX C3 fix: ALTTP move-style (8.8 fixed-point,
+     * ~1.5 px/frame, diagonal allowed) can SKIP exact $0D
+     * value. Widen tolerance to $0C..$0E (3-px window) so
+     * ALTTP players still trigger cave entry. NES-style stays
+     * exact ($0D only) by virtue of 1-px/frame walk speed
+     * matching the gate. */
+    unsigned char y_low = (unsigned char)((unsigned char)players[0].y & 0x0Fu);
+    unsigned char gate_pass = (s_move_style == MOVE_STYLE_ALTTP)
+        ? (unsigned char)(y_low >= 0x0Cu && y_low <= 0x0Eu)
+        : (unsigned char)(y_low == 0x0Du);
+    if (s_scene == SCENE_OW && gate_pass) {
+        unsigned char standing_tile =
+            collision_get_collidable_tile_still(0u);
+        /* Tier 0 verify sentinel: $07FD = last standing tile
+         * Link was on. Helps debug entrance detection. */
+        DBG_SENTINEL(0x1Du) = standing_tile;
+        cave_id_t cid = cave_entrance_check(standing_tile, s_room_id);
+        if (cid != (cave_id_t)0) {
+            /* NES enters caves ONLY at a $10-aligned column:
+             * HandleWarpOW/CheckWarps gate on ObjX&$0F==0
+             * (Z_05.asm:7213), so the descent (Mode $10) and
+             * InitModeB both run at the 16px-grid column ($70),
+             * never a mid-grid X. The Gen gate fires at Link's
+             * exact walk X ($78), so snap to the NES warp grid
+             * HERE -- before the descent mirror (line ~475), the
+             * arch hi-prio marking, and the saved exit-return
+             * column -- so ObjX byte-matches NES ($78 & $F0 = $70)
+             * across the whole descend/hold/emerge window. */
+            players[0].x =
+                (short)((unsigned char)players[0].x & 0xF0u);
+            /* Mirror the aligned X into nes_ram ObjX[0] NOW: line
+             * ~2146 already ran this tick with the pre-snap $78, and
+             * the gated player->nes_ram sync is suppressed once
+             * cave_fade is active (descend handler owns it) -- so
+             * without this the mirror holds the stale $78 for the few
+             * setup frames before the first descend_step. */
+            nes_ram[0x0070u] = (unsigned char)players[0].x;
+            /* Tier 0 verify sentinel: $07FC = cave-entry fire
+             * counter. Increments each time cave entry triggers
+             * so the smoke probe can confirm entrance path ran
+             * (separate signal from $0350 which is aliased to
+             * enemy slot 1 type). */
+            DBG_SENTINEL(0x1Cu) =
+                (unsigned char)(DBG_SENTINEL(0x1Cu) + 1u);
+            s_cave_return_room = s_room_id;
+            s_cave_return_face = players[0].face;
+            s_cave_return_x    = (unsigned char)players[0].x;
+            s_cave_return_y    = (unsigned char)players[0].y;
+            /* Tier 1: hand off to cave_fade sequencer.
+             * Mark 2x2 BG cells around cave-entrance arch with
+             * high priority so Link sprite (prio=0) renders
+             * BEHIND the arch lip during descend — NES sprite-
+             * priority effect. plane row = (Y >> 3) + 7 HUD. */
+            {
+                unsigned char tile_col =
+                    (unsigned char)((unsigned char)players[0].x >> 3);
+                unsigned char tile_row =
+                    (unsigned char)(((unsigned char)players[0].y >> 3) + 7u);
+                cave_fade_mark_arch_hi_prio(tile_col, tile_row);
+            }
+            /* NES InitMode10 fires the stairs SFX at the cave-entry
+             * trigger (EffectRequest=$08, Z_05.asm:1408). Play the
+             * Genesis synth stairs SFX (#8 -> XGM id 71). We do NOT
+             * mirror the NES EffectRequest cell ($0603): on NES it is a
+             * transient request the sound engine consumes+clears next
+             * frame ($80->$08->$00); the SGDK-XGM path has no such cell,
+             * so a static write would DIVERGE worse than leaving it. SFX
+             * parity is functional (audio_sfx_play + the $07F0 sentinel);
+             * EffectRequest is REPORTED, not byte-gated (like GameMode). */
+            audio_sfx_play(8u);
+            cave_fade_set_callbacks(&k_cave_fade_callbacks);
+            cave_fade_begin_enter(cid);
+            return 1u;
+        }
+    }
+
+    /* Plan v5a T1.2 + T1.3 — refresh heart cells + Link face
+     * each tick. ObjDir[0] was seeded once at debug-enter, but
+     * goes stale on any C-side face change; AI chase targets
+     * read this cell every frame. Hearts mirror inventory so
+     * any future NES HUD-readout consumer sees live values. */
+    inventory_sync_from_native();
+    nes_ram_sync_link_face();
+    nes_ram_sync_sword();
+
+    /* Tier 0 (plan v6) pause gate: when g_paused != OFF, skip
+     * gameplay tick (enemy AI + collision + Link state machine).
+     * NES Z_07.asm:472 Paused dispatch matches: gameplay update
+     * skipped, status-mode draw still runs (HUD redraw below
+     * stays active). Bare-START toggle at line 2052 flips the
+     * flag; potion-drink involuntary pause cleared by
+     * HeartPartial fill (Phase 6.10 deferral). Without this gate
+     * enemy AI keeps running while player thinks game is paused
+     * = death-while-paused bug. */
+    if (!roomrom_pause_is_active()) {
+        enemy_loop_tick();
+        /* T-119: NES UpdateMode5Play runs CheckShutters +
+         * UpdateDoors after the object loop (Z_07.asm:1983). */
+        enemy_loop_play_tail(s_scene == SCENE_UW ? 1u : 0u);
+        if (s_scene == SCENE_UW) uw_door_state_update();
+    }
+    return 0u;
+}
+
+/* Mode dispatch, audio routing, sprite sweep and transfer-buffer
+ * drain: run every gameplay frame after the objects. */
+static void play_finish(void)
+{
+    /* Phase 7 root-cause fix #5b 2026-05-16 — restore GameMode
+     * ($0012) before dispatch. a4_probe_main.c probe_check
+     * stamps RAM($0012)=$CD as an A4-readback sentinel each
+     * frame after roomrom_debug_tick returns; the next frame's
+     * mode_dispatch_update would see $CD -> default no-op
+     * branch -> Mode 5 Play body never fires. Restore Mode 5
+     * (Play) before dispatch consumes the cell. probe_check
+     * sentinel write still verifies A4 readback per
+     * tools/debug/test_debug_contract.py contract; gameplay
+     * just normalizes the cell before use. */
+    /* Plan v5a T3.1 — gate sentinel restore behind
+     * s_in_gameplay. Future Mode 3/4 (Unfurl/Enter) ports
+     * would otherwise see $CD->$05 force-snap mid-transition.
+     * Restore only when debug_enter has handed off to the
+     * gameplay loop. */
+    if (s_in_gameplay && nes_ram[0x0012u] == 0xCDu) {
+        nes_ram[0x0012u] = 0x05u;
+        nes_ram[0x0013u] = 0x00u;
+    }
+    /* Plan v5b Tier-5 T5.5 — audio dispatcher: gamemode+scene
+     * tuple change -> single music_play() per audio_routing.md.
+     * Edge-fires only; same-tuple frames are silent. Per-tick
+     * cost: 3 byte compares. Idempotent: re-entry safe via
+     * audio_dispatch_reset() in roomrom_debug_enter. MUST run
+     * AFTER GameMode-$CD restore — otherwise audio sees raw
+     * a4_probe sentinel ($CD) every frame, falls to default
+     * branch, never resolves to gameplay song. */
+    audio_dispatch_tick((unsigned char)s_scene, s_room_id);
+    mode_dispatch_update();
+    reveal_ganon_room_after_fade();
+    /* 2026-05-15 perf: switched from enemy_render_sweep_oam_to_sat
+     * (iterated 64 NES OAM entries → up to ~50 SAT writes/frame,
+     * costing ~30% frame budget) to enemy_render_native_sweep
+     * (iterates 11 alive ENEMY_LOOP slots → up to 11 SAT writes).
+     * anim_write_sprite_drained latches per-slot tile/attrs/x/y
+     * into a side-channel cache; native sweep emits 1 SAT entry
+     * per alive enemy from the cache. NES OAM scatter still
+     * happens for downstream compat but is no longer consumed. */
+    /* Phase 8: bosses draw MULTI-sprite (Aquamentus 6, Manhandla 5,
+     * etc.) via draw_write_boss_sprite into the NES OAM shadow, which
+     * the 1-SAT-per-slot native sweep does NOT consume. In a boss
+     * room (boss ObjType $31-34/$38-3E/$41-48 in a slot; UW only)
+     * there are no regular enemies, so flush the OAM shadow instead
+     * to emit the boss's full sprite set. */
+    {
+        unsigned char bs, boss_room = 0u;
+        if (s_scene == SCENE_UW) {
+            for (bs = 1u; bs <= 11u; ++bs) {
+                unsigned char bt = nes_ram[0x034Fu + bs];
+                if ((bt >= 0x31u && bt <= 0x34u) ||
+                    (bt >= 0x38u && bt <= 0x3Eu) ||
+                    (bt >= 0x41u && bt <= 0x48u)) { boss_room = 1u; break; }
+            }
+        }
+        if (boss_room) enemy_render_sweep_oam_to_sat();
+        else           enemy_render_native_sweep();
+    }
+
+    /* Plan v5b — drain TRANSFER_BUF after all gameplay writers
+     * have committed. world_animate_world_fading, Mode 11 dead-
+     * Link palette cue, room column-attr writes all stage
+     * records into nes_ram[$0301..]; without this drain the
+     * records land in a dead buffer and Genesis CRAM never
+     * updates. Bounded walk; $3F (palette) entries forward to
+     * render_cram_write_color, $20-$2F (nametable) entries are
+     * skipped pending plane bridge. */
+    transfer_buf_drain();
+}
+
 void roomrom_debug_tick(void)
 {
         /* DEBUG SENTINEL — capture players[0]+s_room_id at TOP-of-tick
@@ -2207,7 +2477,22 @@ void roomrom_debug_tick(void)
             if (ow_nes_scroll_enabled()) {
                 u8 c;
                 short distance;
+                /* NES Link_EndMoveAndAnimate[BetweenRooms] calls in the
+                 * mode/submode this frame runs (read before the tick):
+                 * InitMode6 2 (DrawSpritesBetweenRooms + its own), mode 6
+                 * update 1 unless the grid offset is 0/+-8 (next mode),
+                 * InitMode7 Sub1 2, other InitMode7 submodes 0, mode 7
+                 * update 1 (UpdateMode7SubmodeAndDrawLink). OW only; the
+                 * BetweenRooms form returns in the UW. */
+                u8 gm = nes_ram[0x0012u], sub = nes_ram[0x0013u], upd = nes_ram[0x0011u];
+                u8 grid = nes_ram[0x0394u];
+                u8 anims = 0u;
+                if (gm == 0x06u)
+                    anims = upd ? ((grid == 0u || grid == 0x08u || grid == 0xF8u) ? 0u : 1u) : 2u;
+                else if (gm == 0x07u)
+                    anims = upd ? 1u : (sub == 1u ? 2u : 0u);
                 ow_done = ow_scroll_tick(&players[0].x, &players[0].y);
+                while (anims--) roomrom_combat_end_move_and_animate();
                 c = ow_scroll_column();
                 if (c < 16u) {
                     u8 slot = s_scroll_state < SCROLL_V_DOWN
@@ -2224,6 +2509,9 @@ void roomrom_debug_tick(void)
                 if (s_scroll_state == SCROLL_V_UP) v_scroll -= distance;
                 enemy_render_reset_oam();
                 enemy_render_native_sweep();
+                s_link_frame = (u8)((nes_ram[0x03E4u] & 1u) ^
+                    ((players[0].face == LINK_FACE_LEFT ||
+                      players[0].face == LINK_FACE_RIGHT) ? 1u : 0u));
                 roomrom_sprites_set_link_pose(players[0].x, players[0].y,
                                               players[0].face, s_link_frame);
                 VDP_updateSprites(80u, DMA_QUEUE);
@@ -2334,265 +2622,6 @@ void roomrom_debug_tick(void)
          * Link sprite continues descending = visual desync. */
         if (cave_fade_is_active() && !roomrom_pause_is_active()) {
             cave_fade_tick();
-        }
-
-        /* Task 6.10.2: NES Z_07.asm:472 gates per-frame gameplay update on
-         * `Paused != 0`. Mirror that here — projectile/combat ticks freeze
-         * while paused (voluntary or involuntary). Cave + scroll handling
-         * already returned above; only the in-room update path is gated.
-         *
-         * Tier 1: also gate on !cave_fade_is_active so cave-entry/exit
-         * animations don't get bombed by combat updates or by
-         * cave-entrance re-detection on the very tile that triggered
-         * the fade. */
-        if (!roomrom_pause_is_active() && !cave_fade_is_active()) {
-            roomrom_combat_update(players[0].x, players[0].y, players[0].face);
-            roomrom_boomerang_update(players[0].x, players[0].y);
-            roomrom_arrow_update();
-            roomrom_bomb_update();
-            roomrom_candle_fire_update();
-            roomrom_link_damage_tick((unsigned char)s_frame_counter);
-            /* Decrement LINK_STUN_TIMER ($04F0) on even frames per NES
-             * Z_07.asm:5756 DecrementInvincibilityTimer. NES drained
-             * link_collision_link_be_harmed sets this cell to 24 on hit;
-             * without per-frame decrement, Link stays permanently
-             * invincible after first hit and damage path skips all
-             * subsequent collisions. */
-            if (nes_ram[0x04F0u] != 0u &&
-                ((unsigned char)s_frame_counter & 1u) == 0u) {
-                nes_ram[0x04F0u]--;
-            }
-            inventory_rupee_tick((unsigned char)s_frame_counter);
-            /* Tier 2: drive Power Triforce fanfare. core_take_power_triforce
-             * (item_dispatch.c:48) sets POWER_TRIFORCE_FANFARE_FLAG +
-             * CURTAIN_TIMER on pickup; this check ticks the curtain +
-             * palette ash-replace + ITEM_SFX_SECONDARY each frame until
-             * the timer expires. Without this call the fanfare flag
-             * never clears and triforce pickup has no visible/audible
-             * effect. */
-            progress_check_power_triforce_fanfare();
-            /* Phase 7 substrate fix 2026-05-15 — clear NES OAM mirror
-             * + reset RollingSpriteIndex AT FRAME START. NES Z1 NMI
-             * resets RollingSpriteIndex per frame; without that
-             * reset, sprite writes accumulate across frames + the
-             * cumulative OAM eats SAT slot budget after 1-2 frames.
-             * Each enemy then renders as the LEFT half only (right
-             * halves bumped beyond SAT slot 79 by stale records).
-             * Clear-before-draw mirrors the NES NMI sentinel pass. */
-            enemy_render_reset_oam();
-            roomrom_hud_refresh_dynamic();
-            /* Plan v5c T6.5 — mini-map position marker flash + room
-             * change refresh. Per NES Z_01.asm:4095-4146 the marker
-             * flashes every 16 frames keyed on FrameCounter ($0015). */
-            roomrom_hud_refresh_marker(s_room_id,
-                                       (unsigned char)(s_scene == SCENE_UW),
-                                       nes_ram[0x0015u]);
-            /* Phase 7 root-cause fix #6 2026-05-16 — sync C-side
-             * players[0] and s_room_id into NES_RAM cells before
-             * gameplay tick. NES Z1 native code reads these cells
-             * directly; without the sync collision detection thinks
-             * Link is at (0,0), enemy AI sees RoomId=0 (overworld
-             * starting room) regardless of where the player is, and
-             * room-specific behaviors all key off wrong room.
-             *
-             * NES Variables.inc: ObjX[0]=$0070, ObjY[0]=$0084 (Link
-             * is slot 0 in the per-slot arrays), RoomId=$00EB.
-             * CurLevel ($0010) and Link face ($008C ObjDir[0]) are
-             * already seeded by roomrom_debug_enter; refresh here
-             * each frame in case they get out-of-sync with the C
-             * source-of-truth. */
-            nes_ram[0x0070u] = (unsigned char)players[0].x;
-            nes_ram[0x0084u] = (unsigned char)players[0].y;
-            /* SENTINEL $07F9 = s_room_id at tick-start sync (each tick) */
-            DBG_SENTINEL(0x19u) = s_room_id;
-            nes_ram[0x00EBu] = s_room_id;
-
-            /* Tier 0 (plan v6) cave-entrance detection. Only fires in
-             * SCENE_OW. Looks up tile under Link via existing collision
-             * primitive (collision_get_collidable_tile_still slot 0 =
-             * Link). NES Z_05.asm:7320-7327 entrance tile set: $24
-             * armos warp, $88 rock-pile, $70-$73 stairs. On positive
-             * hit: save OW return state, transition to SCENE_CAVE,
-             * call cave_init. cave_exit (existing C+START chord)
-             * restores OW + return position. */
-            /* NES Z_05.asm:7240-7244 alignment gate: only check cave-
-             * entrance tile when (ObjY & $0F) == $0D. Link must be
-             * sub-tile-aligned (Y low nibble = $D = 13 px into a
-             * 16-px row) before warp-tile check runs. Without this
-             * gate, Genesis triggers at first row=3 frame (Y=$54,
-             * low nibble $4 = off-center, Link beside arch) instead
-             * of waiting until Y=$4D (low nibble $D = centered under
-             * arch entrance metatile). Verified via NES probe: NES
-             * triggers at Y=$4D, Genesis was triggering at Y=$54.
-             *
-             * APPENDIX C3 fix: ALTTP move-style (8.8 fixed-point,
-             * ~1.5 px/frame, diagonal allowed) can SKIP exact $0D
-             * value. Widen tolerance to $0C..$0E (3-px window) so
-             * ALTTP players still trigger cave entry. NES-style stays
-             * exact ($0D only) by virtue of 1-px/frame walk speed
-             * matching the gate. */
-            unsigned char y_low = (unsigned char)((unsigned char)players[0].y & 0x0Fu);
-            unsigned char gate_pass = (s_move_style == MOVE_STYLE_ALTTP)
-                ? (unsigned char)(y_low >= 0x0Cu && y_low <= 0x0Eu)
-                : (unsigned char)(y_low == 0x0Du);
-            if (s_scene == SCENE_OW && gate_pass) {
-                unsigned char standing_tile =
-                    collision_get_collidable_tile_still(0u);
-                /* Tier 0 verify sentinel: $07FD = last standing tile
-                 * Link was on. Helps debug entrance detection. */
-                DBG_SENTINEL(0x1Du) = standing_tile;
-                cave_id_t cid = cave_entrance_check(standing_tile, s_room_id);
-                if (cid != (cave_id_t)0) {
-                    /* NES enters caves ONLY at a $10-aligned column:
-                     * HandleWarpOW/CheckWarps gate on ObjX&$0F==0
-                     * (Z_05.asm:7213), so the descent (Mode $10) and
-                     * InitModeB both run at the 16px-grid column ($70),
-                     * never a mid-grid X. The Gen gate fires at Link's
-                     * exact walk X ($78), so snap to the NES warp grid
-                     * HERE -- before the descent mirror (line ~475), the
-                     * arch hi-prio marking, and the saved exit-return
-                     * column -- so ObjX byte-matches NES ($78 & $F0 = $70)
-                     * across the whole descend/hold/emerge window. */
-                    players[0].x =
-                        (short)((unsigned char)players[0].x & 0xF0u);
-                    /* Mirror the aligned X into nes_ram ObjX[0] NOW: line
-                     * ~2146 already ran this tick with the pre-snap $78, and
-                     * the gated player->nes_ram sync is suppressed once
-                     * cave_fade is active (descend handler owns it) -- so
-                     * without this the mirror holds the stale $78 for the few
-                     * setup frames before the first descend_step. */
-                    nes_ram[0x0070u] = (unsigned char)players[0].x;
-                    /* Tier 0 verify sentinel: $07FC = cave-entry fire
-                     * counter. Increments each time cave entry triggers
-                     * so the smoke probe can confirm entrance path ran
-                     * (separate signal from $0350 which is aliased to
-                     * enemy slot 1 type). */
-                    DBG_SENTINEL(0x1Cu) =
-                        (unsigned char)(DBG_SENTINEL(0x1Cu) + 1u);
-                    s_cave_return_room = s_room_id;
-                    s_cave_return_face = players[0].face;
-                    s_cave_return_x    = (unsigned char)players[0].x;
-                    s_cave_return_y    = (unsigned char)players[0].y;
-                    /* Tier 1: hand off to cave_fade sequencer.
-                     * Mark 2x2 BG cells around cave-entrance arch with
-                     * high priority so Link sprite (prio=0) renders
-                     * BEHIND the arch lip during descend — NES sprite-
-                     * priority effect. plane row = (Y >> 3) + 7 HUD. */
-                    {
-                        unsigned char tile_col =
-                            (unsigned char)((unsigned char)players[0].x >> 3);
-                        unsigned char tile_row =
-                            (unsigned char)(((unsigned char)players[0].y >> 3) + 7u);
-                        cave_fade_mark_arch_hi_prio(tile_col, tile_row);
-                    }
-                    /* NES InitMode10 fires the stairs SFX at the cave-entry
-                     * trigger (EffectRequest=$08, Z_05.asm:1408). Play the
-                     * Genesis synth stairs SFX (#8 -> XGM id 71). We do NOT
-                     * mirror the NES EffectRequest cell ($0603): on NES it is a
-                     * transient request the sound engine consumes+clears next
-                     * frame ($80->$08->$00); the SGDK-XGM path has no such cell,
-                     * so a static write would DIVERGE worse than leaving it. SFX
-                     * parity is functional (audio_sfx_play + the $07F0 sentinel);
-                     * EffectRequest is REPORTED, not byte-gated (like GameMode). */
-                    audio_sfx_play(8u);
-                    cave_fade_set_callbacks(&k_cave_fade_callbacks);
-                    cave_fade_begin_enter(cid);
-                    return;
-                }
-            }
-
-            /* Plan v5a T1.2 + T1.3 — refresh heart cells + Link face
-             * each tick. ObjDir[0] was seeded once at debug-enter, but
-             * goes stale on any C-side face change; AI chase targets
-             * read this cell every frame. Hearts mirror inventory so
-             * any future NES HUD-readout consumer sees live values. */
-            inventory_sync_from_native();
-            nes_ram_sync_link_face();
-            nes_ram_sync_sword();
-
-            /* Tier 0 (plan v6) pause gate: when g_paused != OFF, skip
-             * gameplay tick (enemy AI + collision + Link state machine).
-             * NES Z_07.asm:472 Paused dispatch matches: gameplay update
-             * skipped, status-mode draw still runs (HUD redraw below
-             * stays active). Bare-START toggle at line 2052 flips the
-             * flag; potion-drink involuntary pause cleared by
-             * HeartPartial fill (Phase 6.10 deferral). Without this gate
-             * enemy AI keeps running while player thinks game is paused
-             * = death-while-paused bug. */
-            if (!roomrom_pause_is_active()) {
-                enemy_loop_tick();
-                /* T-119: NES UpdateMode5Play runs CheckShutters +
-                 * UpdateDoors after the object loop (Z_07.asm:1983). */
-                enemy_loop_play_tail(s_scene == SCENE_UW ? 1u : 0u);
-                if (s_scene == SCENE_UW) uw_door_state_update();
-            }
-            /* Phase 7 root-cause fix #5b 2026-05-16 — restore GameMode
-             * ($0012) before dispatch. a4_probe_main.c probe_check
-             * stamps RAM($0012)=$CD as an A4-readback sentinel each
-             * frame after roomrom_debug_tick returns; the next frame's
-             * mode_dispatch_update would see $CD -> default no-op
-             * branch -> Mode 5 Play body never fires. Restore Mode 5
-             * (Play) before dispatch consumes the cell. probe_check
-             * sentinel write still verifies A4 readback per
-             * tools/debug/test_debug_contract.py contract; gameplay
-             * just normalizes the cell before use. */
-            /* Plan v5a T3.1 — gate sentinel restore behind
-             * s_in_gameplay. Future Mode 3/4 (Unfurl/Enter) ports
-             * would otherwise see $CD->$05 force-snap mid-transition.
-             * Restore only when debug_enter has handed off to the
-             * gameplay loop. */
-            if (s_in_gameplay && nes_ram[0x0012u] == 0xCDu) {
-                nes_ram[0x0012u] = 0x05u;
-                nes_ram[0x0013u] = 0x00u;
-            }
-            /* Plan v5b Tier-5 T5.5 — audio dispatcher: gamemode+scene
-             * tuple change -> single music_play() per audio_routing.md.
-             * Edge-fires only; same-tuple frames are silent. Per-tick
-             * cost: 3 byte compares. Idempotent: re-entry safe via
-             * audio_dispatch_reset() in roomrom_debug_enter. MUST run
-             * AFTER GameMode-$CD restore — otherwise audio sees raw
-             * a4_probe sentinel ($CD) every frame, falls to default
-             * branch, never resolves to gameplay song. */
-            audio_dispatch_tick((unsigned char)s_scene, s_room_id);
-            mode_dispatch_update();
-            reveal_ganon_room_after_fade();
-            /* 2026-05-15 perf: switched from enemy_render_sweep_oam_to_sat
-             * (iterated 64 NES OAM entries → up to ~50 SAT writes/frame,
-             * costing ~30% frame budget) to enemy_render_native_sweep
-             * (iterates 11 alive ENEMY_LOOP slots → up to 11 SAT writes).
-             * anim_write_sprite_drained latches per-slot tile/attrs/x/y
-             * into a side-channel cache; native sweep emits 1 SAT entry
-             * per alive enemy from the cache. NES OAM scatter still
-             * happens for downstream compat but is no longer consumed. */
-            /* Phase 8: bosses draw MULTI-sprite (Aquamentus 6, Manhandla 5,
-             * etc.) via draw_write_boss_sprite into the NES OAM shadow, which
-             * the 1-SAT-per-slot native sweep does NOT consume. In a boss
-             * room (boss ObjType $31-34/$38-3E/$41-48 in a slot; UW only)
-             * there are no regular enemies, so flush the OAM shadow instead
-             * to emit the boss's full sprite set. */
-            {
-                unsigned char bs, boss_room = 0u;
-                if (s_scene == SCENE_UW) {
-                    for (bs = 1u; bs <= 11u; ++bs) {
-                        unsigned char bt = nes_ram[0x034Fu + bs];
-                        if ((bt >= 0x31u && bt <= 0x34u) ||
-                            (bt >= 0x38u && bt <= 0x3Eu) ||
-                            (bt >= 0x41u && bt <= 0x48u)) { boss_room = 1u; break; }
-                    }
-                }
-                if (boss_room) enemy_render_sweep_oam_to_sat();
-                else           enemy_render_native_sweep();
-            }
-
-            /* Plan v5b — drain TRANSFER_BUF after all gameplay writers
-             * have committed. world_animate_world_fading, Mode 11 dead-
-             * Link palette cue, room column-attr writes all stage
-             * records into nes_ram[$0301..]; without this drain the
-             * records land in a dead buffer and Genesis CRAM never
-             * updates. Bounded walk; $3F (palette) entries forward to
-             * render_cram_write_color, $20-$2F (nametable) entries are
-             * skipped pending plane bridge. */
-            transfer_buf_drain();
         }
 
         u16 joy = JOY_readJoypad(JOY_1);
@@ -2962,8 +2991,6 @@ void roomrom_debug_tick(void)
                 break;
             default:             break;
             }
-            /* NES steps Link's item-use state later in the same frame (T-102). */
-            link_step_after_wield();
         }
 
         /* Z held + START press = quest toggle (UW only). Z-held suppresses
@@ -3191,6 +3218,10 @@ void roomrom_debug_tick(void)
              *    ObjGridOffset until it reaches +8 or -8, then returns to 0. */
 
             u16 input = joy & (BUTTON_LEFT|BUTTON_RIGHT|BUTTON_UP|BUTTON_DOWN);
+            /* NES Walker_Move (Z_07.asm:2616) clears scratch [0E] (door
+             * block / doorway index) for Link every frame; MoveShot later in
+             * the frame reads it (T-102, t116_shot_hit grid offset). */
+            nes_ram[0x000Eu] = 0u;
             u8 h_dir = (input & BUTTON_LEFT) ? 1u
                      : ((input & BUTTON_RIGHT) ? 2u : 0u);
             u8 v_dir = (input & BUTTON_UP)   ? 1u
@@ -3348,10 +3379,32 @@ void roomrom_debug_tick(void)
                     roomrom_sprites_set_link_pose(players[0].x, players[0].y,
                                                   players[0].face, s_link_frame);
                 }
-            } else {
-                roomrom_combat_draw_item_pose(players[0].x, players[0].y,
-                                              players[0].face);
             }
+        }
+
+        /* T-102: NES UpdateMode5Play order: UpdatePlayer (input, movement,
+         * Link animation) first, then weapons and objects. UpdatePlayer
+         * that changes the mode (a room scroll started) skips them
+         * (IsUpdatingMode, Z_07.asm:1851). */
+        if (!roomrom_pause_is_active() && !cave_fade_is_active()) {
+            roomrom_combat_end_move_and_animate();
+            /* NES draws Link after AnimateLinkBase (SetUpWalkingSprites):
+             * a frame toggled this tick shows now. */
+            if (s_mode == MODE_WALK && s_move_style == MOVE_STYLE_NES &&
+                !roomrom_combat_link_locked()) {
+                s_link_frame = (u8)((nes_ram[0x03E4u] & 1u) ^
+                    ((players[0].face == LINK_FACE_LEFT ||
+                      players[0].face == LINK_FACE_RIGHT) ? 1u : 0u));
+                if (nes_ram[0x04F0u] != 0u)
+                    roomrom_sprites_set_link_pose_pal(players[0].x, players[0].y,
+                        players[0].face, s_link_frame,
+                        (unsigned char)(((unsigned char)s_frame_counter) & 0x03u));
+                else
+                    roomrom_sprites_set_link_pose(players[0].x, players[0].y,
+                                                  players[0].face, s_link_frame);
+            }
+            if (s_scroll_state == SCROLL_NONE && play_update_objects()) return;
+            play_finish();
         }
 
         /* Task 5.4: warp coordinator runs AFTER movement settles. The

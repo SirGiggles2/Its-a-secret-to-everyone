@@ -277,18 +277,10 @@ static unsigned char rdir_index(unsigned char dir)
 }
 
 /* PlaceWeaponForPlayerState[AndAnim]: Link enters the wielding state. */
-/* The Genesis tick runs this frame's Link step in combat_update, before
- * input (T-102); NES runs it after input, once. A wield that resets the
- * counter (AndAnim) needs the step after it; a plain one only if the
- * tick has not stepped yet. link_step_after_wield applies that. */
-static unsigned char s_link_step_done;
-static unsigned char s_link_step_pending;
-
 void link_place_weapon_for_player_state(unsigned char and_anim)
 {
     if (and_anim) L_ANIMCNT = 1u;
     L_STATE = 0x10u;
-    s_link_step_pending = (unsigned char)(and_anim || !s_link_step_done);
 }
 
 /* AnimateLinkObjState. */
@@ -311,21 +303,16 @@ static void animate_link_obj_state(void)
 void link_anim_state_step(void)
 {
     unsigned char gm = RAM(0x0012u);
+    /* UpdatePlayer returns before Link_EndMoveAndAnimate while Link is
+     * halted (ObjState & $C0 = $40, e.g. the pond fairy). */
+    if ((L_STATE & 0xC0u) == 0x40u) return;
     if (L_STATE == 0u && gm != 0x04u && gm != 0x10u &&
         (RAM(0x03F8u) & 0x0Fu) == 0u) return;
-    s_link_step_done = 1u;
     L_ANIMCNT = (unsigned char)(L_ANIMCNT - 1u);
     if (L_ANIMCNT != 0u) return;
     animate_link_obj_state();
     L_ANIMCNT = 6u;
     L_ANIMFRAME = (unsigned char)(L_ANIMFRAME ^ 1u);
-}
-
-void link_step_after_wield(void)
-{
-    if (!s_link_step_pending) return;
-    s_link_step_pending = 0u;
-    link_anim_state_step();
 }
 
 /* Walker_Move: Link does not move while using or catching an item. */
@@ -370,11 +357,6 @@ void roomrom_combat_try_swing(link_face_t face, short link_x, short link_y)
         if (d & 0x0Cu) SW_X = (unsigned char)(SW_X + 3u);
     }
     audio_sfx_play(1u);
-    /* NES runs Link's animation and UpdateSwordOrRod later in the same
-     * frame; the Genesis tick already ran combat_update before input
-     * (T-102), so do this frame's steps now. */
-    link_step_after_wield();
-    update_sword_or_rod(SW_SLOT);
 }
 
 /* WieldRod (Z_05.asm:3028): rod slot $12, state $31 for 5 frames, then
@@ -394,9 +376,6 @@ void roomrom_combat_wield_rod(void)
     RAM(0x0070u + ROD_SLOT) = (unsigned char)(RAM(0x0070u) + ((d & 0x01u) ? 0x10u : (d & 0x02u) ? 0xF0u : 0u));
     RAM(0x0084u + ROD_SLOT) = (unsigned char)(RAM(0x0084u) + ((d & 0x04u) ? 0x10u : (d & 0x08u) ? 0xF0u : 0u));
     if (d & 0x0Cu) RAM(0x0070u + ROD_SLOT) = (unsigned char)(RAM(0x0070u + ROD_SLOT) + 3u);
-    /* This frame's Link step and rod update (see try_swing, T-102). */
-    link_step_after_wield();
-    update_sword_or_rod(ROD_SLOT);
 }
 
 /* UpdateRodOrArrow for rod states $3x. */
@@ -405,15 +384,12 @@ void roomrom_combat_update_rod(void)
     update_sword_or_rod(ROD_SLOT);
 }
 
-/* DrawLink for the item-use states ($1x/$2x): the attack pose facing
- * ObjDir. combat_update draws it each tick; a wield during input (after
- * combat_update, T-102) redraws it the same frame. */
-void roomrom_combat_draw_item_pose(short link_x, short link_y, link_face_t face)
+/* Link_EndMoveAndAnimate's AnimateLinkBase, at the end of UpdatePlayer.
+ * Runs even on a frame whose movement started a room scroll. */
+void roomrom_combat_end_move_and_animate(void)
 {
-    unsigned char major = (unsigned char)(L_STATE & 0x30u);
-    if (s_redux) return;
-    if (major == 0x10u || major == 0x20u)
-        roomrom_sprites_set_link_attack_pose(link_x, link_y, face);
+    /* Redux keeps the NES walk cadence; its swing never sets ObjState. */
+    link_anim_state_step();
 }
 
 unsigned char roomrom_combat_link_locked(void)
@@ -532,10 +508,9 @@ void roomrom_combat_update(short link_x, short link_y, link_face_t face)
 
     (void)st;
     (void)sx; (void)sy;
-    /* Vanilla: NES Link item state + UpdateSwordOrRod (T-116). */
-    s_link_step_done = 0u;
-    s_link_step_pending = 0u;
-    link_anim_state_step();
+    /* Vanilla: NES UpdateSwordOrRod (T-116). Runs after Link's input,
+     * movement and AnimateLinkBase (roomrom_combat_end_move_and_animate,
+     * T-102), then the weapons update in slot order. */
     {
         unsigned char major = (unsigned char)(L_STATE & 0x30u);
         /* DrawLink faces ObjDir for every item use (sword, rod, ...). */

@@ -78,8 +78,6 @@ void roomrom_boomerang_throw(link_face_t face, short link_x, short link_y)
     /* Input direction (maybe diagonal), else Link's facing. */
     BM_DIR = (nes_ram[0x03F8u] & 0x0Fu) ? (unsigned char)(nes_ram[0x03F8u] & 0x0Fu)
                                          : nes_ram[0x0098u];
-    /* This frame's weapon update (see roomrom_arrow_fire, T-102). */
-    roomrom_boomerang_update(0, 0);
 }
 
 unsigned char roomrom_boomerang_active(void)
