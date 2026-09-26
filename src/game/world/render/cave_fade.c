@@ -16,7 +16,7 @@
  * of V64 to free CHR space). */
 #define CAVE_FADE_PLANE_A_BASE   0xC000u
 #define CAVE_FADE_PLANE_COLS     64u
-#define CAVE_FADE_PLANE_ROWS     32u
+#define CAVE_FADE_PLANE_ROWS     64u   /* 64x64 plane (PR-2c) */
 #define CAVE_FADE_HUD_ROW_OFFSET 7u  /* matches ROOMROM_ROOM_FIRST_ROW */
 
 static void mark_cell_hi_prio_xy(unsigned char col, unsigned char row)
@@ -165,10 +165,11 @@ void cave_fade_mark_arch_hi_prio(unsigned char link_tile_col,
      * Cols -1..+1 covers Link's 16-px-wide sprite + 1 col buffer. */
     for (signed char dr = -2; dr <= 4; ++dr) {
         for (signed char dc = -1; dc <= 1; ++dc) {
-            signed int row = (signed int)link_tile_row + (signed int)dr;
-            signed int col = (signed int)link_tile_col + (signed int)dc;
-            if (row < 0 || row >= (signed int)CAVE_FADE_PLANE_ROWS) continue;
-            if (col < 0 || col >= (signed int)CAVE_FADE_PLANE_COLS) continue;
+            /* The plane wraps (T-132). */
+            signed int row = ((signed int)link_tile_row + (signed int)dr) &
+                             (signed int)(CAVE_FADE_PLANE_ROWS - 1u);
+            signed int col = ((signed int)link_tile_col + (signed int)dc) &
+                             (signed int)(CAVE_FADE_PLANE_COLS - 1u);
             mark_cell_hi_prio_xy((unsigned char)col, (unsigned char)row);
         }
     }

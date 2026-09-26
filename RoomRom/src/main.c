@@ -291,6 +291,19 @@ static scroll_state_t s_scroll_state    = SCROLL_NONE;
 static u8             s_ow_edge = 0u;
 /* T-131: UW CheckScreenEdge / false-wall exit direction (NES bit). */
 static u8             s_uw_edge = 0u;
+/* T-132: level entry from the OW (NES modes $10 / 2 / 3, then 4). */
+enum { LVL_NONE = 0, LVL_STAIRS, LVL_CURTAIN, LVL_EXIT_LOAD, LVL_STEP_OUT };
+static u8             s_lvl_phase = LVL_NONE;
+static u8             s_lvl_target_y = 0u;
+static u8             s_lvl_step = 0u;
+static u8             s_lvl_timer = 0u;
+static u8             s_lvl_enter_only = 0u;
+static u8             s_lvl_init = 0u;       /* InitMode10 frame pending */
+static u8             s_lvl_exiting = 0u;    /* curtain leads to StepOutside */
+static u8             s_lvl_entrance_tile = 0u; /* UndergroundEntranceTile */
+static u16            s_curtain[32][22];     /* play-area words behind it */
+static unsigned char begin_level_exit(void);
+static rr_warp_outcome_t s_lvl_out;
 static u8             s_scroll_frame    = 0u;     /* counts up during scroll */
 static u8             s_scroll_total_frames = SCROLL_TOTAL_FRAMES_SMOOTH;
 static u8             s_active_slot_x   = 0u;     /* 0 = cols 0..31, 1 = cols 32..63 */
@@ -487,6 +500,22 @@ static void set_bg_scroll(short h_scroll, short v_scroll)
 {
     set_plane_scroll(s_active_plane, h_scroll, v_scroll);
     set_plane_scroll((u8)(s_active_plane ^ 1u), h_scroll, v_scroll);
+}
+
+/* NES PutLinkBehindBackground (UpdateMode10Stairs): stamp the plane cells
+ * around Link's standing position high priority so the low-priority Link
+ * sprite shows only over colour 0 (the black entrance). Plane cell of NES
+ * pixel (X, Y): the Genesis frame is the NES frame minus its top 8 lines;
+ * screen x shows plane pixel x - hscroll, line l shows plane line
+ * l + vscroll (the plane is 64x64 and scrolled; T-132: the old
+ * (Y >> 3) + 7 assumed an unscrolled 32-row plane, so no cell was marked). */
+static void mark_link_behind_bg(void)
+{
+    unsigned short px = (unsigned short)(((unsigned char)players[0].x -
+                                          s_active_scroll_x) & 511);
+    unsigned short py = (unsigned short)(((unsigned char)players[0].y - 8 +
+                                          s_active_scroll_y) & 511);
+    cave_fade_mark_arch_hi_prio((unsigned char)(px >> 3), (unsigned char)(py >> 3));
 }
 
 /* Forward-decl of s_link_frame which is defined below at line ~529 with
@@ -1699,6 +1728,13 @@ static void edge_load_or_clamp(void)
                s_uw_edge == 0x04u ? SCROLL_V_DOWN :
                s_uw_edge == 0x08u ? SCROLL_V_UP : SCROLL_NONE;
         s_uw_edge = 0u;
+        /* NES CalculateNextRoomForDoor: NextRoomId >= $80 -> EndGameMode12. */
+        if (want != SCROLL_NONE) {
+            unsigned char next = (unsigned char)(s_room_id +
+                (want == SCROLL_H_RIGHT ? 1 : want == SCROLL_H_LEFT ? -1 :
+                 want == SCROLL_V_DOWN ? 16 : -16));
+            if ((next & 0x80u) && begin_level_exit()) return;
+        }
         if (want == SCROLL_H_LEFT)  { --col; players[0].x = 0xF0; }
         if (want == SCROLL_H_RIGHT) { ++col; players[0].x = 0x00; }
         if (want == SCROLL_V_UP)    { --row; players[0].y = 0xDD; }
@@ -1992,6 +2028,262 @@ static void scroll_finalize_room(void)
     request_boss_chr_if_boss_room();
 }
 
+/* T-132: OW -> dungeon level entry, NES order.
+ * NES source: Z_05.asm InitMode10 / UpdateMode10Stairs_Full (tile $24:
+ * stairs sound, Link Y+1 every 4th frame to Y+$10, drawn behind the BG),
+ * Z_06/Z_07 mode 2 (load, screen off), InitMode3_Sub8 (Link at X $78,
+ * Y LevelInfo_StartY, facing up; curtain columns $10/$11), Z_01.asm
+ * UpdateWorldCurtainEffect (two columns every 5 frames from the centre),
+ * GoToNextModePlayLevelSong (mode 4 submode 0: InitMode_EnterRoom walk-in).
+ * Coverage: FULL for the entry path; Genesis loads during one frame of
+ * mode 2 (NES blanks ~28 frames: faster load). */
+/* Plane cell of NES play-area tile (col 0..31, row 0..21): see
+ * mark_link_behind_bg for the NES pixel -> plane mapping. */
+static u16 curtain_addr(u8 col, u8 row, u16 *pc, u16 *pr)
+{
+    *pc = (u16)((((u16)col << 3) - s_active_scroll_x) & 511) >> 3;
+    *pr = (u16)((0x40u + ((u16)row << 3) - 8 + s_active_scroll_y) & 511) >> 3;
+    return (u16)(0xC000u + ((*pr * 64u + *pc) << 1));
+}
+
+static void curtain_hide(void)
+{
+    u8 col, row;
+    u16 pc, pr;
+    for (col = 0u; col < 32u; ++col)
+        for (row = 0u; row < 22u; ++row) {
+            s_curtain[col][row] = render_vram_read_word(curtain_addr(col, row, &pc, &pr));
+            render_set_plane_a_word(pc, pr, 0u);
+        }
+}
+
+static void curtain_reveal(u8 col)
+{
+    u8 row;
+    u16 pc, pr;
+    for (row = 0u; row < 22u; ++row) {
+        (void)curtain_addr(col, row, &pc, &pr);
+        render_set_plane_a_word(pc, pr, s_curtain[col][row]);
+    }
+}
+
+/* Mode 3 status bar before the curtain: static part only. */
+static void level_hud_static_only(void)
+{
+    roomrom_hud_set_counts_hidden(1u);
+    roomrom_sprites_hide_hud_marker(0u);
+    roomrom_sprites_hide_hud_marker(1u);
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_HUD_B_ITEM, -32, -32,
+        RENDER_SPRITE_SIZE(1, 2), 0u, ROOMROM_SPRITE_SLOT_HUD_B_ITEM_R);
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_HUD_B_ITEM_R, -32, -32,
+        RENDER_SPRITE_SIZE(1, 2), 0u, ROOMROM_SPRITE_SLOT_HUD_PLAYER);
+}
+
+/* T-132 exit: NES EndGameMode12 when NextRoomId >= $80 (start room S
+ * edge). Returns 1 when the level exit started. */
+static unsigned char begin_level_exit(void)
+{
+    if (!roomrom_world_transition_level_exit(&s_lvl_out)) return 0u;
+    room_save_kill_count_uw();                  /* InitMode6 SaveKillCount */
+    nes_ram[0x0604u] = 0x80u;                   /* Tune0Request: silence */
+    nes_ram[0x0012u] = 0x02u;
+    nes_ram[0x0013u] = 0u;
+    s_lvl_exiting = 1u;
+    s_lvl_phase = LVL_EXIT_LOAD;
+    return 1u;
+}
+
+void roomrom_main_begin_level_entry(const rr_warp_outcome_t *out)
+{
+    unsigned char tile;
+    s_lvl_out = *out;
+    nes_ram[0x0070u] = (unsigned char)players[0].x;
+    nes_ram[0x0084u] = (unsigned char)players[0].y;
+    tile = collision_get_collidable_tile_still(0u);
+    s_lvl_entrance_tile = tile;
+    s_lvl_exiting = 0u;
+    nes_ram[0x0012u] = 0x10u;
+    nes_ram[0x0013u] = 0u;
+    s_lvl_target_y = (unsigned char)players[0].y;
+    if (tile == 0x24u) {
+        s_lvl_target_y = (unsigned char)(players[0].y + 0x10);
+        mark_link_behind_bg();
+    }
+    s_lvl_phase = LVL_STAIRS;
+    s_lvl_init = 1u;
+}
+
+static void level_entry_draw_link(void)
+{
+    s_link_frame = (u8)((nes_ram[0x03E4u] & 1u) ^
+        ((players[0].face == LINK_FACE_LEFT ||
+          players[0].face == LINK_FACE_RIGHT) ? 1u : 0u));
+    roomrom_sprites_set_link_pose(players[0].x, players[0].y,
+                                  players[0].face, s_link_frame);
+}
+
+static void level_entry_tick(void)
+{
+    /* The new scene's sprite banks load while the screen is still dark. */
+    level_chr_swap_tick();
+    roomrom_scene_uw_sprite_base_tick();
+    if (s_lvl_phase == LVL_EXIT_LOAD) {
+        /* Mode 2 (display off) + mode 3 submodes: back to the OW room. */
+        render_display_enable(0u);
+        roomrom_main_apply_warp_outcome(&s_lvl_out);
+        s_underground_exit_type = 2u;           /* EndGameMode12 */
+        roomrom_sprites_set_link_pose((short)-32, (short)-32, players[0].face, 0u);
+        curtain_hide();
+        level_hud_static_only();
+        enemy_render_reset_oam();
+        enemy_render_native_sweep();
+        VDP_updateSprites(80u, DMA_QUEUE);
+        render_display_enable(1u);
+        nes_ram[0x0012u] = 0x03u;
+        nes_ram[0x0013u] = 0u;
+        s_lvl_step = 0u;
+        s_lvl_timer = 0u;
+        s_lvl_phase = LVL_CURTAIN;
+        return;
+    }
+    if (s_lvl_phase == LVL_STEP_OUT) {
+        unsigned char cnt;
+        if (s_lvl_init) {
+            /* InitMode_EnterRoom method 1 (Z_05.asm): X from
+             * LevelBlockAttrsA, Y row from LevelBlockAttrsF; 1-a (entered
+             * through a $24 opening): start $10 lower, stairs sound,
+             * facing down. */
+            unsigned char room = s_room_id;
+            unsigned char ty = (unsigned char)(((nes_ram[0x6AFEu + room] & 7u) << 4) + 0x4Du);
+            s_lvl_init = 0u;
+            players[0].x = (short)(nes_ram[0x687Eu + room] & 0xF0u);
+            s_lvl_target_y = ty;
+            players[0].y = (short)(s_lvl_entrance_tile == 0x24u ? ty + 0x10 : ty);
+            players[0].face = LINK_FACE_DOWN;
+            s_link_dir = LINK_DIR_DOWN;
+            s_link_grid_offset = 0;
+            nes_ram[0x0098u] = 0x04u;
+            nes_ram[0x0070u] = (unsigned char)players[0].x;
+            nes_ram[0x0084u] = (unsigned char)players[0].y;
+            nes_ram[0x0394u] = 0u;
+            if (s_lvl_entrance_tile == 0x24u) {
+                nes_ram[0x0603u] |= 0x08u;
+                mark_link_behind_bg();
+            }
+            roomrom_hud_b_item_update();          /* DrawSpritesBetweenRooms */
+            level_entry_draw_link();
+            if (s_lvl_entrance_tile != 0x24u) goto stepped_out;
+            return;
+        }
+        /* StepOutside: AnimateAndDrawLinkBehindBackground, Y-1 every 4th
+         * frame to StairsTargetY. */
+        cnt = nes_ram[0x03D0u];
+        if (cnt <= 1u) {
+            nes_ram[0x03D0u] = 6u;
+            nes_ram[0x03E4u] = (unsigned char)(nes_ram[0x03E4u] ^ 1u);
+        } else {
+            nes_ram[0x03D0u] = (unsigned char)(cnt - 1u);
+        }
+        if ((nes_ram[0x0015u] & 0x03u) == 0u) {
+            players[0].y = (short)(players[0].y - 1);
+            nes_ram[0x0084u] = (unsigned char)players[0].y;
+        }
+        level_entry_draw_link();
+        VDP_updateSprites(ROOMROM_SPRITE_SLOT_ENEMY_FIRST, DMA_QUEUE);
+        if ((unsigned char)players[0].y != s_lvl_target_y) return;
+stepped_out:
+        /* GoToNextModePlayLevelSong: play resumes. */
+        nes_ram[0x0012u] = 0x05u;
+        nes_ram[0x0013u] = 0u;
+        roomrom_hud_set_counts_hidden(0u);
+        s_lvl_phase = LVL_NONE;
+        return;
+    }
+    if (s_lvl_phase == LVL_STAIRS) {
+        unsigned char cnt;
+        /* InitMode10 takes a frame of its own (no move, no animation). */
+        if (s_lvl_init) {
+            s_lvl_init = 0u;
+            if (s_lvl_target_y != (unsigned char)players[0].y)
+                nes_ram[0x0603u] |= 0x08u;         /* stairs effect */
+            level_entry_draw_link();
+            return;
+        }
+        /* AnimateObjectWalking: 6-frame ObjAnimCounter cadence. */
+        cnt = nes_ram[0x03D0u];
+        if (cnt <= 1u) {
+            nes_ram[0x03D0u] = 6u;
+            nes_ram[0x03E4u] = (unsigned char)(nes_ram[0x03E4u] ^ 1u);
+        } else {
+            nes_ram[0x03D0u] = (unsigned char)(cnt - 1u);
+        }
+        if ((unsigned char)players[0].y != s_lvl_target_y &&
+            (nes_ram[0x0015u] & 0x03u) == 0u) {
+            players[0].y = (short)(players[0].y + 1);
+            nes_ram[0x0084u] = (unsigned char)players[0].y;
+        }
+        level_entry_draw_link();
+        VDP_updateSprites(ROOMROM_SPRITE_SLOT_ENEMY_FIRST, DMA_QUEUE);
+        if ((unsigned char)players[0].y != s_lvl_target_y) return;
+        /* Mode 2: load the level with the display off (NES blanks it). */
+        nes_ram[0x0012u] = 0x02u;
+        render_display_enable(0u);
+        roomrom_main_apply_warp_outcome(&s_lvl_out);
+        /* InitMode3_Sub8. */
+        players[0].x = 0x78;
+        players[0].y = (short)nes_ram[0x6BA6u];     /* LevelInfo_StartY */
+        players[0].face = LINK_FACE_UP;
+        s_link_dir = LINK_DIR_UP;
+        s_link_grid_offset = 0;
+        nes_ram[0x0070u] = 0x78u;
+        nes_ram[0x0084u] = nes_ram[0x6BA6u];
+        nes_ram[0x0098u] = 0x08u;
+        nes_ram[0x0394u] = 0u;
+        curtain_hide();
+        /* Mode 3 status bar: static part only (no counts, hearts, map
+         * dot or B/A items; t131_uw_doors f1420-1490). */
+        level_hud_static_only();
+        roomrom_sprites_set_link_pose((short)-32, (short)-32, players[0].face, 0u);
+        enemy_render_reset_oam();
+        enemy_render_native_sweep();
+        VDP_updateSprites(80u, DMA_QUEUE);
+        render_display_enable(1u);
+        nes_ram[0x0012u] = 0x03u;
+        nes_ram[0x0013u] = 0u;
+        s_lvl_step = 0u;
+        s_lvl_timer = 0u;
+        s_lvl_phase = LVL_CURTAIN;
+        return;
+    }
+    /* Mode 3 UpdateWorldCurtainEffect: columns $10-k and $11+k (1-based)
+     * when Link's ObjTimer has run out, then a 5-frame delay. */
+    if (s_lvl_timer != 0u) {
+        s_lvl_timer = (unsigned char)(s_lvl_timer - 1u);
+        return;
+    }
+    curtain_reveal((unsigned char)(16u + s_lvl_step));
+    curtain_reveal((unsigned char)(15u - s_lvl_step));
+    s_lvl_timer = 4u;
+    if (++s_lvl_step < 16u) return;
+    if (s_lvl_exiting) {
+        /* Mode 4 in the OW: InitMode_EnterRoom method 1, StepOutside. */
+        s_lvl_exiting = 0u;
+        nes_ram[0x0012u] = 0x04u;
+        nes_ram[0x0013u] = 0u;
+        s_lvl_init = 1u;
+        s_lvl_phase = LVL_STEP_OUT;
+        return;
+    }
+    /* GoToNextModePlayLevelSong: mode 4 submode 0, the NES walk-in. */
+    s_lvl_phase = LVL_NONE;
+    s_lvl_enter_only = 1u;
+    ow_scroll_begin_enter(0x08u);
+    s_scroll_start_x = s_active_scroll_x;
+    s_scroll_start_y = s_active_scroll_y;
+    s_scroll_state = SCROLL_V_UP;
+    s_scroll_frame = 0u;
+}
+
 void roomrom_debug_enter(void)
 {
     unsigned char saved_options[OPTIONS_STATE_SIZE];
@@ -2245,9 +2537,11 @@ static unsigned char play_update_objects(void)
     /* Plan v5c T6.5 — mini-map position marker flash + room
      * change refresh. Per NES Z_01.asm:4095-4146 the marker
      * flashes every 16 frames keyed on FrameCounter ($0015). */
-    roomrom_hud_refresh_marker(s_room_id,
-                               (unsigned char)(s_scene == SCENE_UW),
-                               nes_ram[0x0015u]);
+    /* T-132: no map dot during the curtain (mode 3); mode 4 draws it. */
+    if (s_lvl_phase == LVL_NONE || s_lvl_phase == LVL_STEP_OUT)
+        roomrom_hud_refresh_marker(s_room_id,
+                                   (unsigned char)(s_scene == SCENE_UW),
+                                   nes_ram[0x0015u]);
     /* Phase 7 root-cause fix #6 2026-05-16 — sync C-side
      * players[0] and s_room_id into NES_RAM cells before
      * gameplay tick. NES Z1 native code reads these cells
@@ -2339,13 +2633,7 @@ static unsigned char play_update_objects(void)
              * high priority so Link sprite (prio=0) renders
              * BEHIND the arch lip during descend — NES sprite-
              * priority effect. plane row = (Y >> 3) + 7 HUD. */
-            {
-                unsigned char tile_col =
-                    (unsigned char)((unsigned char)players[0].x >> 3);
-                unsigned char tile_row =
-                    (unsigned char)(((unsigned char)players[0].y >> 3) + 7u);
-                cave_fade_mark_arch_hi_prio(tile_col, tile_row);
-            }
+            mark_link_behind_bg();
             /* NES InitMode10 fires the stairs SFX at the cave-entry
              * trigger (EffectRequest=$08, Z_05.asm:1408). Play the
              * Genesis synth stairs SFX (#8 -> XGM id 71). We do NOT
@@ -2481,7 +2769,8 @@ static void play_finish(void)
             }
         }
         if (boss_room) enemy_render_sweep_oam_to_sat();
-        else           enemy_render_native_sweep();
+        else if (s_lvl_phase == LVL_NONE) enemy_render_native_sweep();
+        /* T-132: NES modes $10/2/3 update no objects; their sprites stay. */
     }
 
     /* Plan v5b — drain TRANSFER_BUF after all gameplay writers
@@ -2591,6 +2880,7 @@ void roomrom_debug_tick(void)
             }
         }
         level_chr_swap_tick();
+        roomrom_scene_uw_sprite_base_tick();   /* T-129 */
         level_chr_boss_tick();
         if (s_scene == SCENE_UW) uw_door_state_tick();
 
@@ -2600,6 +2890,14 @@ void roomrom_debug_tick(void)
                 if (s_uw_fade_phase == UW_FADE_AFTER_SCROLL) nes_ram[0x051Fu] = 0u;
                 s_uw_fade_phase = UW_FADE_NONE;
             }
+            transfer_buf_drain();
+            return;
+        }
+
+        /* T-132: level entry (stairs, load, curtain). */
+        if (s_lvl_phase != LVL_NONE) {
+            s_joy_prev = 0u;
+            level_entry_tick();
             transfer_buf_drain();
             return;
         }
@@ -2652,7 +2950,10 @@ void roomrom_debug_tick(void)
                     nes_ram[0x0084u] = (u8)players[0].y;
                     roomrom_combat_end_move_and_animate();
                 } else if (r == OW_SCROLL_ENTER) {
-                    scroll_finalize_room();
+                    if (!s_lvl_enter_only) scroll_finalize_room();
+                    /* InitMode_EnterRoom's DrawSpritesBetweenRooms draws
+                     * the status bar items (level entry: from mode 4). */
+                    else roomrom_hud_b_item_update();
                     if (s_scene == SCENE_UW) {
                         ow_scroll_enter_room_uw(&players[0].x);
                         s_link_grid_offset = (signed char)nes_ram[0x0394u];
@@ -2714,6 +3015,8 @@ void roomrom_debug_tick(void)
                                               players[0].face, 0u);
 
             if (nes_scroll_enabled() && ow_done) {
+                if (s_lvl_enter_only) roomrom_hud_set_counts_hidden(0u);
+                s_lvl_enter_only = 0u;
                 /* T-131: the room was made current at mode 4 entry
                  * (InitMode_EnterRoom); the UW walk-in has ended. */
                 /* ObjPosFrac carries over from the walk-in (NES). */

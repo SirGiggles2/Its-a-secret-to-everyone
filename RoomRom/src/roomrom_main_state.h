@@ -42,6 +42,11 @@ typedef struct {
  * in main.c. */
 void roomrom_main_apply_warp_outcome(const rr_warp_outcome_t *out);
 
+/* T-132: OW -> dungeon level entry. Runs NES mode $10 (stairs), loads the
+ * level (mode 2), unfurls the curtain (mode 3) and walks Link in (mode 4);
+ * applies `out` itself when the stairs finish. */
+void roomrom_main_begin_level_entry(const rr_warp_outcome_t *out);
+
 /* Read the current redux flag for the active scene. The coordinator
  * reads this in PREPARE so it can populate dest_redux_flag without
  * depending on private main.c statics. */

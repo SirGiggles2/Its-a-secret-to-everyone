@@ -3,6 +3,8 @@
 #include "../world/render/sprite_render.h"
 #include "../../../RoomRom/src/atlas/level_chr_swap.h"
 #include "bg_palette.h"  /* Phase 12.2 promoted */
+#include "render_abi.h"                      /* render_chr_upload */
+#include "../../../RoomRom/src/roomrom_vram_map.h"   /* ROOMROM_SPR_TILE_BASE */
 
 void roomrom_scene_load(roomrom_scene_id_t scene_id, unsigned char variant)
 {
@@ -42,4 +44,35 @@ void roomrom_scene_load(roomrom_scene_id_t scene_id, unsigned char variant)
     default:
         break;
     }
+}
+
+/* T-129: NES TransferLevelPatternBlocksUW loads PatternBlockUWSP (16 tiles,
+ * PPU $08E0 = sprite tiles $8E-$9D: keese, gel/zol, bubble, ...) for every
+ * dungeon besides the level bank. It was never uploaded, so those
+ * monsters drew as blank sprites (lockstep t129_enemy_sweep: SAT entries
+ * on tiles without pixels). translate_tile maps UW $8E-$9D to SPR base +
+ * tile = SCENE_OBJ tiles 98..113, above the UWSP (34) and boss (64) banks;
+ * only an OW bank (114) overwrites it, so upload after each completed
+ * dungeon bank swap.
+ * data/chr/sprites.c (tools/extract_chr.py): OWSP 114 tiles, UWSP358 34,
+ * UWSP469 34, PatternBlockUWSP 16, UWSP127 34 (Genesis 4bpp, the UWSP
+ * atlas encoding). */
+extern const unsigned char sprites_chr[];
+#define UWSP_BASE_BLOB_OFFSET ((114u + 34u + 34u) * 32u)
+#define UWSP_BASE_TILES       16u
+
+void roomrom_scene_uw_sprite_base_tick(void)
+{
+    static unsigned short s_done_request = 0xFFFFu;
+    roomrom_scene_id_t active;
+    unsigned short req;
+    if (!level_chr_swap_is_ready()) return;
+    req = level_chr_swap_request_count();
+    if (req == s_done_request) return;
+    s_done_request = req;
+    active = level_chr_swap_active_scene();
+    if (active < ROOMROM_SCENE_UW_L1 || active > ROOMROM_SCENE_UW_L9) return;
+    render_chr_upload((unsigned short)((ROOMROM_SPR_TILE_BASE + 0x8Eu) * 32u),
+                      sprites_chr + UWSP_BASE_BLOB_OFFSET,
+                      (unsigned short)(UWSP_BASE_TILES * 32u));
 }

@@ -68,6 +68,20 @@ void ow_scroll_begin(unsigned char dir, unsigned char target)
     nes_ram[0x4F0u] = 0u;
 }
 
+void ow_scroll_begin_enter(unsigned char nes_dir)
+{
+    /* T-132: GoToNextModePlayLevelSong after the level-entry curtain
+     * starts mode 4 at submode 0 (InitMode_EnterRoom). */
+    direction = nes_dir == 1u ? 1u : nes_dir == 2u ? 2u : nes_dir == 4u ? 3u : 4u;
+    target_room = source_room = nes_ram[0xEBu];
+    pixels = 0u;
+    column = 0xFFu;
+    link_hidden = 1u;
+    OBJ_DIR = nes_dir;
+    MODE = 4u;
+    SUB = UPD = 0u;
+}
+
 unsigned char ow_scroll_column(void) { return column; }
 unsigned short ow_scroll_pixels(void) { return pixels; }
 unsigned char ow_scroll_link_hidden(void) { return link_hidden; }

@@ -50,6 +50,9 @@ typedef struct {
 
 void roomrom_world_transition_init(void);
 void roomrom_world_transition_tick(void);
+/* T-132: fill `out` with the OW return of a dungeon level exit (the latched
+ * entrance); 0 when nothing was latched. */
+unsigned char roomrom_world_transition_level_exit(rr_warp_outcome_t *out);
 
 /* Returns 1 while the coordinator is in any non-IDLE state. main.c
  * skips movement / input / scroll-machine work for that frame. */

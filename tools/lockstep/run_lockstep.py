@@ -51,12 +51,15 @@ def main() -> int:
     preset_lua = out / "preset.lua"
     preset_lua.write_text(presets.to_lua(p), encoding="utf-8")
 
+    # Long scripts and --snap dumps outrun a fixed emulator timeout.
+    frames = min(a.frames, sum(n for n, _ in p["script"]))
+    timeout = 300 + frames // 10 + 20 * len(p.get("snap", []))
     seed = ""
     for plat, rom in (("nes", NES_ROM), ("gen", GEN_ROM)):
         prefix = (out / plat).as_posix()
         r = subprocess.run([sys.executable, str(ROOT / "tools" / "debug" / "run_probe.py"),
                             str(HERE / "capture.lua"), str(out / f"run_{plat}"),
-                            "--rom", str(rom), "--timeout", "300",
+                            "--rom", str(rom), "--timeout", str(timeout),
                             "--subst", f"PRESET={preset_lua.as_posix()}",
                             f"OUT={prefix}", f"MAXF={a.frames}", f"SEED={seed}"])
         print(f"{plat}: runner exit {r.returncode}")

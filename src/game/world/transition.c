@@ -515,6 +515,30 @@ static unsigned char detect_warp_uw_to_ow(unsigned char source_room_id,
     return 1u;
 }
 
+/* T-132: NES EndGameMode12 (Z_05.asm CalculateNextRoomForDoor: NextRoomId
+ * >= $80 leaves the level). Outcome = the latched OW entrance. Returns 0
+ * when no OW entry was latched. */
+unsigned char roomrom_world_transition_level_exit(rr_warp_outcome_t *out)
+{
+    if (s_save.source_room_id == 0u) return 0u;
+    s_save.dest_scene = ROOMROM_MAIN_SCENE_OW;
+    s_save.dest_level = 0u;
+    s_save.dest_quest = roomrom_main_current_quest();
+    s_save.dest_room_id = s_save.source_room_id;
+    s_save.dest_link_x = s_save.source_link_x;
+    s_save.dest_link_y = s_save.source_link_y;
+    s_save.dest_link_face = s_save.source_link_face;
+    out->dest_scene = ROOMROM_MAIN_SCENE_OW;
+    out->dest_level = 0u;
+    out->dest_quest = s_save.dest_quest;
+    out->dest_room_id = s_save.source_room_id;
+    out->dest_link_x = s_save.source_link_x;
+    out->dest_link_y = s_save.source_link_y;
+    out->dest_link_face = s_save.source_link_face;
+    out->dest_redux_flag = roomrom_main_current_redux_flag();
+    return 1u;
+}
+
 void roomrom_world_transition_tick(void)
 {
     rr_warp_outcome_t outcome;
@@ -558,7 +582,22 @@ void roomrom_world_transition_tick(void)
                                            &outcome);
             }
         }
-        if (hit) {
+        if (hit && scene == ROOMROM_MAIN_SCENE_OW &&
+            s_save.dest_scene == ROOMROM_MAIN_SCENE_UW) {
+            /* T-132: NES CheckWarps enters mode $10 on this frame; the
+             * stairs / load / curtain / walk-in sequence is main.c's. */
+            outcome.dest_scene    = s_save.dest_scene;
+            outcome.dest_level    = s_save.dest_level;
+            outcome.dest_quest    = s_save.dest_quest;
+            outcome.dest_room_id  = s_save.dest_room_id;
+            outcome.dest_link_x   = s_save.dest_link_x;
+            outcome.dest_link_y   = s_save.dest_link_y;
+            outcome.dest_link_face = s_save.dest_link_face;
+            outcome.dest_redux_flag = roomrom_main_current_redux_flag();
+            roomrom_audio_silence_for_warp();
+            roomrom_main_begin_level_entry(&outcome);
+            s_state = RR_WARP_IDLE;
+        } else if (hit) {
             s_state = RR_WARP_PREPARE;
         }
         /* Phase C: UET clear on OW grid-aligned step (NES Z_07.asm:3200). */

@@ -360,6 +360,9 @@ static void apply_transfer_macro(const unsigned char *macro)
  * costs ~2 scanlines of 68000 time, and the old full refresh (counts +
  * 16 heart tiles) cost ~60 lines, dropping frames in busy rooms. */
 static unsigned short s_count_drawn[4];   /* HUD rows 2..5 at col 12 */
+/* T-132: NES fills the counts and hearts only in mode 5
+ * (UpdateHeartsAndRupees); level entry (modes 3/4) shows them blank. */
+static unsigned char s_hud_counts_hidden;
 static unsigned char s_heart_drawn[16];
 
 static void draw_count_cell(unsigned short value, unsigned char col,
@@ -411,7 +414,8 @@ static void draw_hearts_row(unsigned char col, unsigned char row,
         unsigned char top = (i >= 8u);
         unsigned char x = (unsigned char)(col + (i & 7u));
         unsigned char y = (unsigned char)(row - top);
-        unsigned char tile = hud_heart_tile(RAM(0x066Fu), RAM(0x0670u), i);
+        unsigned char tile = s_hud_counts_hidden ? HUD_TILE_SPACE :
+                             hud_heart_tile(RAM(0x066Fu), RAM(0x0670u), i);
         if (hud_id == ROOMROM_MAP_REDUX)
             tile = hud_heart_container_anim_override_tile(i, tile);
         if (!s_hud_force && s_heart_drawn[i] == tile) continue;
@@ -440,6 +444,17 @@ static void draw_status_counts_redux(void)
  * the live 3-digit count at cols 12..14, leaving the icon untouched. */
 static void draw_status_counts_original(void)
 {
+    if (s_hud_counts_hidden) {
+        unsigned char r, k;
+        static const unsigned char rows[3] = { 2u, 4u, 5u };
+        for (r = 0u; r < 3u; ++r) {
+            if (!s_hud_force && s_count_drawn[rows[r] - 2u] == 0xFFFFu) continue;
+            s_count_drawn[rows[r] - 2u] = 0xFFFFu;
+            for (k = 0u; k < 3u; ++k)
+                draw_hud_tile((unsigned char)(12u + k), rows[r], HUD_TILE_SPACE, 0u);
+        }
+        return;
+    }
     draw_count_cell(RAM(0x066Du),                12u, 2u, 0u);
     if (RAM(0x0664u)) {
         /* Magic key "XA": cache it as an out-of-range count value. */
@@ -701,6 +716,16 @@ unsigned char hud_status_bar_b_item(unsigned char *slot_out)
     }
     *slot_out = x;
     return 1u;
+}
+
+void roomrom_hud_set_counts_hidden(unsigned char hidden)
+{
+    hidden = hidden ? 1u : 0u;
+    if (hidden == s_hud_counts_hidden) return;
+    s_hud_counts_hidden = hidden;
+    if (s_hud_id_cached == 0xFFu) return;
+    s_hud_force = 1u;
+    draw_hud_dynamic(s_hud_id_cached);
 }
 
 void roomrom_hud_invalidate(void)

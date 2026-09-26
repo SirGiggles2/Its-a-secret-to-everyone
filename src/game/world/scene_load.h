@@ -18,5 +18,7 @@
 #include "atlas/roomrom_scene_vram_contracts.h"
 
 void roomrom_scene_load(roomrom_scene_id_t scene_id, unsigned char variant);
+/* T-129: after a dungeon enemy-bank swap, load PatternBlockUWSP. */
+void roomrom_scene_uw_sprite_base_tick(void);
 
 #endif /* ROOMROM_SCENE_LOAD_H */

@@ -1,5 +1,5 @@
 {
- "name": "t131_uw_ndoor",
+ "name": "t132_uw_exit",
  "file_name": "LINK",
  "quest": 0,
  "items": {
@@ -68,15 +68,15 @@
    ""
   ],
   [
-   320,
+   220,
    ""
   ],
   [
-   90,
-   "U"
+   40,
+   "D"
   ],
   [
-   160,
+   260,
    ""
   ]
  ],
@@ -104,10 +104,6 @@
   [
    1300,
    "wr(0x15, 0x40)\nwr(0x70, 112)\nwr(0x84, 157)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 157, 8)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X keys %d bombs %d doors %02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x66E), rd(0x658), rd(0xEE)))"
-  ],
-  [
-   1700,
-   "wr(0x70, 120)\nwr(0x84, 125)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(120, 125, 8)\nlog(string.format('N door room %02X lvl %02X gm %02X link %02X,%02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84)))"
   ]
  ]
 }
