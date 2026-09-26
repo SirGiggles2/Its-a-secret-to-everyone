@@ -512,7 +512,17 @@ void render_vsram_write_word(unsigned short value)
 void render_plane_fill(unsigned short plane_base, unsigned short fill_word,
                        unsigned short tile_count)
 {
+    /* T-125: 16 cells per step as 8 long writes (a long data-port write
+     * is two word writes at the auto-increment); a full 64x64 plane was
+     * ~12k 68000 instructions, most of the pause-open frame freeze. */
+    const unsigned long fill2 = ((unsigned long)fill_word << 16) | fill_word;
+    volatile unsigned long *const port = (volatile unsigned long *)0xC00000;
     render_vram_open_write(plane_base);
+    while (tile_count >= 16u) {
+        *port = fill2; *port = fill2; *port = fill2; *port = fill2;
+        *port = fill2; *port = fill2; *port = fill2; *port = fill2;
+        tile_count = (unsigned short)(tile_count - 16u);
+    }
     while (tile_count--) VDP_DATA_WORD = fill_word;
 }
 

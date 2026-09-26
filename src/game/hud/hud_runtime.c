@@ -662,6 +662,15 @@ static void find_and_select_occupied_item_slot(unsigned char dir, unsigned char 
 {
     signed char x = 9;
     RAM(0x00EFu) = dir;
+    /* T-125: nothing selectable (the NES loop then runs all 10 steps and
+     * settles on slot 0); NES re-runs this every frame with no B item. */
+    if ((HUD_ITEMS(0x1Du) | HUD_ITEMS(0x1Eu) | HUD_ITEMS(1u) | HUD_ITEMS(4u) |
+         HUD_ITEMS(5u) | HUD_ITEMS(6u) | HUD_ITEMS(7u) | HUD_ITEMS(8u) |
+         HUD_ITEMS(0x0Fu)) == 0u &&
+        (HUD_ITEMS(2u) == 0u || HUD_ITEMS(3u) == 0u)) {
+        HUD_SELECTED_SLOT = 0u;
+        return;
+    }
     for (;;) {
         y = cycle9(y, dir);
         if (y == 0u) {

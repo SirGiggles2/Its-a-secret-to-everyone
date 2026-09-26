@@ -523,6 +523,23 @@ static void mark_link_behind_bg(void)
  * give Link a visible walk-cycle while sinking into the entrance. */
 extern u8 s_link_frame;
 
+/* T-125: the NES movement step asks for Link's walk pose; it is drawn
+ * once per frame, after AnimateLinkBase (NES SetUpWalkingSprites). */
+static unsigned char s_link_draw_pending = 0u;
+
+static void draw_link_pending(void)
+{
+    if (!s_link_draw_pending) return;
+    s_link_draw_pending = 0u;
+    if (nes_ram[0x04F0u] != 0u)
+        roomrom_sprites_set_link_pose_pal(players[0].x, players[0].y,
+            players[0].face, s_link_frame,
+            (unsigned char)(((unsigned char)s_frame_counter) & 0x03u));
+    else
+        roomrom_sprites_set_link_pose(players[0].x, players[0].y,
+                                      players[0].face, s_link_frame);
+}
+
 /* Tier 1 cave-fade callbacks. cave_fade.c owns sequencing + cave_init/
  * cave_exit + plane fill; this side owns Link reposition + scene flip
  * + HUD underlay reset (which need RoomRom-local statics). */
@@ -2784,6 +2801,8 @@ static void play_finish(void)
     transfer_buf_drain();
 }
 
+static u32 s_tick_vtimer = 0u;   /* T-125: vtimer at tick start */
+
 void roomrom_debug_tick(void)
 {
         /* DEBUG SENTINEL — capture players[0]+s_room_id at TOP-of-tick
@@ -2793,7 +2812,14 @@ void roomrom_debug_tick(void)
         DBG_SENTINEL(0x15u) = (unsigned char)players[0].x;
         DBG_SENTINEL(0x16u) = (unsigned char)players[0].y;
         DBG_SENTINEL(0x17u) = s_room_id;
+        /* T-125 frame budget probe, in the 6502 stack page (unused by the
+         * port, masked by the lockstep diff): $01FE = frames the previous
+         * tick ran past its own (0 = it fit), $01FF = VDP V counter when
+         * it finished. */
+        nes_ram[0x01FFu] = (u8)(*(volatile u16 *)0xC00008u >> 8);
+        nes_ram[0x01FEu] = (u8)(vtimer - s_tick_vtimer);
         SYS_doVBlankProcess();
+        s_tick_vtimer = vtimer;
         /* Phase Q v2: roll per-frame DMA byte tally into peak tracker
          * and reset accumulator for next frame. Probes read peak via
          * render_dma_stats_get(). */
@@ -2831,7 +2857,6 @@ void roomrom_debug_tick(void)
          * Skip MenuState / Paused gate (debug-mode always ticks). */
         {
             unsigned char loop_end;
-            unsigned char x;
             unsigned char stun = nes_ram[0x0026u];
             stun = (unsigned char)(stun - 1u);
             nes_ram[0x0026u] = stun;
@@ -2841,9 +2866,13 @@ void roomrom_debug_tick(void)
                 nes_ram[0x0026u] = 0x09u;  /* reset stun cycle */
                 loop_end = 0x4Eu;  /* extended loop $4E..$27 */
             }
-            for (x = loop_end; x > 0x26u; --x) {
-                unsigned char v = nes_ram[x];
-                if (v != 0u) nes_ram[x] = (unsigned char)(v - 1u);
+            /* T-125: pointer walk (independent cells, order-free). */
+            {
+                unsigned char *t = &nes_ram[0x0027u];
+                unsigned char *end = &nes_ram[(unsigned short)loop_end + 1u];
+                do {
+                    if (*t != 0u) --*t;
+                } while (++t != end);
             }
         }
 
@@ -3845,22 +3874,8 @@ void roomrom_debug_tick(void)
             nes_ram[0x394u] = (u8)s_link_grid_offset;
             nes_ram[0x3A8u] = s_link_pos_frac;
             nes_ram[0x3BCu] = s_link_qspeed; /* T-113/T-123: ObjQSpeedFrac */
-            if (!roomrom_combat_link_locked()) {
-                /* Per APPENDIX plan revert: single SAT entry unconditional.
-                 * Split-sprite removed; wide BG-prio stamp handles
-                 * NES "Link behind BG" effect via tile color-0 transparency. */
-                unsigned char stun = nes_ram[0x04F0u];
-                if (stun != 0u) {
-                    unsigned char pal = (unsigned char)
-                        (((unsigned char)s_frame_counter) & 0x03u);
-                    roomrom_sprites_set_link_pose_pal(players[0].x, players[0].y,
-                                                      players[0].face,
-                                                      s_link_frame, pal);
-                } else {
-                    roomrom_sprites_set_link_pose(players[0].x, players[0].y,
-                                                  players[0].face, s_link_frame);
-                }
-            }
+            /* T-125: Link is drawn once, after AnimateLinkBase below. */
+            if (!roomrom_combat_link_locked()) s_link_draw_pending = 1u;
         }
 
         /* T-102: NES UpdateMode5Play order: UpdatePlayer (input, movement,
@@ -3876,17 +3891,13 @@ void roomrom_debug_tick(void)
                 s_link_frame = (u8)((nes_ram[0x03E4u] & 1u) ^
                     ((players[0].face == LINK_FACE_LEFT ||
                       players[0].face == LINK_FACE_RIGHT) ? 1u : 0u));
-                if (nes_ram[0x04F0u] != 0u)
-                    roomrom_sprites_set_link_pose_pal(players[0].x, players[0].y,
-                        players[0].face, s_link_frame,
-                        (unsigned char)(((unsigned char)s_frame_counter) & 0x03u));
-                else
-                    roomrom_sprites_set_link_pose(players[0].x, players[0].y,
-                                                  players[0].face, s_link_frame);
+                s_link_draw_pending = 1u;
             }
+            draw_link_pending();
             if (s_scroll_state == SCROLL_NONE && play_update_objects()) return;
             play_finish();
         }
+        draw_link_pending();
 
         /* Task 5.4: warp coordinator runs AFTER movement settles. The
          * tick is a no-op in non-OW scenes and when the OW raw-tile

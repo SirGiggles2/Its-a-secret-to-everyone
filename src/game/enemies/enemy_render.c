@@ -453,8 +453,13 @@ void enemy_render_reset_oam(void)
      * NES hides unused sprites by Y=$F0; only the 40 enemy Y cells need
      * clearing, not the complete 256-byte OAM mirror. */
     enemy_render_native_reset();
-    for (i = 24u; i < 64u; ++i) {
-        RAM(NES_SPRITES_BASE + i * 4u) = 0xF0u;
+    {
+        /* T-125: 8 stores per step (runs every frame). */
+        unsigned char *p = &RAM(NES_SPRITES_BASE + 24u * 4u);
+        for (i = 0u; i < 5u; ++i, p += 32) {
+            p[0] = 0xF0u;  p[4] = 0xF0u;  p[8] = 0xF0u;  p[12] = 0xF0u;
+            p[16] = 0xF0u; p[20] = 0xF0u; p[24] = 0xF0u; p[28] = 0xF0u;
+        }
     }
     RAM(NES_ROLLING_SPR_INDEX) = 0u;
 }

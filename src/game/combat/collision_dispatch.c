@@ -30,8 +30,11 @@ static const unsigned char k_play_area_column_addrs[64] = {
 };
 
 /* NES Z_07.asm WalkableTiles (line 2099): 9 bytes. */
-static const unsigned char k_walkable_tiles[9] = {
-    0x8Du, 0x91u, 0x9Cu, 0xACu, 0xADu, 0xCCu, 0xD2u, 0xD5u, 0xDFu
+/* NES WalkableTiles (9 entries) as a lookup by tile id (T-125: the 9-entry
+ * scan ran for every object on every frame). */
+static const unsigned char k_walkable_tile[256] = {
+    [0x8Du] = 1u, [0x91u] = 1u, [0x9Cu] = 1u, [0xACu] = 1u, [0xADu] = 1u,
+    [0xCCu] = 1u, [0xD2u] = 1u, [0xD5u] = 1u, [0xDFu] = 1u
 };
 
 /* SwordDamagePoints[3] — sword level 1/2/3 damage. NES drain
@@ -80,7 +83,6 @@ unsigned char collision_get_collidable_tile(unsigned int hotspot_offset,
                                             unsigned int slot)
 {
     /* drain at collision_runtime.c:239-308. NES GetCollidableTile. */
-    static const unsigned char walkable_count = 9u;
     COMBAT_HITBOX_X = (uint8_t)hotspot_offset;
     const unsigned char y_pos = (unsigned char)OBJ_TILE_Y(slot);
     const unsigned char adjusted_y = (uint8_t)(y_pos + 0x0Bu);
@@ -135,11 +137,8 @@ unsigned char collision_get_collidable_tile(unsigned int hotspot_offset,
 
     if (ENEMY_DARK_ROOM_FLAG == 0u) {
         tile = (unsigned char)ENEMY_COLLIDED_TILE(slot);
-        for (signed char i = (signed char)(walkable_count - 1u); i >= 0; i--) {
-            if (tile == k_walkable_tiles[i]) {
-                tile = 0x26u;
-                break;
-            }
+        if (k_walkable_tile[tile]) {
+            tile = 0x26u;
         }
         ENEMY_COLLIDED_TILE(slot) = tile;
 
