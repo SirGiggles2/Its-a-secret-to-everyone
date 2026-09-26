@@ -41,7 +41,8 @@
 #include "../../src/game/world/transfer_buf_drain.h"     /* Plan v5b: TRANSFER_BUF -> CRAM bridge (unblocks Mode 11 palette cycle) */
 #include "../../src/game/world/progress_dispatch.h"      /* Tier 2: triforce fanfare driver */
 #include "../../src/game/world/world_dispatch.h"     /* world_animate_world_fading */
-#include "../../src/game/dungeon/uw_dark.h"              /* T-111: dark rooms by palette */
+#include "../../src/game/dungeon/uw_dark.h"
+#include "../../src/game/audio/audio_requests.h"         /* T-127: NES sound request cells */              /* T-111: dark rooms by palette */
 #include "../../src/game/cave/uw_person_dispatch.h"    /* T-120: CheckPersonBlocking */
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
 #include "atlas/level_chr_swap.h"        /* PR-4a: scene-bank DMA state machine */
@@ -2278,9 +2279,9 @@ static unsigned char play_update_objects(void)
              * transient request the sound engine consumes+clears next
              * frame ($80->$08->$00); the SGDK-XGM path has no such cell,
              * so a static write would DIVERGE worse than leaving it. SFX
-             * parity is functional (audio_sfx_play + the $07F0 sentinel);
+             * parity is functional (audio_requests + the $07F0 sentinel);
              * EffectRequest is REPORTED, not byte-gated (like GameMode). */
-            audio_sfx_play(8u);
+            nes_ram[0x0603u] |= 0x08u;   /* stairs effect (audio_requests) */
             cave_fade_set_callbacks(&k_cave_fade_callbacks);
             cave_fade_begin_enter(cid);
             return 1u;
@@ -2414,6 +2415,9 @@ void roomrom_debug_tick(void)
          * increment here in roomrom_debug_tick (the per-frame body)
          * so all consumers see a normal 0..$FF cycling counter. */
         nes_ram[0x0015u] = (unsigned char)(nes_ram[0x0015u] + 1u);
+        /* T-127: the NES sound engine runs in NMI and consumes the request
+         * cells written during the previous frame. */
+        audio_requests_consume();
 
         /* Phase 7 root-cause fix #2 2026-05-16 — port NES Z_07.asm:468
          * @UpdateTimers from the NES NMI handler. Per-frame decrement
@@ -3016,7 +3020,7 @@ void roomrom_debug_tick(void)
                  * is 1-11 only. Full whirlwind summon = Phase 9 scope.
                  * V1: play SFX as audible acknowledgement. */
                 if (s_scene == SCENE_OW) {
-                    audio_sfx_play(4u);  /* nearest analog to NES Tune1=$10 */
+                    nes_ram[0x0602u] |= 0x10u;   /* WieldFlute: Tune1Request $10 */
                 }
                 break;
             case B_ITEM_FOOD:
@@ -3029,7 +3033,6 @@ void roomrom_debug_tick(void)
                 if (g_inventory.food > 0u) {
                     g_inventory.food = 0u;
                     nes_ram[0x065Du] = 0u;
-                    audio_sfx_play(2u);  /* placeholder SFX */
                 }
                 break;
             default:             break;

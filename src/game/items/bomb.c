@@ -26,8 +26,7 @@
  *    for the door updater; Genesis does the same through
  *    uw_door_state_trigger_open and door_state.c UpdateDoors (T-119).
  *  - Sound: Tune0Request $20 and PlayEffect $10 are written to the NES
- *    request cells. Nothing consumes those yet (T-071), so the detonation
- *    also keeps the existing audible audio_sfx_play(3).
+ *    request cells (played by src/game/audio/audio_requests.c).
  */
 
 #include "../combat/combat_runtime.h"   /* T-116 Link item-use state */
@@ -41,7 +40,6 @@
 #include "../dungeon/cellar_meta.h"
 #include "../dungeon/uw_render.h"
 
-extern void audio_sfx_play(unsigned char sfx);
 
 #define NES_OBJ_TIMER_BASE      0x0028u
 #define NES_OBJ_DIR_BASE        0x0098u
@@ -251,7 +249,6 @@ static void update_bomb(unsigned char x)
         minor = (unsigned char)(OBJ_STATE_(x) & 0x0Fu);
         if (minor == 0x03u) {
             nes_ram[NES_EFFECT_REQUEST] |= 0x10u;
-            audio_sfx_play(3u);
         }
         if (minor == 0x05u) {
             OBJ_STATE_(x) = 0u;   /* ResetObjState; A = 0 */

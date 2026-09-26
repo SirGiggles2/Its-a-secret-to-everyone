@@ -10,6 +10,8 @@
 
 #include "audio_adapter.h"
 #include "sfx_pcm.h"
+#include "../../data/audio/sfx_pcm_tunes.h"   /* NES square tunes: Tune0/Tune1 */
+#include "../../data/audio/sfx_pcm_noise.h"   /* NES noise effects: sword/arrow/flame/bomb/sea */
 #include "../../data/audio/sfx_pcm_stairs.h"  /* NES cave stairs SFX (#8 / XGM id 71), synth */
 #include "platform_abi.h"   /* nes_ram (A4-pinned) for probe sentinels */
 #include "../../data/audio_music/ow_theme_xgm.h"
@@ -79,6 +81,35 @@ void audio_xgm_init(void)
     /* SFX #8 = NES cave stairs (XGM id 71 = SFX_PCM_ID_BASE + 7), synthesized
      * separately from the DMC bank (it is an APU-noise sound, not a sample). */
     XGM_setPCM(SFX_PCM_STAIRS_ID, sfx_pcm_stairs, SFX_PCM_STAIRS_LEN);
+    /* SFX #9..#13 = the other NES noise effects (EffectRequest bits 0, 1,
+     * 2, 4, 5), XGM ids 72..76 (tools/audio/synth_noise_sfx.py). */
+    XGM_setPCM(SFX_PCM_SWORD_ID, sfx_pcm_sword, SFX_PCM_SWORD_LEN);
+    XGM_setPCM(SFX_PCM_ARROW_ID, sfx_pcm_arrow, SFX_PCM_ARROW_LEN);
+    XGM_setPCM(SFX_PCM_FLAME_ID, sfx_pcm_flame, SFX_PCM_FLAME_LEN);
+    XGM_setPCM(SFX_PCM_BOMB_ID,  sfx_pcm_bomb,  SFX_PCM_BOMB_LEN);
+    XGM_setPCM(SFX_PCM_SEA_ID,   sfx_pcm_sea,   SFX_PCM_SEA_LEN);
+    /* NES square-channel tunes (tools/audio/synth_square_sfx.py): ids
+     * 77..91 = Tune0 bits 0..6, Tune1 bits 0..7. */
+    for (u8 i = 0; i < SFX_PCM_TUNE_COUNT; i++)
+        XGM_setPCM((u8)(SFX_PCM_TUNE_FIRST_ID + i), sfx_pcm_tune_data[i],
+                   sfx_pcm_tune_len[i]);
+}
+
+/* T-127: play PCM `id` on XGM PCM channel `ch` (1..4) with priority `prio`
+ * (0..15; a sample only replaces one of equal or lower priority). Used by
+ * src/game/audio/audio_requests.c, which gives each NES sound source its own
+ * channel: DMC samples 2, noise effects 3, square tunes 4. */
+unsigned char  g_audio_pcm_last;
+unsigned short g_audio_pcm_calls;
+
+void audio_pcm_play(unsigned char id, unsigned char prio, unsigned char ch)
+{
+    if (!xgm_initialized) audio_xgm_init();
+    if (ch < 1u || ch > 4u) return;
+    XGM_startPlayPCM(id, prio, (SoundPCMChannel)(SOUND_PCM_CH1 + (ch - 1u)));
+    /* Probe counters (read from the 68K RAM dump by symbol). */
+    g_audio_pcm_last = id;
+    g_audio_pcm_calls++;
 }
 
 void audio_music_play(unsigned char song)
@@ -119,9 +150,9 @@ void audio_music_play(unsigned char song)
 void audio_sfx_play(unsigned char sfx)
 {
     if (!xgm_initialized) audio_xgm_init();
-    /* 1..SFX_PCM_COUNT = DMC bank; SFX_PCM_COUNT+1 (=8) = synth stairs SFX,
-     * which maps to SFX_PCM_ID_BASE+(8-1)=71=SFX_PCM_STAIRS_ID below. */
-    if (sfx == 0 || sfx > SFX_PCM_COUNT + 1) return;
+    /* 1..SFX_PCM_COUNT = DMC bank; 8 = synth stairs (id 71); 9..13 =
+     * sword/arrow/flame/bomb/sea (ids 72..76): id = SFX_PCM_ID_BASE+sfx-1. */
+    if (sfx == 0 || sfx > SFX_PCM_COUNT + 6) return;
 
     SoundPCMChannel chan = (SoundPCMChannel)(SOUND_PCM_CH2 + sfx_next_channel);
     sfx_next_channel = (sfx_next_channel + 1) % 3;

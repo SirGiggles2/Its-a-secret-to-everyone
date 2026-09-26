@@ -269,14 +269,12 @@ void core_play_key_taken_tune(void)
     /* drain at core_runtime.c:13-16. */
     DEATH_FRAME_COUNTER = 0u;
     RAM(0x0604u) = 8u;  /* ROOM_SFX_MAIN */
-    audio_sfx_play(4u);  /* bitmap $08 = sample 4 (key/door taken jingle) */
 }
 
 void core_play_parry_tune(void)
 {
     /* drain at core_runtime.c:237-239. */
     RAM(0x0604u) = 1u;  /* ROOM_SFX_MAIN */
-    audio_sfx_play(1u);  /* bitmap $01 = sample 1 (sword parry / clank) */
 }
 
 unsigned char core_silence_all_sound(void)

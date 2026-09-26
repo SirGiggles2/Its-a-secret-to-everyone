@@ -23,7 +23,6 @@
 #include "platform_abi.h"
 
 extern const unsigned char rooms_dungeons[];
-extern void audio_sfx_play(unsigned char sfx);
 
 #define NES_GAME_MODE          0x0012u
 #define NES_DOOR_TIMER         0x0027u
@@ -326,7 +325,7 @@ static void door_anim_step(unsigned char dir, unsigned char open)
     const unsigned char *src;
     /* PrepareWriteHorizontalDoorTransferRecords: keys and shutter play
      * the door sound. */
-    if (t >= DOOR_TYPE_KEY) audio_sfx_play(3u);
+    if (t >= DOOR_TYPE_KEY) nes_ram[0x0601u] |= 0x04u;   /* PlaySample $04: door */
     prov = (t == DOOR_TYPE_BOMBABLE) ? 8u : (t == DOOR_TYPE_WALL) ? 4u : t;
     face = (unsigned char)(prov - 3u);
     if (open) {
@@ -433,7 +432,7 @@ void uw_door_state_open_by_mask(unsigned char dir_mask)
     }
     if (any_new) {
         lay_out_doors(1u);
-        audio_sfx_play(3u);
+        nes_ram[0x0601u] |= 0x04u;   /* PlaySample $04: door */
     }
 }
 

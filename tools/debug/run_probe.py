@@ -153,7 +153,9 @@ def main() -> int:
     syms = elf_symbols(set(SYM_RE.findall(text)))
     text = SYM_RE.sub(lambda m: f"0x{syms[m.group(1)]:06X}", text)
 
-    stage = Path(r"C:\tmp\claude_probe") / out.name
+    # Unique per output folder (e.g. <preset>_run_nes) so parallel runs of
+    # different presets never share a stage directory.
+    stage = Path(r"C:\tmp\claude_probe") / f"{out.parent.name}_{out.name}"
     if stage.exists():
         shutil.rmtree(stage)
     stage.mkdir(parents=True)

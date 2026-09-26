@@ -165,9 +165,6 @@ void item_take_item(unsigned char item_id)
     if (item_id == 0x0Eu) {
         ITEM_SFX_PRIMARY = 2u;
     }
-    /* T5.2: real audio output via XGM SFX path. NES set ItemSFXPrimary
-     * for the asm tune dispatcher; we fire the DMC sample now. */
-    audio_sfx_play(7u);
     if ((unsigned char)GAME_MODE != 5u) {
         ITEM_FREEZE_FLAG = 0x80u;
         ITEM_SFX_SECONDARY = 8u;

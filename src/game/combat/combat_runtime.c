@@ -334,7 +334,7 @@ void roomrom_combat_try_swing(link_face_t face, short link_x, short link_y)
         s_state = COMBAT_ACTIVE;
         s_frame = 0u;
         s_face  = face;
-        audio_sfx_play(1u);
+        nes_ram[0x0603u] |= 0x01u;   /* WieldSword: PlayEffect $01 */
         return;
     }
     /* Link_HandleInput: A only in the idle state, sword not blocked. */
@@ -356,7 +356,7 @@ void roomrom_combat_try_swing(link_face_t face, short link_x, short link_y)
         SW_Y = (unsigned char)(RAM(0x0084u) + ((d & 0x04u) ? 0x10u : (d & 0x08u) ? 0xF0u : 0u));
         if (d & 0x0Cu) SW_X = (unsigned char)(SW_X + 3u);
     }
-    audio_sfx_play(1u);
+    nes_ram[0x0603u] |= 0x01u;       /* WieldSword: PlayEffect $01 */
 }
 
 /* WieldRod (Z_05.asm:3028): rod slot $12, state $31 for 5 frames, then

@@ -95,6 +95,8 @@ TITLE_C_SOURCES = [
     ("src/sgdk_adapter/audio_adapter.c",    "audio_adapter.o"),
     ("data/audio/sfx_pcm.c",                "sfx_pcm.o"),
     ("data/audio/sfx_pcm_stairs.c",         "sfx_pcm_stairs.o"),
+    ("data/audio/sfx_pcm_noise.c",          "sfx_pcm_noise.o"),   # NES noise effects (tools/audio/synth_noise_sfx.py)
+    ("data/audio/sfx_pcm_tunes.c",          "sfx_pcm_tunes.o"),   # NES square tunes (tools/audio/synth_square_sfx.py)
     # OW/UW themes: XGC binaries (xgmtool output) dispatched via
     # src/sgdk_adapter/audio_adapter.c::audio_music_play(SONG_OW=$01) →
     # XGM_startPlay(*_theme_xgm).
@@ -194,6 +196,7 @@ ROOMROM_C_SOURCES = [
     # Plan v5b Tier-5 T5.5 2026-05-16 — audio dispatcher: gamemode+scene
     # tuple change -> single music_play() per docs/audit/audio_routing.md.
     ("src/game/audio/audio_dispatch.c",         "audio_dispatch.o"),
+    ("src/game/audio/audio_requests.c",         "audio_requests.o"),  # NES Sample/EffectRequest consumer
     # Phase 7 enemy render bridge — NES OAM mirror -> Genesis SAT sweep.
     ("src/game/enemies/enemy_render.c",         "enemy_render.o"),
     # Phase 7 substrate — ROOM_BOUNDS setup (drained roomld_setup_obj_room_bounds).

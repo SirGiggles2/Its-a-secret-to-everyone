@@ -32,7 +32,6 @@ void combat_play_parry_sound_for_damage_type(void)
 void combat_handle_monster_died(unsigned int slot)
 {
     /* drain at combat_runtime.c:12-23. */
-    audio_sfx_play(6u);  /* enemy death */
     ROOM_KILL_COUNT = (uint8_t)((unsigned char)ROOM_KILL_COUNT + 1u);
     if ((unsigned char)ROOM_CHAIN_KILL_COUNT < 0x0Au) {
         ROOM_CHAIN_KILL_COUNT =
@@ -52,7 +51,6 @@ void combat_deal_damage(unsigned int slot)
 {
     /* drain at combat_runtime.c:25-40. */
     SFX_COMBAT = 2u;
-    audio_sfx_play(5u);  /* enemy hit */
     const unsigned char damage = (unsigned char)COMBAT_DAMAGE_AMOUNT;
     const unsigned char hp = (unsigned char)MON_HP(slot);
     if (hp < damage) {

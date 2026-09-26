@@ -8,8 +8,6 @@
 #include "../../state/inventory.h"
 #include "../../abi/platform_abi.h"
 
-extern void audio_sfx_play(unsigned char sfx);
-
 /* T-116: Link's boomerang as the NES object in slot $0F.
  *
  * NES source: Z_05.asm WieldBoomerang, Z_07.asm UpdateArrowOrBoomerang
@@ -110,7 +108,7 @@ static void animate_and_draw(void)
         BM_STATE = (unsigned char)((BM_STATE + 1u) & 0x77u);
         /* PlayBoomerangSfx: throttled by ObjTimer+19. */
         if (nes_ram[NES_ITEM_OBJ_TIMER] == 0u) {
-            audio_sfx_play(2u);
+            nes_ram[0x0603u] |= 0x02u;   /* PlayEffect $02 */
             nes_ram[NES_ITEM_OBJ_TIMER] = 0x0Au;
         }
     }

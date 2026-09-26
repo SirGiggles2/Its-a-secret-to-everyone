@@ -7,8 +7,6 @@
 #include "../enemies/enemy_render.h"       /* enemy_render_item_sat */
 #include "../../state/inventory.h"
 
-extern void audio_sfx_play(unsigned char sfx);
-
 /* T-116: Link's arrow as the NES object in slot $12.
  *
  * NES source: Z_05.asm WieldArrow / WieldWeapon, Z_07.asm UpdateRodOrArrow
@@ -63,7 +61,7 @@ void roomrom_arrow_fire(link_face_t face, short link_x, short link_y)
     if (nes_ram[NES_BOW] == 0u) return;
     if (st != 0u && (st & 0x80u) == 0u) return;   /* slot busy (ASL / BCC) */
     if (nes_ram[NES_INV_RUPEES] == 0u) return;
-    audio_sfx_play(2u);                           /* boomerang/arrow effect */
+    nes_ram[0x0603u] |= 0x02u;                    /* PlayEffect $02 (arrow) */
     inventory_rupee_debit(1u);                    /* INC RupeesToSubtract */
     /* WieldWeapon($10). */
     AR_STATE = 0x10u;
