@@ -110,6 +110,10 @@ unsigned char     cave_fade_descend_step_idx(void);
  * cave tiles; on SWAP_EXIT, ow_render fill_plane_a repaints OW with
  * prio=0 defaults. So the prio bit is transient — only set during
  * the descend window. */
+/* T-011: lower the cells raised by cave_fade_mark_arch_hi_prio (end of
+ * a stairs walk); forget them when the plane is redrawn. */
+void              cave_fade_restore_arch(void);
+void              cave_fade_forget_arch(void);
 void              cave_fade_mark_arch_hi_prio(unsigned char link_tile_col,
                                               unsigned char link_tile_row);
 

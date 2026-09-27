@@ -19,6 +19,17 @@
 #define CAVE_FADE_PLANE_ROWS     64u   /* 64x64 plane (PR-2c) */
 #define CAVE_FADE_HUD_ROW_OFFSET 7u  /* matches ROOMROM_ROOM_FIRST_ROW */
 
+/* T-011: cells this module raised to high priority, so the NES
+ * behind-background effect ends with the stairs animation: NES sets the
+ * sprite priority bit on Link only while he walks in/out
+ * (PutLinkBehindBackground / AnimateAndDrawLinkBehindBackground). Left
+ * raised, a Link standing still at a cave mouth after StepOutside was
+ * hidden behind the ground (user report, t011_exit_idle tick 1100). */
+#define CAVE_FADE_ARCH_MAX 21u   /* 3 cols x 7 rows */
+static unsigned char s_arch_col[CAVE_FADE_ARCH_MAX];
+static unsigned char s_arch_row[CAVE_FADE_ARCH_MAX];
+static unsigned char s_arch_n = 0u;
+
 static void mark_cell_hi_prio_xy(unsigned char col, unsigned char row)
 {
     if (col >= CAVE_FADE_PLANE_COLS || row >= CAVE_FADE_PLANE_ROWS) {
@@ -32,6 +43,31 @@ static void mark_cell_hi_prio_xy(unsigned char col, unsigned char row)
         return;  /* already high prio */
     }
     render_set_plane_a_word(col, row, (unsigned short)(cur | 0x8000u));
+    if (s_arch_n < CAVE_FADE_ARCH_MAX) {
+        s_arch_col[s_arch_n] = col;
+        s_arch_row[s_arch_n] = row;
+        ++s_arch_n;
+    }
+}
+
+void cave_fade_restore_arch(void)
+{
+    unsigned char i;
+    for (i = 0u; i < s_arch_n; ++i) {
+        const unsigned short vram_addr = (unsigned short)(
+            CAVE_FADE_PLANE_A_BASE +
+            ((unsigned short)s_arch_row[i] * CAVE_FADE_PLANE_COLS +
+             (unsigned short)s_arch_col[i]) * 2u);
+        const unsigned short cur = render_vram_read_word(vram_addr);
+        render_set_plane_a_word(s_arch_col[i], s_arch_row[i],
+                                (unsigned short)(cur & 0x7FFFu));
+    }
+    s_arch_n = 0u;
+}
+
+void cave_fade_forget_arch(void)
+{
+    s_arch_n = 0u;   /* plane redrawn: the raised cells are gone */
 }
 
 /* NES InitMode10 + UpdateMode10Stairs: 16 pixels down, 1 px every 4

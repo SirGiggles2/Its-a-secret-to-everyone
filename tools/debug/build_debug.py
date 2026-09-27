@@ -524,6 +524,8 @@ ROOMROM_C_SOURCES = [
     ("RoomRom/src/redux_hud_chr.c", "redux_hud_chr.o"),
     ("data/chr/common.c", "common.o"),
     ("data/chr/sprites.c", "sprites.o"),
+    # T-011: NES sprite tiles $70.. (demo block; Link item-lift pose $78/$79).
+    ("data/chr/demo.c", "demo_chr.o"),
     ("data/misc/palettes.c", "palettes.o"),
 ]
 

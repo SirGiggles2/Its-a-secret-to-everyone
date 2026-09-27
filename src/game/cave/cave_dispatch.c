@@ -48,6 +48,9 @@
  * ware ids + CaveFlags missing the show-items bit ($04) -> cave items
  * (e.g. the cave-6A wood sword) never drew. Read from the blob instead. */
 #include "../../../data/rooms/overworld_offsets.h"
+
+/* T-011: NES InitCave halts Link on the person's first object update. */
+static unsigned char s_cave_halt_pending = 0u;
 extern const unsigned char rooms_overworld[];
 
 /* NES Z_01.asm:559 TextboxCharTransferRecTemplate — 5-byte VRAM
@@ -158,7 +161,11 @@ int cave_init(cave_id_t cave_id)
     RAM(0x0405u + 1u) = 0u;               /* ObjMetastate */
     RAM(0x0405u + 2u) = 0u;
     RAM(0x0405u + 3u) = 0u;
-    RAM(0x00ACu)     = 0x40u;             /* ObjState (Link) = $40 (halt) */
+    /* T-011: Link is halted (ObjState $40) by NES InitCave, which runs in
+     * the object loop on the first play tick -- after that tick's
+     * UpdatePlayer has moved Link (Up held through the walk-in: NES Link
+     * ends at $D4, not $D5). Deferred to the person's first update. */
+    s_cave_halt_pending = 1u;
     /* Bonfires slot 2/3 — fixed positions flanking the NPC. */
     RAM(0x034Fu + 2u) = 0x40u;            /* ObjType+2 = $40 (StandingFire) */
     RAM(0x034Fu + 3u) = 0x40u;            /* ObjType+3 = $40 (StandingFire) */
@@ -572,6 +579,10 @@ void cave_write_prices_transfer_buf(void)
 
 void cave_update_cave_person(unsigned int slot)
 {
+    if (s_cave_halt_pending) {                /* NES InitCave (see cave_init) */
+        s_cave_halt_pending = 0u;
+        RAM(0x00ACu) = 0x40u;                 /* ObjState (Link) = $40 (halt) */
+    }
     /* NES UpdateCavePerson (Z_01.asm:300). Drain at
      * src/oracle/cave/cave_runtime.c:326-353. Drain MATCH per Gate 1
      * finding 3_4n_h_cave_update_cave_person.md. */

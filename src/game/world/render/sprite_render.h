@@ -43,6 +43,11 @@ void roomrom_sprites_set_hud_marker(unsigned char compass, short x, short y,
                                     unsigned char inactive_palette);
 void roomrom_sprites_hide_hud_marker(unsigned char compass);
 void roomrom_sprites_set_link_pos(short x, short y);
+/* T-011: NES Link item-lift pose (one_hand = half-width item). */
+void roomrom_sprites_set_link_lift(short x, short y, unsigned char one_hand);
+/* T-011: Link halves from Genesis SAT words. */
+void roomrom_sprites_set_link_sat(short x, short y,
+                                  unsigned short left_sat, unsigned short right_sat);
 void roomrom_sprites_set_link_pose(short x, short y,
                                    link_face_t face, unsigned char frame);
 

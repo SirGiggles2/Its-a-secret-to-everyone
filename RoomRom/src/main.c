@@ -308,6 +308,7 @@ static void begin_cave_exit(void);
 /* T-135: NES UndergroundEntranceTile of the cave Link is in ($24 = the
  * black opening: method 1-a step out; else the stairs). */
 static u8            s_cave_entrance_tile = 0x24u;
+static short         s_tick_start_link_y = 0;   /* players[0].y at tick start */
 static rr_warp_outcome_t s_lvl_out;
 static u8             s_scroll_frame    = 0u;     /* counts up during scroll */
 static u8             s_scroll_total_frames = SCROLL_TOTAL_FRAMES_SMOOTH;
@@ -658,7 +659,11 @@ static void cave_fade_load_blank_handler(unsigned char stage)
     if (stage == 0u) {
         /* Sprite changes reach VRAM at the next VBlank, one frame after
          * the plane writes below: hide Link a tick earlier so both show
-         * on the same frame. */
+         * on the same frame. NES enters mode $0B (cave) here and stays
+         * in it while in the cave (T-011: TakeItem lifts the item only
+         * outside mode 5). */
+        nes_ram[0x0012u] = 0x0Bu;
+        nes_ram[0x0013u] = 0u;
         s_cave_load_blank = 1u;
         roomrom_sprites_set_link_pose((short)-32, (short)-32,
                                       players[0].face, 0u);
@@ -998,6 +1003,7 @@ static void refresh_room_metadata(u8 room_id)
 
 static void load_room(u8 room_id)
 {
+    cave_fade_forget_arch();   /* T-011: the plane is redrawn below */
     /* NES Z_05.asm:InitMode_EnterRoom installs OW/UW object bounds from
      * CurLevel. Do this on every full scene load after its level identity
      * has been installed, including direct dungeon warps. The old boot-
@@ -1721,7 +1727,14 @@ static void edge_load_or_clamp(void)
      * or the dungeon's Y=208 clamp. Test direction to avoid exiting at
      * the initial cave-bottom spawn while Link faces into the room. */
     if (s_scene == SCENE_CAVE) {
-        if (players[0].y >= 0xDD && (s_joy_prev & BUTTON_DOWN)) {
+        /* NES CheckCaveEdge runs in UpdatePlayer before the move: the
+         * exit starts the tick after Link reaches $DD (t011_exit_idle
+         * tick 806, was 805). */
+        if (s_tick_start_link_y >= 0xDD && players[0].y >= 0xDD &&
+            (s_joy_prev & BUTTON_DOWN)) {
+            /* NES leaves before moving: take back this tick's step. */
+            players[0].y = s_tick_start_link_y;
+            nes_ram[0x0084u] = (unsigned char)players[0].y;
             begin_cave_exit();   /* T-135: NES mode $0A */
         }
         return;
@@ -2368,6 +2381,9 @@ static void level_entry_tick(void)
         VDP_updateSprites(ROOMROM_SPRITE_SLOT_ENEMY_FIRST, DMA_QUEUE);
         if ((unsigned char)players[0].y != s_lvl_target_y) return;
 stepped_out:
+        /* Link walks in front of the ground again (NES clears his sprite
+         * priority bit when StepOutside ends). */
+        cave_fade_restore_arch();
         /* GoToNextModePlayLevelSong: play resumes. */
         nes_ram[0x0012u] = 0x05u;
         nes_ram[0x0013u] = 0u;
@@ -2673,6 +2689,48 @@ short roomrom_debug_get_link_y(void)
  * animations don't get bombed by combat updates or by
  * cave-entrance re-detection on the very tile that triggered
  * the fade. */
+/* NES Z_07.asm CheckLiftItem / SetUpAndDrawLinkLiftingItem /
+ * EndLinkLiftingItem (T-011). TakeItem outside mode 5 (caves $0B, UW
+ * cellars) sets ItemLiftTimer $506 = $80 and ItemTypeToLift $505; every
+ * play tick after the objects Link is halted (ObjState $40) and drawn
+ * lifting: left half tile $78, right half $78 flipped (two hands) or $08
+ * flipped for a half-width item (one hand), the item at slot $13 16 px
+ * above him, left-aligned (LeftAlignHalfWidthObj $504). NES OAM t011
+ * f504: #18 $78/$00 x$78, #19 $08/$40 x$80, sword $20 at Y-$10. */
+static const unsigned char k_level_song_ids[10] = {
+    0x01u, 0x40u, 0x40u, 0x40u, 0x40u, 0x40u, 0x40u, 0x40u, 0x40u, 0x20u
+};
+
+static void check_lift_item(void)
+{
+    const unsigned char item = nes_ram[0x0505u];
+    unsigned char saved_cur;
+    if (item == 0u) return;
+    nes_ram[0x0506u] = (unsigned char)(nes_ram[0x0506u] - 1u);
+    if (nes_ram[0x0506u] == 0u) {
+        /* EndLinkLiftingItem. */
+        nes_ram[0x00ACu] = 0u;
+        nes_ram[0x0505u] = 0u;
+        if (nes_ram[0x0010u] != 0u && nes_ram[0x0010u] < 10u)
+            nes_ram[0x0600u] = k_level_song_ids[nes_ram[0x0010u]];
+        return;
+    }
+    nes_ram[0x00ACu] = 0x40u;                         /* halted */
+    nes_ram[0x0070u + 19u] = nes_ram[0x0070u];        /* ObjX+19 */
+    nes_ram[0x0084u + 19u] = (unsigned char)(nes_ram[0x0084u] - 0x10u);
+    saved_cur = nes_ram[0x0340u];
+    nes_ram[0x0340u] = 0x13u;
+    nes_ram[0x0504u] = (unsigned char)(nes_ram[0x0504u] + 1u);
+    enemy_render_weapon_reset(0x13u);
+    draw_animate_item_object(item, 0x13u);
+    nes_ram[0x0504u] = (unsigned char)(nes_ram[0x0504u] - 1u);
+    nes_ram[0x0340u] = saved_cur;
+    /* ProcessedNarrowObj ($52): Anim_WriteItemSprites zeroes it, then
+     * counts a half-width item (one-hand lift). */
+    roomrom_sprites_set_link_lift(players[0].x, players[0].y,
+                                  (unsigned char)(nes_ram[0x0052u] != 0u));
+}
+
 static unsigned char play_update_objects(void)
 {
     roomrom_combat_update(players[0].x, players[0].y, players[0].face);
@@ -2822,6 +2880,8 @@ static unsigned char play_update_objects(void)
              * EffectRequest is REPORTED, not byte-gated (like GameMode). */
             nes_ram[0x0603u] |= 0x08u;   /* stairs effect (audio_requests) */
             cave_fade_set_callbacks(&k_cave_fade_callbacks);
+            nes_ram[0x0012u] = 0x10u;         /* T-011: NES mode $10 stairs */
+            nes_ram[0x0013u] = 0u;
             cave_fade_begin_enter(cid);
             return 1u;
         }
@@ -2860,6 +2920,7 @@ static unsigned char play_update_objects(void)
      * render cache instead of a per-item-id Genesis table (the key, $19,
      * fell back to a boomerang placeholder there). */
     enemy_render_weapon_reset(0x13u);
+    check_lift_item();               /* T-011: NES order, before the room item */
     /* Z_07.asm MoveAndDrawRoomItem: not taken, ObjState[$13] active and
      * RoomItemId $AB != $3F. A like-like ($17), stalfos ($2A) or gibdo
      * ($30) in object slot 1 carries the item: it takes that monster's
@@ -2908,7 +2969,7 @@ static void play_finish(void)
      * Restore only when debug_enter has handed off to the
      * gameplay loop. */
     if (s_in_gameplay && nes_ram[0x0012u] == 0xCDu) {
-        nes_ram[0x0012u] = 0x05u;
+        nes_ram[0x0012u] = (s_scene == SCENE_CAVE) ? 0x0Bu : 0x05u;
         nes_ram[0x0013u] = 0x00u;
     }
     /* Plan v5b Tier-5 T5.5 — audio dispatcher: gamemode+scene
@@ -2972,6 +3033,7 @@ void roomrom_debug_tick(void)
         DBG_SENTINEL(0x15u) = (unsigned char)players[0].x;
         DBG_SENTINEL(0x16u) = (unsigned char)players[0].y;
         DBG_SENTINEL(0x17u) = s_room_id;
+        s_tick_start_link_y = players[0].y;   /* T-011: cave edge check */
         /* T-125 frame budget probe, in the 6502 stack page (unused by the
          * port, masked by the lockstep diff): $01FE = frames the previous
          * tick ran past its own (0 = it fit), $01FF = VDP V counter when

@@ -115,7 +115,7 @@ Status: `TODO` · `ACTIVE` · `BLOCKED` · `REVIEW` · `DONE`. Plan ref = task I
 | ID | Segment | Plan ref | Status | Owner | Acceptance |
 |---|---|---|---|---|---|
 | T-010 | Boot → file create → OW start | P2.1, P7.4 | TODO | | Recorded input file replays to OW start |
-| T-011 | Sword cave → sword → exit | P2.2 | TODO | | Sword owned, HUD updated, correct exit spot |
+| T-011 | Sword cave → sword → exit | P2.2 | DONE | Claude | `builds/reports/recovery/t011-sword-cave/SUMMARY.md`: user bug "Link invisible after the first cave" = stairs behind-BG cells never lowered (fixed); NES item lift ported (mode $0B caves, CheckLiftItem, lift pose tiles from demo CHR), cave halt timing, text-erase transfer buffers $1E/$2A, exit trigger tick. t011_sword_cave framebuffer 0 px vs NES through pickup/lift/exit; suite t011a lag GEN 210 / NES 382, only new NES diff = Ganon-intro lift timer in the staged sweep (NES staged into mode $13, T-098) |
 | T-012 | OW → L1 entrance (combat, room crossings) | P2.3–2.4 | TODO | | Enters L1 with no staging |
 | T-013 | L1 full → Aquamentus → heart + triforce → exit | P2.5, P1.1–1.7 | TODO | | Real fight, reward, exit; save/reload once (P2.6) |
 | T-014 … T-021 | L2 … L9 (one row each, add when reached) | P8.1–8.2 | TODO | | Entry, key items, boss, reward, exit |

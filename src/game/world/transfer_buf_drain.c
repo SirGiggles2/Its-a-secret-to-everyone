@@ -42,12 +42,32 @@ static const unsigned char k_mode11_dead_link_palette[] = {
     0x3Fu, 0x10u, 0x04u, 0x0Fu, 0x10u, 0x30u, 0x00u, 0xFFu
 };
 
+/* Z_06.asm:690 BlankTextBoxLines = selector $1E (entry 15): the person
+ * text lines 1-2 (NT $21A4/$21C4, 24 blanks each). Cued when a cave item
+ * is taken (t011 tick 501). */
+static const unsigned char k_blank_text_box_lines[] = {
+    0x21u, 0xA4u, 0x58u, 0x24u, 0x21u, 0xC4u, 0x58u, 0x24u, 0xFFu
+};
+
+/* Z_06.asm:694 BlankPersonWares = selector $2A (entry 21): text line 3
+ * (NT $21E4, 24 blanks) and the price row (NT $22C8, 13 blanks). Cued by
+ * UpdatePersonState_CueTransferBlankPersonWares (t011 tick 502). */
+static const unsigned char k_blank_person_wares[] = {
+    0x21u, 0xE4u, 0x58u, 0x24u, 0x22u, 0xC8u, 0x4Du, 0x24u, 0xFFu
+};
+
 /* Map selector -> static buffer pointer + length. Returns NULL if
  * unknown (caller clears selector to avoid pile-up). */
 static const unsigned char *resolve_static_buffer(unsigned char selector,
                                                   unsigned char *out_len)
 {
     switch (selector) {
+    case 0x1Eu:
+        *out_len = (unsigned char)sizeof k_blank_text_box_lines;
+        return k_blank_text_box_lines;
+    case 0x2Au:
+        *out_len = (unsigned char)sizeof k_blank_person_wares;
+        return k_blank_person_wares;
     case 0x2Cu:
         *out_len = (unsigned char)sizeof k_mode11_dead_link_palette;
         return k_mode11_dead_link_palette;

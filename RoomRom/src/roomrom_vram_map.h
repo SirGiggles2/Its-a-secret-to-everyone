@@ -168,6 +168,12 @@
  * enemy in the minimap (lockstep hud_marker, VRAM tile $2BC). */
 #define ROOMROM_HUD_MARKER_TILE_BASE 1312u
 #define ROOMROM_HUD_MARKER_TILE_COUNT 2u
+/* T-011: Link lifting an item, NES common sprite pair $78/$79 (8x16). Its
+ * SPR_TILE_BASE+$78 copy lies inside the SCENE_OBJ overlay (SPR+44) and
+ * holds enemy art in play. 1376..1440 are unused in OW / cave / UW / boss
+ * VRAM snapshots (t011, t131, t129). */
+#define ROOMROM_LINK_LIFT_TILE_BASE 1376u
+#define ROOMROM_LINK_LIFT_TILE_COUNT 2u
 /* The pause inventory owns 1280..1295. Its ROM-derived marker pair
  * (indices 14/15) is also uploaded at gameplay boot for the Original HUD. */
 #define ROOMROM_SUBSCREEN_SPRITE_TILE_BASE 1280u

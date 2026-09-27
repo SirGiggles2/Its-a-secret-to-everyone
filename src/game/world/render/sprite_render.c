@@ -63,6 +63,7 @@ ATLAS_ASSERT_SIZE(BOOMERANG3, 1, 2);
  * currently and is no longer uploaded -- frees ~232 tiles in the SPR bank.
  * NES tile IDs in common_chr are 1:1 (NES tile $58 = common_chr + 0x58*32). */
 extern const unsigned char common_chr[7616];
+extern const unsigned char demo_chr[8768];   /* T-011: NES sprite tiles $70.. */
 
 #define COMMON_VRAM_TILE_BASE   ROOMROM_SPR_TILE_BASE
 #define COMMON_CHR_BYTES        7616u
@@ -276,6 +277,12 @@ void roomrom_sprites_upload_persistent_chr(void)
     render_chr_upload((unsigned short)(ROOMROM_HUD_MARKER_TILE_BASE * 32u),
                       common_chr + 0x3Eu * 32u,
                       ROOMROM_HUD_MARKER_TILE_COUNT * 32u);
+    /* T-011: Link item-lift pair $78/$79 outside the scene overlay. The
+     * NES sprite table's $70.. tiles are the extracted demo block (tile k
+     * = NES $70 + k; byte-matched to NES CHR-RAM in a cave, t011 f520). */
+    render_chr_upload((unsigned short)(ROOMROM_LINK_LIFT_TILE_BASE * 32u),
+                      demo_chr + (0x78u - 0x70u) * 32u,
+                      ROOMROM_LINK_LIFT_TILE_COUNT * 32u);
 
     /* Walk poses (32 tiles). */
     {
@@ -410,6 +417,41 @@ static void set_link_halves(short x, short y, unsigned short tile,
                       RENDER_SPRITE_SIZE(1, 2),
                       RENDER_TILE_ATTR_FULL(pal_index, link_half_prio((short)(x + 8)),
                                             0, 0, (unsigned short)(tile + 2u)),
+                      ROOMROM_SPRITE_NEXT(ROOMROM_SPRITE_SLOT_LINK_R));
+}
+
+/* T-011: NES DrawLinkLiftingItem pose: left half $78/$79, right half
+ * $78/$79 h-flipped (two hands) or $08/$09 h-flipped for a half-width
+ * item (one hand). Link palette (NES sprite sub-pal 0 = PAL1). */
+void roomrom_sprites_set_link_lift(short x, short y, unsigned char one_hand)
+{
+    const unsigned short left = RENDER_TILE_ATTR_FULL(RENDER_PAL1, 0, 0, 0,
+                                                      ROOMROM_LINK_LIFT_TILE_BASE);
+    const unsigned short right = RENDER_TILE_ATTR_FULL(RENDER_PAL1, 0, 0, 1,
+        one_hand ? (unsigned short)(COMMON_VRAM_TILE_BASE + 0x08u)
+                 : (unsigned short)ROOMROM_LINK_LIFT_TILE_BASE);
+    roomrom_sprites_set_link_sat(x, y, left, right);
+}
+
+/* T-011: Link's two 8x16 halves from Genesis SAT words at ObjY as is:
+ * DrawLinkLiftingItem takes the position from
+ * Anim_FetchObjPosForSpriteDescriptor, without the walk draw's OW +2
+ * (link_draw_y; NES OAM t011 f504: Link Y $9D = ObjY). The priority bit
+ * follows the Link door rule like set_link_halves. */
+void roomrom_sprites_set_link_sat(short x, short y,
+                                  unsigned short left_sat, unsigned short right_sat)
+{
+    signed short gy = (signed short)y;
+    set_door_masks();
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_LINK, (signed short)x, gy,
+                      RENDER_SPRITE_SIZE(1, 2),
+                      (unsigned short)((left_sat & 0x7FFFu) |
+                                       ((unsigned short)link_half_prio(x) << 15)),
+                      ROOMROM_SPRITE_NEXT(ROOMROM_SPRITE_SLOT_LINK));
+    VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_LINK_R, (signed short)(x + 8), gy,
+                      RENDER_SPRITE_SIZE(1, 2),
+                      (unsigned short)((right_sat & 0x7FFFu) |
+                                       ((unsigned short)link_half_prio((short)(x + 8)) << 15)),
                       ROOMROM_SPRITE_NEXT(ROOMROM_SPRITE_SLOT_LINK_R));
 }
 
