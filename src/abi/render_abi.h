@@ -176,6 +176,11 @@ void render_plane_fill(unsigned short plane_base, unsigned short fill_word,
 void render_plane_fill_row(unsigned char plane_b, unsigned short col,
                            unsigned short row, unsigned short count,
                            unsigned short word);
+/* T-134: queue count cells of Plane A row `row` from col for the VBlank
+ * DMA (cells must stay valid until then). Returns 0 if the queue is full. */
+unsigned char render_plane_a_queue_row(unsigned short row, unsigned short col,
+                                       const unsigned short *cells,
+                                       unsigned short count);
 /* T-125: count words of VRAM from vram_addr into dst (one address set). */
 void render_vram_read_run(unsigned short vram_addr, unsigned short *dst,
                           unsigned short count);

@@ -33,6 +33,10 @@ void roomrom_ow_room_render_fill_plane_a(unsigned char room_id);
  *
  * Same raw-tile cache + stable-flag semantics as fill_plane_a. */
 void roomrom_cave_room_render_fill_plane_a(unsigned char cave_id);
+/* T-134: compute up to max_cols cave metatile columns ahead of the swap
+ * (RAM only, nothing drawn). */
+void roomrom_cave_room_render_prepare(unsigned char cave_id,
+                                      unsigned char max_cols);
 
 /* S5 collision: returns non-zero if the metatile at (col, row) in the
  * current OW room is walkable. col 0..15, row 0..10. Out-of-bounds = 0. */

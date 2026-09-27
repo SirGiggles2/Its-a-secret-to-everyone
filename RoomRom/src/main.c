@@ -521,10 +521,14 @@ extern u8 s_link_frame;
  * once per frame, after AnimateLinkBase (NES SetUpWalkingSprites). */
 static unsigned char s_link_draw_pending = 0u;
 
+/* T-134: set while the cave-load playfield is black (Link hidden). */
+static unsigned char s_cave_load_blank = 0u;
+
 static void draw_link_pending(void)
 {
     if (!s_link_draw_pending) return;
     s_link_draw_pending = 0u;
+    if (s_cave_load_blank) return;
     if (nes_ram[0x04F0u] != 0u)
         roomrom_sprites_set_link_pose_pal(players[0].x, players[0].y,
             players[0].face, s_link_frame,
@@ -565,6 +569,7 @@ static void cave_fade_descend_step_handler(unsigned char step_idx)
 static void cave_fade_swap_entry_handler(cave_id_t cid)
 {
     (void)cid;
+    s_cave_load_blank = 0u;
     s_scene = SCENE_CAVE;
     /* NES Z1 cave-entry Link spawn (Z_01.asm:2965 InitModeB_EnterCave_Bank5):
      * ObjX=$70 (112), ObjY=$DD (221), facing up. Byte-verified vs NES via
@@ -633,13 +638,32 @@ static void cave_fade_swap_exit_handler(void)
     roomrom_main_apply_warp_outcome(&out);
 }
 
+/* T-134: NES mode $0B blanks the playfield (HUD stays) while it lays out
+ * the cave; the curtain blank is the same black play area (byte-checked
+ * vs NES in T-132). */
+static void playfield_blank(void);
+static void cave_fade_load_blank_handler(unsigned char stage)
+{
+    if (stage == 0u) {
+        /* Sprite changes reach VRAM at the next VBlank, one frame after
+         * the plane writes below: hide Link a tick earlier so both show
+         * on the same frame. */
+        s_cave_load_blank = 1u;
+        roomrom_sprites_set_link_pose((short)-32, (short)-32,
+                                      players[0].face, 0u);
+    } else {
+        playfield_blank();
+    }
+}
+
 static const cave_fade_callbacks_t k_cave_fade_callbacks = {
     cave_fade_descend_step_handler,
     cave_fade_swap_entry_handler,
     cave_fade_ascend_step_handler,
     cave_fade_swap_exit_handler,
     cave_fade_emerge_step_handler,
-    cave_fade_anim_tick_handler
+    cave_fade_anim_tick_handler,
+    cave_fade_load_blank_handler
 };
 
 static void anchor_active_slot(void)
@@ -2079,6 +2103,22 @@ static void curtain_hide(void)
     }
 }
 
+/* T-134: the curtain's black play area without saving what was there. */
+static void playfield_blank(void)
+{
+    u8 row;
+    u16 pc, pr;
+    for (row = 0u; row < 22u; ++row) {
+        u16 first;
+        (void)curtain_addr(0u, row, &pc, &pr);
+        first = (u16)(64u - pc);
+        if (first > 32u) first = 32u;
+        render_plane_fill_row(0u, pc, pr, first, 0u);
+        if (first < 32u)
+            render_plane_fill_row(0u, 0u, pr, (u16)(32u - first), 0u);
+    }
+}
+
 static void curtain_reveal(u8 col)
 {
     u8 row;
@@ -3139,7 +3179,19 @@ void roomrom_debug_tick(void)
          * the C side just acted on. `pressed` derived from the
          * original s_joy_prev above (already overwritten with `joy`)
          * and re-swapped with `joy` if AB swap is active. */
-        nes_ram_sync_input(joy, pressed);
+        if (cave_fade_is_active()) {
+            /* T-134: NES modes $10/$0B (stairs, cave load) read the pad
+             * but run no UpdatePlayer, and ObjInputDir ($3F8) is only set
+             * in mode 5: holding a direction must not move Link against
+             * the descent. */
+            unsigned char input_dir = nes_ram[0x03F8u];
+            nes_ram_sync_input(joy, pressed);
+            nes_ram[0x03F8u] = input_dir;
+            joy = 0u;
+            pressed = 0u;
+        } else {
+            nes_ram_sync_input(joy, pressed);
+        }
 
         /* SCENE_CAVE harness: tick the native cave gamemode each frame.
          * C+START exit chord hands off to cave_fade sequencer. Other

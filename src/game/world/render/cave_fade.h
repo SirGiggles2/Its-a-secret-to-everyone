@@ -76,6 +76,11 @@ typedef struct {
      * mirrors nes_ram $3D0=counter / $3E4=frame. Appended last to preserve the
      * existing positional initializer order. */
     void (*on_anim_tick)(unsigned char counter, unsigned char frame);
+    /* T-134: NES mode $0B submode 2 blanks the playfield (the HUD stays)
+     * until the cave appears. stage 0 at the descent end (owner hides
+     * Link: sprite writes land a frame after plane writes), stage 1 on the
+     * next tick (owner blanks the play area). Appended last. */
+    void (*on_load_blank)(unsigned char stage);
 } cave_fade_callbacks_t;
 
 void              cave_fade_set_callbacks(const cave_fade_callbacks_t *cb);

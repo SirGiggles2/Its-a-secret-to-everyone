@@ -59,7 +59,7 @@ static unsigned char         s_frame_counter  = 0u;  /* 0..63 for descend */
 static unsigned char         s_step_idx       = 0u;  /* 0..15 px steps emitted */
 static cave_id_t             s_pending_cid    = 0u;
 static unsigned char         s_return_room_id = 0u;
-static cave_fade_callbacks_t s_cb             = { 0, 0, 0, 0, 0, 0 };
+static cave_fade_callbacks_t s_cb             = { 0, 0, 0, 0, 0, 0, 0 };
 /* LINK_EMERGE running state (NES MoveObject accumulator). */
 static unsigned char         s_emerge_y       = 0u;
 static unsigned char         s_emerge_posfrac = 0u;
@@ -94,6 +94,9 @@ static unsigned char         s_anim_frame     = 0u;
  * (InitMode_WalkCave) repositions to $DD and emerges. Byte-captured ~29 frames
  * for cave $6A (NES descent-end fr64 -> emerge-spawn fr93). */
 #define CAVE_LOAD_HOLD_FRAMES 18u
+/* T-134: hold counter value at which the playfield goes black: NES
+ * submode 2 is visible 2 frames after mode $0B starts (t120 f124 -> f126). */
+#define CAVE_LOAD_BLANK_AT ((unsigned char)(CAVE_LOAD_HOLD_FRAMES - 1u))
 static unsigned char         s_load_counter   = 0u;
 
 void cave_fade_set_callbacks(const cave_fade_callbacks_t *cb)
@@ -211,6 +214,7 @@ void cave_fade_tick(void)
                  * submodes BEFORE the emerge — replicate the duration. */
                 s_load_counter = CAVE_LOAD_HOLD_FRAMES;
                 s_phase = CAVE_FADE_LOAD_HOLD;
+                if (s_cb.on_load_blank != 0) s_cb.on_load_blank(0u);
             }
         }
         break;
@@ -222,6 +226,16 @@ void cave_fade_tick(void)
          * for the NES cave-load duration, then do the swap + emerge. */
         if (s_load_counter > 0u) {
             s_load_counter = (unsigned char)(s_load_counter - 1u);
+            /* T-134: NES enters mode $0B at the descent end and its
+             * submode 2 (t120 f124 -> f126) shows a black
+             * playfield until the cave appears at once (submode 8). */
+            if (s_load_counter == CAVE_LOAD_BLANK_AT &&
+                s_cb.on_load_blank != 0) {
+                s_cb.on_load_blank(1u);
+            }
+            /* Lay the cave out behind the black playfield (RAM only). */
+            if (s_load_counter <= CAVE_LOAD_BLANK_AT)
+                roomrom_cave_room_render_prepare((unsigned char)s_pending_cid, 2u);
         } else {
             s_phase = CAVE_FADE_SWAP_ENTRY;
         }

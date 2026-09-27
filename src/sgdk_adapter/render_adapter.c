@@ -580,6 +580,15 @@ void render_plane_fill_row(unsigned char plane_b, unsigned short col,
     SYS_enableInts();
 }
 
+unsigned char render_plane_a_queue_row(unsigned short row, unsigned short col,
+                                       const unsigned short *cells,
+                                       unsigned short count)
+{
+    const unsigned short addr = (unsigned short)(PLANE_A_BASE +
+        row * s_plane_row_stride_bytes + col * 2u);
+    return DMA_queueDmaFast(DMA_VRAM, (void *)cells, addr, count, 2) ? 1u : 0u;
+}
+
 void render_vram_read_run(unsigned short vram_addr, unsigned short *dst,
                           unsigned short count)
 {
