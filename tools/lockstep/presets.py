@@ -132,7 +132,9 @@ def build(spec: dict) -> dict:
             # T-012: "play" = the script advances only on play-mode ticks
             # (GameMode $05/$09/$0B), so a load the Genesis finishes in
             # fewer ticks than the NES does not shift later inputs.
-            "clock": spec.get("clock", "tick")}
+            "clock": spec.get("clock", "tick"),
+            # T-013: NES-only route bot (tools/lockstep/bot.lua).
+            "bot": spec.get("bot")}
 
 
 def stages_of(spec: dict) -> list:
@@ -141,6 +143,21 @@ def stages_of(spec: dict) -> list:
     if spec.get("stage") and int(spec.get("stage_at", -1)) >= 0:
         out.append((int(spec["stage_at"]), spec["stage"]))
     return sorted(out, key=lambda t: t[0])
+
+
+def lua_value(v) -> str:
+    """JSON value -> Lua literal (lists become 1-based tables)."""
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, (int, float)):
+        return str(v)
+    if isinstance(v, str):
+        return '"' + v.replace("\\", "\\\\").replace('"', '\\"') + '"'
+    if isinstance(v, list):
+        return "{" + ",".join(lua_value(x) for x in v) + "}"
+    if isinstance(v, dict):
+        return "{" + ",".join(f"[{lua_value(str(k))}]={lua_value(x)}" for k, x in v.items()) + "}"
+    raise SystemExit(f"bot spec: unsupported value {v!r}")
 
 
 def to_lua(p: dict) -> str:
@@ -156,6 +173,9 @@ def to_lua(p: dict) -> str:
     for i, (at, body) in enumerate(p.get("stages", []), 1):
         out += (f'PRESET.stages[{i}] = {{at={at}, fn=function(rd, wr, log, sys, '
                 f'gen_b_item, gen_link_pos)\n{body}\nend}}\n')
+    if p.get("bot"):
+        out += (Path(__file__).resolve().parent / "bot.lua").read_text(encoding="utf-8")
+        out += "\nPRESET.bot = " + lua_value(p["bot"]) + "\n"
     if p.get("pc_profile"):
         a, b = p["pc_profile"]
         out += f'PRESET.pc_profile = {{{int(a)}, {int(b)}}}\n'

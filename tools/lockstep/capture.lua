@@ -147,6 +147,19 @@ for _, step in ipairs(PRESET.script) do
 end
 local ram = io.open(OUT .. ".ram", "wb")
 local total = math.min(MAXF, #seq)
+-- T-013: optional route bot (tools/lockstep/bot.lua, inlined into the
+-- preset by presets.py), NES only, play clock only. After the script it
+-- picks each new tick's buttons from NES RAM and logs them to <OUT>.botin
+-- (one line per tick, then "# <why it stopped>"); bot_merge.py turns the
+-- log into script steps for the Genesis replay.
+local SCRIPT_LEN = #seq
+local botlog = nil
+if PRESET.bot and sys == "NES" then
+    if PRESET.clock ~= "play" then fail("bot presets need clock=play") return end
+    BOT.init(PRESET.bot)
+    total = math.min(MAXF, SCRIPT_LEN + (PRESET.bot.max or 3000))
+    botlog = io.open(OUT .. ".botin", "w")
+end
 local function srd(o) return memory.read_u8(RAM_BASE + o, RAM_DOM) end
 local function swr(o, v) memory.write_u8(RAM_BASE + o, v & 0xFF, RAM_DOM) end
 local function slog(msg) meta:write("stage: " .. msg .. "\n") end
@@ -305,6 +318,12 @@ while tick < total and f < FRAME_CAP do
     end
     if PCP and f == PCP[2] + 1 then pc_stop() end
     local bytes = memory.read_bytes_as_array(RAM_BASE, 0x800, RAM_DOM)
+    if new_tick and botlog and tick >= SCRIPT_LEN and seq[tick + 1] == nil then
+        local b = BOT.decide(srd)
+        seq[tick + 1] = b
+        botlog:write(b .. "\n")
+        if BOT.done then total = tick + 1 end
+    end
     if new_tick then
         for _, st in ipairs(PRESET.stages) do
             if st.at > prev_tick and st.at <= tick then
@@ -371,6 +390,10 @@ while tick < total and f < FRAME_CAP do
 end
 fram:close()
 frtick:close()
+if botlog then
+    botlog:write("# " .. (BOT.done and BOT.why or "tick budget spent") .. "\n")
+    botlog:close()
+end
 if tick >= total and prev_tick < total - 1 then
     -- a FrameCounter jump crossed the script end: rows up to total - 1
     local row = row_of(memory.read_bytes_as_array(RAM_BASE, 0x800, RAM_DOM))

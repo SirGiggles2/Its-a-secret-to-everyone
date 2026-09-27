@@ -32,6 +32,8 @@ def main() -> int:
     ap.add_argument("--pc-profile", metavar="FIRST:LAST",
                     help="Genesis 68K PC histogram over VIDEO frames FIRST..LAST "
                          "(writes gen.pcprof; report with pc_profile.py)")
+    ap.add_argument("--nes-only", action="store_true",
+                    help="capture the NES only (route design; no Genesis run, no diff)")
     ap.add_argument("--snap", metavar="F1,F2,...",
                     help="also dump the video domains at these game ticks (T-136) "
                          "(<plat>.fNNNNN.<oam|nt|pal|vram|cram|vsram>)")
@@ -55,7 +57,8 @@ def main() -> int:
     frames = min(a.frames, sum(n for n, _ in p["script"]))
     timeout = 300 + frames // 10 + 20 * len(p.get("snap", []))
     seed = ""
-    for plat, rom in (("nes", NES_ROM), ("gen", GEN_ROM)):
+    plats = (("nes", NES_ROM),) if a.nes_only else (("nes", NES_ROM), ("gen", GEN_ROM))
+    for plat, rom in plats:
         prefix = (out / plat).as_posix()
         r = subprocess.run([sys.executable, str(ROOT / "tools" / "debug" / "run_probe.py"),
                             str(HERE / "capture.lua"), str(out / f"run_{plat}"),
@@ -71,6 +74,8 @@ def main() -> int:
                 # flag on its first tick (before seeding). Align them too (T-107).
                 cells = [0x15, *range(0x18, 0x25), 0x26, 0x4A, 0x60, 0x61, 0x62]
                 seed = " ".join(f"SEED[0x{a:02X}]=0x{ram[a]:02X}" for a in cells)
+    if a.nes_only:
+        return 0
     return diff.main(out)
 
 

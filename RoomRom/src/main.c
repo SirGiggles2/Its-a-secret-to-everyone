@@ -2947,7 +2947,10 @@ static unsigned char play_update_objects(void)
      * any future NES HUD-readout consumer sees live values. */
     inventory_sync_from_native();
     nes_ram_sync_link_face();
-    nes_ram_sync_sword();
+    /* T-013: the vanilla sword runs in the NES cells ($0D slot) itself;
+     * this copy of the swing-start facing is for the Redux swing only
+     * (it undid a mid-swing turn: sword ObjDir $08 vs NES $02). */
+    if (roomrom_main_current_redux_flag()) nes_ram_sync_sword();
 
     /* Tier 0 (plan v6) pause gate: when g_paused != OFF, skip
      * gameplay tick (enemy AI + collision + Link state machine).
@@ -3851,7 +3854,11 @@ void roomrom_debug_tick(void)
         /* S7: while sword is mid-swing, swallow D-pad so Link freezes on
          * his swing pose. Combat module ticks below + clears sword on
          * retract, returning control. */
-        if (roomrom_combat_link_locked() || nes_ram[0x00ACu] == 0x40u) {
+        /* T-013: NES UpdatePlayer returns while Link is halted; in the
+         * sword/item states ($1x/$2x) Link_HandleInput still turns him and
+         * Walker_Move only drops the move (below). */
+        if ((roomrom_main_current_redux_flag() && roomrom_combat_link_locked()) ||
+            (nes_ram[0x00ACu] & 0xC0u) == 0x40u) {
             joy = (u16)(joy & ~(BUTTON_LEFT|BUTTON_RIGHT|BUTTON_UP|BUTTON_DOWN));
         }
 
@@ -4029,6 +4036,9 @@ void roomrom_debug_tick(void)
                     }
                 }
 
+                /* NES Walker_Move (Z_07.asm:2612): Link in state $1x/$2x
+                 * keeps the facing Link_HandleInput chose, [0F] = 0. */
+                const u8 item_use_hold = link_item_use_blocks_move();
                 if (moving_dir != LINK_DIR_NONE) {
                     /* NES draws Link facing ObjDir (s_link_dir), which the
                      * no-walkable grid-point case leaves unchanged (T-122). */
@@ -4040,6 +4050,7 @@ void roomrom_debug_tick(void)
                     default: break;
                     }
                 }
+                if (item_use_hold) moving_dir = LINK_DIR_NONE;
 
                 /* T-120: Walker_Move for Link (Z_07.asm:2632): tile objects
                  * (block/rock/gravestone/armos in state 1) within $10 px

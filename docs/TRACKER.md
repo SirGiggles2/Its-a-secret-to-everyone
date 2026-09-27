@@ -121,7 +121,7 @@ Status: `TODO` · `ACTIVE` · `BLOCKED` · `REVIEW` · `DONE`. Plan ref = task I
 | T-140 | Level exit (mode $12 → 2 → 3 → 4): count NES FrameCounter steps of the exit load and add the catch-up (entry uses 12) when T-013 reaches the exit | P2.5 | TODO | | FC/Random equal NES after the L1 exit |
 | T-138 | Link hurt flash: NES Anim_WriteSpritePair uses sub-palette `ObjInvincibilityTimer & 3` (Z_01.asm:5152); Genesis cycles CRAM PAL0-3 by its own tick count (`draw_link_pending`), colors unverified | P3 | TODO | | Framebuffer/CRAM vs NES over one hurt flash |
 | T-137 | T-012 route: Genesis Link hit early in room $67 and died. FrameCounter/Random/timers 20 NES frames behind after the fast cave load + exit; stairs start a frame late; walk-in and step-out missing NES frames; room enemies and shots initialized at spawn (NES: first update) | P2.3 | DONE | Claude | `t012_route` play clock: FC + Random equal to NES every tick of 1748; Link/enemy/HP cells equal through room $67 (see T-012 evidence) |
-| T-013 | L1 full → Aquamentus → heart + triforce → exit | P2.5, P1.1–1.7 | TODO | | Real fight, reward, exit; save/reload once (P2.6) |
+| T-013 | L1 full → Aquamentus → heart + triforce → exit | P2.5, P1.1–1.7 | ACTIVE | Claude | Real fight, reward, exit; save/reload once (P2.6) |
 | T-014 … T-021 | L2 … L9 (one row each, add when reached) | P8.1–8.2 | TODO | | Entry, key items, boss, reward, exit |
 | T-022 | Ganon → Zelda → ending | P6.1, P8.3 | TODO | | Unassisted fight; ending mode + credits (renderer stubs → T-051) |
 
