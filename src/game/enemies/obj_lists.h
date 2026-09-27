@@ -59,10 +59,11 @@ unsigned char enemy_room_load_objects(unsigned char room_id);
 void enemy_assign_spawn_positions(unsigned char room_id,
                                   unsigned char template_id);
 
-/* NES source: Z_05.asm:FindNextEdgeSpawnCell / Z_07.asm:InitMonsterFromEdge.
- * Drained C: enemy_edge_spawn_next. Coverage: PARTIAL room-entry placement.
- * Stance: EXTEND. Returns nonzero after selecting a walkable, Link-safe edge cell. */
-unsigned char enemy_edge_spawn_next(unsigned int slot);
+/* NES FindNextEdgeSpawnCell + InitMonsterFromEdge placement: next
+ * walkable edge cell into CurEdgeSpawnCell $525 and the slot's X/Y. */
+void enemy_edge_spawn_next(unsigned int slot);
+/* NES IsDistanceSafeToSpawn: 1 when Link is at least $22 away. */
+unsigned char enemy_edge_distance_safe(unsigned int slot);
 
 #ifdef __cplusplus
 }

@@ -293,7 +293,7 @@ static u8             s_ow_edge = 0u;
 static u8             s_uw_edge = 0u;
 /* T-132: level entry from the OW (NES modes $10 / 2 / 3, then 4). */
 enum { LVL_NONE = 0, LVL_STAIRS, LVL_CURTAIN, LVL_EXIT_LOAD, LVL_STEP_OUT,
-       LVL_CAVE_EXIT };
+       LVL_CAVE_EXIT, LVL_PLAY_INIT };
 static u8             s_lvl_phase = LVL_NONE;
 static u8             s_lvl_target_y = 0u;
 static u8             s_lvl_step = 0u;
@@ -550,6 +550,34 @@ static void draw_link_pending(void)
                                       players[0].face, s_link_frame);
 }
 
+/* T-012: the NES runs its NMI frame work (timers, Random, FrameCounter)
+ * once per frame of a load; Genesis loads in fewer frames. Enemy AI reads
+ * Random and the timers, so after a fast load the missing NES frames' work
+ * runs at once (no wait): t012_route room $67 octoroks turned the other
+ * way and hit Link 60 ticks early, FrameCounter 20 behind the NES. */
+static void nes_frame_timers_and_random(void);
+static u16 s_nes_load_base = 0u;   /* s_frame_counter at the load's start */
+static void nes_frames_catch_up(unsigned char nes_frames)
+{
+    const u16 ran = (u16)(s_frame_counter - s_nes_load_base);
+    u16 n;
+    if (ran >= nes_frames) return;
+    for (n = (u16)(nes_frames - ran); n != 0u; --n) {
+        nes_ram[0x0015u] = (unsigned char)(nes_ram[0x0015u] + 1u);
+        nes_frame_timers_and_random();
+    }
+}
+/* FrameCounter steps from the mode $0B submode 0 frame (stairs end) to
+ * InitMode_WalkCave's first frame: submodes 0-3 (4), 22 row copies,
+ * 5-7 (3) (Z_05.asm InitModeB; t012_route NES fc $A8 -> $C5). */
+#define NES_CAVE_ENTER_FRAMES 29u
+/* From the mode $0A submode 0 frame to mode 4's first frame: submodes
+ * 0-4 (5), 22 row copies, 6-A (5) (InitModeA; NES fc $B3 -> $D3). */
+#define NES_CAVE_LEAVE_FRAMES 32u
+/* From mode 2's first frame (stairs end) to the mode 3 curtain: mode 2
+ * (4) + InitMode3 submodes (8) (t012_route NES fc $48 -> $54). */
+#define NES_LEVEL_LOAD_FRAMES 12u
+
 /* Tier 1 cave-fade callbacks. cave_fade.c owns sequencing + cave_init/
  * cave_exit + plane fill; this side owns Link reposition + scene flip
  * + HUD underlay reset (which need RoomRom-local statics). */
@@ -590,6 +618,11 @@ static void cave_fade_swap_entry_handler(cave_id_t cid)
     players[0].x    = 0x70u;   /* 112 */
     players[0].y    = 0xDDu;   /* 221 */
     players[0].face = LINK_FACE_UP;
+    /* T-012: this is InitMode_WalkCave's first frame (submode 8). */
+    nes_frames_catch_up(NES_CAVE_ENTER_FRAMES);
+    nes_ram[0x0013u] = 8u;
+    s_link_grid_offset = 0x30;
+    s_link_pos_frac = 0u;
     /* Mirror spawn into nes_ram ObjX/ObjY[0] so the byte-diff sees $DD at the
      * swap frame (cave_init wrote $D0 here as its cave-spawn). The LINK_EMERGE
      * phase then walks ObjY[0] $DD -> $D5 each frame, below. */
@@ -612,6 +645,10 @@ static void cave_fade_emerge_step_handler(unsigned char obj_y,
     nes_ram[0x0084u]  = obj_y;
     nes_ram[0x0394u]  = grid;
     nes_ram[0x03A8u]  = posfrac;
+    /* The end-of-tick Link publish copies these back to $394/$3A8. */
+    s_link_grid_offset = (signed char)grid;
+    s_link_pos_frac    = posfrac;
+    nes_ram[0x0013u]  = 8u;   /* InitMode_WalkCave */
     /* Walk pose driven by cave_fade_anim_tick_handler (6-frame cadence). */
 }
 
@@ -634,6 +671,12 @@ static void cave_fade_anim_tick_handler(unsigned char counter,
     s_link_frame      = frame;
     nes_ram[0x03D0u]  = counter;
     nes_ram[0x03E4u]  = frame;
+}
+
+/* T-012: InitMode_WalkCave's settle frame begins the cave update. */
+static void cave_fade_walk_done_handler(void)
+{
+    nes_ram[0x0013u] = 0u;
 }
 
 static void cave_fade_swap_exit_handler(void)
@@ -664,11 +707,13 @@ static void cave_fade_load_blank_handler(unsigned char stage)
          * outside mode 5). */
         nes_ram[0x0012u] = 0x0Bu;
         nes_ram[0x0013u] = 0u;
+        s_nes_load_base = s_frame_counter;
         s_cave_load_blank = 1u;
         roomrom_sprites_set_link_pose((short)-32, (short)-32,
                                       players[0].face, 0u);
     } else {
         playfield_blank();
+        nes_ram[0x0013u] = 1u;   /* InitModeB load submodes (NES 1..7) */
     }
 }
 
@@ -679,7 +724,8 @@ static const cave_fade_callbacks_t k_cave_fade_callbacks = {
     cave_fade_swap_exit_handler,
     cave_fade_emerge_step_handler,
     cave_fade_anim_tick_handler,
-    cave_fade_load_blank_handler
+    cave_fade_load_blank_handler,
+    cave_fade_walk_done_handler
 };
 
 static void anchor_active_slot(void)
@@ -2218,6 +2264,7 @@ static void begin_cave_exit(void)
     s_cave_load_blank = 1u;                 /* no Link redraw from here */
     nes_ram[0x0012u] = 0x0Au;
     nes_ram[0x0013u] = 0u;
+    s_nes_load_base = s_frame_counter;
     s_lvl_step = 0u;
     s_lvl_phase = LVL_CAVE_EXIT;
 }
@@ -2269,6 +2316,7 @@ static void cave_exit_tick(void)
     }
     if (step == CAVE_EXIT_REVEAL_STEP) {
         /* Mode 4 InitMode_EnterRoom method 1: StepOutside (T-132). */
+        nes_frames_catch_up(NES_CAVE_LEAVE_FRAMES);
         s_cave_load_blank = 0u;
         nes_ram[0x0012u] = 0x04u;
         nes_ram[0x0013u] = 0u;
@@ -2314,6 +2362,15 @@ static void level_entry_tick(void)
     roomrom_scene_uw_sprite_base_tick();
     if (s_lvl_phase == LVL_CAVE_EXIT) {
         cave_exit_tick();
+        return;
+    }
+    if (s_lvl_phase == LVL_PLAY_INIT) {
+        /* T-012: InitMode5Play takes a frame of its own (Link drawn, no
+         * UpdatePlayer); t012_route NES t807 Link still, Genesis moved. */
+        nes_ram[0x0011u] = 1u;                    /* IsUpdatingMode */
+        level_entry_draw_link();
+        VDP_updateSprites(ROOMROM_SPRITE_SLOT_ENEMY_FIRST, DMA_QUEUE);
+        s_lvl_phase = LVL_NONE;
         return;
     }
     if (s_lvl_phase == LVL_EXIT_LOAD) {
@@ -2387,8 +2444,9 @@ stepped_out:
         /* GoToNextModePlayLevelSong: play resumes. */
         nes_ram[0x0012u] = 0x05u;
         nes_ram[0x0013u] = 0u;
+        nes_ram[0x0011u] = 0u;                    /* InitMode5Play next */
         roomrom_hud_set_counts_hidden(0u);
-        s_lvl_phase = LVL_NONE;
+        s_lvl_phase = LVL_PLAY_INIT;
         return;
     }
     if (s_lvl_phase == LVL_STAIRS) {
@@ -2442,6 +2500,10 @@ stepped_out:
         render_display_enable(1u);
         nes_ram[0x0012u] = 0x03u;
         nes_ram[0x0013u] = 0u;
+        /* T-012: NES modes 2 + 3 init take 12 frames before the curtain
+         * runs (t012_route fc $48 -> $54); Genesis loaded in this one. */
+        s_nes_load_base = s_frame_counter;
+        nes_frames_catch_up(NES_LEVEL_LOAD_FRAMES);
         s_lvl_step = 0u;
         s_lvl_timer = 0u;
         s_lvl_phase = LVL_CURTAIN;
@@ -2739,16 +2801,6 @@ static unsigned char play_update_objects(void)
     roomrom_bomb_update();
     roomrom_candle_fire_update();
     roomrom_link_damage_tick((unsigned char)s_frame_counter);
-    /* Decrement LINK_STUN_TIMER ($04F0) on even frames per NES
-     * Z_07.asm:5756 DecrementInvincibilityTimer. NES drained
-     * link_collision_link_be_harmed sets this cell to 24 on hit;
-     * without per-frame decrement, Link stays permanently
-     * invincible after first hit and damage path skips all
-     * subsequent collisions. */
-    if (nes_ram[0x04F0u] != 0u &&
-        ((unsigned char)s_frame_counter & 1u) == 0u) {
-        nes_ram[0x04F0u]--;
-    }
     inventory_rupee_tick((unsigned char)s_frame_counter);
     /* Tier 2: drive Power Triforce fanfare. core_take_power_triforce
      * (item_dispatch.c:48) sets POWER_TRIFORCE_FANFARE_FLAG +
@@ -2772,7 +2824,8 @@ static unsigned char play_update_objects(void)
      * change refresh. Per NES Z_01.asm:4095-4146 the marker
      * flashes every 16 frames keyed on FrameCounter ($0015). */
     /* T-132: no map dot during the curtain (mode 3); mode 4 draws it. */
-    if (s_lvl_phase == LVL_NONE || s_lvl_phase == LVL_STEP_OUT)
+    if (s_lvl_phase == LVL_NONE || s_lvl_phase == LVL_STEP_OUT ||
+        s_lvl_phase == LVL_PLAY_INIT)
         roomrom_hud_refresh_marker(s_room_id,
                                    (unsigned char)(s_scene == SCENE_UW),
                                    nes_ram[0x0015u]);
@@ -3022,6 +3075,56 @@ static void play_finish(void)
     transfer_buf_drain();
 }
 
+/* NES NMI frame work (Z_07.asm:468-515): timers, then Random. */
+static void nes_frame_timers_and_random(void)
+{
+    /* Phase 7 root-cause fix #2 2026-05-16 — port NES Z_07.asm:468
+     * @UpdateTimers from the NES NMI handler. Per-frame decrement
+     * of every non-zero byte in NES $26..$3C (StunCycle through
+     * FluteTimer, including DoorTimer $27, ObjTimer $28..$33 for
+     * 12 slots, ObjTimer+1 $29..$34 hi-bytes, ObjStunTimer $3D..
+     * (StunCycle gates the extra range) so enemy state machines
+     * tick + transitions fire. Without this loop NES Z1 timers
+     * froze: enemies stuck in animation phase 0, doors stuck open,
+     * stun never released, flute timer perma-locked.
+     *
+     * StunCycle ($26) wraps every 9 frames; on wrap, extends the
+     * loop range up to $4E (ChaseLongTimer + others) per NES asm.
+     *
+     * Skip MenuState / Paused gate (debug-mode always ticks). */
+    {
+        unsigned char loop_end;
+        unsigned char stun = nes_ram[0x0026u];
+        stun = (unsigned char)(stun - 1u);
+        nes_ram[0x0026u] = stun;
+        if ((signed char)stun >= 0) {
+            loop_end = 0x3Cu;  /* short loop $3C..$27 */
+        } else {
+            nes_ram[0x0026u] = 0x09u;  /* reset stun cycle */
+            loop_end = 0x4Eu;  /* extended loop $4E..$27 */
+        }
+        /* T-125: pointer walk (independent cells, order-free). */
+        {
+            unsigned char *t = &nes_ram[0x0027u];
+            unsigned char *end = &nes_ram[(unsigned short)loop_end + 1u];
+            do {
+                if (*t != 0u) --*t;
+            } while (++t != end);
+        }
+    }
+
+    /* Phase 7 root-cause fix #3 2026-05-16 — port NES Z_07.asm:499
+     * @ScrambleRandom from the NES NMI handler. The drained gameplay
+     * loop never advanced NES Random[$18..$24], so every drop-table
+     * roll, AI direction roll, item-spawn coin flip pulled the same
+     * value forever. Symptom: identical drops every kill, enemy AI
+     * directionality biased / locked.
+     *
+     * Discard return value — NES NMI scramble runs unconditionally
+     * regardless of whether anyone reads the result. Same effect. */
+    (void)rng_next();
+}
+
 static u32 s_tick_vtimer = 0u;   /* T-125: vtimer at tick start */
 
 void roomrom_debug_tick(void)
@@ -3063,51 +3166,7 @@ void roomrom_debug_tick(void)
          * cells written during the previous frame. */
         audio_requests_consume();
 
-        /* Phase 7 root-cause fix #2 2026-05-16 — port NES Z_07.asm:468
-         * @UpdateTimers from the NES NMI handler. Per-frame decrement
-         * of every non-zero byte in NES $26..$3C (StunCycle through
-         * FluteTimer, including DoorTimer $27, ObjTimer $28..$33 for
-         * 12 slots, ObjTimer+1 $29..$34 hi-bytes, ObjStunTimer $3D..
-         * (StunCycle gates the extra range) so enemy state machines
-         * tick + transitions fire. Without this loop NES Z1 timers
-         * froze: enemies stuck in animation phase 0, doors stuck open,
-         * stun never released, flute timer perma-locked.
-         *
-         * StunCycle ($26) wraps every 9 frames; on wrap, extends the
-         * loop range up to $4E (ChaseLongTimer + others) per NES asm.
-         *
-         * Skip MenuState / Paused gate (debug-mode always ticks). */
-        {
-            unsigned char loop_end;
-            unsigned char stun = nes_ram[0x0026u];
-            stun = (unsigned char)(stun - 1u);
-            nes_ram[0x0026u] = stun;
-            if ((signed char)stun >= 0) {
-                loop_end = 0x3Cu;  /* short loop $3C..$27 */
-            } else {
-                nes_ram[0x0026u] = 0x09u;  /* reset stun cycle */
-                loop_end = 0x4Eu;  /* extended loop $4E..$27 */
-            }
-            /* T-125: pointer walk (independent cells, order-free). */
-            {
-                unsigned char *t = &nes_ram[0x0027u];
-                unsigned char *end = &nes_ram[(unsigned short)loop_end + 1u];
-                do {
-                    if (*t != 0u) --*t;
-                } while (++t != end);
-            }
-        }
-
-        /* Phase 7 root-cause fix #3 2026-05-16 — port NES Z_07.asm:499
-         * @ScrambleRandom from the NES NMI handler. The drained gameplay
-         * loop never advanced NES Random[$18..$24], so every drop-table
-         * roll, AI direction roll, item-spawn coin flip pulled the same
-         * value forever. Symptom: identical drops every kill, enemy AI
-         * directionality biased / locked.
-         *
-         * Discard return value — NES NMI scramble runs unconditionally
-         * regardless of whether anyone reads the result. Same effect. */
-        (void)rng_next();
+        nes_frame_timers_and_random();
 
         roomrom_palette_tick_frame(s_frame_counter);
         /* PR-4a: advance scene-bank DMA state machine. Runs after
@@ -3776,6 +3835,15 @@ void roomrom_debug_tick(void)
             return;
         }
 
+        /* NES UpdatePlayer starts with DecrementInvincibilityTimer
+         * (Z_07.asm:2045, 5756): Link's $04F0 drops on even FrameCounter
+         * values. T-012: keyed on the Genesis tick count and run after
+         * Link's collisions, it fell a frame off the NES (t012_route
+         * t1321). */
+        if (!cave_fade_is_active() && nes_ram[0x04F0u] != 0u &&
+            (nes_ram[0x0015u] & 1u) == 0u)
+            nes_ram[0x04F0u]--;
+
         /* Level cycle (was MODE-only) removed -- MODE is reserved hardware.
          * Reach a different level via teleport (X mode + DPAD) which warps
          * across the 16x8 room grid. */
@@ -4116,6 +4184,7 @@ void roomrom_debug_tick(void)
          * Link animation) first, then weapons and objects. UpdatePlayer
          * that changes the mode (a room scroll started) skips them
          * (IsUpdatingMode, Z_07.asm:1851). */
+        u8 warp_ticked = 0u;
         if (!roomrom_pause_is_active() && !cave_fade_is_active()) {
             roomrom_combat_end_move_and_animate();
             /* NES draws Link after AnimateLinkBase (SetUpWalkingSprites):
@@ -4128,7 +4197,19 @@ void roomrom_debug_tick(void)
                 s_link_draw_pending = 1u;
             }
             draw_link_pending();
-            if (s_scroll_state == SCROLL_NONE && play_update_objects()) return;
+            /* T-012: NES UpdatePlayer enters the stairs/cave mode itself;
+             * a mode change there skips weapons and objects that frame
+             * (Z_07.asm:1851 IsUpdatingMode). The warp coordinator is that
+             * check here, run after Link moved. */
+            {
+                const u8 gm = nes_ram[0x0012u];
+                roomrom_world_transition_tick();
+                warp_ticked = 1u;
+                if (nes_ram[0x0012u] == gm && !cave_fade_is_active() &&
+                    s_lvl_phase == LVL_NONE &&
+                    !roomrom_world_transition_is_active() &&
+                    s_scroll_state == SCROLL_NONE && play_update_objects()) return;
+            }
             play_finish();
         }
         draw_link_pending();
@@ -4138,7 +4219,7 @@ void roomrom_debug_tick(void)
          * cache isn't stable (mid-scroll). When it fires, the apply
          * step runs synchronously inside the coordinator and the next
          * frame begins in the new scene. */
-        roomrom_world_transition_tick();
+        if (!warp_ticked) roomrom_world_transition_tick();
 
         /* Task 5.7: push-block state machine runs after world_transition
          * (so a coordinator-driven scene swap clears push state cleanly

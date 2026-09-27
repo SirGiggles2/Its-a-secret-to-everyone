@@ -603,7 +603,9 @@ unsigned int c_shoot_if_wanted(unsigned int shot_type, unsigned int slot)
     ENEMY_STATE_TIMER(empty)       = 0u;  /* ObjState ($00AC) */
     ENEMY_HIT_REACTION(empty)      = 0u;  /* ObjInvincibilityTimer ($04F0) */
     ENEMY_METASTATE(empty)         = 0x01u;
-    ENEMY_ALIVE_FLAG(empty)        = 1u;  /* slot now occupied */
+    /* DestroyObject_WRAM: uninitialized; its first update runs
+     * InitObject (T-012: the shot waits a frame, NES). */
+    ENEMY_ALIVE_FLAG(empty)        = 0xFFu;
 
     /* Shoot block: state $10 = "shot active", copy dir/x/y from shooter. */
     ENEMY_STATE_TIMER(empty) = 0x10u;
@@ -612,38 +614,9 @@ unsigned int c_shoot_if_wanted(unsigned int shot_type, unsigned int slot)
     ENEMY_X(empty)           = (unsigned char)ENEMY_X(slot);
     ENEMY_Y(empty)           = (unsigned char)ENEMY_Y(slot);
 
-    /* NES InitObject step (Z_07.asm:5566-5567 + ObjectTypeToAttributes
-     * @ Z_07.asm:5213): ObjAttr[slot] = ObjectTypeToAttributes[type].
-     * Without this, draw_object_with_anim_and_specific_sprites's
-     * half-width branch (status & 0x02) never fires, and the rock $53
-     * renders as 2 sprites (16x16) instead of NES-correct 1 sprite (8x16).
-     * NES table for shot types $53..$5C:
-     *   $53..$57 = $E3 (custom collision + half-width + reverse-on-hit)
-     *   $58..$5C = $E1 (no half-width — sword/magic shot/arrow are 16x16)
-     */
-    {
-        unsigned char attr;
-        if (shot_type <= 0x57u) attr = 0xE3u;
-        else                    attr = 0xE1u;
-        OBJ(0x04BFu, empty) = attr;
-    }
-
-    /* Dispatch the per-type INIT fn for the new shot slot. NES
-     * SetTypeAndClearObject (Z_07.asm:5782) does this implicitly — the
-     * type-specific init lands ObjQSpeed (= ENEMY_WALK_SPEED) so the
-     * shot's UpdateMonsterShot → c_move_object actually advances each
-     * frame. Without this call, ObjQSpeed stays 0 and the shot is
-     * spawned with state=$10 but never moves (visible bug: octorok
-     * "shoots" but rock sits where it spawned). NES dispatch table is
-     * the same `InitObject_JumpTable` used by enemy_loop_room_init. */
-    {
-        extern const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX];
-        if (shot_type < ENEMY_LOOP_TYPE_MAX) {
-            enemy_init_fn init_fn = enemy_init_fns[shot_type];
-            if (init_fn != (enemy_init_fn)0) init_fn(empty);
-        }
-    }
-
+    /* T-012: ObjAttr and the per-type init (InitMonsterShot: ObjQSpeed)
+     * come from InitObject on the shot's first update (enemy_loop),
+     * as on the NES; running them here moved the rock a frame early. */
     return CARRY_SET | empty;
 }
 
@@ -710,7 +683,8 @@ void enrt_update_octorock(unsigned int slot)
                                     || type == 0x09u || type == 0x0Au);
             if (!is_blue && cur_timer == 0u) {
                 if ((unsigned char)ENEMY_RNG_A(slot) < 0xF8u) {
-                    ENEMY_WALK_SPEED(slot) = qspeed;
+                    /* NES @Exit: ObjQSpeedFrac unchanged (T-012: a red
+                     * fast octorok keeps InitFastOctorock's $30). */
                     goto draw_octorock;
                 }
             }
@@ -913,7 +887,7 @@ static void native_destroy_monster(unsigned int slot)
     ENEMY_MOVE_TIMER(slot)    = 0u;
     OBJ_STATE(slot)           = 0u;
     ENEMY_HIT_REACTION(slot)  = 0u;     /* ObjInvincibilityTimer $4F0 */
-    ENEMY_ALIVE_FLAG(slot)    = 0u;
+    ENEMY_ALIVE_FLAG(slot)    = 0xFFu;  /* DestroyObject_WRAM */
     ENEMY_METASTATE(slot)     = 0u;
 }
 
@@ -1002,12 +976,10 @@ static unsigned char native_set_up_dropped_item(unsigned int slot)
     if (item_id == 0x23u) {
         enrt_set_up_fairy_object(slot);
     }
-    /* NES UpdateMetaObjectEnd stores ObjUninitialized=$FF before
-     * SetUpDroppedItem. The next object pass consumes one InitObject
-     * tick; only the following pass dispatches UpdateItem. In this
-     * runtime $0492 is also the occupied-slot flag, and enemy_loop_tick
-     * already treats $FF as occupied + pending initialization. */
-    ENEMY_ALIVE_FLAG(slot) = 0xFFu;
+    /* NES @DropItem (Z_07.asm:5457) stores $60 in ObjType and
+     * ObjUninitialized before SetUpDroppedItem: the next object pass runs
+     * InitObject, only the following one UpdateItem. */
+    ENEMY_ALIVE_FLAG(slot) = 0x60u;
     return 1u;
 }
 
@@ -1130,7 +1102,7 @@ void update_meta_object(unsigned int slot)
         /* @DropItem: convert slot to dropped-item type ($60), then run
          * SetUpDroppedItem to pick the item id (or destroy if no drop). */
         ENEMY_TYPE(slot)       = 0x60u;
-        ENEMY_ALIVE_FLAG(slot) = 1u;
+        ENEMY_ALIVE_FLAG(slot) = 0x60u;  /* STA ObjUninitialized: uninitialized */
         META_OBJ_ATTR(slot)    = 0x81u;
 
         /* SetUpDroppedItem (Z_04.asm:11103). Returns 0 if slot was

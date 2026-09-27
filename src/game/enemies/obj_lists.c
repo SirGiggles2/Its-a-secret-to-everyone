@@ -323,54 +323,55 @@ static const unsigned char *const spawn_pos_lists[4] = {
 static const unsigned char cellar_keese_xs[4] = { 0x20u, 0x60u, 0x90u, 0xD0u };
 static const unsigned char cellar_keese_ys[4] = { 0x9Du, 0x5Du, 0x7Du, 0x9Du };
 
-static unsigned char abs_diff_u8(unsigned char a, unsigned char b)
+/* NES FindNextEdgeSpawnCell (Z_05.asm:3406) + the InitMonsterFromEdge
+ * coordinate extraction (Z_07.asm:5509). CurEdgeSpawnCell $525 packs the
+ * square column (low nibble) and row (high nibble). Step one square
+ * counterclockwise until the play-area tile is < $84, or back at the start
+ * cell (which is then kept). T-012: the old port sampled the collision
+ * probe at the object position, folded IsDistanceSafeToSpawn into the
+ * search and clamped the start cell; the NES tests the distance once, in
+ * InitObject, after the cell is stored. */
+void enemy_edge_spawn_next(unsigned int slot)
 {
-    return (a >= b) ? (unsigned char)(a - b) : (unsigned char)(b - a);
-}
-
-/* NES source: Z_05.asm:FindNextEdgeSpawnCell and
- * Z_07.asm:InitMonsterFromEdge coordinate extraction.
- * Drained C: NONE. Coverage: PARTIAL (entry placement, no stagger timer).
- * Stance: EXTEND.
- *
- * Walk the packed perimeter counterclockwise. A packed cell uses its low
- * nibble as the 16-pixel column and high nibble as the row. The original
- * routine checks the room tile map for tile < $84; collision_get_* is the
- * native owner of that same active room map, so use it after installing the
- * candidate coordinates. Also reject Link-near cells as the NES consumer's
- * IsDistanceSafeToSpawn step does. */
-unsigned char enemy_edge_spawn_next(unsigned int slot)
-{
-    unsigned char start = (unsigned char)RAM(0x0525u);
-    unsigned char cell;
-    unsigned int tries;
-    if ((start & 0xF0u) < 0x40u || (start & 0xF0u) >= 0xE0u)
-        start = 0x40u;
-    cell = start;
-    for (tries = 0u; tries < 64u; ++tries) {
-        unsigned char low = (unsigned char)(cell & 0x0Fu);
+    const unsigned char start = (unsigned char)RAM(0x0525u);
+    unsigned char cell = start;
+    for (;;) {
+        const unsigned char low = (unsigned char)(cell & 0x0Fu);
+        unsigned char hi;
         if (low == 0u) cell = (unsigned char)(cell + 0x10u);
         else if (low == 0x0Fu) cell = (unsigned char)(cell - 0x10u);
-        if ((cell & 0xF0u) == 0xE0u) cell++;
-        else if ((cell & 0xF0u) == 0x40u) cell--;
-
-        ENEMY_X(slot) = (unsigned char)((cell & 0x0Fu) << 4);
-        ENEMY_Y(slot) = (unsigned char)((cell & 0xF0u) - 3u);
-        (void)collision_get_collidable_tile_still(slot);
-        if ((unsigned char)ENEMY_COLLIDED_TILE(slot) < 0x84u) {
-            unsigned char dx = abs_diff_u8((unsigned char)OBJ(NES_OBJ_X, 0u),
-                                           (unsigned char)ENEMY_X(slot));
-            unsigned char dy = abs_diff_u8((unsigned char)OBJ(NES_OBJ_Y, 0u),
-                                           (unsigned char)ENEMY_Y(slot));
-            if (dx >= 0x22u || dy >= 0x22u) {
-                RAM(0x0525u) = cell;
-                return 1u;
-            }
+        hi = (unsigned char)(cell & 0xF0u);
+        if (hi == 0xE0u) cell++;
+        else if (hi == 0x40u) cell--;
+        {
+            const unsigned short col = (unsigned short)((cell & 0x0Fu) * 2u);
+            const unsigned short row = (unsigned short)(((cell & 0xF0u) - 0x40u) >> 3);
+            if ((unsigned char)RAM(NES_PLAY_AREA_BASE + col * NES_TILE_COL_STRIDE + row) < 0x84u)
+                break;
         }
         if (cell == start) break;
     }
-    RAM(0x0525u) = start;
-    return 0u;
+    RAM(0x0525u) = cell;
+    ENEMY_X(slot) = (unsigned char)((cell & 0x0Fu) << 4);
+    ENEMY_Y(slot) = (unsigned char)((cell & 0xF0u) - 3u);
+}
+
+/* NES Abs of an 8-bit difference (SBC then Abs): wraps, so Link at X 0
+ * and a monster at X $F0 are $10 apart. */
+static unsigned char nes_abs_sub(unsigned char a, unsigned char b)
+{
+    unsigned char d = (unsigned char)(a - b);
+    return (d & 0x80u) ? (unsigned char)(0u - d) : d;
+}
+
+/* NES IsDistanceSafeToSpawn (Z_05.asm): 1 when Link is at least $22 away
+ * on either axis. */
+unsigned char enemy_edge_distance_safe(unsigned int slot)
+{
+    if (nes_abs_sub((unsigned char)OBJ(NES_OBJ_X, 0u), (unsigned char)ENEMY_X(slot)) >= 0x22u)
+        return 1u;
+    return (unsigned char)(nes_abs_sub((unsigned char)OBJ(NES_OBJ_Y, 0u),
+                                       (unsigned char)ENEMY_Y(slot)) >= 0x22u);
 }
 
 /* NES Z_05.asm:2006 IsSafeToSpawn — returns 1 if unsafe, 0 if safe. */
@@ -380,10 +381,10 @@ static unsigned char is_safe_to_spawn(unsigned int slot)
     unsigned char tile  = (unsigned char)ENEMY_COLLIDED_TILE(slot);
     unsigned char floor = (unsigned char)ENEMY_DUNGEON_TILE_FLOOR;
     if (tile >= floor) return 1u;
-    unsigned char dx = abs_diff_u8((unsigned char)OBJ(NES_OBJ_X, 0u),
+    unsigned char dx = nes_abs_sub((unsigned char)OBJ(NES_OBJ_X, 0u),
                                    (unsigned char)OBJ(NES_OBJ_X, slot));
     if (dx >= 0x22u) return 0u;
-    unsigned char dy = abs_diff_u8((unsigned char)OBJ(NES_OBJ_Y, 0u),
+    unsigned char dy = nes_abs_sub((unsigned char)OBJ(NES_OBJ_Y, 0u),
                                    (unsigned char)OBJ(NES_OBJ_Y, slot));
     if (dy < 0x22u) return 1u;
     return 0u;
@@ -429,25 +430,12 @@ void enemy_assign_spawn_positions(unsigned char room_id, unsigned char template_
     /* NES line 1890-1893: skip if template == 0 or Zelda ($37). */
     if (template_id == 0u || template_id == 0x37u) skip_main = 1u;
 
-    /* NES line 1896-1900: OW edge-spawn skip via LBA_F bit 3.
-     * Underworld (CurLevel != 0) bypasses this gate.
-     *
-     * Substrate gap 2026-05-15: NES Z1 lets the per-slot UpdateObject
-     * path (Z_07.asm:5244 LDA ObjUninitialized) call FindNextEdgeSpawnCell
-     * (Z_05.asm:3406) each frame until a walkable edge cell is found.
-     * Our $0492 cell is repurposed as ENEMY_ALIVE_FLAG with opposite
-     * polarity, so the NES uninitialized-loop never fires. Pending the
-     * full FindNextEdgeSpawnCell drain we fall through to the main spawn
-     * loop with list_idx forced to 0 below — enemies land at spawn_pos_list_0
-     * coords (NES "Link came from above" default). Visible parity is
-     * approximate: positions match the up-scroll spawn case rather than
-     * the actual approach direction. Full edge-spawn port = follow-up. */
-    unsigned char edge_spawn_substitute = 0u;
-    if (!skip_main && (unsigned char)CUR_LEVEL == 0u) {
-        if ((DUNGEON_LBA_F(room_id) & 0x08u) != 0u) {
-            edge_spawn_substitute = 1u;
-        }
-    }
+    /* NES line 1896-1900: OW rooms with monsters from the edges (LBA_F
+     * bit 3) skip the spawn lists; InitObject places each monster at an
+     * edge cell on its first update (enemy_loop_init_object). */
+    if (!skip_main && (unsigned char)CUR_LEVEL == 0u &&
+        (DUNGEON_LBA_F(room_id) & 0x08u) != 0u)
+        skip_main = 1u;
 
     /* NES line 1902-1903: redundant count==0 gate (already covered above). */
     if (!skip_main && (unsigned char)DUNGEON_ROOM_OBJ_COUNT == 0u) skip_main = 1u;
@@ -460,21 +448,12 @@ void enemy_assign_spawn_positions(unsigned char room_id, unsigned char template_
          * ObjDir array. Scratch usually held a stale value, so the
          * spawn-list index was effectively random.
          * Read the right cell ($0098 = Link's slot-0 ObjDir). */
-        unsigned char list_idx = edge_spawn_substitute
-            ? 0u   /* edge-spawn substitute: force "Link from above" list. */
-            : dir_to_spawn_list_index((unsigned char)nes_ram[0x0098u]);
+        unsigned char list_idx =
+            dir_to_spawn_list_index((unsigned char)nes_ram[0x0098u]);
         const unsigned char *list = spawn_pos_lists[list_idx];
         unsigned char y = (unsigned char)DUNGEON_SPAWN_CYCLE;
         unsigned int x;
-        if (edge_spawn_substitute) {
-            /* NES edge-spawn rooms bypass SpawnPosListAddrs. Per-slot
-             * placement is deferred to enemy_loop_tick so the shared
-             * long timer can release one perimeter entrant at a time. */
-            for (x = 1u; x <= DUNGEON_ROOM_OBJ_COUNT && x < 0x0Au; ++x) {
-                OBJ(NES_OBJ_X, x) = 0u;
-                OBJ(NES_OBJ_Y, x) = 0u;
-            }
-        } else {
+        {
             unsigned int iter_cap = 0u;
             for (x = 1u; x < 0x0Au; ) {
                 unsigned char b = list[y];

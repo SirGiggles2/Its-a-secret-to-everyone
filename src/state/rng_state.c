@@ -26,6 +26,10 @@ void rng_seed(unsigned short seed)
     for (i = 0; i < RNG_RANDOM_LEN; i++) {
         RAM(RNG_RANDOM_BASE + i) = (i == 0u) ? 0x40u : 0x00u;
     }
+    /* Same store: CurEdgeSpawnCell ($525), where FindNextEdgeSpawnCell
+     * first looks (T-012: left 0, the first edge monster spawned off
+     * the top of the room). */
+    RAM(0x0525u) = 0x40u;
 }
 
 static void rng_scramble(void)

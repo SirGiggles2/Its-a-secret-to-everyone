@@ -116,7 +116,11 @@ Status: `TODO` · `ACTIVE` · `BLOCKED` · `REVIEW` · `DONE`. Plan ref = task I
 |---|---|---|---|---|---|
 | T-010 | Boot → file create → OW start | P2.1, P7.4 | TODO | | Recorded input file replays to OW start |
 | T-011 | Sword cave → sword → exit | P2.2 | DONE | Claude | `builds/reports/recovery/t011-sword-cave/SUMMARY.md`: user bug "Link invisible after the first cave" = stairs behind-BG cells never lowered (fixed); NES item lift ported (mode $0B caves, CheckLiftItem, lift pose tiles from demo CHR), cave halt timing, text-erase transfer buffers $1E/$2A, exit trigger tick. t011_sword_cave framebuffer 0 px vs NES through pickup/lift/exit; suite t011a lag GEN 210 / NES 382, only new NES diff = Ganon-intro lift timer in the staged sweep (NES staged into mode $13, T-098) |
-| T-012 | OW → L1 entrance (combat, room crossings) | P2.3–2.4 | TODO | | Enters L1 with no staging |
+| T-012 | OW → L1 entrance (combat, room crossings) | P2.3–2.4 | DONE | Claude | `builds/reports/recovery/t012-ow-to-l1/SUMMARY.md`: `t012_route` (no staging, play clock) start $77 → sword cave → $67 $68 $58 $48 $38 $37 → L1 room $73; Link, HP, room, mode, every live object slot, FrameCounter and Random equal NES every tick of 2186. Suite t012c: no new vs-NES cells (hud_marker 105→29, ow_walk 129→30, t050_* ~−75 each vs t011a) |
+| T-139 | OW tile object (slot 11, e.g. $64 in room $78) appears one tick after the NES at room entry (t123_slow_tiles t132, t129 t222; also in suite t011a) | P3 | TODO | | Slot 11 type/X/Y equal NES on the entry tick |
+| T-140 | Level exit (mode $12 → 2 → 3 → 4): count NES FrameCounter steps of the exit load and add the catch-up (entry uses 12) when T-013 reaches the exit | P2.5 | TODO | | FC/Random equal NES after the L1 exit |
+| T-138 | Link hurt flash: NES Anim_WriteSpritePair uses sub-palette `ObjInvincibilityTimer & 3` (Z_01.asm:5152); Genesis cycles CRAM PAL0-3 by its own tick count (`draw_link_pending`), colors unverified | P3 | TODO | | Framebuffer/CRAM vs NES over one hurt flash |
+| T-137 | T-012 route: Genesis Link hit early in room $67 and died. FrameCounter/Random/timers 20 NES frames behind after the fast cave load + exit; stairs start a frame late; walk-in and step-out missing NES frames; room enemies and shots initialized at spawn (NES: first update) | P2.3 | DONE | Claude | `t012_route` play clock: FC + Random equal to NES every tick of 1748; Link/enemy/HP cells equal through room $67 (see T-012 evidence) |
 | T-013 | L1 full → Aquamentus → heart + triforce → exit | P2.5, P1.1–1.7 | TODO | | Real fight, reward, exit; save/reload once (P2.6) |
 | T-014 … T-021 | L2 … L9 (one row each, add when reached) | P8.1–8.2 | TODO | | Entry, key items, boss, reward, exit |
 | T-022 | Ganon → Zelda → ending | P6.1, P8.3 | TODO | | Unassisted fight; ending mode + credits (renderer stubs → T-051) |
@@ -152,6 +156,8 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 | T-080 | Builder: clean-staging build from user ROM, no live captures, drag-and-drop shell, reproducibility | P10 | TODO |
 
 ## Handoff log (newest first)
+
+**2026-09-27 · Claude** — T-012 DONE: controller-only OW route into L1 matches NES tick-for-tick (T-137 root causes: fast loads now replay the NES frame work, NES object init timing and $492 meaning, edge-spawn port, shoot-gate speed, leever init). Harness tick clock counts FrameCounter jumps. New rows T-138 (hurt flash colors), T-139 (tile object tick), T-140 (level-exit catch-up). Next: T-013 L1 → Aquamentus.
 
 **2026-09-26 · Claude** — T-125 DONE (no gameplay slowdown in the enemy sweep, Gleeok full speed, faster loads), T-134 DONE (cave entry black + one-frame cave, input ignored during stairs). OW column renderer now streams columns. Next: T-135 cave exit (NES mode $0A + method-1 step out), then T-136 tick-aligned lockstep.
 

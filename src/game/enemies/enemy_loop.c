@@ -431,9 +431,11 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x58] = enrt_init_monster_shot,             /* MagicShot */
     [0x59] = enrt_init_monster_shot,             /* MagicShot variant */
     [0x5A] = enrt_init_monster_shot,             /* MonsterShot 0x5A */
-    [0x5B] = enrt_init_monster_shot,             /* MonsterArrow */
-    [0x5C] = enrt_init_monster_shot_unknown54,   /* Arrow-or-Boomerang */
-    [0x5D] = core_reset_obj_metastate,           /* DeadDummy NES Z_07.asm:5693 */
+    /* T-012: NES rows $5B/$5C are ResetObjMetastate (the arrow and
+     * boomerang set their own speed), $5D UpdateDeadDummy. */
+    [0x5B] = core_reset_obj_metastate,           /* MonsterArrow */
+    [0x5C] = core_reset_obj_metastate,           /* MonsterBoomerang */
+    [0x5D] = z07_update_dead_dummy,              /* DeadDummy */
     /* Task 7.4 step 2b — $11 Zora INIT. NES InitObject_JumpTable @
      * Z_07.asm:5601 row $11 = ResetObjMetastateAndTimer. Body drained
      * at src/game/core/core_dispatch.c:455 (one-line: ENEMY_MOVE_TIMER=0
@@ -1131,7 +1133,7 @@ static void clear_slot_scratch(unsigned int slot)
     ENEMY_OBJ_SHOVE_DIR(slot)  = 0u;          /* ResetShoveInfo */
     OBJ(0x00D3u, slot)         = 0u;          /* ObjShoveDistance */
     ENEMY_MOVE_TIMER(slot)     = (unsigned char)slot;  /* InitObject preamble */
-    ENEMY_ALIVE_FLAG(slot)     = 1u;          /* mark slot occupied */
+    ENEMY_ALIVE_FLAG(slot)     = 0xFFu;       /* ObjUninitialized: InitMode_EnterRoom DEC from 0 */
 }
 
 /* Public: empty-clear every enemy slot (1..11) WITHOUT respawning. Mirrors
@@ -1147,7 +1149,7 @@ void enemy_loop_clear_all_slots(void)
     unsigned int slot;
     for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
         ENEMY_TYPE(slot)            = 0u;   /* type 0 = DoNothing = empty */
-        ENEMY_ALIVE_FLAG(slot)      = 0u;
+        ENEMY_ALIVE_FLAG(slot)      = 0xFFu; /* NES DEC from 0 */
         ENEMY_X(slot)               = 0u;
         ENEMY_Y(slot)               = 0u;
         ENEMY_OBJ_SHOVE_DIR(slot)   = 0u;   /* $00C0+slot */
@@ -1164,7 +1166,6 @@ void enemy_loop_clear_all_slots(void)
  * to skip the next room_init pass (otherwise natural-spawn rolls clobber
  * the force-spawned probe target). */
 static unsigned char s_fix_arm_suppress_room_init = 0u;
-static unsigned char s_edge_spawn_pending[ENEMY_LOOP_SLOT_LAST + 1u];
 
 /* T-050: NES SetupTileObjectOW, run for OW rooms at room entry after
  * AssignObjSpawnPositions (Z_05.asm, "LDA CurLevel / BNE / JSR
@@ -1185,7 +1186,7 @@ static void ow_tile_object_room_setup(unsigned char scene_id, unsigned char leve
     RAM(0x052Du) = y;                    /* RoomTileObjY */
     room_setup_tile_object_ow();
     if ((unsigned char)ENEMY_TYPE(11u) == 0u) {
-        ENEMY_ALIVE_FLAG(11u) = 0u;
+        ENEMY_ALIVE_FLAG(11u) = 0xFFu;
         return;
     }
     clear_slot_scratch(11u);
@@ -1195,7 +1196,6 @@ static void ow_tile_object_room_setup(unsigned char scene_id, unsigned char leve
     OBJ(0x0098u, 11u) = 0u;              /* ObjDir */
     OBJ(NES_OBJ_GRID_OFFSET, 11u) = 0u;
     OBJ(NES_OBJ_POS_FRAC, 11u) = 0u;
-    s_edge_spawn_pending[11u] = 0u;
 }
 
 void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id,
@@ -1289,16 +1289,14 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id,
      * 4-pixel-per-frame loop = user-visible "fly across screen".
      * Clear ALL state cells the per-frame walker/AI paths read. */
     for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
-        s_edge_spawn_pending[slot] = 0u;
         /* NES source: Z_05.asm:InitMode_EnterRoom common object defaults.
          * Drained C: clear_slot_scratch (previously debug-spawn only).
          * Coverage: PARTIAL room-spawn movement; Stance: EXTEND.
          * Type-specific init overrides these after room placement. */
         clear_slot_scratch(slot);
         ENEMY_TYPE(slot) = 0u;        /* type 0 = DoNothing = empty */
-        ENEMY_ALIVE_FLAG(slot) = 0u;
-        ENEMY_X(slot) = 0u;
-        ENEMY_Y(slot) = 0u;
+        ENEMY_ALIVE_FLAG(slot) = 0xFFu;  /* ObjUninitialized, NES DEC from 0 */
+        /* ObjX/ObjY keep their values (outside NES ClearRam0300UpTo). */
         ENEMY_OBJ_SHOVE_DIR(slot) = 0u;        /* $00C0+slot */
         OBJ(0x00D3u, slot)         = 0u;       /* shove distance */
         OBJ(NES_OBJ_POS_FRAC, slot) = 0u;      /* $03A8+slot */
@@ -1347,47 +1345,101 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id,
         ow_tile_object_room_setup(scene_id, level, room_id);
         return;
     }
+    /* T-012: NES InitMode_EnterRoom (Z_05.asm:1689) only flags the
+     * slots uninitialized ($FF); UpdateObject runs InitObject on the
+     * object's first update (mode 5), which rolls Random for the start
+     * direction. Initializing here, frames early, drew other Random
+     * values (t012_route room $67: octorok dirs 02/02/02/08 at the load,
+     * NES 04/02/04/04 on its first update). enemy_loop_tick's
+     * uninitialized branch runs enemy_loop_init_object. */
     for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
         unsigned char t = ENEMY_TYPE(slot);
-        enemy_init_fn fn;
         if (t == 0u) continue;
         if (t >= ENEMY_LOOP_TYPE_MAX) continue;
-        native_init_obj_hp(slot, t);    /* NES Z_07.asm:5576 HP nibble */
-        native_init_obj_attr(slot, t);  /* NES Z_07.asm:5566 @FetchAttrs */
-
-        /* NES order (Z_07.asm:5546-5600):
-         *   1. @NormalSpawn preamble — for cloud monsters (type < $53,
-         *      excl $1E/$22), ObjTimer = slot_index.
-         *   2. @FetchAttrs — ObjAttr from table (handled by
-         *      c_shoot_if_wanted path elsewhere).
-         *   3. TableJump InitObject_JumpTable[type] — type-specific init
-         *      (e.g. InitSlowOctorock sets ObjTimer = (slot+1)<<4 = $20).
-         *
-         * Cloud monsters' ObjTimer is set by preamble FIRST, then
-         * overwritten by type-init. Octorock + Tektite specifically
-         * override to ($slot+1)*$10 for longer spawn-cloud duration.
-         * Non-overriding walkers (BlueLynel etc.) keep preamble value. */
-        if (t < 0x53u && t != 0x1Eu && t != 0x22u) {
-            ENEMY_METASTATE(slot)  = 0x01u;
-            ENEMY_MOVE_TIMER(slot) = (unsigned char)slot;
-        }
-
-        fn = enemy_init_fns[t];
-        if (fn != (enemy_init_fn)0) {
-            fn(slot);  /* may overwrite ENEMY_MOVE_TIMER */
-        }
-        /* NES source: Z_07.asm:InitMonsterFromEdge clears ObjMetastate
-         * after a safe perimeter cell is selected, so edge entrants do
-         * not play the ordinary interior spawn cloud. Placement itself
-         * is drained in obj_lists.c:enemy_edge_spawn_next. */
-        if (level == 0u && (DUNGEON_LBA_F(room_id) & 0x08u) != 0u &&
-            t != 0x11u && t != 0x1Eu && t != 0x2Eu && t != 0x40u && t < 0x53u) {
-            ENEMY_METASTATE(slot) = 0u;
-            s_edge_spawn_pending[slot] = 1u;
-        }
-        ENEMY_ALIVE_FLAG(slot) = 1u;
+        ENEMY_ALIVE_FLAG(slot) = 0xFFu;
     }
     ow_tile_object_room_setup(scene_id, level, room_id);
+}
+
+static void loop_object_wrapper(unsigned int slot)
+{
+    /* NES @LoopObject post-update wrapper (Z_07.asm:1928-1945).
+     * After UpdateObject returns, NES runs:
+     *   if metastate == 0 && (ObjAttr & 0x01) == 0:
+     *     if (ObjAttr & 0x04) == 0: AnimateAndDrawObjectWalking
+     *     CheckMonsterCollisions
+     *
+     * Moblin/Goriya/Lynel have attr $00 — wrapper does BOTH draw and
+     * collide. Without it, Moblin walks invisibly and Link can't
+     * touch-damage. Octorok/Stalfos have bit 0 set, skip wrapper. */
+    if (ENEMY_METASTATE(slot) == 0u) {
+        unsigned char attr = (unsigned char)RAM(0x04BFu + slot);
+        if ((attr & 0x01u) == 0u) {
+            if ((attr & 0x04u) == 0u) {
+                extern void z07_animate_object_walking(unsigned int slot);
+                extern void c_draw_object_not_mirrored_with_frame(unsigned int frame, unsigned int slot);
+                z07_animate_object_walking(slot);
+                /* 2026-05-22 — NES SetUpWalkingSprites (Z_07.asm:5059)
+                 * picks frame index from ObjDir:
+                 *   dir & $08 (UP)   -> frame=3
+                 *   dir & $04 (DOWN) -> frame=2
+                 *   horizontal       -> frame = ObjAnimFrame (0/1)
+                 * Without this Moblin always renders horizontal
+                 * frame regardless of facing → looked like "only
+                 * faces L/R". */
+                unsigned char d = (unsigned char)ENEMY_DIR(slot);
+                unsigned char draw_frame;
+                if ((d & 0x0Cu) != 0u) {
+                    draw_frame = ((d & 0x08u) != 0u) ? 3u : 2u;
+                } else {
+                    draw_frame = (unsigned char)ENEMY_DRAW_FRAME(slot);
+                }
+                c_draw_object_not_mirrored_with_frame(draw_frame, slot);
+            }
+            extern void c_check_monster_collisions(unsigned int slot);
+            c_check_monster_collisions(slot);
+        }
+    }
+}
+
+/* NES UpdateObject's uninitialized path (Z_07.asm:5244) + InitObject
+ * (Z_07.asm:5466). $492 keeps the NES meaning: 0 = initialized, anything
+ * else = InitObject on the next update. */
+static void enemy_loop_init_object(unsigned int slot, unsigned char t)
+{
+    enemy_init_fn fn;
+    const unsigned char cloud = (unsigned char)(t < 0x53u && t != 0x1Eu && t != 0x22u);
+    /* UpdateObject: cloud types start with ObjTimer 7 (InitObject sets
+     * the real value); flagged initialized before InitObject runs. */
+    if (cloud) ENEMY_MOVE_TIMER(slot) = 7u;
+    ENEMY_ALIVE_FLAG(slot) = 0u;
+
+    /* InitObject: OW rooms with "enemies from edges" (LevelBlockAttrsF
+     * bit 3; NES reads its copy LevelBlockAttrsByteF $4CD) bring monsters in from the edge, one per long-timer period;
+     * zora, fire, armos, whirlwind and non-cloud objects spawn normally. */
+    if ((unsigned char)RAM(0x0010u) == 0u &&
+        ((unsigned char)DUNGEON_LBA_F((unsigned char)RAM(0x00EBu)) & 0x08u) != 0u &&
+        t != 0x11u && t != 0x40u && t != 0x1Eu && t != 0x2Eu && t < 0x53u) {
+        if ((unsigned char)RAM(0x004Bu) != 0u) {
+            /* @UninitMonsterFromEdge: stay uninitialized. */
+            ENEMY_ALIVE_FLAG(slot) = (unsigned char)RAM(0x004Bu);
+            return;
+        }
+        enemy_edge_spawn_next(slot);
+        RAM(0x004Bu) = (unsigned char)(((unsigned char)ENEMY_RNG_B(slot) & 3u) + 2u);
+        if (!enemy_edge_distance_safe(slot)) {
+            ENEMY_ALIVE_FLAG(slot) = (unsigned char)RAM(0x004Bu);
+            return;
+        }
+        ENEMY_METASTATE(slot) = 0u;        /* no spawn cloud */
+    }
+
+    /* @NormalSpawn: cloud monsters start moving at slot-staggered times. */
+    if (cloud) ENEMY_MOVE_TIMER(slot) = (unsigned char)slot;
+    native_init_obj_attr(slot, t);  /* NES Z_07.asm:5566 @FetchAttrs */
+    native_init_obj_hp(slot, t);    /* NES Z_07.asm:5576 HP nibble */
+    fn = enemy_init_fns[t];
+    if (fn != (enemy_init_fn)0) fn(slot);
 }
 
 /* Forward decl for arm hook (defined later in this file). */
@@ -1464,7 +1516,7 @@ static void enemy_loop_arm_fix_probe(void)
         unsigned int s;
         for (s = ENEMY_LOOP_SLOT_FIRST; s <= ENEMY_LOOP_SLOT_LAST; ++s) {
             ENEMY_TYPE(s) = 0u;
-            ENEMY_ALIVE_FLAG(s) = 0u;
+            ENEMY_ALIVE_FLAG(s) = 0xFFu;
         }
     }
 
@@ -1661,33 +1713,17 @@ void enemy_loop_tick(void)
             cave_update_cave_person(slot);
             continue;
         }
-        if (ENEMY_ALIVE_FLAG(slot) == 0u) continue;
         if (t == 0u || t >= ENEMY_LOOP_TYPE_MAX) continue;
         ENEMY_THROWER_SLOT = (unsigned char)slot;
-        /* NES source: Z_07.asm:@InitMonsterFromEdge. Drained C:
-         * enemy_edge_spawn_next plus this shared long-timer gate.
-         * Coverage: PARTIAL OW edge rooms. Stance: EXTEND. */
-        if (s_edge_spawn_pending[slot]) {
-            if ((unsigned char)RAM(0x004Bu) != 0u) continue;
-            RAM(0x004Bu) = (unsigned char)(((unsigned char)ENEMY_RNG_B(slot) & 3u) + 2u);
-            if (!enemy_edge_spawn_next(slot)) continue;
-            s_edge_spawn_pending[slot] = 0u;
-        }
-        /* NES UpdateObject checks ObjUninitialized before metastate.
-         * SetTypeAndClearObject leaves $FF here for dynamic spawns;
-         * the native room loader uses 1 for an initialized live slot.
-         * Without this branch shots keep attr=0 and accept sword damage.
-         * DestroyMonster also leaves $FF, but its type=0 is skipped above. */
-        if (ENEMY_ALIVE_FLAG(slot) == 0xFFu) {
-            enemy_init_fn init = enemy_init_fns[t];
-            native_init_obj_hp(slot, t);
-            native_init_obj_attr(slot, t);
-            if (t < 0x53u && t != 0x1Eu && t != 0x22u) {
-                ENEMY_METASTATE(slot) = 1u;
-                ENEMY_MOVE_TIMER(slot) = (unsigned char)slot;
-            }
-            ENEMY_ALIVE_FLAG(slot) = 1u;
-            if (init != 0) init(slot);
+        /* NES UpdateObject checks ObjUninitialized ($492, nonzero) before
+         * metastate: room objects, shots and dropped items are all
+         * initialized on their first update. The loop's wrapper then
+         * draws/collides the object if it came out with metastate 0 (an
+         * edge monster). */
+        if (ENEMY_ALIVE_FLAG(slot) != 0u) {
+            enemy_loop_init_object(slot, t);
+            if (ENEMY_TYPE(slot) != 0u && ENEMY_ALIVE_FLAG(slot) == 0u)
+                loop_object_wrapper(slot);
             continue;
         }
         /* Step 20 metastate gate. NES UpdateObject (Z_07.asm:5275) checks
@@ -1711,44 +1747,7 @@ void enemy_loop_tick(void)
         ENEMY_THROWER_SLOT = (unsigned char)slot;
         if (fn != 0) fn(slot);
         if (ENEMY_TYPE(slot) == 0u) continue;
-
-        /* NES @LoopObject post-update wrapper (Z_07.asm:1928-1945).
-         * After UpdateObject returns, NES runs:
-         *   if metastate == 0 && (ObjAttr & 0x01) == 0:
-         *     if (ObjAttr & 0x04) == 0: AnimateAndDrawObjectWalking
-         *     CheckMonsterCollisions
-         *
-         * Moblin/Goriya/Lynel have attr $00 — wrapper does BOTH draw and
-         * collide. Without it, Moblin walks invisibly and Link can't
-         * touch-damage. Octorok/Stalfos have bit 0 set, skip wrapper. */
-        if (ENEMY_METASTATE(slot) == 0u) {
-            unsigned char attr = (unsigned char)RAM(0x04BFu + slot);
-            if ((attr & 0x01u) == 0u) {
-                if ((attr & 0x04u) == 0u) {
-                    extern void z07_animate_object_walking(unsigned int slot);
-                    extern void c_draw_object_not_mirrored_with_frame(unsigned int frame, unsigned int slot);
-                    z07_animate_object_walking(slot);
-                    /* 2026-05-22 — NES SetUpWalkingSprites (Z_07.asm:5059)
-                     * picks frame index from ObjDir:
-                     *   dir & $08 (UP)   -> frame=3
-                     *   dir & $04 (DOWN) -> frame=2
-                     *   horizontal       -> frame = ObjAnimFrame (0/1)
-                     * Without this Moblin always renders horizontal
-                     * frame regardless of facing → looked like "only
-                     * faces L/R". */
-                    unsigned char d = (unsigned char)ENEMY_DIR(slot);
-                    unsigned char draw_frame;
-                    if ((d & 0x0Cu) != 0u) {
-                        draw_frame = ((d & 0x08u) != 0u) ? 3u : 2u;
-                    } else {
-                        draw_frame = (unsigned char)ENEMY_DRAW_FRAME(slot);
-                    }
-                    c_draw_object_not_mirrored_with_frame(draw_frame, slot);
-                }
-                extern void c_check_monster_collisions(unsigned int slot);
-                c_check_monster_collisions(slot);
-            }
-        }
+        loop_object_wrapper(slot);
     }
 
     if (armed) {
@@ -1877,6 +1876,7 @@ void enemy_loop_force_spawn_typed(unsigned int slot,
 
     fn = enemy_init_fns[enemy_type];
     if (fn != 0) fn(slot);
+    ENEMY_ALIVE_FLAG(slot) = 0u;   /* initialized */
 
     /* Caller can still override DIR after init (e.g., probe wants
      * fixed direction). Pass dir=0 to use chase-target computation. */
@@ -1887,7 +1887,7 @@ unsigned int enemy_loop_alive_count(void)
 {
     unsigned int slot, n = 0u;
     for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
-        if (ENEMY_ALIVE_FLAG(slot) != 0u) n++;
+        if (ENEMY_TYPE(slot) != 0u) n++;
     }
     return n;
 }

@@ -39,10 +39,13 @@ typedef enum {
     CAVE_FADE_LINK_EMERGE  = 5,  /* cave ENTRY emerge: Link walks UP from $DD to
                                   * the cave floor ($D5) via NES MoveObject
                                   * (InitMode_WalkCave, Z_05.asm:6643). */
-    CAVE_FADE_LOAD_HOLD    = 6   /* between descent-end and emerge: NES holds
+    CAVE_FADE_LOAD_HOLD    = 6,  /* between descent-end and emerge: NES holds
                                   * Link at the descent-end Y while submodes 1-7
                                   * load the cave (~29 frames) before
                                   * InitModeB_EnterCave repositions to $DD. */
+    CAVE_FADE_EMERGE_SETTLE = 7  /* T-012: InitMode_WalkCave's last frame
+                                  * (ObjGridOffset 0): no move, no animation,
+                                  * RunCrossRoomTasksAndBeginUpdateMode. */
 } cave_fade_phase_t;
 
 typedef struct {
@@ -81,6 +84,9 @@ typedef struct {
      * Link: sprite writes land a frame after plane writes), stage 1 on the
      * next tick (owner blanks the play area). Appended last. */
     void (*on_load_blank)(unsigned char stage);
+    /* T-012: the walk-in's settle frame (submode 8 -> 0, mode $0B update
+     * starts next frame). Appended last. */
+    void (*on_walk_done)(void);
 } cave_fade_callbacks_t;
 
 void              cave_fade_set_callbacks(const cave_fade_callbacks_t *cb);

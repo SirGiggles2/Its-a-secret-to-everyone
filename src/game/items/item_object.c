@@ -43,7 +43,7 @@ static void item_obj_destroy(unsigned int slot)
     ENEMY_MOVE_TIMER(slot)    = 0u;
     OBJ_STATE(slot)           = 0u;
     ENEMY_INVINCIBILITY(slot) = 0u;
-    ENEMY_ALIVE_FLAG(slot)    = 0u;
+    ENEMY_ALIVE_FLAG(slot)    = 0xFFu;   /* DestroyObject_WRAM */
     ENEMY_METASTATE(slot)     = 0u;
 }
 

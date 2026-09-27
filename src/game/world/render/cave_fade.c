@@ -9,6 +9,7 @@
 #include "cave_palette.h"
 #include "ow_render.h"
 #include "render_abi.h"  /* render_vram_read_word, render_set_plane_a_word */
+#include "platform_abi.h"  /* RAM(): FrameCounter $15 */
 
 /* Genesis Plane A VRAM base + cell stride. Per src/sgdk_adapter
  * config (RoomRom PR-2 H64xV32 layout): plane A at $C000, 64 cells
@@ -95,7 +96,7 @@ static unsigned char         s_frame_counter  = 0u;  /* 0..63 for descend */
 static unsigned char         s_step_idx       = 0u;  /* 0..15 px steps emitted */
 static cave_id_t             s_pending_cid    = 0u;
 static unsigned char         s_return_room_id = 0u;
-static cave_fade_callbacks_t s_cb             = { 0, 0, 0, 0, 0, 0, 0 };
+static cave_fade_callbacks_t s_cb             = { 0, 0, 0, 0, 0, 0, 0, 0 };
 /* LINK_EMERGE running state (NES MoveObject accumulator). */
 static unsigned char         s_emerge_y       = 0u;
 static unsigned char         s_emerge_posfrac = 0u;
@@ -236,11 +237,13 @@ void cave_fade_tick(void)
 
     switch (s_phase) {
     case CAVE_FADE_LINK_DESCEND: {
-        /* NES: every 4th frame INC ObjY. We count frames; when
-         * (frame_counter & 3) == 3 we are about to roll into a multiple
-         * of 4 — emit one descend step + bump idx. After 16 steps, swap. */
-        s_frame_counter = (unsigned char)(s_frame_counter + 1u);
-        if ((s_frame_counter & 0x03u) == 0u) {
+        /* NES UpdateMode10Stairs_Full (Z_05.asm:2314): INC ObjY when
+         * FrameCounter & 3 == 0, from the frame after InitMode10's own
+         * (T-012: a private 4-frame count was a frame late at fc $6C;
+         * the init frame at fc $B8 must not move). After 16 steps,
+         * mode $0B. */
+        if (s_frame_counter < 2u) s_frame_counter++;
+        if (s_frame_counter >= 2u && (RAM(0x0015u) & 0x03u) == 0u) {
             if (s_cb.on_descend_step != 0) {
                 s_cb.on_descend_step(s_step_idx);
             }
@@ -300,6 +303,10 @@ void cave_fade_tick(void)
          * it): hold pose 0 through the walk-up, flip to pose 1 at the settle. */
         s_anim_frame     = 0u;
         s_anim_counter   = CAVE_ANIM_EMERGE_SEED;
+        /* T-012: this is InitMode_WalkCave's first frame (ObjY $DD, no
+         * move yet); its Link_EndMoveAndAnimateInRoom animates. */
+        if (s_cb.on_anim_tick != 0) s_cb.on_anim_tick(s_anim_counter, s_anim_frame);
+        s_anim_counter   = (unsigned char)(s_anim_counter - 1u);
         s_phase          = CAVE_FADE_LINK_EMERGE;
         break;
 
@@ -331,11 +338,25 @@ void cave_fade_tick(void)
         if (s_cb.on_emerge_step != 0) {
             s_cb.on_emerge_step(s_emerge_y, s_emerge_grid, s_emerge_posfrac);
         }
+        /* T-012: NES shows the floor frame in submode 8, then one more
+         * frame (ObjGridOffset 0) before the cave updates. */
         if (s_emerge_y <= CAVE_EMERGE_FLOOR_Y) {
-            s_phase = CAVE_FADE_IDLE;
+            s_phase = CAVE_FADE_EMERGE_SETTLE;
+            s_step_idx = 0u;
         }
         break;
     }
+
+    case CAVE_FADE_EMERGE_SETTLE:
+        /* Stays active through the settle tick (the owner runs no
+         * objects while active); play resumes on the next one. */
+        if (s_step_idx == 0u) {
+            if (s_cb.on_walk_done != 0) s_cb.on_walk_done();
+            s_step_idx = 1u;
+        } else {
+            s_phase = CAVE_FADE_IDLE;
+        }
+        break;
 
     case CAVE_FADE_LINK_ASCEND: {
         /* Mirror of LINK_DESCEND: Y -= 1 every 4 frames for 16 steps.

@@ -390,7 +390,7 @@ extern void          c_move_object(unsigned short slot);
 #define OBJECT_FIRST_UNWALKABLE_TILE  RAM(0x034A)   /* NES $34A */
 #define OBJ_SHOVE_DIR                 0x00C0u       /* OBJ(_, slot) base */
 #define OBJ_TIMER_BASE                0x0028u       /* NES_OBJ_MOVE_TIMER */
-#define OBJ_GRID_OFFSET_BASE          0x0470u       /* NES_OBJ_GRID_OFFSET */
+#define OBJ_GRID_OFFSET_BASE          NES_OBJ_GRID_OFFSET  /* ObjGridOffset $394 (T-012: was $470) */
 
 /* NES Z_04.asm:2728-2735 RedLeeverStateQSpeeds / Times / AnimTimes. */
 static const unsigned char RedLeeverStateQSpeeds[6] = {

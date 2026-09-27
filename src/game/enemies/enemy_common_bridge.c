@@ -107,7 +107,9 @@ unsigned int c_shoot_limited(unsigned int slot)
     ENEMY_STATE_TIMER(empty)       = 0u;  /* ObjState ($00AC) */
     ENEMY_HIT_REACTION(empty)      = 0u;  /* ObjInvincibilityTimer ($04F0) */
     ENEMY_METASTATE(empty)         = 0x01u;
-    ENEMY_ALIVE_FLAG(empty)        = 1u;
+    /* DestroyObject_WRAM: uninitialized; its first update runs
+     * InitObject (T-012: the shot waits a frame, NES). */
+    ENEMY_ALIVE_FLAG(empty)        = 0xFFu;
 
     /* Shoot block: state $10, copy dir/x/y from caller slot. */
     ENEMY_STATE_TIMER(empty) = 0x10u;

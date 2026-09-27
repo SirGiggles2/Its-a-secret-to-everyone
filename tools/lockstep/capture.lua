@@ -276,9 +276,28 @@ local fram = io.open(OUT .. ".fram", "wb")
 local frtick = io.open(OUT .. ".frtick", "wb")
 local STALL_FRAMES = 120
 local FRAME_CAP = total * 3 + 600
+-- T-012: play clock (PRESET.clock == "play"): GameMode $05 play, $09
+-- cellar, $0B cave, each only in submode 0 ($0B runs its cave load in
+-- submodes 1..8). Transitions add video frames without ticks. A game that
+-- ticks NOPLAY_TICKS times without one play tick (death, ending) fails.
+local PLAY_MODES = { [0x05] = true, [0x09] = true, [0x0B] = true }
+local NOPLAY_TICKS = 1200
+local noplay = 0
+if PRESET.clock == "play" then FRAME_CAP = total * 5 + 3000 end
 local tick, f, stall = 0, 0, 0
 local last_fc = srd(0x15)
 local new_tick = true
+-- T-137: the Genesis runs the NES frame work of a load it finishes early
+-- in one go (FrameCounter +N in one frame). The tick clock counts N ticks
+-- then; the skipped ticks' rows repeat the state after the jump, and
+-- stages/snapshots inside the jump run on its last tick. (Those rows
+-- differ from the NES load rows by design.)
+local prev_tick = -1
+local function row_of(bytes)
+    local chunk = {}
+    for i = 1, 0x800 do chunk[i] = string.char(bytes[i]) end
+    return table.concat(chunk)
+end
 while tick < total and f < FRAME_CAP do
     if PCP and f == PCP[1] then
         pc_id = event.onmemoryexecuteany(pc_hook, "t118_pc", "M68K BUS")
@@ -288,24 +307,24 @@ while tick < total and f < FRAME_CAP do
     local bytes = memory.read_bytes_as_array(RAM_BASE, 0x800, RAM_DOM)
     if new_tick then
         for _, st in ipairs(PRESET.stages) do
-            if st.at == tick then
-                meta:write(string.format("stage at tick=%d f=%d\n", tick, f))
+            if st.at > prev_tick and st.at <= tick then
+                meta:write(string.format("stage at=%d run tick=%d f=%d\n", st.at, tick, f))
                 st.fn(srd, swr, slog, sys, gen_b_item, gen_link_pos)
             end
         end
         if stage_failed then ram:close(); fram:close(); frtick:close(); fail(stage_fail_why) return end
         last_fc = srd(0x15)   -- a stage may write $15: not a game tick
         bytes = memory.read_bytes_as_array(RAM_BASE, 0x800, RAM_DOM)
-        local chunk = {}
-        for i = 1, 0x800 do chunk[i] = string.char(bytes[i]) end
-        ram:write(table.concat(chunk))
-        if SNAP[tick] then snap_video(string.format(".f%05d", tick)) end
+        local row = row_of(bytes)
+        for t = prev_tick + 1, tick do
+            ram:write(row)
+            if SNAP[t] then snap_video(string.format(".f%05d", t)) end
+        end
+        prev_tick = tick
         new_tick = false
     end
     do
-        local chunk = {}
-        for i = 1, 0x800 do chunk[i] = string.char(bytes[i]) end
-        fram:write(table.concat(chunk))
+        fram:write(row_of(bytes))
         frtick:write(string.char((tick >> 8) & 0xFF, tick & 0xFF))
     end
     meta:write(string.format("f=%d t=%d in=%s gm=%02X sub=%02X fc=%02X room=%02X\n",
@@ -315,10 +334,31 @@ while tick < total and f < FRAME_CAP do
     f = f + 1
     local fc = srd(0x15)
     if fc ~= last_fc then
+        local fc_steps = (fc - last_fc) & 0xFF
         last_fc = fc
-        tick = tick + 1
         stall = 0
-        new_tick = true
+        -- T-012 play clock: only a tick that started in a play mode
+        -- consumes script input; load/transition ticks (which the Genesis
+        -- may need fewer of) hold the script position. bytes[] is the RAM
+        -- read at the top of this frame (1-based: GameMode $12 = [0x13],
+        -- GameSubmode $13 = [0x14]).
+        if PRESET.clock ~= "play" then
+            tick = math.min(tick + fc_steps, total)
+            new_tick = true
+            noplay = 0
+        elseif PLAY_MODES[bytes[0x13]] and bytes[0x14] == 0 then
+            tick = math.min(tick + fc_steps, total)
+            new_tick = true
+            noplay = 0
+        else
+            noplay = noplay + 1
+            if noplay >= NOPLAY_TICKS then
+                ram:close(); fram:close(); frtick:close()
+                fail(string.format("T-012 play clock: %d ticks without a play tick (GameMode $%02X sub $%02X) at tick %d f %d",
+                    noplay, bytes[0x13], bytes[0x14], tick, f))
+                return
+            end
+        end
     else
         stall = stall + 1
         if stall >= STALL_FRAMES then
@@ -331,6 +371,14 @@ while tick < total and f < FRAME_CAP do
 end
 fram:close()
 frtick:close()
+if tick >= total and prev_tick < total - 1 then
+    -- a FrameCounter jump crossed the script end: rows up to total - 1
+    local row = row_of(memory.read_bytes_as_array(RAM_BASE, 0x800, RAM_DOM))
+    for t = prev_tick + 1, total - 1 do
+        ram:write(row)
+        if SNAP[t] then snap_video(string.format(".f%05d", t)) end
+    end
+end
 if tick < total then
     ram:close()
     fail(string.format("T-136 frame cap %d hit at tick %d of %d", FRAME_CAP, tick, total))

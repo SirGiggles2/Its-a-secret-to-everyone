@@ -128,7 +128,11 @@ def build(spec: dict) -> dict:
     return {"name": spec["name"], "nes_wram": nes, "gen_slot0": gen,
             "items": items, "script": spec.get("script", []),
             "stages": stages_of(spec),
-            "gen_entry": spec.get("gen_entry", "fs")}
+            "gen_entry": spec.get("gen_entry", "fs"),
+            # T-012: "play" = the script advances only on play-mode ticks
+            # (GameMode $05/$09/$0B), so a load the Genesis finishes in
+            # fewer ticks than the NES does not shift later inputs.
+            "clock": spec.get("clock", "tick")}
 
 
 def stages_of(spec: dict) -> list:
@@ -146,7 +150,8 @@ def to_lua(p: dict) -> str:
     items = ",".join(f"0x{b:02X}" for b in p["items"])
     out = (f'PRESET={{name="{p["name"]}",nes_wram={{{nes}}},gen_slot0={{{gen}}},'
            f'items={{{items}}},script={{{script}}},'
-           f'gen_entry="{p.get("gen_entry", "fs")}"}}\n'
+           f'gen_entry="{p.get("gen_entry", "fs")}",'
+           f'clock="{p.get("clock", "tick")}"}}\n'
            f'PRESET.stages = {{}}\n')
     for i, (at, body) in enumerate(p.get("stages", []), 1):
         out += (f'PRESET.stages[{i}] = {{at={at}, fn=function(rd, wr, log, sys, '

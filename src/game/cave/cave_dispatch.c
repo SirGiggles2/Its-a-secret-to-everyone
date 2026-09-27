@@ -173,12 +173,8 @@ int cave_init(cave_id_t cave_id)
     RAM(0x0070u + 3u) = 0xA8u;            /* ObjX+3    = $A8 */
     RAM(0x0084u + 2u) = 0x80u;            /* ObjY+2    = $80 */
     RAM(0x0084u + 3u) = 0x80u;            /* ObjY+3    = $80 */
-    /* Mark bonfires alive so enemy_loop dispatches enrt_update_standing_fire
-     * per frame. NES uses ObjType != 0 as the alive marker; Gen enemy_loop
-     * gates on ENEMY_ALIVE_FLAG ($0492+slot). Without setting alive, slot
-     * 2/3 skipped and bonfire sprites never publish. */
-    RAM(0x0492u + 2u) = 0x01u;            /* ENEMY_ALIVE_FLAG+2 */
-    RAM(0x0492u + 3u) = 0x01u;            /* ENEMY_ALIVE_FLAG+3 */
+    /* The bonfires stay uninitialized ($492 = $FF from the room load,
+     * NES SetUpCommonCaveObjects); UpdateObject initializes them. */
 
     /* NES InitCaveContinue (Z_01.asm:105-170) port:
      * 1) cave_idx = cave_id - $6A.
@@ -235,15 +231,12 @@ void cave_exit(void)
     /* Clear bonfire slots so they don't persist into OW context.
      * cave_init populates slot 2/3 with type=$40 (StandingFire) + alive=1;
      * enemy_loop would otherwise tick + draw them on every OW frame after
-     * cave exit. Reset both type, alive flag, and position cells. */
+     * cave exit (NES InitMode_EnterRoom: types cleared, $492 DEC to $FF,
+     * positions left as they were). */
     RAM(0x034Fu + 2u) = 0u;   /* ObjType+2 = 0 */
     RAM(0x034Fu + 3u) = 0u;   /* ObjType+3 = 0 */
-    RAM(0x0492u + 2u) = 0u;   /* ENEMY_ALIVE_FLAG+2 = 0 */
-    RAM(0x0492u + 3u) = 0u;   /* ENEMY_ALIVE_FLAG+3 = 0 */
-    RAM(0x0070u + 2u) = 0u;
-    RAM(0x0070u + 3u) = 0u;
-    RAM(0x0084u + 2u) = 0u;
-    RAM(0x0084u + 3u) = 0u;
+    RAM(0x0492u + 2u) = 0xFFu;
+    RAM(0x0492u + 3u) = 0xFFu;
 }
 
 cave_id_t cave_current_id(void)

@@ -37,6 +37,9 @@ void enrt_update_bubble(unsigned int slot) {
 void enrt_init_leever(unsigned int slot) {
     ENEMY_LEEVER_TIMER = 5;
     z07_reset_obj_metastate_and_timer(slot);
+    /* NES InitLeever falls through into InitSlowOctorockOrGhini
+     * (Z_04.asm): q-speed $20, timer (slot+1)*$10, InitWalker. */
+    enrt_octorock_common(slot, 32);
 }
 
 void enrt_init_walker(unsigned int slot) {
@@ -202,8 +205,7 @@ static void enrt_try_shooting(unsigned char qspeed_fail, unsigned char shot_type
                                 || type == 0x09u || type == 0x0Au);
         if (!is_blue && cur_timer == 0u) {
             if (ENEMY_RNG_A(slot) < 0xF8u) {
-                ENEMY_WALK_SPEED(slot) = qspeed_fail;
-                return;
+                return;   /* NES @Exit: ObjQSpeedFrac unchanged */
             }
         }
     }
