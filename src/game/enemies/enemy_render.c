@@ -79,36 +79,12 @@ static enemy_render_entry_t
     s_enemy_entries[ENEMY_LOOP_SLOT_LAST + 1u][ENEMY_RENDER_MAX_PER_SLOT];
 static unsigned char s_enemy_count[ENEMY_LOOP_SLOT_LAST + 1u];
 
-/* Phase G 2026-05-15 — Gleeok sub-cache. Flat array of up to 20 entries
- * (per spec). Body 6 + heads 4 + first 4 segments per neck (4*4=16) =
- * 26 max; cap at 20 = body + 4 heads + first 4 segments per neck up
- * to 10. Beyond cap = priority-drop (NES does the same on hardware
- * via per-scanline limit). */
-#define ENEMY_RENDER_GLEEOK_MAX  20u
-static enemy_render_entry_t s_gleeok_entries[ENEMY_RENDER_GLEEOK_MAX];
-static unsigned char s_gleeok_count;
-
 void enemy_render_native_reset(void)
 {
     unsigned char i;
     for (i = 0u; i <= ENEMY_LOOP_SLOT_LAST; ++i) {
         s_enemy_count[i] = 0u;
     }
-    s_gleeok_count = 0u;
-}
-
-void enemy_render_publish_gleeok(unsigned char tile,
-                                 unsigned char attrs,
-                                 unsigned char x,
-                                 unsigned char y)
-{
-    if (s_gleeok_count >= ENEMY_RENDER_GLEEOK_MAX) return;
-    enemy_render_entry_t *e = &s_gleeok_entries[s_gleeok_count];
-    e->tile  = tile;
-    e->attrs = attrs;
-    e->x     = x;
-    e->y     = y;
-    s_gleeok_count = (unsigned char)(s_gleeok_count + 1u);
 }
 
 void anim_write_sprite_drained(unsigned int tile, unsigned int slot)
@@ -713,8 +689,8 @@ static inline unsigned short translate_attrs(unsigned char nes_attrs,
  * instructions per sprite, 11% of the frame). s_xlat_tile holds
  * translate_tile(t, 0) for the current (boss bank, OW/UW) state and is
  * rebuilt when that state changes; XLAT_SLOW keeps the full function for
- * the cases that depend on attrs or have side effects (fireball lazy CHR
- * upload, boss sub-pal 3 split). Marker attrs (META/ITEM) always take the
+ * the fireball tiles (lazy CHR upload side effect); xlat_sat applies the
+ * boss sub-pal 3 split itself. Marker attrs (META/ITEM) always take the
  * full function. s_xlat_attr holds translate_attrs(a, 0): the tile only
  * matters for the boss sub-pal 3 range, patched in xlat_sat. */
 #define XLAT_SLOW 0xFFFFu
@@ -734,7 +710,7 @@ static void xlat_refresh(void)
     }
     s_xlat_key = key;
     for (t = 0u; t < 256u; ++t) {
-        if (t == 0x44u || t == 0x45u || (s_boss_bank_active && t >= 0xC0u))
+        if (t == 0x44u || t == 0x45u)
             s_xlat_tile[t] = XLAT_SLOW;
         else
             s_xlat_tile[t] = translate_tile((unsigned char)t, 0u);
@@ -748,6 +724,12 @@ static inline unsigned short xlat_sat(unsigned char tile, unsigned char attrs)
     unsigned short sat;
     if ((attrs & (META_ATTR_MARKER | ITEM_ATTR_MARKER)) || tid == XLAT_SLOW)
         tid = translate_tile(tile, attrs);
+    else if (tile >= 0xC0u && tile != 0xF3u && s_boss_bank_active &&
+             (attrs & 0x03u) == 3u)
+        /* T-125: the one attrs-dependent boss-bank case of translate_tile
+         * (sub-pal 3 copy); the table holds the sub-pal 0-2 bank tile. */
+        tid = (unsigned short)(ROOMROM_BOSS_SUBPAL3_TILE_BASE +
+                               (unsigned short)(tile - 0xC0u));
     sat = (unsigned short)(s_xlat_attr[attrs] | (tid & 0x07FFu));
     if (tid >= ROOMROM_BOSS_SUBPAL3_TILE_BASE &&
         tid < ROOMROM_BOSS_SUBPAL3_TILE_BASE + ROOMROM_BOSS_SUBPAL3_TILE_COUNT)
@@ -838,30 +820,6 @@ static unsigned int emit_native_entries(unsigned int sat_slot)
         }
     }
 
-    /* Phase G 2026-05-15 — Gleeok sub-cache emission. Body / heads /
-     * segments published via enemy_render_publish_gleeok land here.
-     * Drained in flat order (body first, then heads, then segments
-     * per the NES draw call ordering). Skip if no Gleeok entries.
-     * Cap honored by publisher (drops over 20). */
-    {
-        unsigned char gi;
-        for (gi = 0u; gi < s_gleeok_count; ++gi) {
-            if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
-            enemy_render_entry_t *e = &s_gleeok_entries[gi];
-            if (e->y == 0xF0u) continue;
-
-            unsigned short sat_attrs = xlat_sat(e->tile, e->attrs);
-            unsigned short size      = RENDER_SPRITE_SIZE(1, 2);
-            unsigned char  link      = (sat_slot < ENEMY_RENDER_SLOT_LAST)
-                                          ? (unsigned char)(sat_slot + 1u) : 0u;
-            render_set_sprite_inline((unsigned short)sat_slot,
-                                     (signed short)e->x,
-                                     (signed short)(e->y + ROOMROM_PLAY_SPRITE_DY),
-                                     size, sat_attrs, link);
-            ++sat_slot;
-        }
-    }
-
     return sat_slot;
 }
 
@@ -893,9 +851,15 @@ void enemy_render_sweep_oam_to_sat(void)
     /* 2026-05-15 perf: NES Z1's SpriteOffsets table (k_sprite_offsets)
      * scatters Anim_WriteSprite writes across byte offsets $60..$FC =
      * OAM slot 24..63. Slots 0..23 are NEVER populated. Skip them. */
+    xlat_refresh();   /* T-125: table lookups, as the native path */
     for (i = 24u; i < NES_OAM_SLOT_COUNT; ++i) {
         unsigned short base = (unsigned short)(NES_SPRITES_BASE + i * 4u);
         unsigned char y     = RAM(base + 0u);
+
+        /* Y == $F0 = NES hide-sprite convention. Skip. */
+        if (y == 0xF0u) {
+            continue;
+        }
         unsigned char tile  = RAM(base + 1u);
         unsigned char attrs = RAM(base + 2u);
         unsigned char x     = RAM(base + 3u);
@@ -905,13 +869,8 @@ void enemy_render_sweep_oam_to_sat(void)
         if (y == 0u && tile == 0u && attrs == 0u && x == 0u) {
             continue;
         }
-        /* Y == $F0 = NES hide-sprite convention. Skip. */
-        if (y == 0xF0u) {
-            continue;
-        }
 
-        unsigned short tile_id    = translate_tile(tile, attrs);
-        unsigned short sat_attrs  = translate_attrs(attrs, tile_id);
+        unsigned short sat_attrs  = xlat_sat(tile, attrs);
         /* NES Z1 uses 8x16 sprite mode (PPUCTRL bit 5 = 1). Each NES
          * sprite = 2 vertically-stacked CHR tiles. Genesis SPRITE_SIZE
          * (1, 2) = 1 column wide, 2 rows tall = 8x16. */
@@ -986,7 +945,7 @@ unsigned char g_enemy_render_last_sat_slot = ROOMROM_SPRITE_SLOT_ENEMY_FIRST;
  * enemies whose visual width exceeds 16px (Aquamentus 24x16, etc.).
  *
  * Wider enemies (Gleeok body 32x32, Patra body w/ satellites) are
- * handled by Phase F+G per-segment / sub-cache paths, not this table.
+ * handled by the boss-room NES OAM sweep, not this table.
  *
  * Source for type IDs: src/game/enemies/enemy_loop.c per-type comments
  * + reference/aldonunez/Z_05.asm (Variables.inc enum). */
@@ -1065,6 +1024,5 @@ void enemy_render_native_sweep(void)
         for (i = 0u; i <= ENEMY_LOOP_SLOT_LAST; ++i) {
             s_enemy_count[i] = 0u;
         }
-        s_gleeok_count = 0u;
     }
 }

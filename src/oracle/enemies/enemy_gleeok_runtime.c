@@ -49,20 +49,8 @@ void enrt_init_gleeok_head(unsigned int slot) {
     ENEMY_AIR_SPEED(slot) = 0xBF;
 }
 
-static unsigned char gleeok_load_byte(unsigned int ptr_addr,
-                                      unsigned int seg_index) {
-    /* LDA (ptr),Y in NES RAM where ptr is at NES RAM[ptr_addr..ptr_addr+1]. */
-    unsigned int ptr =
-        (unsigned int)RAM(ptr_addr) | ((unsigned int)RAM(ptr_addr + 1) << 8);
-    return nes_ram[ptr + seg_index];
-}
-
-static void gleeok_store_byte(unsigned int ptr_addr,
-                              unsigned int seg_index,
-                              unsigned char value) {
-    unsigned int ptr =
-        (unsigned int)RAM(ptr_addr) | ((unsigned int)RAM(ptr_addr + 1) << 8);
-    nes_ram[ptr + seg_index] = value;
+static unsigned int gleeok_ptr(unsigned int ptr_addr) {
+    return (unsigned int)RAM(ptr_addr) | ((unsigned int)RAM(ptr_addr + 1) << 8);
 }
 
 void enrt_update_gleeok(unsigned int slot) {
@@ -90,11 +78,18 @@ void enrt_update_gleeok(unsigned int slot) {
         /* Load this neck's segment bytes from external NES arrays into the
          * working object slots (X→OBJ(0x70,1..6), Y→OBJ(0x84,1..6), misc→
          * RAM[0x0413+1..0x0413+6]). Loop seg = 5..0. */
-        for (seg = 5; seg >= 0; seg--) {
-            unsigned int s = (unsigned int)seg;
-            RAM(0x0071 + s) = gleeok_load_byte(0x0000, s);
-            RAM(0x0085 + s) = gleeok_load_byte(0x0002, s);
-            RAM(0x0413 + s) = gleeok_load_byte(0x0004, s);
+        /* T-125: resolve the three (ptr),Y bases once per neck (the
+         * per-byte pointer loads cost ~1k instructions a frame with 3
+         * necks). The arrays never overlap the $00-$05 pointers. */
+        {
+            const unsigned char *sx = &nes_ram[gleeok_ptr(0x0000)];
+            const unsigned char *sy = &nes_ram[gleeok_ptr(0x0002)];
+            const unsigned char *sm = &nes_ram[gleeok_ptr(0x0004)];
+            for (seg = 5; seg >= 0; seg--) {
+                RAM(0x0071 + seg) = sx[seg];
+                RAM(0x0085 + seg) = sy[seg];
+                RAM(0x0413 + seg) = sm[seg];
+            }
         }
 
         /* One neck per frame moves + may shoot; selected by frame_tick & 3. */
@@ -119,11 +114,15 @@ void enrt_update_gleeok(unsigned int slot) {
 
         /* Save segment data back to the external NES arrays. */
         c_gleeok_fetch_neck_addrs();
-        for (seg = 5; seg >= 0; seg--) {
-            unsigned int s = (unsigned int)seg;
-            gleeok_store_byte(0x0000, s, RAM(0x0071 + s));
-            gleeok_store_byte(0x0002, s, RAM(0x0085 + s));
-            gleeok_store_byte(0x0004, s, RAM(0x0413 + s));
+        {
+            unsigned char *dx = &nes_ram[gleeok_ptr(0x0000)];
+            unsigned char *dy = &nes_ram[gleeok_ptr(0x0002)];
+            unsigned char *dm = &nes_ram[gleeok_ptr(0x0004)];
+            for (seg = 5; seg >= 0; seg--) {
+                dx[seg] = RAM(0x0071 + seg);
+                dy[seg] = RAM(0x0085 + seg);
+                dm[seg] = RAM(0x0413 + seg);
+            }
         }
     }
 }

@@ -171,6 +171,14 @@ void render_vsram_write_word(unsigned short value);
 void render_plane_fill(unsigned short plane_base, unsigned short fill_word,
                        unsigned short tile_count);
 /* T-118: count cells down a Plane A column, wrapping at plane_rows. */
+/* T-125: count cells of one plane row (A, or B when plane_b) from col set
+ * to word, one VDP address per call. */
+void render_plane_fill_row(unsigned char plane_b, unsigned short col,
+                           unsigned short row, unsigned short count,
+                           unsigned short word);
+/* T-125: count words of VRAM from vram_addr into dst (one address set). */
+void render_vram_read_run(unsigned short vram_addr, unsigned short *dst,
+                          unsigned short count);
 void render_plane_a_write_col(unsigned short col, unsigned short row,
                               const unsigned short *cells, unsigned short count,
                               unsigned short plane_rows);

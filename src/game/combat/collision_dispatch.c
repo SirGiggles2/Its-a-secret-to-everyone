@@ -251,7 +251,8 @@ void collision_check_monster_weapon_collision(unsigned int monster_slot,
     collision_handle_monster_weapon_collision(monster_slot, weapon_slot);
 }
 
-void collision_check_monster_slender_weapon_collision2(unsigned int monster_slot)
+/* T-125: inlined into CheckMonsterCollisions (per-monster, per-frame). */
+__attribute__((always_inline)) void collision_check_monster_slender_weapon_collision2(unsigned int monster_slot)
 {
     /* drain at collision_runtime.c:91-105. */
     const unsigned int weapon_slot = (unsigned int)COMBAT_WEAPON_SLOT;
@@ -319,7 +320,8 @@ void collision_check_monster_stabbing_collision(unsigned int monster_slot,
                              (unsigned int)(unsigned char)COMBAT_WEAPON_SLOT);
 }
 
-void collision_check_monster_sword_collision(unsigned int monster_slot,
+/* T-125: inlined into CheckMonsterCollisions (per-monster, per-frame). */
+__attribute__((always_inline)) void collision_check_monster_sword_collision(unsigned int monster_slot,
                                              unsigned int weapon_slot)
 {
     /* drain at collision_runtime.c:144-149. */
@@ -357,7 +359,8 @@ void collision_check_monster_shot_collision(unsigned int monster_slot,
     collision_parry_or_shove(monster_slot, weapon_slot);
 }
 
-void collision_check_monster_arrow_or_rod_collision(unsigned int monster_slot,
+/* T-125: inlined into CheckMonsterCollisions (per-monster, per-frame). */
+__attribute__((always_inline)) void collision_check_monster_arrow_or_rod_collision(unsigned int monster_slot,
                                                     unsigned int weapon_slot)
 {
     /* drain at collision_runtime.c:168-181. */
@@ -378,7 +381,8 @@ void collision_check_monster_arrow_or_rod_collision(unsigned int monster_slot,
     collision_check_monster_shot_collision(monster_slot, weapon_slot, dmg);
 }
 
-void collision_check_monster_boomerang_or_food_collision(
+/* T-125: inlined into CheckMonsterCollisions (per-monster, per-frame). */
+__attribute__((always_inline)) void collision_check_monster_boomerang_or_food_collision(
     unsigned int monster_slot, unsigned int weapon_slot)
 {
     /* drain at collision_runtime.c:183-191. */
@@ -396,7 +400,8 @@ void collision_check_monster_boomerang_or_food_collision(
         (unsigned int)(unsigned char)((unsigned char)OBJ_Y(weapon_slot) + 8u));
 }
 
-void collision_check_monster_sword_shot_or_magic_shot_collision(
+/* T-125: inlined into CheckMonsterCollisions (per-monster, per-frame). */
+__attribute__((always_inline)) void collision_check_monster_sword_shot_or_magic_shot_collision(
     unsigned int monster_slot, unsigned int weapon_slot)
 {
     /* drain at collision_runtime.c:193-211. */
@@ -422,7 +427,8 @@ void collision_check_monster_sword_shot_or_magic_shot_collision(
     core_handle_shot_blocked(14u);
 }
 
-void collision_check_monster_bomb_or_fire_collision(
+/* T-125: inlined into CheckMonsterCollisions (per-monster, per-frame). */
+__attribute__((always_inline)) void collision_check_monster_bomb_or_fire_collision(
     unsigned int monster_slot, unsigned int weapon_slot)
 {
     /* drain at collision_runtime.c:213-235. */

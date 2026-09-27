@@ -217,9 +217,8 @@ static void load_palette_from_levelinfo(void)
      * Cheap correct fallback: BG palette is per-LEVEL constant on NES Z1.
      * Walk g_uw_room_index for any blob entry matching current level/quest
      * and reuse its PAL[0..15] — guaranteed correct since blob was captured
-     * live from NES PALRAM. Only falls through to zeroed buf if level has
+     * live from NES PALRAM. Only falls through to the default palette if level has
      * no captured rooms at all (defensive). */
-    unsigned char buf[16] = {0};
     unsigned short i;
     int found_idx = -1;
     unsigned char want_map = (s_uw_map_id == ROOMROM_MAP_REDUX) ? 1u : 0u;

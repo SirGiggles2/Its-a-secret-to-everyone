@@ -564,6 +564,34 @@ void render_plane_a_write_col(unsigned short col, unsigned short row,
     }
 }
 
+void render_plane_fill_row(unsigned char plane_b, unsigned short col,
+                           unsigned short row, unsigned short count,
+                           unsigned short word)
+{
+    const unsigned short addr = (unsigned short)(
+        (plane_b ? PLANE_B_BASE : PLANE_A_BASE) +
+        row * s_plane_row_stride_bytes + col * 2u);
+    SYS_disableInts();
+    render_set_autoinc_word();
+    VDP_CTRL_LONG = 0x40000000UL
+                  | ((unsigned long)(addr & 0x3FFFu) << 16)
+                  | ((addr >> 14) & 0x0003u);
+    while (count--) VDP_DATA_WORD = word;
+    SYS_enableInts();
+}
+
+void render_vram_read_run(unsigned short vram_addr, unsigned short *dst,
+                          unsigned short count)
+{
+    SYS_disableInts();
+    render_set_autoinc_word();
+    VDP_CTRL_LONG = 0x00000000UL
+                  | ((unsigned long)(vram_addr & 0x3FFFu) << 16)
+                  | ((unsigned long)(vram_addr >> 14) & 0x0003u);
+    while (count--) *dst++ = VDP_DATA_WORD;
+    SYS_enableInts();
+}
+
 /* ---- Phase F5 FS frontend cutover primitives ---- */
 
 /* Open CRAM write cursor at a raw byte address.

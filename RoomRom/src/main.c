@@ -301,7 +301,7 @@ static u8             s_lvl_enter_only = 0u;
 static u8             s_lvl_init = 0u;       /* InitMode10 frame pending */
 static u8             s_lvl_exiting = 0u;    /* curtain leads to StepOutside */
 static u8             s_lvl_entrance_tile = 0u; /* UndergroundEntranceTile */
-static u16            s_curtain[32][22];     /* play-area words behind it */
+static u16            s_curtain[22][32];     /* play-area words behind it */
 static unsigned char begin_level_exit(void);
 static rr_warp_outcome_t s_lvl_out;
 static u8             s_scroll_frame    = 0u;     /* counts up during scroll */
@@ -445,16 +445,10 @@ static void set_plane_scroll(u8 plane, short h_scroll, short v_scroll)
 static void clear_tile_rect_on_plane(u8 plane, u16 x, u16 y, u16 w, u16 h)
 {
     u16 row;
-    u16 col;
-    for (row = 0u; row < h; row++) {
-        for (col = 0u; col < w; col++) {
-            if (plane) {
-                render_set_plane_b_word((u16)(x + col), (u16)(y + row), 0u);
-            } else {
-                render_set_plane_a_word((u16)(x + col), (u16)(y + row), 0u);
-            }
-        }
-    }
+    /* T-125: one VDP address per row (was per cell; ~30k instructions of
+     * the dungeon-entry load). */
+    for (row = 0u; row < h; row++)
+        render_plane_fill_row(plane, x, (u16)(y + row), w, 0u);
 }
 
 static void clear_room_scroll_gutters_on_plane(u8 plane)
@@ -2065,13 +2059,24 @@ static u16 curtain_addr(u8 col, u8 row, u16 *pc, u16 *pr)
 
 static void curtain_hide(void)
 {
-    u8 col, row;
+    u8 row;
     u16 pc, pr;
-    for (col = 0u; col < 32u; ++col)
-        for (row = 0u; row < 22u; ++row) {
-            s_curtain[col][row] = render_vram_read_word(curtain_addr(col, row, &pc, &pr));
-            render_set_plane_a_word(pc, pr, 0u);
+    /* T-125: one run per plane row (two when the 32 screen columns wrap
+     * the 64-cell plane row); was a VDP read + write address per cell. */
+    for (row = 0u; row < 22u; ++row) {
+        u16 first;
+        (void)curtain_addr(0u, row, &pc, &pr);
+        first = (u16)(64u - pc);
+        if (first > 32u) first = 32u;
+        render_vram_read_run((u16)(0xC000u + ((pr * 64u + pc) << 1)),
+                             &s_curtain[row][0], first);
+        render_plane_fill_row(0u, pc, pr, first, 0u);
+        if (first < 32u) {
+            render_vram_read_run((u16)(0xC000u + ((pr * 64u) << 1)),
+                                 &s_curtain[row][first], (u16)(32u - first));
+            render_plane_fill_row(0u, 0u, pr, (u16)(32u - first), 0u);
         }
+    }
 }
 
 static void curtain_reveal(u8 col)
@@ -2080,7 +2085,7 @@ static void curtain_reveal(u8 col)
     u16 pc, pr;
     for (row = 0u; row < 22u; ++row) {
         (void)curtain_addr(col, row, &pc, &pr);
-        render_set_plane_a_word(pc, pr, s_curtain[col][row]);
+        render_set_plane_a_word(pc, pr, s_curtain[row][col]);
     }
 }
 

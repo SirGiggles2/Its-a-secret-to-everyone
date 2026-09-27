@@ -238,6 +238,10 @@ int debug_main_after_a4(bool hardReset)
 {
     (void) hardReset;
 
+    /* T-125: pad 2 only ever needs the NES buttons (NES controller 2 has
+     * A/B/Start/Select/D-pad); the 6-button read runs every VBlank. */
+    JOY_setSupport(PORT_2, JOY_SUPPORT_3BTN);
+
     /* Phase 10.3 audio link, VBlank tick slice: register music_tick
      * as VBlank callback so the audio driver advances notes once per
      * frame. Must run before any music_play() request. */

@@ -28,7 +28,6 @@
 #include "object_state.h"             /* OBJ_*  */
 #include "core/core_dispatch.h"       /* core_write_blank_priority_sprites,
                                          core_reset_obj_metastate */
-#include "../enemy_render.h"          /* Phase G: enemy_render_publish_gleeok */
 #include "world/draw_dispatch.h"      /* k_sprite_offsets */
 #include "world/sprite_dispatch.h"    /* sprite_cycle_cur_sprite_index */
 
@@ -432,10 +431,7 @@ static void gleeok_anim_write_specific_sprite(unsigned char tile,
     OAM_BYTE((unsigned int)sprite_off) = gy;
     OAM_BYTE((unsigned int)(sprite_off + 2u)) = attrs;
     sprite_cycle_cur_sprite_index();
-    /* Phase G: publish to Gleeok sub-cache so the native sweep emits
-     * a SAT entry. The OAM mirror write above stays for compat with
-     * any consumer that still reads NES OAM. */
-    enemy_render_publish_gleeok(tile, attrs, gx, gy);
+    /* Gleeok rooms draw from NES OAM (enemy_render_sweep_oam_to_sat). */
 }
 
 static void gleeok_anim_write_level_palette_sprite(unsigned char tile,
@@ -558,9 +554,6 @@ void c_gleeok_draw_body(void)
 
                 tile_idx = (unsigned char)(tile_idx + 1u);
                 sprite_cycle_cur_sprite_index();
-
-                /* Phase G: publish body sprite to Gleeok sub-cache. */
-                enemy_render_publish_gleeok(body_tile, attrs, gx, gy);
             }
         }
     }
