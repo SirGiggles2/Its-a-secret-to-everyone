@@ -148,11 +148,13 @@ static void emit_nametable_record(unsigned char hi,
      * CAVE NPC-dialogue transfers carry SCREEN-ABSOLUTE NT rows (line 1 =
      * $21A4 = row 13), so the +7 double-counts the HUD and dropped the text
      * ~2 rows below NES (Gen row 15/20 vs NES rows 13/14). Map the absolute
-     * NT row straight to the Plane A row for caves. Byte-verified vs NES
-     * golden (tools/parity/cave_golden). */
+     * NT row to the Plane A row for caves. T-135: the Genesis frame is the
+     * NES frame without its top 8 lines (room row 0 = NT row 8 is plane row
+     * 7), so NT row r is plane row r - 1; r drew the text 8 px low
+     * (framebuffer vs NES, t134_cave_exit f540). */
     unsigned char plane_row =
         (roomrom_main_current_scene() == ROOMROM_MAIN_SCENE_CAVE)
-            ? nes_row
+            ? (unsigned char)(nes_row - 1u)
             : (unsigned char)(nes_row + PLANE_BRIDGE_HUD_ROWS);
 
     unsigned char src_avail = (unsigned char)((src_off < src_end)

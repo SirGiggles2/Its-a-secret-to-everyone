@@ -576,6 +576,15 @@ void render_plane_fill_row(unsigned char plane_b, unsigned short col,
     VDP_CTRL_LONG = 0x40000000UL
                   | ((unsigned long)(addr & 0x3FFFu) << 16)
                   | ((addr >> 14) & 0x0003u);
+    {
+        /* Long writes, 8 cells a step (room loads clear ~3.4k cells). */
+        const unsigned long word2 = ((unsigned long)word << 16) | word;
+        volatile unsigned long *const port = (volatile unsigned long *)0xC00000;
+        while (count >= 8u) {
+            *port = word2; *port = word2; *port = word2; *port = word2;
+            count = (unsigned short)(count - 8u);
+        }
+    }
     while (count--) VDP_DATA_WORD = word;
     SYS_enableInts();
 }

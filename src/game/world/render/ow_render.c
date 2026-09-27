@@ -674,6 +674,27 @@ static void write_metatile_col(unsigned char dst_col, unsigned char dst_row_base
     }
 }
 
+/* T-134/T-135: columns computed ahead of a load while the playfield is
+ * black (cave entry: the cave; cave exit: the OW room). One set of buffers,
+ * owned by whichever was prepared last. */
+static unsigned short s_prep_rows[ROOMROM_ROOM_ROWS][32];
+static unsigned char  s_prep_raw[16][2][ROOMROM_ROOM_ROWS];
+static unsigned char  s_prep_walk[16][11];
+static unsigned char  s_prep_outer = 0u, s_prep_inner = 0u;
+static unsigned char  s_cave_prep_id = 0xFFu;   /* cave id, 0xFF = none */
+static unsigned char  s_ow_prep_room = 0xFFu;   /* OW room, 0xFF = none */
+static unsigned char  s_prep_cols = 0u;
+
+static void prep_store_col(unsigned char col, const unsigned short *col0,
+                           const unsigned short *col1)
+{
+    unsigned char row;
+    for (row = 0; row < ROOMROM_ROOM_ROWS; row++) {
+        s_prep_rows[row][col << 1]        = col0[row];
+        s_prep_rows[row][(col << 1) + 1u] = col1[row];
+    }
+}
+
 static void render_one_metatile_col(unsigned char room_id,
                                     unsigned char src_col,
                                     unsigned char dst_col,
@@ -685,11 +706,49 @@ static void render_one_metatile_col(unsigned char room_id,
     unsigned char raw[2][ROOMROM_ROOM_ROWS];
     unsigned char walk[11];
     unsigned char outer_pal, inner_pal;
+    if (col_dirs_override == (const unsigned char *)0 &&
+        room_id == s_ow_prep_room && src_col < s_prep_cols) {
+        unsigned char row;
+        for (row = 0; row < ROOMROM_ROOM_ROWS; row++) {
+            col0[row] = s_prep_rows[row][src_col << 1];
+            col1[row] = s_prep_rows[row][(src_col << 1) + 1u];
+        }
+        store_metatile_col(src_col, dst_col, dst_row_base, s_prep_raw[src_col],
+                           s_prep_walk[src_col], s_prep_outer, s_prep_inner);
+        write_metatile_col(dst_col, dst_row_base, col0, col1);
+        return;
+    }
     compute_metatile_col(room_id, src_col, col_dirs_override, col0, col1,
                          raw, walk, &outer_pal, &inner_pal);
     store_metatile_col(src_col, dst_col, dst_row_base, raw, walk,
                        outer_pal, inner_pal);
     write_metatile_col(dst_col, dst_row_base, col0, col1);
+}
+
+void roomrom_ow_room_render_prepare(unsigned char room_id, unsigned char max_cols)
+{
+    if (s_ow_prep_room != room_id) {
+        s_ow_prep_room = room_id;
+        s_cave_prep_id = 0xFFu;
+        s_prep_cols = 0u;
+    }
+    while (max_cols-- && s_prep_cols < 16u) {
+        const unsigned char col = s_prep_cols;
+        unsigned short col0[ROOMROM_ROOM_ROWS];
+        unsigned short col1[ROOMROM_ROOM_ROWS];
+        compute_metatile_col(room_id, col, (const unsigned char *)0, col0, col1,
+                             s_prep_raw[col], s_prep_walk[col],
+                             &s_prep_outer, &s_prep_inner);
+        prep_store_col(col, col0, col1);
+        ++s_prep_cols;
+    }
+}
+
+void roomrom_ow_room_render_prepare_drop(void)
+{
+    s_ow_prep_room = 0xFFu;
+    s_cave_prep_id = 0xFFu;
+    s_prep_cols = 0u;
 }
 
 static void commit_fill_mapping(void)
@@ -799,35 +858,25 @@ static const unsigned char *cave_layout_for(unsigned char cave_id)
  * walkability are computed during the load hold (prepare), and the swap
  * stores them and queues the plane rows for the next VBlank DMA, so the
  * cave appears in one frame. */
-static unsigned short s_cave_rows[ROOMROM_ROOM_ROWS][32];
-static unsigned char  s_cave_raw[16][2][ROOMROM_ROOM_ROWS];
-static unsigned char  s_cave_walk[16][11];
-static unsigned char  s_cave_prep_id = 0xFFu;
-static unsigned char  s_cave_prep_cols = 0u;
-
 void roomrom_cave_room_render_prepare(unsigned char cave_id,
                                       unsigned char max_cols)
 {
     const unsigned char *layout = cave_layout_for(cave_id);
     if (s_cave_prep_id != cave_id) {
         s_cave_prep_id = cave_id;
-        s_cave_prep_cols = 0u;
+        s_ow_prep_room = 0xFFu;
+        s_prep_cols = 0u;
     }
     s_rendering_cave = 1u;   /* cave wall cells -> sub-pal 3 (orange/brown) */
-    while (max_cols-- && s_cave_prep_cols < 16u) {
-        const unsigned char col = s_cave_prep_cols;
+    while (max_cols-- && s_prep_cols < 16u) {
+        const unsigned char col = s_prep_cols;
         unsigned short col0[ROOMROM_ROOM_ROWS];
         unsigned short col1[ROOMROM_ROOM_ROWS];
-        unsigned char outer_pal, inner_pal;
-        unsigned char row;
         compute_metatile_col(CAVE_PALETTE_ROOM_ID, col, layout, col0, col1,
-                             s_cave_raw[col], s_cave_walk[col],
-                             &outer_pal, &inner_pal);
-        for (row = 0; row < ROOMROM_ROOM_ROWS; row++) {
-            s_cave_rows[row][col << 1]        = col0[row];
-            s_cave_rows[row][(col << 1) + 1u] = col1[row];
-        }
-        ++s_cave_prep_cols;
+                             s_prep_raw[col], s_prep_walk[col],
+                             &s_prep_outer, &s_prep_inner);
+        prep_store_col(col, col0, col1);
+        ++s_prep_cols;
     }
     s_rendering_cave = 0u;
 }
@@ -840,7 +889,7 @@ void roomrom_cave_room_render_fill_plane_a(unsigned char cave_id)
     s_raw_tile_capture_active = 1u;
     s_rendering_cave = 1u;
     for (col = 0; col < 16; col++) {
-        store_metatile_col(col, col, 0u, s_cave_raw[col], s_cave_walk[col],
+        store_metatile_col(col, col, 0u, s_prep_raw[col], s_prep_walk[col],
                            3u, 2u);
     }
     s_rendering_cave = 0u;
@@ -850,14 +899,16 @@ void roomrom_cave_room_render_fill_plane_a(unsigned char cave_id)
     for (row = 0; row < ROOMROM_ROOM_ROWS; row++) {
         const unsigned short r = wrapped_plane_row(
             (unsigned short)(ROOMROM_ROOM_FIRST_ROW + row));
-        if (s_target_plane || !render_plane_a_queue_row(r, 0u, s_cave_rows[row], 32u)) {
+        if (s_target_plane || !render_plane_a_queue_row(r, 0u, s_prep_rows[row], 32u)) {
             for (col = 0; col < 32u; col++) {
-                if (s_target_plane) render_set_plane_b_word(col, r, s_cave_rows[row][col]);
-                else                render_set_plane_a_word(col, r, s_cave_rows[row][col]);
+                if (s_target_plane) render_set_plane_b_word(col, r, s_prep_rows[row][col]);
+                else                render_set_plane_a_word(col, r, s_prep_rows[row][col]);
             }
         }
     }
-    s_cave_prep_id = 0xFFu;   /* rows stay valid until the VBlank DMA */
+    /* Rows stay valid until the VBlank DMA; the next prepare reclaims. */
+    s_cave_prep_id = 0xFFu;
+    s_prep_cols = 0u;
 }
 
 unsigned char roomrom_ow_room_render_raw_tile_at(unsigned char tile_col,

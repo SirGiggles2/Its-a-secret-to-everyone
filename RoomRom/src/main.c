@@ -292,7 +292,8 @@ static u8             s_ow_edge = 0u;
 /* T-131: UW CheckScreenEdge / false-wall exit direction (NES bit). */
 static u8             s_uw_edge = 0u;
 /* T-132: level entry from the OW (NES modes $10 / 2 / 3, then 4). */
-enum { LVL_NONE = 0, LVL_STAIRS, LVL_CURTAIN, LVL_EXIT_LOAD, LVL_STEP_OUT };
+enum { LVL_NONE = 0, LVL_STAIRS, LVL_CURTAIN, LVL_EXIT_LOAD, LVL_STEP_OUT,
+       LVL_CAVE_EXIT };
 static u8             s_lvl_phase = LVL_NONE;
 static u8             s_lvl_target_y = 0u;
 static u8             s_lvl_step = 0u;
@@ -303,6 +304,10 @@ static u8             s_lvl_exiting = 0u;    /* curtain leads to StepOutside */
 static u8             s_lvl_entrance_tile = 0u; /* UndergroundEntranceTile */
 static u16            s_curtain[22][32];     /* play-area words behind it */
 static unsigned char begin_level_exit(void);
+static void begin_cave_exit(void);
+/* T-135: NES UndergroundEntranceTile of the cave Link is in ($24 = the
+ * black opening: method 1-a step out; else the stairs). */
+static u8            s_cave_entrance_tile = 0x24u;
 static rr_warp_outcome_t s_lvl_out;
 static u8             s_scroll_frame    = 0u;     /* counts up during scroll */
 static u8             s_scroll_total_frames = SCROLL_TOTAL_FRAMES_SMOOTH;
@@ -428,8 +433,14 @@ static void scroll_advance_fixed_point(short *h_scroll, short *v_scroll)
     }
 }
 
+/* T-135: while set, the hardware scroll stays parked on blank plane rows
+ * (a room loads unseen behind a black playfield). */
+static u8 s_scroll_hold = 0u;
+#define PARK_VSCROLL 256   /* plane rows 32..59 on screen */
+
 static void set_plane_scroll(u8 plane, short h_scroll, short v_scroll)
 {
+    if (s_scroll_hold) return;
     if (plane)
     {
         VDP_setHorizontalScroll(BG_B, h_scroll);
@@ -1007,10 +1018,8 @@ static void load_room(u8 room_id)
     s_active_scroll_y = 0;
     /* Reset both planes' scroll registers. Subsequent renders go to BG_A
      * via the default target_plane=0 setter. */
-    VDP_setHorizontalScroll(BG_A, 0);
-    VDP_setVerticalScroll(BG_A, 0);
-    VDP_setHorizontalScroll(BG_B, 0);
-    VDP_setVerticalScroll(BG_B, 0);
+    set_plane_scroll(0u, 0, 0);
+    set_plane_scroll(1u, 0, 0);
     set_room_render_target_plane(s_active_plane);
     /* HUD is on Window; BG_A only carries staged room playfields. */
     if (s_scene == SCENE_UW) {
@@ -1713,8 +1722,7 @@ static void edge_load_or_clamp(void)
      * the initial cave-bottom spawn while Link faces into the room. */
     if (s_scene == SCENE_CAVE) {
         if (players[0].y >= 0xDD && (s_joy_prev & BUTTON_DOWN)) {
-            cave_fade_set_callbacks(&k_cave_fade_callbacks);
-            cave_fade_begin_exit(s_cave_return_room);
+            begin_cave_exit();   /* T-135: NES mode $0A */
         }
         return;
     }
@@ -2155,6 +2163,108 @@ static unsigned char begin_level_exit(void)
     return 1u;
 }
 
+/* T-135: NES cave exit, mode $0A (t134_cave_exit, trigger f540 = T):
+ * T+1 Link hidden (DrawSpritesBetweenRooms), T+2 playfield black, T+6/T+7
+ * whole screen off (LayoutRoom), the OW room shown at once, then mode 4
+ * InitMode_EnterRoom method 1 (StepOutside) with Link a frame later. */
+/* Steps count ticks from the one after the trigger. Plane writes show on
+ * the tick's frame, sprite writes one frame later. */
+#define CAVE_EXIT_HIDE_STEP    1u   /* Link gone with the blank (f542) */
+#define CAVE_EXIT_BLANK_STEP   2u   /* playfield black on NES submode 2 */
+#define CAVE_EXIT_LOAD_STEP    6u   /* display off on NES LayoutRoom */
+#define CAVE_EXIT_REVEAL_STEP 22u   /* NES: 34; Genesis loads faster */
+
+/* Black playfield by parking the scroll on cleared plane rows 32..59: the
+ * next room renders into rows 0..28 unseen (no display-off, HUD stays).
+ * The rows are cleared on the two ticks before, while off screen (VRAM
+ * writes stall during active display), so the park is one scroll write. */
+static void playfield_park_clear(u16 first_row)
+{
+    u16 row;
+    for (row = first_row; row < (u16)(first_row + 14u); ++row)
+        render_plane_fill_row(0u, 0u, row, 32u, 0u);
+}
+
+/* Scroll change applied at the next VBlank (a tick's direct write lands
+ * mid-frame and tears). */
+static void set_bg_scroll_vsync(short h_scroll, short v_scroll)
+{
+    VDP_setHorizontalScrollVSync(BG_A, h_scroll);
+    VDP_setVerticalScrollVSync(BG_A, v_scroll);
+    VDP_setHorizontalScrollVSync(BG_B, h_scroll);
+    VDP_setVerticalScrollVSync(BG_B, v_scroll);
+}
+
+static void playfield_park_black(void)
+{
+    set_bg_scroll_vsync(0, PARK_VSCROLL);
+    s_scroll_hold = 1u;
+}
+static void begin_cave_exit(void)
+{
+    s_cave_load_blank = 1u;                 /* no Link redraw from here */
+    nes_ram[0x0012u] = 0x0Au;
+    nes_ram[0x0013u] = 0u;
+    s_lvl_step = 0u;
+    s_lvl_phase = LVL_CAVE_EXIT;
+}
+
+static void cave_exit_tick(void)
+{
+    const u8 step = s_lvl_step++;
+    if (step < CAVE_EXIT_LOAD_STEP)          /* OW room columns, RAM only */
+        roomrom_ow_room_render_prepare(s_cave_return_room, 3u);
+    if (step < 2u)                           /* parking rows, off screen */
+        playfield_park_clear(step == 0u ? 32u : 46u);
+    if (step == 0u) {
+        /* DrawSpritesBetweenRooms: the object sprites go on NES f541. */
+        enemy_render_reset_oam();
+        enemy_render_native_sweep();
+        VDP_updateSprites(80u, DMA_QUEUE);
+    }
+    if (step == CAVE_EXIT_HIDE_STEP) {       /* Link goes with the blank */
+        roomrom_sprites_set_link_pose((short)-32, (short)-32, players[0].face, 0u);
+        VDP_updateSprites(80u, DMA_QUEUE);
+    }
+    if (step == (u8)(CAVE_EXIT_BLANK_STEP - 1u)) {
+        playfield_park_black();              /* shows on the blank frame */
+        return;
+    }
+    if (step == CAVE_EXIT_LOAD_STEP) {
+        rr_warp_outcome_t out = {0};
+        cave_exit();
+        out.dest_scene = SCENE_OW;
+        out.dest_room_id = s_cave_return_room;
+        out.dest_link_x = s_cave_return_x;
+        out.dest_link_y = (u8)(s_cave_return_y + 16u);
+        out.dest_link_face = LINK_FACE_DOWN;
+        out.dest_redux_flag = roomrom_main_current_redux_flag();
+        roomrom_main_apply_warp_outcome(&out);
+        roomrom_sprites_set_link_pose((short)-32, (short)-32, players[0].face, 0u);
+        enemy_render_reset_oam();
+        enemy_render_native_sweep();
+        VDP_updateSprites(80u, DMA_QUEUE);
+        roomrom_ow_room_render_prepare_drop();
+        return;
+    }
+    if (step == (u8)(CAVE_EXIT_REVEAL_STEP - 1u)) {
+        /* The OW room at once on the reveal frame (NES mode 4 submode 0,
+         * no Link yet). */
+        s_scroll_hold = 0u;
+        set_bg_scroll_vsync(s_active_scroll_x, s_active_scroll_y);
+        return;
+    }
+    if (step == CAVE_EXIT_REVEAL_STEP) {
+        /* Mode 4 InitMode_EnterRoom method 1: StepOutside (T-132). */
+        s_cave_load_blank = 0u;
+        nes_ram[0x0012u] = 0x04u;
+        nes_ram[0x0013u] = 0u;
+        s_lvl_entrance_tile = s_cave_entrance_tile;
+        s_lvl_init = 1u;
+        s_lvl_phase = LVL_STEP_OUT;
+    }
+}
+
 void roomrom_main_begin_level_entry(const rr_warp_outcome_t *out)
 {
     unsigned char tile;
@@ -2189,6 +2299,10 @@ static void level_entry_tick(void)
     /* The new scene's sprite banks load while the screen is still dark. */
     level_chr_swap_tick();
     roomrom_scene_uw_sprite_base_tick();
+    if (s_lvl_phase == LVL_CAVE_EXIT) {
+        cave_exit_tick();
+        return;
+    }
     if (s_lvl_phase == LVL_EXIT_LOAD) {
         /* Mode 2 (display off) + mode 3 submodes: back to the OW room. */
         render_display_enable(0u);
@@ -2687,6 +2801,7 @@ static unsigned char play_update_objects(void)
             DBG_SENTINEL(0x1Cu) =
                 (unsigned char)(DBG_SENTINEL(0x1Cu) + 1u);
             s_cave_return_room = s_room_id;
+            s_cave_entrance_tile = standing_tile;   /* T-135 */
             s_cave_return_face = players[0].face;
             s_cave_return_x    = (unsigned char)players[0].x;
             s_cave_return_y    = (unsigned char)players[0].y;
