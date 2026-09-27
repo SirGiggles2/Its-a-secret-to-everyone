@@ -38,6 +38,29 @@ void boss_framework_check_item_secret(unsigned char room_id)
     }
 }
 
+/* NES FindAndCreatePushBlockObject (Z_05.asm:5461): state and direction
+ * of slot 11 cleared; unique room $21 puts the block at ($40, $80), else
+ * the first $B0 tile in play-area row $A, columns 4, 6, ... $18 (none
+ * found: column $1A), at Y $90; type $68. */
+static void find_and_create_push_block_object(unsigned char room_id)
+{
+    unsigned char col;
+    OBJ(0x00ACu, 11u) = 0u;      /* ObjState+11 */
+    OBJ(0x0098u, 11u) = 0u;      /* ObjDir+11 */
+    if (((unsigned char)DUNGEON_LBA_D(room_id) & 0x3Fu) == 0x21u) {
+        OBJ(0x0070u, 11u) = 0x40u;
+        OBJ(0x0084u, 11u) = 0x80u;
+    } else {
+        for (col = 4u; col < 0x1Au; col = (unsigned char)(col + 2u)) {
+            if ((unsigned char)RAM(NES_PLAY_AREA_BASE + (unsigned short)col * NES_TILE_COL_STRIDE + 10u) == 0xB0u)
+                break;
+        }
+        OBJ(0x0070u, 11u) = (unsigned char)(col * 8u);
+        OBJ(0x0084u, 11u) = 0x90u;
+    }
+    OBJ(0x034Fu, 11u) = 0x68u;   /* Block object type */
+}
+
 void boss_framework_room_init(unsigned char room_id)
 {
     unsigned char attrs_e;
@@ -101,15 +124,11 @@ void boss_framework_room_init(unsigned char room_id)
         BOSS_ROOM_ITEM_STATE = 0xFFu;
     }
 
-    /* Z_05.asm:8200-8203 — push-block branch DEFERRED. The NES code
-     * here calls FindAndCreatePushBlockObject (Z_05.asm:5461) when
-     * LBA_D & 0x40 is set. That body is not yet drained or shimmed
-     * for native callers; gating on it would also require populating
-     * a transient object slot used by the push-block sprite. The
-     * branch is intentionally a no-op until Phase 8 follow-up
-     * drains FindAndCreatePushBlockObject — boss rooms do not
-     * trigger this branch. */
-    (void)0u;  /* placeholder for future push-block hook */
+    /* Z_05.asm:8200-8203 — a room with a push block (LBA_D bit 6)
+     * creates the block object in slot 11: FindAndCreatePushBlockObject
+     * (Z_05.asm:5461). T-013: room $42 of L1 has one. */
+    if (((unsigned char)DUNGEON_LBA_D(room_id) & 0x40u) != 0u)
+        find_and_create_push_block_object(room_id);
 
     /* Z_05.asm:8207-8210 — set X/Y for the room item from
      * GetShortcutOrItemXY (drained as

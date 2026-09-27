@@ -532,7 +532,10 @@ void enrt_update_wallmaster(unsigned int slot)
     if ((unsigned char)WM_OBJ_TIMER_SLOT1 != 0u) {
         return;
     }
-    if ((unsigned char)WM_OBJ_STATE(0u) != 0x40u) {
+    /* NES: LDA ObjState / CMP #$40 / BNE @State0 -- a halted Link ($40)
+     * holds them back (T-013: the test was inverted and no wallmaster
+     * ever came out). */
+    if ((unsigned char)WM_OBJ_STATE(0u) == 0x40u) {
         return;
     }
 

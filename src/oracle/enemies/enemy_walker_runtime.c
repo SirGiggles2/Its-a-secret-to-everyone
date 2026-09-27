@@ -164,9 +164,12 @@ void enrt_update_zol(unsigned int slot) {
 }
 
 void enrt_update_gel(unsigned int slot) {
-    unsigned char orig_x = ENEMY_X(slot);
+    unsigned char orig_x;
     c_gel_move(slot);
     c_gel_check_collisions(slot);
+    /* NES UpdateGel saves ObjX after Gel_Move (T-013: saved before, the
+     * restore undid every step and gels never moved). */
+    orig_x = ENEMY_X(slot);
     ENEMY_X(slot) = orig_x + 4;
     z07_anim_fetch_obj_pos(slot);
     z01_anim_set_sprite_desc_attrs(3);

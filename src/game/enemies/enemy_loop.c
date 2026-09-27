@@ -499,6 +499,7 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x65] = room_init_tile_obj_or_item,         /* Gravestone */
     [0x66] = room_init_tile_obj_or_item,
     [0x67] = room_init_tile_obj_or_item,
+    [0x68] = room_init_tile_obj_or_item,         /* UW push block (T-013) */
     [0x23] = core_reset_obj_metastate_and_timer, /* BlueWizzrobe init */
     [0x24] = core_reset_obj_metastate_and_timer, /* RedWizzrobe init */
     [0x25] = core_reset_obj_metastate_and_timer, /* PatraChild1 init */

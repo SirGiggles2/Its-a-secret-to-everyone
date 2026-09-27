@@ -302,9 +302,9 @@ static void enrt_boomerang_animate(unsigned int slot)
     }
 }
 
-static void enrt_boomerang_animate_draw(unsigned int slot)
+/* NES DrawBoomerangAndCheckCollision (Z_07.asm:4227). */
+static void enrt_boomerang_draw_check(unsigned int slot)
 {
-    enrt_boomerang_animate(slot);
     if (slot < 0x0Du) {
         ENEMY_COLLISION_FLAG = 0u;
         z01_check_link_collision(slot);
@@ -314,6 +314,26 @@ static void enrt_boomerang_animate_draw(unsigned int slot)
         }
     }
     c_draw_boomerang(slot);
+}
+
+/* NES SetBoomerangSpeed (Z_01.asm): in the slow return ($4x) the speed
+ * is halved and ObjMovingLimit counts down (twice a frame, once per
+ * axis); at 0 the boomerang returns fast ($50). */
+static void set_boomerang_speed(unsigned int slot, unsigned char q)
+{
+    ENEMY_WALK_SPEED(slot) = q;
+    if (((unsigned char)ENEMY_STATE_TIMER(slot) & 0xF0u) != 0x40u) return;
+    ENEMY_WALK_SPEED(slot) = (unsigned char)(q >> 1);
+    OBJ(0x0380u, slot) = (unsigned char)(OBJ(0x0380u, slot) - 1u);
+    if ((unsigned char)OBJ(0x0380u, slot) == 0u)
+        ENEMY_STATE_TIMER(slot) = 0x50u;
+}
+
+/* NES AnimateBoomerangAndCheckCollision (Z_07.asm:4209). */
+static void enrt_boomerang_animate_draw(unsigned int slot)
+{
+    enrt_boomerang_animate(slot);
+    enrt_boomerang_draw_check(slot);
 }
 
 /* NES UpdateArrowOrBoomerang uses MoveShot for the outbound leg. Unlike
@@ -389,23 +409,26 @@ void enrt_update_arrow_or_boomerang(unsigned int slot) {
             enrt_draw_shot(slot);
             return;
         }
-        /* MoveShot reports a collision/boundary block; NES jumps directly
-         * to HandleArrowOrBoomerangBlocked and enters slow state $30. */
-        /* Range check. |ObjGridOffset| >= ObjMovingLimit has the same
-         * blocked transition after the cumulative outbound movement. */
-        {
+        /* NES HandleArrowOrBoomerangBlocked (Z_07.asm:4009): anim
+         * counter 3, state + $10, then DrawArrowOrBoomerangAndCheck-
+         * Collisions (draw only, no countdown). A MoveShot block turns
+         * $1x into the spark $2x; reaching ObjMovingLimit first sets
+         * state $20 (limit $10), so the boomerang slows down in $30.
+         * T-013: both went to $30 and counted down that frame. */
+        if (blocked == 0u) {
             unsigned char grid = OBJ(NES_OBJ_GRID_OFFSET, slot);
             unsigned char abs_grid = (grid & 0x80u) ? (unsigned char)(0u - grid) : grid;
             unsigned char limit = OBJ(0x0380u, slot);
-            if (abs_grid >= limit) blocked = 1u;
+            if (abs_grid >= limit) {
+                OBJ(0x0380u, slot) = 0x10u;
+                ENEMY_STATE_TIMER(slot) = 0x20u;
+                blocked = 1u;
+            }
         }
         if (blocked != 0u) {
-            /* NES HandleArrowOrBoomerangBlocked: arm the slow phase and
-             * advance $10 -> $20 -> $30 before its first draw. */
-            OBJ(0x0380u, slot) = 0x10u;
             ENEMY_ANIM_TIMER(slot) = 3u;
-            ENEMY_STATE_TIMER(slot) = 0x30u;
-            enrt_boomerang_animate_draw(slot);
+            ENEMY_STATE_TIMER(slot) = (unsigned char)(ENEMY_STATE_TIMER(slot) + 0x10u);
+            enrt_boomerang_draw_check(slot);
         } else {
             /* NES continues to animate and test Link while flying out. */
             enrt_boomerang_animate_draw(slot);
@@ -498,29 +521,24 @@ void enrt_update_arrow_or_boomerang(unsigned int slot) {
         {
             unsigned char vdir = (unsigned char)RAM(0x000Au);  /* vertical dir from target probe */
             unsigned char hdir = (unsigned char)RAM(0x000Bu);  /* horizontal dir */
+            /* _CalcDiagonalSpeedIndex from the middle index 4, on the
+             * distances GetDirectionsAndDistancesToTarget left in $03/$04
+             * (T-013: a fixed index 4 flew diagonally). */
+            const unsigned char idx = (unsigned char)z01_calc_diagonal_speed_index(4u);
             /* Vertical move. */
-            ENEMY_WALK_SPEED(slot) = k_boomerang_qspeed_y[4];
+            set_boomerang_speed(slot, k_boomerang_qspeed_y[idx]);
             RAM(NES_OBJ_DIR)       = vdir;
             ENEMY_DIR(slot)        = vdir;
             c_move_object((unsigned short)slot);
             /* Horizontal move. */
-            ENEMY_WALK_SPEED(slot) = k_boomerang_qspeed_x[4];
+            set_boomerang_speed(slot, k_boomerang_qspeed_x[idx]);
             RAM(NES_OBJ_DIR)       = hdir;
             ENEMY_DIR(slot)        = hdir;
             c_move_object((unsigned short)slot);
         }
 
-        /* NES AnimateBoomerangAndCheckCollision advances the visible
-         * spin phase during both slow and fast return, before checking
-         * Link collision. Keep this separate from the collision helper,
-         * which also owns the blocked-shot bounce bookkeeping. */
-        enrt_boomerang_animate(slot);
-        enrt_check_shot_link_collision(slot);
-        if (ENEMY_COLLISION_FLAG != 0u) {
-            ENEMY_ANIM_TIMER(slot) = 3u;
-            ENEMY_STATE_TIMER(slot) = 0x20u;     /* spark on hit */
-        }
-        c_draw_boomerang(slot);
+        /* NES falls into AnimateBoomerangAndCheckCollision. */
+        enrt_boomerang_animate_draw(slot);
     }
 }
 

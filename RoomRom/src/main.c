@@ -3843,9 +3843,14 @@ void roomrom_debug_tick(void)
          * values. T-012: keyed on the Genesis tick count and run after
          * Link's collisions, it fell a frame off the NES (t012_route
          * t1321). */
-        if (!cave_fade_is_active() && nes_ram[0x04F0u] != 0u &&
-            (nes_ram[0x0015u] & 1u) == 0u)
-            nes_ram[0x04F0u]--;
+        if (!cave_fade_is_active()) {
+            /* BeginUpdateWorld (Z_07.asm:1841): with the clock (InvClock
+             * $66C) Link's invincibility timer gains $10 every frame. */
+            if (nes_ram[0x066Cu] != 0u)
+                nes_ram[0x04F0u] = (unsigned char)(nes_ram[0x04F0u] + 0x10u);
+            if (nes_ram[0x04F0u] != 0u && (nes_ram[0x0015u] & 1u) == 0u)
+                nes_ram[0x04F0u]--;
+        }
 
         /* Level cycle (was MODE-only) removed -- MODE is reserved hardware.
          * Reach a different level via teleport (X mode + DPAD) which warps
