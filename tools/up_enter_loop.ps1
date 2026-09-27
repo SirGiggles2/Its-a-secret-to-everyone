@@ -1,6 +1,6 @@
 # Auto-prompt Claude Code every 30 min. Press x + Enter to stop.
 
-$sentence = "im not here. Just use the criteria mentioned in /primedirective for goals. use /octo:debate for questions and /octo:debug with /systematic-debugging to fix things"
+$sentence = "im not here. Just use the criteria mentioned in /primedirective for goals. use /chuckle and /systematic-debugging to fix things"
 
 Add-Type @"
 using System;

@@ -351,10 +351,11 @@ Cost of running the differ first: minutes.
 
 ---
 
-## RULE V2 — NEVER WRITE A LUA SCRIPT WITHOUT /octo:review (user 2026-05-27)
+## RULE V2 — NEVER RUN A LUA SCRIPT WITHOUT A REVIEW (user 2026-05-27)
 
 **Every Lua script (BizHawk probe, capture harness, anything `.lua`) in
-this project MUST go through `/octo:review` before it is run or trusted.**
+this project MUST be reviewed (the built-in `/code-review` on the diff)
+before it is run or trusted.**
 
 No exceptions. Write the Lua → review it → fix what review surfaces →
 only then run. Lua probes touch raw memory domains (OAM/PALRAM/CHR/VRAM/
@@ -364,10 +365,10 @@ mid-animation capture) produces garbage goldens that look fine and
 poison every downstream verdict. Review catches these before they cost a
 full capture sweep.
 
-If `/octo:review` (the octo-code-reviewer agent) stalls or returns no
-findings, fall back to verifying EACH review concern directly against
-ground truth (working reference probe + NES asm + live read) — the review
-is not "done" until each concern is checked, by agent or by hand.
+If the review is unavailable, stalls or returns no findings, fall back
+to verifying EACH concern directly against ground truth (working reference
+probe + NES asm + live read) — the review is not "done" until each concern
+is checked, by reviewer or by hand.
 
 ---
 

@@ -50,7 +50,7 @@ disable-model-invocation: false
    Stop conditions (only these):
    - tracker BLOCKED (exit 2) or has entries in `blockers[]`
    - hard-rule refusal triggered (SGDK / WT / D1 / banned-name / GREENFIELD-on-drain)
-   - bug-detection branch fires (defer to /chuckle + /octo:debate)
+   - bug-detection branch fires (defer to /chuckle + /code-review)
    - next action requires destructive op on shared state (push, force-push, branch delete, external publish)
    - user interrupts
 
@@ -149,11 +149,11 @@ When `/primedirective` detects a bug — symptoms include: failing probe in trac
 Sequence:
 
 1. Invoke `/chuckle` — runs the 4-step debugging protocol (Real Problem → Research → Structural Fix → Verification). Diagnoses root cause; produces structural fix proposal.
-2. Invoke `/octo:debate` with the proposed fix as the topic — adversarial 4-way review (Codex / Gemini / Sonnet / Opus) finds wrong assumptions, missed edge cases, ordering risks, scope creep BEFORE implementation.
-3. Apply the synthesized fix from `/octo:debate`. Run phase-close gate steps 1–10 against the fix.
+2. Review the proposed fix with `/code-review` — find wrong assumptions, missed edge cases, ordering risks, scope creep BEFORE it lands.
+3. Apply the reviewed fix. Run phase-close gate steps 1–10 against the fix.
 4. Record the bug + fix as a `deferrals[]` or `out_of_phase_tasks[]` entry via `prime_refresh.py`.
 
-This pairing (/chuckle + /octo:debate) is mandatory for any bug touching substrate, src/game/, parity oracle, or phase-close gate. Quick-patch shortcut is forbidden — root-cause fix only per Prime Directive priority 1 (best long-term outcome).
+This pairing (/chuckle + /code-review) is mandatory for any bug touching substrate, src/game/, parity oracle, or phase-close gate. Quick-patch shortcut is forbidden — root-cause fix only per Prime Directive priority 1 (best long-term outcome).
 
 ## Progressive references
 

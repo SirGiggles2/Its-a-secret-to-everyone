@@ -1,7 +1,7 @@
 # Session Intent Contract — Octorok NES Parity (2026-05-17)
 
 **Created:** 2026-05-17 (supersedes 2026-05-10 Task 7.7 contract above)
-**Source:** /octo:plan "both steps"
+**Source:** planning session "both steps"
 
 ## Job Statement
 

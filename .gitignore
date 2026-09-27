@@ -56,7 +56,6 @@ build/reports/
 build/generated/
 
 # Octo plugin scratch state
-.claude-octopus/
 
 # Backup/temp trees
 .pre-merge-backup/

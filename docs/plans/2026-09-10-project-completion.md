@@ -19,7 +19,7 @@ This replaces the earlier recovery outline at this path. The existing master pla
 
 This amendment supersedes conflicting execution order below while preserving task IDs and historical evidence. First release is Original gameplay, both quests, with the Windows user-ROM builder. Preserve approved custom title/file-select presentation. Redux is subsequent milestone P11; four-player gameplay is outside this release. Neither expands Original acceptance.
 
-Keep TODO, ACTIVE, PASS, FAIL, BLOCKED. Record behavior/owner/dependencies, NES source, Drained C, Coverage, Stance, scenario/build/result and applicable evidence scope (data, behavior, presentation, integration, persistence). Parent PASS requires its required children. Carry forward valid unchanged evidence. Do not restore octo:debate or blanket per-fix matrices.
+Keep TODO, ACTIVE, PASS, FAIL, BLOCKED. Record behavior/owner/dependencies, NES source, Drained C, Coverage, Stance, scenario/build/result and applicable evidence scope (data, behavior, presentation, integration, persistence). Parent PASS requires its required children. Carry forward valid unchanged evidence. Do not restore multi-model debate rounds or blanket per-fix matrices.
 
 ### Foundation additions1
 
