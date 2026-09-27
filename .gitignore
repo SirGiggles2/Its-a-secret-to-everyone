@@ -54,6 +54,7 @@ builds/Debug.md
 build/debug_project/
 build/reports/
 build/generated/
+build/lockstep_cache/
 
 # Octo plugin scratch state
 

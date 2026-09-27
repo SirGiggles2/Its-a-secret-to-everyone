@@ -40,6 +40,8 @@ import json
 import re
 from pathlib import Path
 
+import gate
+
 ROOT = Path(__file__).resolve().parents[2]
 VARS = ROOT / "reference" / "aldonunez" / "Variables.inc"
 
@@ -134,7 +136,9 @@ def build(spec: dict) -> dict:
             # fewer ticks than the NES does not shift later inputs.
             "clock": spec.get("clock", "tick"),
             # T-013: NES-only route bot (tools/lockstep/bot.lua).
-            "bot": spec.get("bot")}
+            "bot": spec.get("bot"),
+            # T-141: gate allow entries [addr, nes, gen, first, last, "T-###"]
+            "allow": spec.get("allow", [])}
 
 
 def stages_of(spec: dict) -> list:
@@ -173,6 +177,8 @@ def to_lua(p: dict) -> str:
     for i, (at, body) in enumerate(p.get("stages", []), 1):
         out += (f'PRESET.stages[{i}] = {{at={at}, fn=function(rd, wr, log, sys, '
                 f'gen_b_item, gen_link_pos)\n{body}\nend}}\n')
+    # T-141: gate tables (tools/lockstep/gate.py) for the Genesis fail-fast.
+    out += gate.lua_tables(p.get("allow", []))
     if p.get("bot"):
         out += (Path(__file__).resolve().parent / "bot.lua").read_text(encoding="utf-8")
         out += "\nPRESET.bot = " + lua_value(p["bot"]) + "\n"

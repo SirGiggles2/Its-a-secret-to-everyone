@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import os
+import re
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 
@@ -545,11 +548,48 @@ def include_args() -> list[str]:
     return args
 
 
+def depfile_inputs(dep: Path) -> list[Path] | None:
+    """Inputs listed in a gcc -MMD depfile (target first, spaces escaped '\\ ')."""
+    try:
+        text = dep.read_text(encoding="utf-8", errors="replace").replace("\\\n", " ")
+    except OSError:
+        return None
+    toks = [t.replace("\\ ", " ") for t in re.findall(r"(?:\\ |\S)+", text)]
+    for i, t in enumerate(toks):
+        if t.endswith(":"):
+            return [Path(x) for x in toks[i + 1:]]
+    return None
+
+
+def up_to_date(obj: Path, cmd: list[str]) -> bool:
+    """T-141 incremental build: reuse obj when its command line is unchanged and
+    no input in its depfile (source + every included header) is newer."""
+    stamp, dep = obj.with_suffix(".cmd"), obj.with_suffix(".d")
+    if not (obj.exists() and stamp.exists() and dep.exists()):
+        return False
+    if stamp.read_text(encoding="utf-8") != "\n".join(cmd):
+        return False
+    inputs = depfile_inputs(dep)
+    if not inputs:
+        return False
+    t = obj.stat().st_mtime
+    try:
+        return all(p.stat().st_mtime <= t for p in inputs)
+    except OSError:
+        return False
+
+
 def compile_c(src: str, obj_name: str) -> Path:
     src_path = ROOT / src
     obj_path = OUT / obj_name
+    cmd = [str(a) for a in gcc_prefix() + CFLAGS + LTO_CFLAGS + include_args()
+           + ["-c", src_path, "-o", obj_path]]
+    if up_to_date(obj_path, cmd):
+        return obj_path
     print(f"[3] Compiling {src}...")
-    run(gcc_prefix() + CFLAGS + LTO_CFLAGS + include_args() + ["-c", src_path, "-o", obj_path], cwd=PROJ)
+    obj_path.with_suffix(".cmd").unlink(missing_ok=True)
+    run(cmd + ["-MMD", "-MF", obj_path.with_suffix(".d")], cwd=PROJ)
+    obj_path.with_suffix(".cmd").write_text("\n".join(cmd), encoding="utf-8")
     return obj_path
 
 
@@ -629,11 +669,11 @@ def main() -> int:
         compile_asm(ROOT / "src" / "audio_driver.asm", "audio_driver.o", "src/audio_driver.asm", mri=True),
     ]
 
-    for src, obj in TITLE_C_SOURCES:
-        objects.append(compile_c(src, obj))
-
-    for src, obj in ROOMROM_C_SOURCES:
-        objects.append(compile_c(src, obj))
+    # T-141: C units compile in parallel; unchanged ones are reused
+    # (compile_c / up_to_date). Link order stays the source-list order.
+    c_units = list(TITLE_C_SOURCES) + list(ROOMROM_C_SOURCES)
+    with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as ex:
+        objects.extend(ex.map(lambda so: compile_c(*so), c_units))
 
     print("[4] Linking...")
     run(

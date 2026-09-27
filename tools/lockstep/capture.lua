@@ -328,6 +328,51 @@ local function video_for(t)
     end
 end
 video_for(0)
+-- T-141 fail-fast (GEN only, when the runner passes @GOLD@ = NES .ram):
+-- each new tick's KEY cells (PRESET.gate, emitted from tools/lockstep/
+-- gate.py so Lua and diff.py check the same cells) are compared with the
+-- NES row of that tick. First non-allowed mismatch at tick t: log
+-- "failfast t=..." in <OUT>.txt, snapshot tick t+1 (video on from t),
+-- stop at tick t+30. Padded rows (ticks inside a FrameCounter jump) are
+-- listed in <OUT>.pad and never compared.
+local GOLD_PATH = "@GOLD@"
+local GOLD = nil
+if sys == "GEN" and GOLD_PATH ~= "" then
+    local gh = io.open(GOLD_PATH, "rb")
+    if not gh then fail("fail-fast: cannot open NES golden " .. GOLD_PATH) return end
+    GOLD = gh:read("a"); gh:close()
+    if #GOLD == 0 or #GOLD % 0x800 ~= 0 then fail("fail-fast: bad NES golden size " .. #GOLD) return end
+    if not PRESET.gate then fail("fail-fast: preset has no gate tables") return end
+end
+local failfast_at = nil
+local function gate_mismatch(t, bytes)
+    local base = t * 0x800
+    if base + 0x800 > #GOLD then return nil end   -- past the NES capture
+    local G = PRESET.gate
+    local function bad(a)
+        local x, y = string.byte(GOLD, base + a + 1), bytes[a + 1]
+        if x == y then return nil end
+        for _, e in ipairs(G.allow) do
+            if e[1] == a and e[2] == x and e[3] == y and t >= e[4] and t <= e[5] then return nil end
+        end
+        return { a, x, y }
+    end
+    for _, a in ipairs(G.global) do
+        local m = bad(a); if m then return m end
+    end
+    for i = 1, 11 do
+        local ta = G.slot_type + i
+        local m = bad(ta); if m then return m end
+        if string.byte(GOLD, base + ta + 1) ~= 0 or bytes[ta + 1] ~= 0 then
+            for _, c in ipairs(G.slot_cells) do
+                m = bad(c + i); if m then return m end
+            end
+        end
+    end
+    return nil
+end
+local padf = io.open(OUT .. ".pad", "w")
+padf:setvbuf("line")   -- fail() exits without closing it
 local function row_of(bytes)
     local chunk = {}
     for i = 1, 0x800, 256 do chunk[#chunk + 1] = string.char(table.unpack(bytes, i, i + 255)) end
@@ -365,10 +410,24 @@ while tick < total and f < FRAME_CAP do
         local row = row_of(bytes)
         for t = prev_tick + 1, tick do
             ram:write(row)
+            if t < tick then padf:write(t .. "\n") end
             if SNAP[t] then snap_video(string.format(".f%05d", t)) end
         end
         prev_tick = tick
         new_tick = false
+        if GOLD and not failfast_at then
+            local m = gate_mismatch(tick, bytes)
+            if m then
+                failfast_at = tick
+                total = math.min(total, tick + 30)
+                -- Snapshot tick t+1 only when the run reaches it (a mismatch on
+                -- the last script tick has no t+1 row; the end dump covers it).
+                local snap_t = (tick + 1 < total) and (tick + 1) or -1
+                if snap_t >= 0 then SNAP[snap_t] = true end
+                meta:write(string.format("failfast t=%d snap=%d addr=%03X nes=%02X gen=%02X\n",
+                    tick, snap_t, m[1], m[2], m[3]))
+            end
+        end
         video_for(tick)
     end
     if FRAME_DUMP then
@@ -419,6 +478,7 @@ while tick < total and f < FRAME_CAP do
 end
 fram:close()
 frtick:close()
+padf:close()
 if botlog then
     botlog:write("# " .. (BOT.done and BOT.why or "tick budget spent") .. "\n")
     botlog:close()
@@ -428,6 +488,7 @@ if tick >= total and prev_tick < total - 1 then
     local row = row_of(memory.read_bytes_as_array(RAM_BASE, 0x800, RAM_DOM))
     for t = prev_tick + 1, total - 1 do
         ram:write(row)
+        padf:write(t .. "\n")
         if SNAP[t] then snap_video(string.format(".f%05d", t)) end
     end
 end
