@@ -32,6 +32,8 @@ def main() -> int:
     ap.add_argument("--pc-profile", metavar="FIRST:LAST",
                     help="Genesis 68K PC histogram over VIDEO frames FIRST..LAST "
                          "(writes gen.pcprof; report with pc_profile.py)")
+    ap.add_argument("--frame-dump", action="store_true",
+                    help="also dump RAM every video frame (<plat>.fram/.frtick, lag work)")
     ap.add_argument("--nes-only", action="store_true",
                     help="capture the NES only (route design; no Genesis run, no diff)")
     ap.add_argument("--snap", metavar="F1,F2,...",
@@ -43,6 +45,8 @@ def main() -> int:
     p = presets.build(spec)
     if a.pc_profile:
         p["pc_profile"] = [int(x) for x in a.pc_profile.split(":")]
+    if a.frame_dump:
+        p["frames"] = True
     if a.snap:
         p["snap"] = [int(x) for x in a.snap.split(",")]
     out = ROOT / "builds" / "reports" / "lockstep" / p["name"]

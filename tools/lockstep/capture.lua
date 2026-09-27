@@ -306,9 +306,31 @@ local new_tick = true
 -- stages/snapshots inside the jump run on its last tick. (Those rows
 -- differ from the NES load rows by design.)
 local prev_tick = -1
+-- Speed (T-013): the Lua side, not the core, bounded capture speed
+-- (~60 fps). Rows are built 256 bytes per string.char call; the full RAM
+-- is read only on a new tick; the per-video-frame dump (.fram/.frtick)
+-- and per-frame log lines are written only with PRESET.frames = true
+-- (run_lockstep --frame-dump). Per-tick log lines replace them otherwise.
+local FRAME_DUMP = PRESET.frames == true
+-- Run the core as fast as it goes and skip drawing frames nobody looks
+-- at; drawing comes back 40 ticks before a snapshot and at the end
+-- (client.screenshot needs a drawn frame; memory dumps do not).
+if emu.limitframerate then emu.limitframerate(false) end
+if client.speedmode then client.speedmode(6400) end
+local invisible = nil
+local function video_for(t)
+    -- 40 ticks ahead: a load catch-up jumps FrameCounter by up to 32.
+    local want = t >= total - 2
+    for sf in pairs(SNAP) do if sf >= t and sf <= t + 40 then want = true end end
+    local inv = not want
+    if client.invisibleemulation and inv ~= invisible then
+        client.invisibleemulation(inv); invisible = inv
+    end
+end
+video_for(0)
 local function row_of(bytes)
     local chunk = {}
-    for i = 1, 0x800 do chunk[i] = string.char(bytes[i]) end
+    for i = 1, 0x800, 256 do chunk[#chunk + 1] = string.char(table.unpack(bytes, i, i + 255)) end
     return table.concat(chunk)
 end
 while tick < total and f < FRAME_CAP do
@@ -317,12 +339,13 @@ while tick < total and f < FRAME_CAP do
         meta:write(string.format("pc_profile start f=%d id=%s\n", f, tostring(pc_id)))
     end
     if PCP and f == PCP[2] + 1 then pc_stop() end
-    local bytes = memory.read_bytes_as_array(RAM_BASE, 0x800, RAM_DOM)
+    local bytes = nil
+    local gm0, sub0 = srd(0x12), srd(0x13)   -- this frame's mode at its start
     if new_tick and botlog and tick >= SCRIPT_LEN and seq[tick + 1] == nil then
-        local b = BOT.decide(srd)
+        local b = BOT.decide(srd, function(a) return memory.read_u8(a - SAVE_BASE, SAVE_DOM) end)
         seq[tick + 1] = b
         botlog:write(b .. "\n")
-        if BOT.done then total = tick + 1 end
+        if BOT.done then total = tick + 1; video_for(tick) end
     end
     if new_tick then
         for _, st in ipairs(PRESET.stages) do
@@ -334,6 +357,11 @@ while tick < total and f < FRAME_CAP do
         if stage_failed then ram:close(); fram:close(); frtick:close(); fail(stage_fail_why) return end
         last_fc = srd(0x15)   -- a stage may write $15: not a game tick
         bytes = memory.read_bytes_as_array(RAM_BASE, 0x800, RAM_DOM)
+        gm0, sub0 = bytes[0x13], bytes[0x14]
+        if not FRAME_DUMP then
+            meta:write(string.format("t=%d f=%d in=%s gm=%02X sub=%02X fc=%02X room=%02X\n",
+                tick, f, tostring(seq[tick + 1]), bytes[0x13], bytes[0x14], bytes[0x16], bytes[0xEC]))
+        end
         local row = row_of(bytes)
         for t = prev_tick + 1, tick do
             ram:write(row)
@@ -341,13 +369,15 @@ while tick < total and f < FRAME_CAP do
         end
         prev_tick = tick
         new_tick = false
+        video_for(tick)
     end
-    do
+    if FRAME_DUMP then
+        bytes = bytes or memory.read_bytes_as_array(RAM_BASE, 0x800, RAM_DOM)
         fram:write(row_of(bytes))
         frtick:write(string.char((tick >> 8) & 0xFF, tick & 0xFF))
+        meta:write(string.format("f=%d t=%d in=%s gm=%02X sub=%02X fc=%02X room=%02X\n",
+            f, tick, tostring(seq[tick + 1]), bytes[0x13], bytes[0x14], bytes[0x16], bytes[0xEC]))
     end
-    meta:write(string.format("f=%d t=%d in=%s gm=%02X sub=%02X fc=%02X room=%02X\n",
-        f, tick, seq[tick + 1], bytes[0x13], bytes[0x14], bytes[0x16], bytes[0xEC]))
     joypad.set(btns(seq[tick + 1]), 1)
     emu.frameadvance()
     f = f + 1
@@ -358,14 +388,13 @@ while tick < total and f < FRAME_CAP do
         stall = 0
         -- T-012 play clock: only a tick that started in a play mode
         -- consumes script input; load/transition ticks (which the Genesis
-        -- may need fewer of) hold the script position. bytes[] is the RAM
-        -- read at the top of this frame (1-based: GameMode $12 = [0x13],
-        -- GameSubmode $13 = [0x14]).
+        -- may need fewer of) hold the script position. gm0/sub0 are
+        -- GameMode $12 / GameSubmode $13 read at the top of this frame.
         if PRESET.clock ~= "play" then
             tick = math.min(tick + fc_steps, total)
             new_tick = true
             noplay = 0
-        elseif PLAY_MODES[bytes[0x13]] and bytes[0x14] == 0 then
+        elseif PLAY_MODES[gm0] and sub0 == 0 then
             tick = math.min(tick + fc_steps, total)
             new_tick = true
             noplay = 0
@@ -374,7 +403,7 @@ while tick < total and f < FRAME_CAP do
             if noplay >= NOPLAY_TICKS then
                 ram:close(); fram:close(); frtick:close()
                 fail(string.format("T-012 play clock: %d ticks without a play tick (GameMode $%02X sub $%02X) at tick %d f %d",
-                    noplay, bytes[0x13], bytes[0x14], tick, f))
+                    noplay, gm0, sub0, tick, f))
                 return
             end
         end

@@ -176,6 +176,8 @@ def to_lua(p: dict) -> str:
     if p.get("bot"):
         out += (Path(__file__).resolve().parent / "bot.lua").read_text(encoding="utf-8")
         out += "\nPRESET.bot = " + lua_value(p["bot"]) + "\n"
+    if p.get("frames"):
+        out += "PRESET.frames = true\n"
     if p.get("pc_profile"):
         a, b = p["pc_profile"]
         out += f'PRESET.pc_profile = {{{int(a)}, {int(b)}}}\n'

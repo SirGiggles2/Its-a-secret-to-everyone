@@ -168,6 +168,15 @@ def main() -> int:
     cfg = json.loads((EMU.parent / "config.ini").read_text(encoding="utf-8-sig"))
     cfg["SoundEnabled"] = False
     cfg["SingleInstanceMode"] = False
+    # Probes count frames, not wall time: run the core as fast as it goes.
+    # The user config caps at 400% (ClockThrottle) and records rewind
+    # states every few frames; both only cost time here.
+    cfg["Unthrottled"] = True
+    cfg["ClockThrottle"] = False
+    cfg["VSyncThrottle"] = False
+    cfg["SoundThrottle"] = False
+    if isinstance(cfg.get("Rewind"), dict):
+        cfg["Rewind"]["Enabled"] = False
     for entry in cfg.get("PathEntries", {}).get("Paths", []):
         if entry.get("Type") == "Base":
             entry["Path"] = str(stage / entry["System"])
@@ -183,7 +192,11 @@ def main() -> int:
     rom_dir.mkdir()
     rom_copy = rom_dir / ("game" + a.rom.suffix)  # space/comma-free name for EmuHawk argv
     shutil.copy2(a.rom, rom_copy)
-    cmd = [short(EMU), "--gdi", f"--config={config}", f"--lua={probe}", str(rom_copy)]
+    # The --gdi display cost ~3x the frame time on the hidden desktop
+    # (NES 47 fps vs 145 fps, T-013 benchmark); the config's own display
+    # method renders fine there. CLAUDE_PROBE_GDI=1 restores --gdi.
+    disp = ["--gdi"] if os.environ.get("CLAUDE_PROBE_GDI") == "1" else []
+    cmd = [short(EMU), *disp, f"--config={config}", f"--lua={probe}", str(rom_copy)]
     if os.environ.get("CLAUDE_PROBE_VISIBLE") == "1":
         with (out / "emuhawk.log").open("w", encoding="utf-8") as log:
             p = subprocess.Popen(cmd, cwd=EMU.parent, stdout=log, stderr=subprocess.STDOUT, startupinfo=si)
