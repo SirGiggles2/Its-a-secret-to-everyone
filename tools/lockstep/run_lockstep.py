@@ -30,10 +30,10 @@ def main() -> int:
     ap.add_argument("preset", type=Path)
     ap.add_argument("--frames", type=int, default=100000)
     ap.add_argument("--pc-profile", metavar="FIRST:LAST",
-                    help="Genesis 68K PC histogram over script frames FIRST..LAST "
+                    help="Genesis 68K PC histogram over VIDEO frames FIRST..LAST "
                          "(writes gen.pcprof; report with pc_profile.py)")
     ap.add_argument("--snap", metavar="F1,F2,...",
-                    help="also dump the video domains at these script frames "
+                    help="also dump the video domains at these game ticks (T-136) "
                          "(<plat>.fNNNNN.<oam|nt|pal|vram|cram|vsram>)")
     a = ap.parse_args()
 

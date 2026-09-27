@@ -241,8 +241,8 @@ local function dump_domain(dom, suffix)
     local fh = io.open(OUT .. suffix, "wb"); fh:write(table.concat(chunk)); fh:close()
     meta:write(string.format("dump %s -> %s (%d bytes)\n", dom, suffix, size))
 end
--- Optional mid-run snapshots: PRESET.snap = {script frames}. At frame f
--- (same point as RAM row f: after stages, before that frame's input) dump
+-- Optional mid-run snapshots: PRESET.snap = {script ticks}. At tick t
+-- (same point as RAM row t: after stages, before that tick's input) dump
 -- NES OAM / PALRAM / CIRAM / CHR-RAM or Genesis VRAM (SAT $F400) / CRAM / VSRAM to
 -- <OUT>.fNNNNN.<ext> (T-131 door sprite captures).
 local SNAP = {}
@@ -258,29 +258,85 @@ local function snap_video(tag)
         dump_domain("VSRAM", tag .. ".vsram")
     end
 end
-for f = 1, total do
-    if PCP and f - 1 == PCP[1] then
+-- T-136: the script is per GAME TICK, not per video frame. A tick is a
+-- FrameCounter ($15) change. The NES drops frames (lag) where the Genesis
+-- may not (faster loads); scripting by video frame shifted every later
+-- input on the faster console. Each script entry is held until the game
+-- has ticked once on it. <OUT>.ram gets one row per tick (the state when
+-- that tick's input is applied: row t = after t ticks), so every tool that
+-- compares NES row i with GEN row i compares the same game tick.
+-- <OUT>.fram keeps one row per video frame (lag analysis), <OUT>.frtick
+-- the tick index (u16 BE) of each of those frames. Stages, snapshots
+-- (.fNNNNN = tick NNNNN) run at tick boundaries; pc_profile stays in video
+-- frames (GEN-only budget work). A FrameCounter that does not move for
+-- STALL_FRAMES video frames, or running out of FRAME_CAP frames, FAILS the
+-- capture (no invented ticks, no truncated capture passing as complete).
+if total > 0xFFFF then fail("T-136: more than 65535 ticks (frtick is u16)") return end
+local fram = io.open(OUT .. ".fram", "wb")
+local frtick = io.open(OUT .. ".frtick", "wb")
+local STALL_FRAMES = 120
+local FRAME_CAP = total * 3 + 600
+local tick, f, stall = 0, 0, 0
+local last_fc = srd(0x15)
+local new_tick = true
+while tick < total and f < FRAME_CAP do
+    if PCP and f == PCP[1] then
         pc_id = event.onmemoryexecuteany(pc_hook, "t118_pc", "M68K BUS")
-        meta:write(string.format("pc_profile start f=%d id=%s\n", f - 1, tostring(pc_id)))
+        meta:write(string.format("pc_profile start f=%d id=%s\n", f, tostring(pc_id)))
     end
-    if PCP and f - 1 == PCP[2] + 1 then pc_stop() end
-    for _, st in ipairs(PRESET.stages) do
-        if st.at == f - 1 then
-            meta:write(string.format("stage at f=%d\n", f - 1))
-            st.fn(srd, swr, slog, sys, gen_b_item, gen_link_pos)
+    if PCP and f == PCP[2] + 1 then pc_stop() end
+    local bytes = memory.read_bytes_as_array(RAM_BASE, 0x800, RAM_DOM)
+    if new_tick then
+        for _, st in ipairs(PRESET.stages) do
+            if st.at == tick then
+                meta:write(string.format("stage at tick=%d f=%d\n", tick, f))
+                st.fn(srd, swr, slog, sys, gen_b_item, gen_link_pos)
+            end
+        end
+        if stage_failed then ram:close(); fram:close(); frtick:close(); fail(stage_fail_why) return end
+        last_fc = srd(0x15)   -- a stage may write $15: not a game tick
+        bytes = memory.read_bytes_as_array(RAM_BASE, 0x800, RAM_DOM)
+        local chunk = {}
+        for i = 1, 0x800 do chunk[i] = string.char(bytes[i]) end
+        ram:write(table.concat(chunk))
+        if SNAP[tick] then snap_video(string.format(".f%05d", tick)) end
+        new_tick = false
+    end
+    do
+        local chunk = {}
+        for i = 1, 0x800 do chunk[i] = string.char(bytes[i]) end
+        fram:write(table.concat(chunk))
+        frtick:write(string.char((tick >> 8) & 0xFF, tick & 0xFF))
+    end
+    meta:write(string.format("f=%d t=%d in=%s gm=%02X sub=%02X fc=%02X room=%02X\n",
+        f, tick, seq[tick + 1], bytes[0x13], bytes[0x14], bytes[0x16], bytes[0xEC]))
+    joypad.set(btns(seq[tick + 1]), 1)
+    emu.frameadvance()
+    f = f + 1
+    local fc = srd(0x15)
+    if fc ~= last_fc then
+        last_fc = fc
+        tick = tick + 1
+        stall = 0
+        new_tick = true
+    else
+        stall = stall + 1
+        if stall >= STALL_FRAMES then
+            ram:close(); fram:close(); frtick:close()
+            fail(string.format("T-136 stall: FrameCounter held %d frames at tick %d f %d",
+                STALL_FRAMES, tick, f))
+            return
         end
     end
-    if stage_failed then ram:close(); fail(stage_fail_why) return end
-    local bytes = memory.read_bytes_as_array(RAM_BASE, 0x800, RAM_DOM)
-    local chunk = {}
-    for i = 1, 0x800 do chunk[i] = string.char(bytes[i]) end
-    ram:write(table.concat(chunk))
-    if SNAP[f - 1] then snap_video(string.format(".f%05d", f - 1)) end
-    meta:write(string.format("f=%d in=%s gm=%02X sub=%02X fc=%02X room=%02X\n",
-        f - 1, seq[f], bytes[0x13], bytes[0x14], bytes[0x16], bytes[0xEC]))
-    joypad.set(btns(seq[f]), 1)
-    emu.frameadvance()
 end
+fram:close()
+frtick:close()
+if tick < total then
+    ram:close()
+    fail(string.format("T-136 frame cap %d hit at tick %d of %d", FRAME_CAP, tick, total))
+    return
+end
+meta:write(string.format("ticks=%d video_frames=%d\n", tick, f))
 ram:close()
 pc_stop()
 if PCP then

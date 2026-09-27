@@ -24,7 +24,9 @@ PRESETS = ROOT / "tools" / "lockstep" / "presets"
 REPORTS = ROOT / "builds" / "reports" / "lockstep"
 KEEP = ["diff.json", "diff.txt", "gen.txt", "nes.txt", "gen.err", "nes.err",
         "gen.ram", "nes.ram", "gen.vram", "gen.m68k", "gen.cram", "gen.vsram",
-        "nes.wram", "nes.nt", "nes.oam", "nes.chr", "nes.pal"]
+        "nes.wram", "nes.nt", "nes.oam", "nes.chr", "nes.pal",
+        # T-136: per-video-frame rows + their tick index (lag analysis)
+        "gen.fram", "nes.fram", "gen.frtick", "nes.frtick"]
 
 
 def run_one(name: str, out: Path) -> str:
