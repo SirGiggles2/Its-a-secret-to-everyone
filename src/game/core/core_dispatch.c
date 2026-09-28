@@ -119,7 +119,10 @@ void core_destroy_object_wram(unsigned int val, unsigned int slot)
 
 void core_destroy_whirlwind(unsigned int slot)
 {
-    /* drain at core_runtime.c:52-54. NES DestroyWhirlwind. */
+    /* drain at core_runtime.c:52-54. NES DestroyWhirlwind (Z_01.asm:1877)
+     * starts with STA ObjType,X = 0 (T-147: the type survived, t129 t5905
+     * whirlwind at the right edge kept updating). */
+    OBJ_TYPE(slot) = 0u;
     core_destroy_object_wram(0u, slot);
 }
 
