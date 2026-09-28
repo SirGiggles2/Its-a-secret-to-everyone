@@ -158,6 +158,14 @@ local function btns(s)
     end
     return t
 end
+-- T-013: a script step "p1|p2" also drives controller 2 (NES pad 2 /
+-- Genesis port 2; "|UA" = pad 2 Up+A). Pad 2 is only set on steps that
+-- press something on it (joypad.set holds for one frame).
+local function set_pads(s)
+    local p1, p2 = s:match("^([^|]*)|?(.*)$")
+    joypad.set(btns(p1), 1)
+    if p2 ~= "" then joypad.set(btns(p2), 2) end
+end
 local seq = {}
 for _, step in ipairs(PRESET.script) do
     for _ = 1, step[1] do seq[#seq + 1] = step[2] end
@@ -454,7 +462,7 @@ while tick < total and f < FRAME_CAP do
         meta:write(string.format("f=%d t=%d in=%s gm=%02X sub=%02X fc=%02X room=%02X\n",
             f, tick, tostring(seq[tick + 1]), bytes[0x13], bytes[0x14], bytes[0x16], bytes[0xEC]))
     end
-    joypad.set(btns(seq[tick + 1]), 1)
+    set_pads(seq[tick + 1])
     emu.frameadvance()
     f = f + 1
     local fc = srd(0x15)

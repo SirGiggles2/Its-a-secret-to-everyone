@@ -177,6 +177,12 @@ def main() -> int:
     cfg["SoundThrottle"] = False
     if isinstance(cfg.get("Rewind"), dict):
         cfg["Rewind"]["Enabled"] = False
+    # T-013: NES controller 2 plugged in (the user config leaves the right
+    # port "UnpluggedNES"); Zelda's save menu is pad 2 Up+A. Genesis port 2
+    # is already a gamepad (gpgx ControlTypeRight = 1).
+    nes_sync = cfg.get("CoreSyncSettings", {}).get("BizHawk.Emulation.Cores.Nintendo.NES.NES")
+    if isinstance(nes_sync, dict) and isinstance(nes_sync.get("Controls"), dict):
+        nes_sync["Controls"]["NesRightPort"] = "ControllerNES"
     for entry in cfg.get("PathEntries", {}).get("Paths", []):
         if entry.get("Type") == "Base":
             entry["Path"] = str(stage / entry["System"])
