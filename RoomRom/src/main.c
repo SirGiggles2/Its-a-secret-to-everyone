@@ -305,6 +305,7 @@ static u8             s_lvl_entrance_tile = 0u; /* UndergroundEntranceTile */
 static u16            s_curtain[22][32];     /* play-area words behind it */
 static unsigned char begin_level_exit(void);
 static void step_out_start_pos(void);
+static void end_prepare_mode(void);
 static void begin_cave_exit(void);
 /* T-135: NES UndergroundEntranceTile of the cave Link is in ($24 = the
  * black opening: method 1-a step out; else the stairs). */
@@ -2336,6 +2337,21 @@ static void cave_exit_tick(void)
     }
 }
 
+/* NES EndPrepareMode (Z_05.asm:3181), run when UpdatePlayer's stairs /
+ * cave-entrance check sets GameMode $10: submode, IsUpdatingMode, [0F],
+ * Link's ObjState, shove and invincibility timer cleared (T-145:
+ * t111_dark_candle kept Link's invincibility $06 into the level). */
+static void end_prepare_mode(void)
+{
+    nes_ram[0x0013u] = 0u;                     /* GameSubmode */
+    nes_ram[0x0011u] = 0u;                     /* IsUpdatingMode */
+    nes_ram[0x000Fu] = 0u;
+    nes_ram[0x00ACu] = 0u;                     /* ObjState (Link) */
+    nes_ram[0x00C0u] = 0u;                     /* ObjShoveDir */
+    nes_ram[0x00D3u] = 0u;                     /* ObjShoveDistance */
+    nes_ram[0x04F0u] = 0u;                     /* ObjInvincibilityTimer */
+}
+
 void roomrom_main_begin_level_entry(const rr_warp_outcome_t *out)
 {
     unsigned char tile;
@@ -2346,7 +2362,7 @@ void roomrom_main_begin_level_entry(const rr_warp_outcome_t *out)
     s_lvl_entrance_tile = tile;
     s_lvl_exiting = 0u;
     nes_ram[0x0012u] = 0x10u;
-    nes_ram[0x0013u] = 0u;
+    end_prepare_mode();
     s_lvl_target_y = (unsigned char)players[0].y;
     if (tile == 0x24u) {
         s_lvl_target_y = (unsigned char)(players[0].y + 0x10);
@@ -2957,7 +2973,7 @@ static unsigned char play_update_objects(void)
             nes_ram[0x0603u] |= 0x08u;   /* stairs effect (audio_requests) */
             cave_fade_set_callbacks(&k_cave_fade_callbacks);
             nes_ram[0x0012u] = 0x10u;         /* T-011: NES mode $10 stairs */
-            nes_ram[0x0013u] = 0u;
+            end_prepare_mode();
             cave_fade_begin_enter(cid);
             inventory_rupee_tick(nes_ram[0x0015u]); /* @FinishUpdatePlay */
             return 1u;
