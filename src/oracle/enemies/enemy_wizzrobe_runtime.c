@@ -119,9 +119,7 @@ static const unsigned char k_rw_dirs[4] = {
 #define WIZ_FRAME_COUNTER     RAM(0x0015u)
 #define WIZ_INV_CLOCK         RAM(0x066Cu)  /* InvClock (T-147: was $0656 SelectedItemSlot) */
 #define WIZ_FIRST_UNWALK      RAM(0x034Au)
-/* (unused) */
 #define WIZ_RANDOM(s)         OBJ(0x0018u, (s))  /* Random+slot */
-#define WIZ_RANDOM_BASE       RAM(0x0018u)
 
 /* NES Z_04.asm:7212 BlueWizzrobe_Move. */
 void enrt_blue_wizzrobe_move(unsigned int slot)
@@ -153,7 +151,7 @@ static void blue_wizzrobe_align_with_nearest_square(unsigned int slot)
  *   ObjTimer = Random | $70. Then align. */
 static void blue_wizzrobe_align_and_randomize_timer(unsigned int slot)
 {
-    WIZ_OBJ_TIMER(slot) = (unsigned char)(WIZ_RANDOM_BASE | 0x70u);
+    WIZ_OBJ_TIMER(slot) = (unsigned char)(WIZ_RANDOM(slot) | 0x70u);   /* NES LDA Random,X (T-147) */
     blue_wizzrobe_align_with_nearest_square(slot);
 }
 
@@ -228,7 +226,7 @@ static void begin_teleporting(unsigned int slot)
 /* NES Z_04.asm:7241 BlueWizzrobe_ChooseTeleportTarget. */
 static void blue_wizzrobe_choose_teleport_target(unsigned int slot)
 {
-    unsigned char rand = (unsigned char)WIZ_RANDOM_BASE;
+    unsigned char rand = (unsigned char)WIZ_RANDOM(slot);   /* NES LDA Random,X (T-147) */
     unsigned char rand_idx = (unsigned char)(rand & 0x03u);
 
     unsigned char orig_x = (unsigned char)WIZ_X(slot);
@@ -315,7 +313,11 @@ static void blue_wizzrobe_walk_or_teleport(unsigned int slot)
     if (timer >= 0x10u) {
         /* Every other frame. */
         if ((WIZ_FRAME_COUNTER & 1u) != 0u) {
-            blue_wizzrobe_turn_toward_link(slot);
+            /* NES BCS L_BlueWizzrobe_TurnTowardLinkIfNeeded: turn only on
+             * a multiple of $40 (T-147: the drain turned every odd frame,
+             * t129 t4661 dir $02 -> $01 and a square snap). */
+            if (((unsigned char)WIZ_TURN_COUNTER(slot) & 0x3Fu) == 0u)
+                blue_wizzrobe_turn_toward_link(slot);
             return;
         }
         enrt_blue_wizzrobe_turn_sometimes_and_move_and_check_tile(slot);
@@ -439,7 +441,7 @@ static void red_wizzrobe_state_3(unsigned int slot)
         return;
     }
     /* State $FF: random place. */
-    unsigned char rand = (unsigned char)WIZ_RANDOM_BASE;
+    unsigned char rand = (unsigned char)WIZ_RANDOM(slot);   /* NES LDA Random,X (T-147) */
     unsigned char dir_idx = (unsigned char)(rand & 0x03u);
     WIZ_DIR(slot) = k_rw_dirs[dir_idx];
 
