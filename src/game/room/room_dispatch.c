@@ -146,8 +146,10 @@ unsigned char room_get_unique_room_id(void)
 
 void room_clear_room_history(void)
 {
-    /* drain at room_runtime.c:283-287. */
-    RAM(NES_ROOM_HISTORY_IDX) = 0u;
+    /* NES ClearRoomHistory (Z_07.asm:1387): [$0529] = 0, then RoomHistory
+     * $621-$626; CurRoomHistoryIndex $620 is left alone (T-013: the drain
+     * cleared $620 instead of $0529). */
+    RAM(0x0529u) = 0u;
     for (signed char i = 5; i >= 0; --i) {
         RAM(NES_ROOM_HISTORY_BASE + (unsigned char)i) = 0u;
     }

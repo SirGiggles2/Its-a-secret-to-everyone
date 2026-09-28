@@ -71,7 +71,7 @@ void mode_dispatch_update(void)
     case 0x0F: mode_stub(); break;  /* Mode F Elimination — frontend */
     case 0x10: mode_stub(); break;  /* Mode 10 Stairs */
     case 0x11: mode11_death_update(); break;  /* Phase 9.7 native */
-    case 0x12: mode12_endlevel_update(); break;  /* Phase 9.7 native */
+    case 0x12: mode_stub(); break;  /* T-013: run by roomrom_debug_tick's own mode $12 branch */
     case 0x13: mode13_wingame_update(); break;  /* Tier 4 scaffold (Sub0 native, Sub1-4 stubs) */
     default:   mode_stub(); break;
     }

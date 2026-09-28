@@ -1,193 +1,156 @@
-/* Phase 9.7 — Mode 12 EndLevel native rewrite.
+/* mode_endlevel.c — GameMode $12 (end of level: triforce piece taken).
  *
- * NES source: reference/aldonunez/Z_05.asm:5534-5606
- *             UpdateMode12EndLevel_Full.
+ * NES source: reference/aldonunez/Z_05.asm InitMode12 (5517) and
+ * UpdateMode12EndLevel_Full (5534); EndGameMode12 (Z_05.asm, after
+ * CalculateNextRoomForDoor); EndGameMode (Z_07.asm:1683).
+ * Drained C: none (the previous scaffold used wrong cells: ObjTimer $30,
+ * TileBufSelector $7A, World_IsFillingHearts $0640, ObjX+12 $8C, and
+ * no-op callees; it stalled in Sub2).
+ * Coverage: FULL state machine. Stance: REPLACE (T-013 evidence:
+ * t013_route NES frames f11866-f12403, cells $12/$13/$28/$14/$63/$7C/$7D/
+ * $505 per frame).
  *
- * Drained C: NONE. tools/audit/drain_coverage.json has no candidate
- * row for Mode 12. This file is the GREENFIELD native transcription
- * per Drain Rule D1 (NES asm wins ties — full per-line port below).
- *
- * Stance: REPLACE — verbatim per-line transcription of the NES asm
- * body. Touches RAM cells:
- *   GameSubmode      $13
- *   ObjTimer         $30  (slot 0 — Link / mode-machine timer)
- *   TileBufSelector  $7A  (selects which 16-byte palette window the
- *                          next PPU transfer copies)
- *   World_IsFillingHearts $0640  (heart-fill animation tick gate)
- *   ObjX+12          $80+12 = $8C (curtain-effect tracker column)
- *   CurPpuControl_2000 $FF (mirror of $2000 PPUCTRL; bit 2 = VRAM
- *                          address increment 32 vs 1)
- *   PpuControl_2000  $2000 (live PPUCTRL register)
- *
- * State machine (mirrors NES asm Sub0..Sub4):
- *   Pre-dispatch:
- *     HideObjectSprites
- *     DrawLinkLiftingItem
- *     Jump table on GameSubmode.
- *
- *   Sub0 — delay:
- *     if ObjTimer != 0: return.
- *     ObjTimer = $30 (run Sub1 for 47 frames).
- *     INC GameSubmode.
- *
- *   Sub1 — flash screen + start heart-fill:
- *     if ObjTimer == 0:
- *         World_IsFillingHearts = 2.  (TODO: NES asm comment "why 2?")
- *         INC GameSubmode.
- *     else:
- *         Y = $18 (LevelPaletteTransferBuf).
- *         if (ObjTimer & 7) >= 4:
- *             Y = $78 (WhitePaletteBottomHalfTransferBuf).
- *         TileBufSelector = Y.
- *         return.
- *
- *   Sub2 — wait for heart-fill to finish:
- *     UpdateHeartsAndRupees.
- *     if World_IsFillingHearts != 0: return.
- *     fall through to Sub3 setup (NES uses BEQ :+ to next-submode-timer
- *     setup at end of Sub3, here we INC submode + set timer).
- *
- *   Sub3 — curtain effect:
- *     if ObjTimer != 0: return.
- *     UpdateWorldCurtainEffect.
- *     if ObjX[12] < $11:    (column reached the middle)
- *         ObjTimer = $80.   (delay 127 frames for Sub4).
- *         INC GameSubmode.
- *     (else: stay in Sub3 next frame.)
- *
- *   Sub4 — finalize:
- *     if ObjTimer != 0: return.
- *     HideAllSprites.
- *     CurPpuControl_2000 &= ~$04   (VRAM increment 1).
- *     PpuControl_2000 = CurPpuControl_2000.
- *     EndGameMode12.
+ * Frame flow (IsUpdatingMode $11 = 0 on the first frame -> InitMode12):
+ *   Init  End Level song, curtain columns $7C=$20 / $7D=$01, ObjTimer
+ *         $30, FillTileMap($24), IsUpdatingMode++, ItemTypeToLift $1B.
+ *   Sub0  wait for ObjTimer, then ObjTimer = $30.
+ *   Sub1  flash: TileBufSelector $18 (level palette) / $78 (white bottom
+ *         half) by ObjTimer & 7; at 0 start filling hearts ($63 = 2).
+ *   Sub2  UpdateHeartsAndRupees until the hearts are full; ObjTimer $80.
+ *   Sub3  after ObjTimer, UpdateWorldCurtainEffect until the decreasing
+ *         column < $11; ObjTimer $80.
+ *   Sub4  after ObjTimer, EndGameMode12 -> GameMode 2 (level exit load).
+ * The Genesis side (Link lifting the triforce, the blank curtain
+ * columns, the exit load) is drawn/run by RoomRom/src/main.c hooks.
  */
 
 #include "platform_abi.h"
 #include "mode_endlevel.h"
-#include "progress_dispatch.h"  /* Tier 2: native curtain effect driver */
+#include "progress_dispatch.h"   /* progress_update_world_curtain_effect */
+#include "hud/hud_dispatch.h"    /* hud_world_fill_hearts, hud_tick_native_rupees */
 
-/* NES RAM cells. */
-#define M12_GAME_SUBMODE         RAM(0x0013u)
-#define M12_OBJ_TIMER_0          RAM(0x0030u)  /* ObjTimer[0] */
-#define M12_TILE_BUF_SELECTOR    RAM(0x007Au)
-#define M12_WORLD_FILLING_HEARTS RAM(0x0640u)
-#define M12_OBJ_X_12             RAM((unsigned short)(0x0080u + 12u))
-#define M12_CUR_PPU_CTRL_2000    RAM(0x00FFu)
+/* NES Variables.inc. */
+#define M12_IS_UPDATING_MODE   RAM(0x0011u)
+#define M12_GAME_SUBMODE       RAM(0x0013u)
+#define M12_TILE_BUF_SELECTOR  RAM(0x0014u)
+#define M12_FRAME_COUNTER      RAM(0x0015u)
+#define M12_OBJ_TIMER_LINK     RAM(0x0028u)   /* ObjTimer */
+#define M12_FILLING_HEARTS     RAM(0x0063u)   /* World_IsFillingHearts */
+#define M12_CURTAIN_DEC_COL    RAM(0x007Cu)   /* ObjX+12 */
+#define M12_CURTAIN_INC_COL    RAM(0x007Du)   /* ObjX+13 */
+#define M12_SONG_REQUEST       RAM(0x0600u)
+#define M12_TUNE0_REQUEST      RAM(0x0604u)
+#define M12_ITEM_TYPE_TO_LIFT  RAM(0x0505u)
+#define M12_E7                 RAM(0x00E7u)
+#define M12_CUR_PPU_CTRL_2000  RAM(0x00FFu)
+#define M12_CUR_PPU_MASK_2001  RAM(0x00FEu)
 
-/* Sub2 transition: NES asm BEQ falls through to "set up Sub3 timer".
- * Looking at Z_05.asm:5582 "BEQ :+", the `:+` label is the same line
- * label inside Sub3 that sets ObjTimer = $80 + INC GameSubmode. We
- * mirror by directly poking those cells when World_IsFillingHearts
- * clears. */
-#define MODE12_SUB3_DELAY_FRAMES 0x80u
+/* PlayAreaTiles (WRAM $6530): 32 columns x 22 rows. */
+#define M12_PLAY_AREA_TILES    0x6530u
+#define M12_PLAY_AREA_BYTES    (32u * 22u)
 
-/* Sub1 palette transfer buf selectors. */
-#define MODE12_LEVEL_PAL_BUF     0x18u
-#define MODE12_WHITE_BOTTOM_BUF  0x78u
+/* Genesis presentation / flow hooks (RoomRom/src/main.c). */
+extern void roomrom_mode12_begin(void);                 /* InitMode12 visuals */
+extern void roomrom_mode12_draw(void);                  /* DrawLinkLiftingItem */
+extern void roomrom_mode12_blank_column(unsigned char col);
+extern void roomrom_mode12_exit(void);                  /* after EndGameMode12 */
 
-/* PpuControl_2000 bit 2 = VRAM address increment (0=1, 1=32). */
-#define MODE12_PPUCTRL_INC32     0x04u
-
-/* Stub callees — bodies not yet drained. Each touches state outside
- * Mode 12's own RAM cells, so we leave them as no-op trampolines for
- * the focused-PR follow-up that ports them. */
-static void mode12_hide_object_sprites(void)        { /* Z_07.asm:611 */ }
-static void mode12_draw_link_lifting_item(void)     { /* Z_07.asm:1055 */ }
-static void mode12_update_hearts_and_rupees(void)   { /* Z_07.asm:2033 */ }
-static void mode12_update_world_curtain_effect(void)
+static void init_mode12(void)
 {
-    /* Tier 2: wire to native progress_update_world_curtain_effect.
-     * NES Z_07.asm UpdateWorldCurtainEffect_Bank2 advances one column-
-     * pair per call when CURTAIN_TIMER hits 0. Drain MATCH per
-     * progress_runtime.c:104-117. */
-    progress_update_world_curtain_effect();
-}
-static void mode12_hide_all_sprites(void)           { /* Z_07.asm — TBD */ }
-static void mode12_end_game_mode_12(void)           { /* Z_05.asm:7487 */ }
-
-/* PpuControl_2000 mirror live write — defer to MMIO adapter. The
- * Genesis-side VDP register write is bound by SGDK adapter; the
- * NES mirror cell is the source of truth so we just update RAM. */
-static inline void mode12_write_ppu_ctrl(unsigned char value)
-{
-    M12_CUR_PPU_CTRL_2000 = value;
-    /* Live $2000 write deferred — graphical effect is "VRAM increment
-     * goes back to 1", which is the default state on Genesis-side
-     * VDP_setAutoInc(2). No-op until full PPUCTRL shim lands. */
+    unsigned int i;
+    M12_SONG_REQUEST = 0x04u;          /* "End Level" song */
+    M12_CURTAIN_DEC_COL = 0x20u;
+    M12_CURTAIN_INC_COL = 0x01u;
+    M12_OBJ_TIMER_LINK = 0x30u;
+    for (i = 0u; i < M12_PLAY_AREA_BYTES; ++i)       /* FillTileMap($24) */
+        nes_ram[M12_PLAY_AREA_TILES + i] = 0x24u;
+    M12_IS_UPDATING_MODE = (unsigned char)(M12_IS_UPDATING_MODE + 1u);
+    M12_ITEM_TYPE_TO_LIFT = 0x1Bu;     /* triforce */
+    roomrom_mode12_begin();
 }
 
-static void mode12_sub0(void)
+static void sub0(void)
 {
-    if (M12_OBJ_TIMER_0 != 0u) {
+    if (M12_OBJ_TIMER_LINK != 0u) return;
+    M12_OBJ_TIMER_LINK = 0x30u;
+    M12_GAME_SUBMODE = (unsigned char)(M12_GAME_SUBMODE + 1u);
+}
+
+static void sub1(void)
+{
+    unsigned char y = 0x18u;           /* LevelInfo_PalettesTransferBuf */
+    if (M12_OBJ_TIMER_LINK == 0u) {
+        M12_FILLING_HEARTS = 0x02u;    /* StartFillingHearts */
+        M12_GAME_SUBMODE = (unsigned char)(M12_GAME_SUBMODE + 1u);
         return;
     }
-    M12_OBJ_TIMER_0 = 0x30u;
-    ++M12_GAME_SUBMODE;
-}
-
-static void mode12_sub1(void)
-{
-    unsigned char timer = M12_OBJ_TIMER_0;
-    if (timer == 0u) {
-        M12_WORLD_FILLING_HEARTS = 0x02u;
-        ++M12_GAME_SUBMODE;
-        return;
-    }
-
-    unsigned char y = MODE12_LEVEL_PAL_BUF;
-    if ((timer & 0x07u) >= 0x04u) {
-        y = MODE12_WHITE_BOTTOM_BUF;
-    }
+    if ((M12_OBJ_TIMER_LINK & 0x07u) >= 0x04u)
+        y = 0x78u;                     /* WhitePaletteBottomHalfTransferBuf */
     M12_TILE_BUF_SELECTOR = y;
 }
 
-static void mode12_sub2(void)
+static void set_delay_and_advance(void)
 {
-    mode12_update_hearts_and_rupees();
-    if (M12_WORLD_FILLING_HEARTS != 0u) {
-        return;
-    }
-    M12_OBJ_TIMER_0 = MODE12_SUB3_DELAY_FRAMES;
-    ++M12_GAME_SUBMODE;
+    M12_OBJ_TIMER_LINK = 0x80u;
+    M12_GAME_SUBMODE = (unsigned char)(M12_GAME_SUBMODE + 1u);
 }
 
-static void mode12_sub3(void)
+static void sub2(void)
 {
-    if (M12_OBJ_TIMER_0 != 0u) {
-        return;
-    }
-    mode12_update_world_curtain_effect();
-    if (M12_OBJ_X_12 >= 0x11u) {
-        return;
-    }
-    M12_OBJ_TIMER_0 = MODE12_SUB3_DELAY_FRAMES;
-    ++M12_GAME_SUBMODE;
+    /* UpdateHeartsAndRupees: World_FillHearts then World_ChangeRupees. */
+    hud_world_fill_hearts();
+    hud_tick_native_rupees(M12_FRAME_COUNTER);
+    if (M12_FILLING_HEARTS != 0u) return;
+    set_delay_and_advance();
 }
 
-static void mode12_sub4(void)
+static void sub3(void)
 {
-    if (M12_OBJ_TIMER_0 != 0u) {
-        return;
+    if (M12_OBJ_TIMER_LINK != 0u) return;
+    {
+        /* UpdateWorldCurtainEffect copies the (blank) tile-map columns
+         * [ObjX+13] and [ObjX+12] to the screen, then moves them inward. */
+        unsigned char dec = M12_CURTAIN_DEC_COL, inc = M12_CURTAIN_INC_COL;
+        progress_update_world_curtain_effect();
+        if (M12_CURTAIN_DEC_COL != dec) {
+            if (inc < 32u) roomrom_mode12_blank_column(inc);
+            if (dec < 32u) roomrom_mode12_blank_column(dec);
+        }
     }
-    mode12_hide_all_sprites();
-    unsigned char ctrl = (unsigned char)(M12_CUR_PPU_CTRL_2000 & (unsigned char)~MODE12_PPUCTRL_INC32);
-    mode12_write_ppu_ctrl(ctrl);
-    mode12_end_game_mode_12();
+    if (M12_CURTAIN_DEC_COL >= 0x11u) return;
+    set_delay_and_advance();
+}
+
+static void sub4(void)
+{
+    if (M12_OBJ_TIMER_LINK != 0u) return;
+    /* HideAllSprites is the exit load's job on Genesis. */
+    M12_CUR_PPU_CTRL_2000 = (unsigned char)(M12_CUR_PPU_CTRL_2000 & 0xFBu);
+    /* EndGameMode12: EndGameMode (IsUpdatingMode, submode = 0), [E7] and
+     * CurLevel 0, GameMode 2, UndergroundExitType 2, song silenced. The
+     * Genesis exit load swaps the scene and sets CurLevel/exit type. */
+    M12_IS_UPDATING_MODE = 0u;
+    M12_GAME_SUBMODE = 0u;
+    M12_E7 = 0u;
+    RAM(0x0012u) = 0x02u;
+    M12_TUNE0_REQUEST = 0x80u;
+    M12_CUR_PPU_MASK_2001 = (unsigned char)(M12_CUR_PPU_MASK_2001 & 0xFEu);
+    roomrom_mode12_exit();
 }
 
 void mode12_endlevel_update(void)
 {
-    mode12_hide_object_sprites();
-    mode12_draw_link_lifting_item();
-
-    unsigned char submode = M12_GAME_SUBMODE;
-    switch (submode) {
-    case 0x00u: mode12_sub0(); break;
-    case 0x01u: mode12_sub1(); break;
-    case 0x02u: mode12_sub2(); break;
-    case 0x03u: mode12_sub3(); break;
-    case 0x04u: mode12_sub4(); break;
-    default:    /* NES TableJump would crash; we no-op. */ break;
+    if (M12_IS_UPDATING_MODE == 0u) {
+        init_mode12();
+        return;
+    }
+    roomrom_mode12_draw();             /* HideObjectSprites + DrawLinkLiftingItem */
+    switch (M12_GAME_SUBMODE) {
+    case 0x00u: sub0(); break;
+    case 0x01u: sub1(); break;
+    case 0x02u: sub2(); break;
+    case 0x03u: sub3(); break;
+    case 0x04u: sub4(); break;
+    default:    break;
     }
 }

@@ -56,6 +56,18 @@ static const unsigned char k_blank_person_wares[] = {
     0x21u, 0xE4u, 0x58u, 0x24u, 0x22u, 0xC8u, 0x4Du, 0x24u, 0xFFu
 };
 
+/* Z_06.asm:722 WhitePaletteBottomHalfTransferBuf = selector $78: BG
+ * palette rows 2-3 ($3F08) white. Mode $12 flashes it (T-013). */
+static const unsigned char k_white_palette_bottom_half[] = {
+    0x3Fu, 0x08u, 0x08u, 0x0Fu, 0x30u, 0x30u, 0x30u, 0x0Fu,
+    0x30u, 0x30u, 0x30u, 0xFFu
+};
+
+/* Selector $18 = LevelInfo_PalettesTransferBuf (Variables.inc: $6B7E),
+ * the level's palette record in the installed LevelInfo block:
+ * $3F00 x $20 colors + terminator (36 bytes). */
+#define LEVEL_PALETTES_TRANSFER_BUF 0x6B7Eu
+
 /* Map selector -> static buffer pointer + length. Returns NULL if
  * unknown (caller clears selector to avoid pile-up). */
 static const unsigned char *resolve_static_buffer(unsigned char selector,
@@ -71,6 +83,12 @@ static const unsigned char *resolve_static_buffer(unsigned char selector,
     case 0x2Cu:
         *out_len = (unsigned char)sizeof k_mode11_dead_link_palette;
         return k_mode11_dead_link_palette;
+    case 0x18u:
+        *out_len = 36u;
+        return (const unsigned char *)&nes_ram[LEVEL_PALETTES_TRANSFER_BUF];
+    case 0x78u:
+        *out_len = (unsigned char)sizeof k_white_palette_bottom_half;
+        return k_white_palette_bottom_half;
     default:
         *out_len = 0u;
         return (const unsigned char *)0;

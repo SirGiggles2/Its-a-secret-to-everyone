@@ -39,6 +39,7 @@
 #include "../../src/game/audio/audio_dispatch.h"         /* Plan v5b Tier-5 T5.5: gamemode+scene music dispatcher */
 #include "../../src/abi/audio_abi.h"                     /* Phase 8 W6/W7: audio_sfx_play */
 #include "../../src/game/world/transfer_buf_drain.h"     /* Plan v5b: TRANSFER_BUF -> CRAM bridge (unblocks Mode 11 palette cycle) */
+#include "../../src/game/world/mode_endlevel.h"             /* T-013: GameMode $12 */
 #include "../../src/game/world/progress_dispatch.h"      /* Tier 2: triforce fanfare driver */
 #include "../../src/game/world/world_dispatch.h"     /* world_animate_world_fading */
 #include "../../src/game/dungeon/uw_dark.h"
@@ -583,7 +584,13 @@ static void nes_frames_catch_up(unsigned char nes_frames)
  * CheckScreenEdge) to the mode 3 curtain: modes 6, 7, 2 and the InitMode3
  * submodes (t132_uw_exit NES fc $78 -> $88 over 34 frames). */
 #define NES_LEVEL_EXIT_FC_STEPS 16u
+/* T-013: from the GameMode $12 Sub4 frame (EndGameMode12; FrameCounter
+ * already advanced for that frame) to the mode 3 curtain: mode 2 and the
+ * InitMode3 submodes (t013_route NES curtain starts at fc $5A; the Sub4
+ * frame runs with $4E). */
+#define NES_MODE12_EXIT_FC_STEPS 12u
 static u8 s_lvl_exit_fc = 0u;      /* FrameCounter on the exit edge tick */
+static u8 s_lvl_exit_steps = NES_LEVEL_EXIT_FC_STEPS;
 
 /* Tier 1 cave-fade callbacks. cave_fade.c owns sequencing + cave_init/
  * cave_exit + plane fill; this side owns Link reposition + scene flip
@@ -1913,8 +1920,12 @@ static void edge_load_or_clamp(void)
          * room_dispatch.c. Coverage: PARTIAL (native edge departure).
          * Stance: EXTEND. Save before enemy_loop_room_init clears the
          * source room's $034F kill total during scroll completion. */
-        if (s_scene == SCENE_UW) room_save_kill_count_uw();
-        else if (s_scene == SCENE_OW) room_save_kill_count_ow(s_room_id);
+        /* T-013: the NES-style scroll saves in InitMode6 (ow_scroll.c),
+         * the frame after the edge tick. */
+        if (!nes_scroll_enabled()) {
+            if (s_scene == SCENE_UW) room_save_kill_count_uw();
+            else if (s_scene == SCENE_OW) room_save_kill_count_ow(s_room_id);
+        }
         s_transition_target = (u8)((row << 4) | col);
         /* NES CalculateNextRoomForDoor (Z_05.asm:7483): in the OW,
          * CheckMazes may send Link back into the same room (Lost Woods
@@ -2218,6 +2229,90 @@ static void level_hud_static_only(void)
         RENDER_SPRITE_SIZE(1, 2), 0u, ROOMROM_SPRITE_SLOT_HUD_PLAYER);
 }
 
+/* NES ReadInputs runs in the NMI every frame, in every mode: ButtonsDown
+ * ($FA) / ButtonsPressed ($F8) follow the pad through transitions, and a
+ * button held across one is not a new press afterwards. ObjInputDir ($3F8)
+ * is only set by mode 5 (T-013: $FA kept the last Up through the level
+ * exit, t013_route t8465). */
+static void nes_pad_read_between_modes(void)
+{
+    u16 joy = JOY_readJoypad(JOY_1);
+    u16 pressed = joy & ~s_joy_prev;
+    u8 input_dir = nes_ram[0x03F8u];
+    s_joy_prev = joy;
+    if (options_consumer_get_ab_swap()) {
+        u16 ab = (u16)(BUTTON_A | BUTTON_B);
+        u16 j = (u16)(joy & ab), p = (u16)(pressed & ab);
+        joy = (u16)((joy & ~ab) | ((j & BUTTON_A) ? BUTTON_B : 0u) | ((j & BUTTON_B) ? BUTTON_A : 0u));
+        pressed = (u16)((pressed & ~ab) | ((p & BUTTON_A) ? BUTTON_B : 0u) | ((p & BUTTON_B) ? BUTTON_A : 0u));
+    }
+    nes_ram_sync_input(joy, pressed);
+    nes_ram[0x03F8u] = input_dir;
+}
+
+/* NES InitMode2 submode 0 (Z_07.asm:1290): ClearRoomHistory and clear
+ * LevelKillCounts ($560-$5DF) before the level loads (T-013: Genesis kept
+ * the previous level's room history, t013_route t2186/t8465). */
+static void init_mode2_sub0(void)
+{
+    u8 i;
+    room_clear_room_history();
+    for (i = 0u; i < 0x80u; ++i) nes_ram[0x0560u + i] = 0u;
+}
+
+/* T-013: GameMode $12 (src/game/world/mode_endlevel.c) presentation and
+ * exit. NES InitMode12 hides the object sprites and draws Link lifting
+ * the triforce (SetUpAndDrawLinkLiftingItem: item at ObjX, ObjY - $10);
+ * UpdateWorldCurtainEffect copies blank tile-map columns in from both
+ * sides; EndGameMode12 starts the mode 2 load back to the overworld. */
+static void mode12_draw_lift(void)
+{
+    u8 saved_cur = nes_ram[0x0340u];
+    nes_ram[0x0070u + 19u] = nes_ram[0x0070u];                     /* ObjX+19 */
+    nes_ram[0x0084u + 19u] = (u8)(nes_ram[0x0084u] - 0x10u);       /* ObjY+19 */
+    nes_ram[0x0340u] = 0x13u;
+    enemy_render_weapon_reset(0x13u);
+    draw_animate_item_object(nes_ram[0x0505u], 0x13u);
+    nes_ram[0x0340u] = saved_cur;
+    roomrom_sprites_set_link_lift(players[0].x, players[0].y,
+                                  (unsigned char)(nes_ram[0x0052u] != 0u));
+}
+
+void roomrom_mode12_begin(void)
+{
+    enemy_render_reset_oam();                  /* HideObjectSprites */
+    enemy_render_native_sweep();
+    mode12_draw_lift();
+    VDP_updateSprites(80u, DMA_QUEUE);
+}
+
+void roomrom_mode12_draw(void)
+{
+    enemy_render_reset_oam();
+    roomrom_hud_refresh_dynamic();             /* hearts fill on screen */
+    mode12_draw_lift();
+    VDP_updateSprites(80u, DMA_QUEUE);
+}
+
+void roomrom_mode12_blank_column(unsigned char col)
+{
+    u8 row;
+    u16 pc, pr;
+    for (row = 0u; row < 22u; ++row) {
+        (void)curtain_addr(col, row, &pc, &pr);
+        render_set_plane_a_word(pc, pr, 0u);
+    }
+}
+
+void roomrom_mode12_exit(void)
+{
+    if (!roomrom_world_transition_level_exit(&s_lvl_out)) return;
+    s_lvl_exit_fc = nes_ram[0x0015u];
+    s_lvl_exit_steps = NES_MODE12_EXIT_FC_STEPS;
+    s_lvl_exiting = 1u;
+    s_lvl_phase = LVL_EXIT_LOAD;
+}
+
 /* T-132 exit: NES EndGameMode12 when NextRoomId >= $80 (start room S
  * edge). Returns 1 when the level exit started. */
 static unsigned char begin_level_exit(void)
@@ -2228,6 +2323,7 @@ static unsigned char begin_level_exit(void)
     /* T-140: the edge tick ends in mode 6 (CheckScreenEdge ->
      * GoToNextModeFromPlay), as on the NES; modes 6/7/2 run next. */
     s_lvl_exit_fc = nes_ram[0x0015u];
+    s_lvl_exit_steps = NES_LEVEL_EXIT_FC_STEPS;
     s_lvl_exiting = 1u;
     s_lvl_phase = LVL_EXIT_LOAD;
     return 1u;
@@ -2424,6 +2520,7 @@ static void level_entry_tick(void)
         /* Mode 2 (display off) + mode 3 submodes: back to the OW room. */
         nes_ram[0x0012u] = 0x02u;
         nes_ram[0x0013u] = 0u;
+        init_mode2_sub0();
         render_display_enable(0u);
         roomrom_main_apply_warp_outcome(&s_lvl_out);
         s_underground_exit_type = 2u;           /* EndGameMode12 */
@@ -2438,7 +2535,7 @@ static void level_entry_tick(void)
         nes_ram[0x0013u] = 0u;
         /* T-140: run the NES frame work of modes 6/7/2/3-init the fast
          * Genesis exit skipped, up to the NES curtain-start FrameCounter. */
-        while ((u8)(nes_ram[0x0015u] - s_lvl_exit_fc) < NES_LEVEL_EXIT_FC_STEPS) {
+        while ((u8)(nes_ram[0x0015u] - s_lvl_exit_fc) < s_lvl_exit_steps) {
             nes_ram[0x0015u] = (unsigned char)(nes_ram[0x0015u] + 1u);
             nes_frame_timers_and_random();
         }
@@ -2517,6 +2614,7 @@ stepped_out:
         if ((unsigned char)players[0].y != s_lvl_target_y) return;
         /* Mode 2: load the level with the display off (NES blanks it). */
         nes_ram[0x0012u] = 0x02u;
+        init_mode2_sub0();
         render_display_enable(0u);
         roomrom_main_apply_warp_outcome(&s_lvl_out);
         /* InitMode3_Sub8. */
@@ -2558,7 +2656,12 @@ stepped_out:
     curtain_reveal((unsigned char)(16u + s_lvl_step));
     curtain_reveal((unsigned char)(15u - s_lvl_step));
     s_lvl_timer = 4u;
-    if (++s_lvl_step < 16u) return;
+    ++s_lvl_step;
+    /* NES UpdateWorldCurtainEffect moves ObjX+12 / ObjX+13 inward-out:
+     * $10/$11 -> $00/$21 over the 16 steps (T-013). */
+    nes_ram[0x007Cu] = (u8)(0x10u - s_lvl_step);
+    nes_ram[0x007Du] = (u8)(0x11u + s_lvl_step);
+    if (s_lvl_step < 16u) return;
     if (s_lvl_exiting) {
         /* Mode 4 in the OW: InitMode_EnterRoom method 1, StepOutside. */
         s_lvl_exiting = 0u;
@@ -3243,6 +3346,7 @@ void roomrom_debug_tick(void)
 
         /* T-111: InitMode7 Sub6 / InitMode4 Sub3 fades hold everything. */
         if (s_uw_fade_phase != UW_FADE_NONE) {
+            nes_pad_read_between_modes();
             if (world_animate_world_fading() == 0u) {
                 if (s_uw_fade_phase == UW_FADE_AFTER_SCROLL) nes_ram[0x051Fu] = 0u;
                 s_uw_fade_phase = UW_FADE_NONE;
@@ -3253,8 +3357,17 @@ void roomrom_debug_tick(void)
 
         /* T-132: level entry (stairs, load, curtain). */
         if (s_lvl_phase != LVL_NONE) {
-            s_joy_prev = 0u;
+            nes_pad_read_between_modes();
             level_entry_tick();
+            transfer_buf_drain();
+            return;
+        }
+
+        /* T-013: GameMode $12 runs only its mode routine (NES UpdateMode
+         * dispatch: no Link, objects or HUD input that frame). */
+        if (nes_ram[0x0012u] == 0x12u) {
+            nes_pad_read_between_modes();
+            mode12_endlevel_update();
             transfer_buf_drain();
             return;
         }
@@ -3263,7 +3376,7 @@ void roomrom_debug_tick(void)
         if (s_scroll_state != SCROLL_NONE) {
             short h_scroll;
             short v_scroll;
-            s_joy_prev = 0u;     /* swallow input across transition */
+            nes_pad_read_between_modes();   /* NES reads the pad; no player update */
 
             u8 ow_done = 0u;
             if (nes_scroll_enabled()) {

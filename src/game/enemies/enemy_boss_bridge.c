@@ -157,7 +157,9 @@ void c_aquamentus_move(unsigned int slot)
     /* Z_04.asm:5612 Aquamentus_Move. */
     if (BOSS_OBJ_GRID_OFFSET(slot) == 0u) {
         /* New random distance: (Random[X] & $0F) | $07 → 7 or 15. */
-        const unsigned char rng = (unsigned char)ENEMY_RNG_B(slot);
+        /* NES LDA Random,X = Random+slot (T-013: read Random+1+slot;
+         * t013_route t7796 distance NES $0F, Genesis $07). */
+        const unsigned char rng = (unsigned char)ENEMY_RNG_A(slot);
         BOSS_OBJ_GRID_OFFSET(slot) = (unsigned char)((rng & 0x0Fu) | 0x07u);
         /* Random direction: (rng & $01) + 1 → Dir=1 (right) or Dir=2 (left). */
         ENEMY_DIR(slot) = (unsigned char)((rng & 0x01u) + 1u);
@@ -194,7 +196,9 @@ void c_aquamentus_shoot(unsigned int slot)
      * Else: fire 3 fireballs (middle/lower/upper) and reseed timer. */
     if (ENEMY_MOVE_TIMER(slot) == 0u) {
         /* Reseed timer: (Random[X] | $70) — at least $70 frames. */
-        const unsigned char rng = (unsigned char)ENEMY_RNG_B(slot);
+        /* NES LDA Random,X = Random+slot (T-013: read Random+1+slot;
+         * t013_route t7747 timer NES $F3, Genesis $F8). */
+        const unsigned char rng = (unsigned char)ENEMY_RNG_A(slot);
         ENEMY_MOVE_TIMER(slot) = (unsigned char)(rng | 0x70u);
 
         /* Middle fireball (vertical offset $00). After spawn,

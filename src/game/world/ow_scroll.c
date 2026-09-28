@@ -19,6 +19,7 @@
 #include "world_dispatch.h"              /* world_animate_world_fading */
 #include "../dungeon/door_state.h"       /* uw_door_state_get_type */
 #include "../dungeon/uw_dark.h"          /* uw_dark_is_dark_room */
+#include "../room/room_dispatch.h"       /* room_save_kill_count_uw/_ow */
 
 #define UPD nes_ram[0x11u]
 #define MODE nes_ram[0x12u]
@@ -136,6 +137,10 @@ unsigned char ow_scroll_tick(short *x, short *y)
     if (MODE == 6u) {
         if (!UPD) {
             unsigned char i;
+            /* InitMode6: SaveKillCount (Z_05.asm, T-013: was saved on the
+             * edge tick, a frame before the NES). */
+            if (uw) room_save_kill_count_uw();
+            else room_save_kill_count_ow(nes_ram[0xEBu]);
             nes_ram[0x66Cu] = 0u; /* InvClock: ResetPlayerState */
             nes_ram[0x64u] = 0u;  /* LadderSlot */
             for (i = 13u; i < 19u; ++i) nes_ram[0xACu + i] = 0u;
