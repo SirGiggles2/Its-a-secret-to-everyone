@@ -757,7 +757,10 @@ unsigned int enrt_pols_voice_get_colliding_tile(unsigned int slot) {
     z07_get_collidable_tile(0, slot);
     tile = ENEMY_COLLIDED_TILE(slot);
     ENEMY_AIR_SPEED(slot) = tile;
-    if (tile < ENEMY_DUNGEON_TILE_FLOOR)
+    /* NES CMP ObjectFirstUnwalkableTile: C=1 (unwalkable) when the tile
+     * is >= it (T-147: the test was inverted; a landed Pols Voice on
+     * floor turned around, t129 t3210). */
+    if (tile >= ENEMY_DUNGEON_TILE_FLOOR)
         return CARRY_SET;
     return (unsigned int)tile;
 }
@@ -767,7 +770,7 @@ unsigned int enrt_wizzrobe_get_base_collidable_tile(unsigned int slot) {
     z07_get_collidable_tile_still(slot);
     tile = ENEMY_COLLIDED_TILE(slot);
     ENEMY_AIR_SPEED(slot) = tile;
-    if (tile < ENEMY_DUNGEON_TILE_FLOOR)
+    if (tile >= ENEMY_DUNGEON_TILE_FLOOR)     /* NES CMP: C=1 unwalkable */
         return CARRY_SET;
     return (unsigned int)tile;
 }
