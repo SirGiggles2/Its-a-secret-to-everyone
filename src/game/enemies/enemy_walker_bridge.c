@@ -1140,7 +1140,10 @@ void update_meta_object(unsigned int slot)
  */
 static void armos_draw_and_check_collisions(unsigned int slot)
 {
-    (void)sprite_anim_advance_and_fetch(0u, slot);
+    /* NES DrawArmosAndCheckCollisions: Anim_FetchObjPosForSpriteDescriptor
+     * only; UpdateArmos animates before jumping here (T-147: the advance
+     * ran the counter down while the armos faded in, t129 t4090). */
+    (void)sprite_anim_fetch_obj_pos(slot);
 
     {
         unsigned char frame_base = ((unsigned char)ENEMY_DIR(slot) == 0x08u) ? 1u : 0u;
@@ -1305,8 +1308,9 @@ void enrt_init_armos_or_flying_ghini(unsigned int slot)
         OBJ(NES_OBJ_GRID_OFFSET, slot) = 0x03u;
 
         /* Q-speed: $20 if RNG_A < $80 else $60. */
+        /* NES LDY Random+1,X (T-147: read Random+0,X). */
         ENEMY_WALK_SPEED(slot) =
-            ((unsigned char)ENEMY_RNG_A(slot) < 0x80u) ? 0x20u : 0x60u;
+            ((unsigned char)ENEMY_RNG_B(slot) < 0x80u) ? 0x20u : 0x60u;
     }
 
 FinishInit:
