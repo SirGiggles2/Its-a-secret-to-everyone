@@ -755,7 +755,14 @@ void roomrom_sprites_clear_boomerang(void)
                       ROOMROM_SPRITE_NEXT(ROOMROM_SPRITE_SLOT_BOOMERANG));
 }
 
-/* Task 5.9.1 room-item sprite. Slot 7. Slice-1 placeholder uses the
+/* LEGACY, UNCALLED (T-157): no production caller uses this room-item
+ * switch. Its item-ID cases predate the active NES ItemIdToSlot drain and
+ * are not authoritative (for example $0C is raft, not ring). Active item
+ * objects use item_object_update -> draw_animate_item_object ->
+ * enemy_render's ITEM_ATTR_MARKER atlas translation. Keep this only as
+ * historical Phase K code until its fixed SAT slot is retired.
+ *
+ * Task 5.9.1 room-item sprite. Slot 7. Slice-1 placeholder uses the
  * boomerang tile from items_chr_x4 atlas (CHR for triforce/etc. not
  * yet extracted; see project_chr_extraction_items_blocker). */
 /* Phase K (2026-05-18): item_id -> tile dispatch. Triforce uses

@@ -1,6 +1,11 @@
 # Sprite Roster Audit — Session 6 close
 *(2026-05-19, post Phase J/J.2/K continuation #1-3/P/W)*
 
+**Historical snapshot, not the active item-ID dispatch.** This May 2026 table
+describes an uncalled fixed-slot renderer and contains stale item IDs (notably
+`$0C` labeled ring). Use [active_item_draw.md](active_item_draw.md) and live
+NES captures for current pickup/pause ownership; T-155 verifies ring `$12/$13`.
+
 ## Purpose
 End-of-cleanup-pass static audit verifying every NES sprite extracted,
 labeled, and dispatched correctly. Cross-references

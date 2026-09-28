@@ -116,7 +116,11 @@ void roomrom_sprites_set_explosion(short x, short y, unsigned char timer,
                                    unsigned char sub_pal);
 void roomrom_sprites_clear_explosion(void);
 
-/* Task 5.9.1 room-item sprite (slot 7). Renders the room-pickup item
+/* LEGACY, UNCALLED (T-157). The active room-item path is
+ * draw_animate_item_object -> enemy_render, not these fixed-slot helpers.
+ * Item-ID cases below are historical and include stale mappings.
+ *
+ * Task 5.9.1 room-item sprite (slot 7). Renders the room-pickup item
  * at the NES (item_x, item_y) position.
  *
  * Phase K (2026-05-18): item_id-aware dispatch. Triforce (NES item_id
