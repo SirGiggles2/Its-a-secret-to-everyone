@@ -268,11 +268,22 @@ void link_collision_check_monster_collisions(unsigned int monster_slot)
         if ((unsigned char)MON_HIT_REACTION(monster_slot)) {
             return;
         }
-        collision_check_monster_boomerang_or_food_collision(monster_slot, 15u);
-        collision_check_monster_sword_shot_or_magic_shot_collision(monster_slot, 14u);
-        collision_check_monster_bomb_or_fire_collision(monster_slot, 16u);
-        collision_check_monster_bomb_or_fire_collision(monster_slot, 17u);
-        collision_check_monster_sword_collision(monster_slot, 13u);
+        /* No weapon can collide while all six player slots are inactive.
+         * The full NES battery still owns every active-weapon case. */
+        if ((unsigned char)OBJ_STATE(13u) ||
+            (unsigned char)OBJ_STATE(14u) ||
+            (unsigned char)OBJ_STATE(15u) ||
+            (unsigned char)OBJ_STATE(16u) ||
+            (unsigned char)OBJ_STATE(17u) ||
+            (unsigned char)OBJ_STATE(18u)) {
+            collision_check_monster_boomerang_or_food_collision(monster_slot, 15u);
+            collision_check_monster_sword_shot_or_magic_shot_collision(monster_slot, 14u);
+            collision_check_monster_bomb_or_fire_collision(monster_slot, 16u);
+            collision_check_monster_bomb_or_fire_collision(monster_slot, 17u);
+            collision_check_monster_sword_collision(monster_slot, 13u);
+        }
+        /* The final check also establishes the NES scratch-cell result
+         * consumed by later object work, even when its slot is empty. */
         collision_check_monster_arrow_or_rod_collision(monster_slot, 18u);
     }
     link_collision_check_link_collision(monster_slot);
