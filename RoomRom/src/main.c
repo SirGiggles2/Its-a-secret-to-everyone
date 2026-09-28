@@ -304,6 +304,7 @@ static u8             s_lvl_exiting = 0u;    /* curtain leads to StepOutside */
 static u8             s_lvl_entrance_tile = 0u; /* UndergroundEntranceTile */
 static u16            s_curtain[22][32];     /* play-area words behind it */
 static unsigned char begin_level_exit(void);
+static void step_out_start_pos(void);
 static void begin_cave_exit(void);
 /* T-135: NES UndergroundEntranceTile of the cave Link is in ($24 = the
  * black opening: method 1-a step out; else the stairs). */
@@ -577,6 +578,11 @@ static void nes_frames_catch_up(unsigned char nes_frames)
 /* From mode 2's first frame (stairs end) to the mode 3 curtain: mode 2
  * (4) + InitMode3 submodes (8) (t012_route NES fc $48 -> $54). */
 #define NES_LEVEL_LOAD_FRAMES 12u
+/* T-140: FrameCounter steps from the level-exit edge tick (mode 6 set by
+ * CheckScreenEdge) to the mode 3 curtain: modes 6, 7, 2 and the InitMode3
+ * submodes (t132_uw_exit NES fc $78 -> $88 over 34 frames). */
+#define NES_LEVEL_EXIT_FC_STEPS 16u
+static u8 s_lvl_exit_fc = 0u;      /* FrameCounter on the exit edge tick */
 
 /* Tier 1 cave-fade callbacks. cave_fade.c owns sequencing + cave_init/
  * cave_exit + plane fill; this side owns Link reposition + scene flip
@@ -1274,6 +1280,9 @@ void roomrom_main_apply_warp_outcome(const rr_warp_outcome_t *out)
     /* Phase 7 Task 7.2 step 2: clear enemy slots + (Task 7.7) dispatch
      * per-room ObjList init. Stub returns NULL until 7.7 lands the
      * template_id table; force-spawn hook fires from probe Lua. */
+    /* T-140: a level exit places Link at his OW step-out spot before the
+     * room's objects (InitMode_EnterRoom method 1). */
+    if (s_lvl_exiting && s_scene == SCENE_OW) step_out_start_pos();
     enemy_loop_room_init(s_room_id, (unsigned char)s_scene,
                 s_scene == SCENE_UW ? roomrom_uw_room_render_get_level() : 0u,
                 s_scene == SCENE_UW ? roomrom_uw_room_render_get_quest() : 0u);
@@ -2215,8 +2224,9 @@ static unsigned char begin_level_exit(void)
     if (!roomrom_world_transition_level_exit(&s_lvl_out)) return 0u;
     room_save_kill_count_uw();                  /* InitMode6 SaveKillCount */
     nes_ram[0x0604u] = 0x80u;                   /* Tune0Request: silence */
-    nes_ram[0x0012u] = 0x02u;
-    nes_ram[0x0013u] = 0u;
+    /* T-140: the edge tick ends in mode 6 (CheckScreenEdge ->
+     * GoToNextModeFromPlay), as on the NES; modes 6/7/2 run next. */
+    s_lvl_exit_fc = nes_ram[0x0015u];
     s_lvl_exiting = 1u;
     s_lvl_phase = LVL_EXIT_LOAD;
     return 1u;
@@ -2346,6 +2356,27 @@ void roomrom_main_begin_level_entry(const rr_warp_outcome_t *out)
     s_lvl_init = 1u;
 }
 
+/* InitMode_EnterRoom method 1 (Z_05.asm:1570): X from LevelBlockAttrsA,
+ * Y row from LevelBlockAttrsF of the OW room; 1-a (entered through a $24
+ * opening): start $10 lower; facing down. NES sets this before
+ * @PlaceObjects, so AssignObjSpawnPositions' IsSafeToSpawn sees it (T-140:
+ * t132_uw_exit spawn spots, SpawnCycle NES 0 / Genesis 2). */
+static void step_out_start_pos(void)
+{
+    unsigned char room = s_room_id;
+    unsigned char ty = (unsigned char)(((nes_ram[0x6AFEu + room] & 7u) << 4) + 0x4Du);
+    players[0].x = (short)(nes_ram[0x687Eu + room] & 0xF0u);
+    s_lvl_target_y = ty;
+    players[0].y = (short)(s_lvl_entrance_tile == 0x24u ? ty + 0x10 : ty);
+    players[0].face = LINK_FACE_DOWN;
+    s_link_dir = LINK_DIR_DOWN;
+    s_link_grid_offset = 0;
+    nes_ram[0x0098u] = 0x04u;
+    nes_ram[0x0070u] = (unsigned char)players[0].x;
+    nes_ram[0x0084u] = (unsigned char)players[0].y;
+    nes_ram[0x0394u] = 0u;
+}
+
 static void level_entry_draw_link(void)
 {
     s_link_frame = (u8)((nes_ram[0x03E4u] & 1u) ^
@@ -2375,6 +2406,8 @@ static void level_entry_tick(void)
     }
     if (s_lvl_phase == LVL_EXIT_LOAD) {
         /* Mode 2 (display off) + mode 3 submodes: back to the OW room. */
+        nes_ram[0x0012u] = 0x02u;
+        nes_ram[0x0013u] = 0u;
         render_display_enable(0u);
         roomrom_main_apply_warp_outcome(&s_lvl_out);
         s_underground_exit_type = 2u;           /* EndGameMode12 */
@@ -2387,6 +2420,12 @@ static void level_entry_tick(void)
         render_display_enable(1u);
         nes_ram[0x0012u] = 0x03u;
         nes_ram[0x0013u] = 0u;
+        /* T-140: run the NES frame work of modes 6/7/2/3-init the fast
+         * Genesis exit skipped, up to the NES curtain-start FrameCounter. */
+        while ((u8)(nes_ram[0x0015u] - s_lvl_exit_fc) < NES_LEVEL_EXIT_FC_STEPS) {
+            nes_ram[0x0015u] = (unsigned char)(nes_ram[0x0015u] + 1u);
+            nes_frame_timers_and_random();
+        }
         s_lvl_step = 0u;
         s_lvl_timer = 0u;
         s_lvl_phase = LVL_CURTAIN;
@@ -2395,23 +2434,8 @@ static void level_entry_tick(void)
     if (s_lvl_phase == LVL_STEP_OUT) {
         unsigned char cnt;
         if (s_lvl_init) {
-            /* InitMode_EnterRoom method 1 (Z_05.asm): X from
-             * LevelBlockAttrsA, Y row from LevelBlockAttrsF; 1-a (entered
-             * through a $24 opening): start $10 lower, stairs sound,
-             * facing down. */
-            unsigned char room = s_room_id;
-            unsigned char ty = (unsigned char)(((nes_ram[0x6AFEu + room] & 7u) << 4) + 0x4Du);
             s_lvl_init = 0u;
-            players[0].x = (short)(nes_ram[0x687Eu + room] & 0xF0u);
-            s_lvl_target_y = ty;
-            players[0].y = (short)(s_lvl_entrance_tile == 0x24u ? ty + 0x10 : ty);
-            players[0].face = LINK_FACE_DOWN;
-            s_link_dir = LINK_DIR_DOWN;
-            s_link_grid_offset = 0;
-            nes_ram[0x0098u] = 0x04u;
-            nes_ram[0x0070u] = (unsigned char)players[0].x;
-            nes_ram[0x0084u] = (unsigned char)players[0].y;
-            nes_ram[0x0394u] = 0u;
+            step_out_start_pos();
             if (s_lvl_entrance_tile == 0x24u) {
                 nes_ram[0x0603u] |= 0x08u;
                 mark_link_behind_bg();
@@ -4116,8 +4140,6 @@ void roomrom_debug_tick(void)
                     if (edge) {
                         s_uw_edge = edge;
                         moving_dir = LINK_DIR_NONE;
-                        /* The Genesis UW scroll still runs in Play mode. */
-                        nes_ram[0x0012u] = 0x05u;
                     }
                 } else if (moving_dir != LINK_DIR_NONE && s_link_grid_offset == 0) {
                     if (!link_walkable_at(players[0].x, players[0].y, moving_dir)) {
