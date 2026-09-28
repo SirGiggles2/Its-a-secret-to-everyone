@@ -166,6 +166,7 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 
 ## Handoff log (newest first)
 
+- 2026-09-27 Claude: T-141 fast test loop (suite 338 s -> ~70 s, fail-fast finds a route bug in ~5 s, NES goldens cached, one GATE line per preset). Then fixed every KEY failure it found: T-143 cave cloud/InitCave, T-140 level exit, T-144 hearts/rupees order, T-145 EndPrepareMode + dark-room catch-up, T-146 boulder timer, T-147 12 enemy drain bugs, T-148 q2_ow card, T-149 save mode. Suite t149a: 46/46 GATE PASS; t013_route (start -> Aquamentus room) equals NES every tick. Next: T-013 Aquamentus fight.
 **2026-09-27 · Claude** — T-012 DONE: controller-only OW route into L1 matches NES tick-for-tick (T-137 root causes: fast loads now replay the NES frame work, NES object init timing and $492 meaning, edge-spawn port, shoot-gate speed, leever init). Harness tick clock counts FrameCounter jumps. New rows T-138 (hurt flash colors), T-139 (tile object tick), T-140 (level-exit catch-up). Next: T-013 L1 → Aquamentus.
 
 **2026-09-26 · Claude** — T-125 DONE (no gameplay slowdown in the enemy sweep, Gleeok full speed, faster loads), T-134 DONE (cave entry black + one-frame cave, input ignored during stairs). OW column renderer now streams columns. Next: T-135 cave exit (NES mode $0A + method-1 step out), then T-136 tick-aligned lockstep.
