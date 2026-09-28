@@ -13,8 +13,8 @@
  * cart SRAM. File A bytes and profile side effects match the NES; the
  * A/B power-loss protocol is replaced by one atomic commit.
  *
- * DIVERGENCE (recorded, T-097): Sub2 returns to Play here, not to GameMode
- * 0 submode 1 as on the NES; the continue/save flow is rebuilt in T-097.
+ * T-149: Sub2 goes to GameMode 0 submode 1 as on the NES; the Genesis
+ * main loop then returns to its File Select.
  */
 
 #include "mode_save.h"
@@ -26,27 +26,31 @@
 #define MODE_SAVE_GAME_SUBMODE RAM(0x0013u)
 #define MODE_SAVE_CUR_SLOT     RAM(0x0016u)
 
-/* GameMode $05 = Play. Where a completed save returns to. */
-#define MODE_PLAY 0x05u
-
 /* Last save result, readable by probes and by any UI that wants to report
  * failure. 0 = no attempt yet, 1 = committed, 2 = refused (bad slot). */
 unsigned char g_mode_save_last_result = 0u;
 
+/* T-149: NES timing (save_roundtrip NES frames f130-f136, FrameCounter
+ * $AE-$B1): Sub0 (format file B + copy the profile) finishes on the
+ * first tick in mode $0D; Sub1 (validate B, CopyFileBToFileA) lags and
+ * finishes, with Sub2 (-> GameMode 0 submode 1), two ticks after Sub0.
+ * Rows after each tick: $0D/0, $0D/1, $00/1. */
+static unsigned char s_sub0_fc;
+
 void mode13_save_update(void)
 {
-    unsigned char slot = MODE_SAVE_CUR_SLOT;
-
-    (void)slot;
-    if (save_game_save_current()) {
-        g_mode_save_last_result = 1u;
-    } else {
-        /* Bad slot index. Do not silently pretend the game was saved:
-         * leave the marker so a probe or UI can tell the difference
-         * between "saved" and "refused". */
-        g_mode_save_last_result = 2u;
+    const unsigned char fc = RAM(0x0015u);
+    if (MODE_SAVE_GAME_SUBMODE == 0u) {
+        /* Sub0 + CopyFileBToFileA collapsed onto file A (T-100). */
+        g_mode_save_last_result = save_game_save_current() ? 1u : 2u;
+        MODE_SAVE_GAME_SUBMODE = 1u;
+        s_sub0_fc = fc;
+        return;
     }
-
-    MODE_SAVE_GAME_SUBMODE = 0u;
-    MODE_SAVE_GAME_MODE = MODE_PLAY;
+    if ((unsigned char)(fc - s_sub0_fc) < 2u) return;
+    /* UpdateModeDSave_Sub2: GameMode 0 submode 1 (the title's save
+     * validation, then the menu); the Genesis front end takes over there
+     * (a4_probe_main.c). */
+    MODE_SAVE_GAME_MODE = 0u;
+    MODE_SAVE_GAME_SUBMODE = 1u;
 }

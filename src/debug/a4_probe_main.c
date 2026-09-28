@@ -111,11 +111,9 @@ static void probe_check(u16 stage)
     probe_publish();
 }
 
-static void debug_enter_title(void)
+/* Front-end video layout (title and File Select). */
+static void frontend_video_layout(void)
 {
-    s_state = COMBINED_STATE_TITLE;
-    s_prev_joy = 0u;
-
     /* Match the native title boot layout from genesis_shell.asm. */
     VDP_CTRL_WORD = 0x8134u; /* display off, VBlank IRQ, DMA, M5 */
     VDP_CTRL_WORD = 0x8230u; /* Plane A @ $C000 */
@@ -128,6 +126,13 @@ static void debug_enter_title(void)
     VDP_CTRL_WORD = 0x8F02u; /* word auto-increment */
     render_mode_set_v32();
     render_window_v_set(0u);
+}
+
+static void debug_enter_title(void)
+{
+    s_state = COMBINED_STATE_TITLE;
+    s_prev_joy = 0u;
+    frontend_video_layout();
 
     DBG_SENTINEL(0x1Fu) = 0xA1u;
     DBG_SENTINEL(0x11u) = 0u;
@@ -330,6 +335,20 @@ int debug_main_after_a4(bool hardReset)
         {
             roomrom_debug_tick();
             ++s_frame;
+            /* T-149: NES UpdateModeDSave_Sub2 sets GameMode 0 submode 1:
+             * UpdateMode0Demo_Sub1 validates the save files, then the menu
+             * runs. Genesis: the same validation, then its File Select. */
+            if (RAM(0x0012u) == 0x00u && RAM(0x0013u) == 0x01u)
+            {
+                s_state = COMBINED_STATE_FS;
+                s_prev_joy = 0u;
+                frontend_video_layout();
+                render_display_enable(1);
+                save_game_boot();
+                fs_enter();
+                music_play(0x80);   /* FS shares the title song */
+                continue;
+            }
             if (enemy_loop_probe_is_armed())
             {
                 probe_check(4U);

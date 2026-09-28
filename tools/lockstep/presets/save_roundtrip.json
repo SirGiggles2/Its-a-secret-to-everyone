@@ -1,10 +1,35 @@
 {
-  "name": "save_roundtrip",
-  "file_name": "ZELDB",
-  "quest": 0,
-  "items": {"InvBombs": 5, "InvRupees": 42, "InvKeys": 2},
-  "world_flags": {"0x6F1": 128, "0x77F": 16},
-  "script": [[60, ""], [40, "L"], [30, ""], [20, ""]],
-  "stage_at": 130,
-  "stage": "wr(0x12, 0x0D)\nwr(0x13, 0x00)\nlog(string.format('save poke: slot=%02X hearts=%02X/%02X', rd(0x16), rd(0x66F), rd(0x670)))"
+ "name": "save_roundtrip",
+ "file_name": "ZELDB",
+ "quest": 0,
+ "items": {
+  "InvBombs": 5,
+  "InvRupees": 42,
+  "InvKeys": 2
+ },
+ "world_flags": {
+  "0x6F1": 128,
+  "0x77F": 16
+ },
+ "script": [
+  [
+   60,
+   ""
+  ],
+  [
+   40,
+   "L"
+  ],
+  [
+   30,
+   ""
+  ],
+  [
+   3,
+   ""
+  ]
+ ],
+ "stage_at": 130,
+ "stage": "wr(0x12, 0x0D)\nwr(0x13, 0x00)\nlog(string.format('save poke: slot=%02X hearts=%02X/%02X', rd(0x16), rd(0x66F), rd(0x670)))",
+ "_note": "T-149: 133 ticks (rows 0-132: save submodes $0D/0 and $0D/1). Tick 133 hands off at GameMode 0 submode 1 to the File Select, a deliberate custom front end that does not run the NES FrameCounter."
 }
