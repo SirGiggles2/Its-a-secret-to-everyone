@@ -65,8 +65,7 @@ void c_gel_check_collisions(unsigned int slot)
  * NES sequence (no ObjWantsToShoot gate, unlike _ShootIfWanted):
  *   1. FindEmptyMonsterSlot — scan Y=$0B downto $01 for ObjType==0.
  *      None found -> return C=0.
- *   2. shot_type read from caller cell (drained convention:
- *      OBJ(NES_OBJ_TYPE, slot) — caller writes type before calling).
+ *   2. shot_type read from [00] (NES STA $00 before JSR ShootLimited).
  *      If shot_type >= $53 (true projectile, not enemy clone):
  *        if ActiveMonsterShots >= 4 -> return C=0.
  *        else INC ActiveMonsterShots.
@@ -76,7 +75,7 @@ void c_gel_check_collisions(unsigned int slot)
  *   5. Return C=1, slot=empty.
  *
  * Caller note (enrt_create_child_gel @ enemy_common_runtime.c:111):
- * sets OBJ(NES_OBJ_TYPE, slot) = 20 (Gel) before calling, then reads
+ * sets [00] = $14 (Child Gel) before calling, then reads
  * back the new child slot from the low byte of the return value to
  * patch in inherited grid offset + opposing direction. */
 unsigned int c_shoot_limited(unsigned int slot)
@@ -92,7 +91,9 @@ unsigned int c_shoot_limited(unsigned int slot)
     }
     if (empty == 0u) return 0u;
 
-    unsigned char shot_type = (unsigned char)ENEMY_TYPE(slot);
+    /* NES ShootLimited reads the shot type from [00] (T-147: read the
+     * caller's ObjType, so a red wizzrobe cloned itself, t129 t4829). */
+    unsigned char shot_type = (unsigned char)RAM(0x0000u);
     if (shot_type >= 0x53u) {
         if (ENEMY_SHOT_COUNT >= 0x04u) return 0u;
         ENEMY_SHOT_COUNT = (unsigned char)(ENEMY_SHOT_COUNT + 1u);

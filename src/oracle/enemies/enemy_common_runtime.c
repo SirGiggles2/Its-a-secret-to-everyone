@@ -109,8 +109,9 @@ static void enrt_update_zol_state_2_split(unsigned int slot) {
  * inherits the parent's grid offset. Returns the new child slot.
  */
 static unsigned int enrt_create_child_gel(unsigned int slot) {
-    /* Set the shot type to 20 (Gel) at slot's NES_OBJ_TYPE cell. */
-    OBJ(NES_OBJ_TYPE, slot) = 20;
+    /* NES LDA #$14 / STA $00: the shot type goes in [00]; the parent
+     * Zol keeps its own type (T-147). */
+    RAM(0x0000u) = 0x14u;
     unsigned int result = c_shoot_limited(slot);
     unsigned int child = result & 0xFFu;
 
