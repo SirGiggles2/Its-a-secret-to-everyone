@@ -119,7 +119,10 @@ unsigned char collision_get_collidable_tile(unsigned int hotspot_offset,
         (unsigned short)(((unsigned short)k_play_area_column_addrs[col_idx]) |
                          ((unsigned short)k_play_area_column_addrs[col_idx + 1u] << 8));
 
-    const unsigned char row_idx = (unsigned char)((tile_y - 0x40u) >> 3);
+    /* NES SBC #$40 wraps at 8 bits before the LSRs (T-147: a red leever
+     * placed at Y $FD -> adjusted Y $08 -> row $19, the next column's row
+     * 3; the int subtraction gave row $F9). */
+    const unsigned char row_idx = (unsigned char)((unsigned char)(tile_y - 0x40u) >> 3);
 
     unsigned char tile = (unsigned char)nes_ram[col_addr + row_idx];
     ENEMY_COLLIDED_TILE(slot) = tile;
