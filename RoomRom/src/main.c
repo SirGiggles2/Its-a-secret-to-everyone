@@ -3619,9 +3619,15 @@ void roomrom_debug_tick(void)
                     roomrom_combat_end_move_and_animate();
                 } else if (r == OW_SCROLL_ENTER) {
                     if (!s_lvl_enter_only) scroll_finalize_room();
-                    /* InitMode_EnterRoom's DrawSpritesBetweenRooms draws
-                     * the status bar items (level entry: from mode 4). */
-                    else roomrom_hud_b_item_update();
+                    /* Mode 4 InitMode_EnterRoom sets up objects again after
+                     * mode 3 laid out the room. Continue can re-enter the
+                     * same room, so bypass the scroll duplicate guard. */
+                    else {
+                        roomrom_hud_b_item_update();
+                        enemy_loop_room_reenter(s_room_id, (unsigned char)s_scene,
+                            s_scene == SCENE_UW ? roomrom_uw_room_render_get_level() : 0u,
+                            s_scene == SCENE_UW ? roomrom_uw_room_render_get_quest() : 0u);
+                    }
                     if (s_scene == SCENE_UW) {
                         ow_scroll_enter_room_uw(&players[0].x);
                         s_link_grid_offset = (signed char)nes_ram[0x0394u];

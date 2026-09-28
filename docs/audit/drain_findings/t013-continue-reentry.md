@@ -1,0 +1,11 @@
+# T-013 Continue/Retry room re-entry (2026-09-28)
+
+NES source: `reference/aldonunez/Z_05.asm` `InitMode_EnterRoom` (lines 1543, 1831) calls `RunCrossRoomTasksAndBeginUpdateMode_EnterPlayModes`; `Z_07.asm` lines 1554–1583 records the room after `CreateRoomObjects`. `InitObject` seeds the slot countdown later (Z_07 lines 5543–5557). Drained/native implementation: `enemy_loop_room_init` and `room_record_history`; stance EXTEND.
+
+Focused reproduction: `tools/lockstep/presets/t013_continue.json`, 410 ticks, on the shared dirty T-013 work before this repair. At tick 300 mode 4, NES room-history index `$0620` became 2 and second entry `$0622` became `$77`; Genesis stayed 1/0. The native initializer treated the Continue re-entry into the same room as a duplicate scroll and skipped the room-object reset/history write. Retrying the initializer without bypassing its guard did not change either cell.
+
+Repair: mode-4 Continue entry calls `enemy_loop_room_reenter`, which invokes the common initializer while bypassing only its same-room guard. `clear_slot_scratch` now leaves ObjTimer zero; the existing InitObject preamble seeds the slot countdown when its cloud-spawn condition applies. This avoids countdowns on empty slots during room entry.
+
+Build: `Debug.bat` succeeded; `builds/Debug.md` SHA-256 `c5928a8ff47318ad0b74be1620c16e6a03fae641426e5479b067aaae09e478ea`. Local reports `builds/reports/lockstep/t013_continue_astra/`, `t013_retry_astra/`, `t050_layout_plain_astra/`, `t132_uw_exit_astra/` use separate names to preserve Claude's reports. Continue KEY 410/410; Retry KEY 264/264; room-entry consumer KEY 238/238; UW exit KEY 1042/1042. At Continue tick 300, `$0028–$002A`, `$0620–$0622`, `$034D`, `$04CE` now equal the NES. The test harness marks GATE FAIL because these new diagnostic presets have no full-RAM baseline and retain pre-existing initialization/presentation residue. This is focused behavior evidence, not connected save/reload acceptance.
+
+Remaining: T-013 connected death → save/continue/retry → real SRAM close/reopen from controller play, then Aquamentus fight/reward/departure and any named affected consumers. Claude's uncommitted mode-3 changes and `t013_continue`/`t013_retry` presets remain in the working tree; this commit stages only Astra's main.c hunk plus the enemy-loop files and this evidence.

@@ -48,6 +48,9 @@ extern const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX];
  * state, and dispatches enemy_init_fns[ENEMY_TYPE(slot)] when set. */
 void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id,
                           unsigned char level, unsigned char quest);
+/* Genuine mode-4 entry into an identity already seen by native loading. */
+void enemy_loop_room_reenter(unsigned char room_id, unsigned char scene_id,
+                             unsigned char level, unsigned char quest);
 
 /* Empty-clear every enemy slot (1..11) WITHOUT respawning. Used by
  * cave_init so caves start on a NES-fresh object page (no surviving OW

@@ -1133,7 +1133,9 @@ static void clear_slot_scratch(unsigned int slot)
     ENEMY_STUN_TIMER(slot)     = 0u;          /* Z_05.asm:1693 ObjStunTimer */
     ENEMY_OBJ_SHOVE_DIR(slot)  = 0u;          /* ResetShoveInfo */
     OBJ(0x00D3u, slot)         = 0u;          /* ObjShoveDistance */
-    ENEMY_MOVE_TIMER(slot)     = (unsigned char)slot;  /* InitObject preamble */
+    /* InitMode_EnterRoom leaves ObjTimer clear. InitObject seeds the slot
+     * countdown later, only for cloud-spawn types (Z_07.asm:5543-5557). */
+    ENEMY_MOVE_TIMER(slot)     = 0u;
     ENEMY_ALIVE_FLAG(slot)     = 0xFFu;       /* ObjUninitialized: InitMode_EnterRoom DEC from 0 */
 }
 
@@ -1219,15 +1221,16 @@ static void ow_tile_object_room_setup(unsigned char scene_id, unsigned char leve
     OBJ(NES_OBJ_POS_FRAC, 11u) = 0u;
 }
 
-void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id,
-                          unsigned char level, unsigned char quest)
+static void enemy_loop_room_init_impl(unsigned char room_id, unsigned char scene_id,
+                                      unsigned char level, unsigned char quest,
+                                      unsigned char force_entry)
 {
     unsigned int slot;
     static unsigned char s_last_room_id  = 0xFFu;
     static unsigned char s_last_scene_id = 0xFFu;
     static unsigned char s_last_level = 0xFFu;
     static unsigned char s_last_quest = 0xFFu;
-    unsigned char same_room = (s_last_room_id == room_id &&
+    unsigned char same_room = (!force_entry && s_last_room_id == room_id &&
                                s_last_scene_id == scene_id &&
                                s_last_level == level &&
                                s_last_quest == quest);
@@ -1380,6 +1383,21 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id,
         ENEMY_ALIVE_FLAG(slot) = 0xFFu;
     }
     ow_tile_object_room_setup(scene_id, level, room_id);
+}
+
+void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id,
+                          unsigned char level, unsigned char quest)
+{
+    enemy_loop_room_init_impl(room_id, scene_id, level, quest, 0u);
+}
+
+/* NES source: Z_05.asm InitMode_EnterRoom, reached from mode 4 after a
+ * mode 3 Continue; drained C: enemy_loop_room_init_impl; coverage: room
+ * re-entry; stance: EXTEND. Bypass only the duplicate-scroll guard. */
+void enemy_loop_room_reenter(unsigned char room_id, unsigned char scene_id,
+                             unsigned char level, unsigned char quest)
+{
+    enemy_loop_room_init_impl(room_id, scene_id, level, quest, 1u);
 }
 
 static void loop_object_wrapper(unsigned int slot)
