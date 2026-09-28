@@ -117,9 +117,9 @@ static const unsigned char k_rw_dirs[4] = {
 #define WIZ_LINK_X            RAM(0x0070u)
 #define WIZ_LINK_Y            RAM(0x0084u)
 #define WIZ_FRAME_COUNTER     RAM(0x0015u)
-#define WIZ_INV_CLOCK         RAM(0x0656u)
+#define WIZ_INV_CLOCK         RAM(0x066Cu)  /* InvClock (T-147: was $0656 SelectedItemSlot) */
 #define WIZ_FIRST_UNWALK      RAM(0x034Au)
-#define WIZ_OBJ_COLLIDED      OBJ(0x040Cu, (s))
+/* (unused) */
 #define WIZ_RANDOM(s)         OBJ(0x0018u, (s))  /* Random+slot */
 #define WIZ_RANDOM_BASE       RAM(0x0018u)
 
