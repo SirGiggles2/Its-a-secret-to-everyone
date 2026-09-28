@@ -3289,6 +3289,13 @@ void roomrom_debug_tick(void)
                     anims = upd ? 1u : (sub == 1u ? 2u : 0u);
                 (void)sub;
                 r = ow_scroll_tick(&players[0].x, &players[0].y);
+                {
+                    u8 n = ow_scroll_take_catch_up();   /* T-145 */
+                    while (n--) {
+                        nes_ram[0x0015u] = (unsigned char)(nes_ram[0x0015u] + 1u);
+                        nes_frame_timers_and_random();
+                    }
+                }
                 ow_done = (u8)(r == OW_SCROLL_PLAY);
                 while (anims--) roomrom_combat_end_move_and_animate();
                 if (r == OW_SCROLL_WALK) {

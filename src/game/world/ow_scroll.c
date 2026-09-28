@@ -36,6 +36,14 @@ static unsigned char source_room;
 static unsigned char column;
 static unsigned short pixels;
 static unsigned char link_hidden;
+static unsigned char s_catch_up;   /* NES frames to replay (T-145) */
+
+unsigned char ow_scroll_take_catch_up(void)
+{
+    unsigned char n = s_catch_up;
+    s_catch_up = 0u;
+    return n;
+}
 
 unsigned char ow_scroll_edge(short x, short y, unsigned char dir,
                              signed char grid, unsigned char room)
@@ -233,7 +241,15 @@ unsigned char ow_scroll_tick(short *x, short *y)
         if (SUB == 1u) {
             /* InitMode4 Sub1 re-copies the play area (22 rows) after a
              * scroll into a dark room; the Genesis plane already shows
-             * the room, so it takes one frame here (faster than NES). */
+             * the room, so it takes one frame here (faster than NES).
+             * T-145: the NES spends 22 frames (one row each, CurRow 0 ->
+             * $16); the caller runs the other 21 frames' NES frame work
+             * (ow_scroll_take_catch_up), so FrameCounter/Random/timers
+             * match when play resumes (t111 room $66: 21 steps behind). */
+            if (ROW < 0x80u) {
+                s_catch_up = 21u;
+                ROW = 0x16u;
+            }
             SUB = 2u;
         } else if (SUB == 2u) {
             /* InitMode4 Sub2: a light room entered from an unlit dark room
