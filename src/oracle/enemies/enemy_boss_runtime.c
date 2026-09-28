@@ -636,8 +636,11 @@ static void enrt_digdogger_check_big_collisions_and_draw(unsigned int slot) {
     ENEMY_DIGDOGGER_CUR_PART(slot) = 0;
     for (part = 0; part < 4u; ++part) {
         unsigned char idx = ENEMY_DIGDOGGER_CUR_PART(slot);
-        ENEMY_X(slot) = (unsigned char)(saved_x + kDigdoggerCornerOffsetsX[idx]);
-        ENEMY_Y(slot) = (unsigned char)(saved_y + kDigdoggerCornerOffsetsY[idx]);
+        /* NES adds each offset to the current ObjX/ObjY (cumulative):
+         * corners (0,0) (+10,+10) (+10,0) (0,+10) (T-147: offsets were
+         * applied to the saved position, t129 t3463 bounce a tick early). */
+        ENEMY_X(slot) = (unsigned char)(ENEMY_X(slot) + kDigdoggerCornerOffsetsX[idx]);
+        ENEMY_Y(slot) = (unsigned char)(ENEMY_Y(slot) + kDigdoggerCornerOffsetsY[idx]);
         c_bound_flyer(slot);
         c_check_monster_collisions(slot);
         ENEMY_DIGDOGGER_CUR_PART(slot) = (unsigned char)(idx + 1u);
