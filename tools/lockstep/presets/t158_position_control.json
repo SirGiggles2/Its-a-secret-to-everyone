@@ -1,0 +1,11 @@
+{
+  "name": "t158_position_control",
+  "file_name": "LINK",
+  "quest": 0,
+  "items": {},
+  "clock": "tick",
+  "script": [[60, ""], [20, ""]],
+  "stages": [
+    [60, "if sys=='NES' then event.on_bus_write(function(a,v) local r=emu.getregisters(); log(string.format('ObjY write PC=%04X value=%02X',r.PC or r['6502 PC'] or 0,v)) end,0x0084,'System Bus') end\nwr(0x70,0xC0); wr(0x84,0x90); wr(0x98,8); wr(0x394,0); gen_link_pos(0xC0,0x90,8); log('position control without item')"]
+  ]
+}
