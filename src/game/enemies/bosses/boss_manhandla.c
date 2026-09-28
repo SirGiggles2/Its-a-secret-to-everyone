@@ -51,7 +51,9 @@ void c_turn_randomly_dir8(unsigned int slot)
         } else if (rnd >= 0x50u) {
             idx = (idx + 1u) & 7u;       /* turn right */
         } else {
-            idx = (idx + 6u) & 7u;       /* turn left == Y-2 mod 8 */
+            /* NES INY, then DEY DEY: net Y-1 (T-147: was Y-2; t129
+             * Digdogger turned $02 -> $04 where NES turned to $06). */
+            idx = (idx + 7u) & 7u;       /* turn left == Y-1 mod 8 */
         }
     }
     ENEMY_DIR(slot) = Directions8[idx];
