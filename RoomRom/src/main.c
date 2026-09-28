@@ -2825,7 +2825,6 @@ static unsigned char play_update_objects(void)
     roomrom_bomb_update();
     roomrom_candle_fire_update();
     roomrom_link_damage_tick((unsigned char)s_frame_counter);
-    inventory_rupee_tick((unsigned char)s_frame_counter);
     /* Tier 2: drive Power Triforce fanfare. core_take_power_triforce
      * (item_dispatch.c:48) sets POWER_TRIFORCE_FANFARE_FLAG +
      * CURTAIN_TIMER on pickup; this check ticks the curtain +
@@ -2960,6 +2959,7 @@ static unsigned char play_update_objects(void)
             nes_ram[0x0012u] = 0x10u;         /* T-011: NES mode $10 stairs */
             nes_ram[0x0013u] = 0u;
             cave_fade_begin_enter(cid);
+            inventory_rupee_tick(nes_ram[0x0015u]); /* @FinishUpdatePlay */
             return 1u;
         }
     }
@@ -3026,6 +3026,10 @@ static unsigned char play_update_objects(void)
             enemy_render_weapon_reset(0x13u);
         }
     }
+    /* NES UpdateMode5Play ends in UpdateHeartsAndRupees (Z_07.asm:2033),
+     * after the object loop and TryTakeRoomItem: a rupee picked up this
+     * frame is counted this frame (t013_route t6773). */
+    inventory_rupee_tick(nes_ram[0x0015u]);
     return 0u;
 }
 
@@ -4246,7 +4250,13 @@ void roomrom_debug_tick(void)
                 if (nes_ram[0x0012u] == gm && !cave_fade_is_active() &&
                     s_lvl_phase == LVL_NONE &&
                     !roomrom_world_transition_is_active() &&
-                    s_scroll_state == SCROLL_NONE && play_update_objects()) return;
+                    s_scroll_state == SCROLL_NONE) {
+                    if (play_update_objects()) return;
+                } else {
+                    /* A mode change in UpdatePlayer skips the objects but
+                     * @FinishUpdatePlay still runs UpdateHeartsAndRupees. */
+                    inventory_rupee_tick(nes_ram[0x0015u]);
+                }
             }
             play_finish();
         }
