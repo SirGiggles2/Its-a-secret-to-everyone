@@ -1,9 +1,10 @@
 {
  "name": "t013_save",
- "_note": "T-013 P2.6: pause (Start), controller 2 Up+A -> GameMode 8 (Continue/Save/Retry), Select -> Save, Start -> GameMode $0D save -> GameMode 0 submode 1. Tick clock: the steps land in non-play modes.",
+ "_note": "T-013 P2.6: pause (Start), controller 2 Up+A -> GameMode 8 (t132), Select -> SAVE (t178), Start (t189) -> flash $40 frames -> GameMode $0D (t253) -> save -> GameMode 0 submode 1 (t257). Tick clock: the steps land in non-play modes. 257 ticks (rows 0-256): tick 257 hands off at GameMode 0 submode 1 to the Genesis File Select, a deliberate custom front end that runs no NES FrameCounter. The stage at t100 (pause menu open, play frozen) changes InvRupees and one OW world flag the same way on both consoles, so the save must write them: tools/lockstep/save_compare.py compares the saved file byte for byte (NES Battery RAM vs Genesis SRAM).",
  "file_name": "LINK",
  "quest": 0,
  "items": {"InvBombs": 5, "InvRupees": 42, "InvKeys": 2},
  "world_flags": {"0x6F1": 128, "0x77F": 16},
- "script": [[60, ""], [1, "S"], [70, ""], [6, "|UA"], [40, ""], [1, "s"], [10, ""], [1, "S"], [120, ""]]
+ "script": [[60, ""], [1, "S"], [70, ""], [6, "|UA"], [40, ""], [1, "s"], [10, ""], [1, "S"], [68, ""]],
+ "stages": [[100, "wr(0x66D, 0x63)\nwr(0x690, 0x80)\nlog(string.format('save stage: rupees=%02X flag690=%02X', rd(0x66D), rd(0x690)))"]]
 }

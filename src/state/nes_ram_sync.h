@@ -53,6 +53,12 @@ extern "C" {
  */
 void nes_ram_sync_input(u16 held, u16 edge_pressed);
 
+/* T-013: controller 2 (NES ReadInputs reads both pads every NMI):
+ *   nes_ram[$00F9] = ButtonsPressed+1, nes_ram[$00FB] = ButtonsDown+1.
+ * Same bit layout; Genesis C = Select. Pad 2 Up+A in the pause menu is
+ * the NES save / continue menu (UpdateMenuActive, Z_05.asm). */
+void nes_ram_sync_input2(u16 held, u16 edge_pressed);
+
 /* T1.2 — pull live heart cells from nes_ram[$066F/$0670] back into
  * g_inventory. nes_ram is the canonical store under drained combat
  * (link_collision_link_be_harmed writes LINK_HEARTS = RAM($066F) on

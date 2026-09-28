@@ -1,183 +1,167 @@
-/* Phase 9.7 — Mode 8 ContinueQuestion native rewrite.
+/* mode_continue_question.c — GameMode 8 (CONTINUE / SAVE / RETRY).
  *
- * NES source: reference/aldonunez/Z_05.asm:2207-2306
- *             UpdateMode8ContinueQuestion_Full.
+ * NES source: reference/aldonunez/Z_05.asm InitMode8 (1374),
+ * UpdateMode8ContinueQuestion_Full (2207) with Mode8BaseSpriteValues /
+ * Mode8SpriteYs / Mode8SelectionToMode / Mode8FlashTransferRecord /
+ * Mode8FlashAttrsAddrLo (2192-2205); Z_06.asm Mode8TextTileBuffer (745);
+ * Z_07.asm ResetPlayerState (1447), EndGameMode (1683),
+ * PatchAndCueLevelPalettesTransferAndAdvanceSubmode (1423),
+ * ClearRoomHistory (1387); Z_01.asm SilenceAllSound (3259).
+ * Reached from UpdateMenuActive (pad 2 Up+A, RoomRom/src/main.c) and from
+ * mode $11 death.
+ * Drained C: room_patch_and_cue_level_palettes_transfer and
+ * room_clear_room_history (src/game/room/room_dispatch.c).
+ * Coverage: FULL. Stance: REPLACE (T-013 P2.6). The previous scaffold used
+ * wrong cells (ButtonsPressed $F7, ObjTimer+1 $30, Tune0Request $89,
+ * DynTileBuf $0500), had no InitMode8 and empty ResetPlayerState /
+ * EndGameMode / SilenceAllSound stubs. Evidence: t013_save NES rows
+ * t131-t253 (tools/lockstep/presets/t013_save.json).
  *
- * Drained C: NONE. tools/audit/drain_coverage.json has no candidate
- * row for Mode 8. This file is the GREENFIELD native transcription
- * per Drain Rule D1 (NES asm wins ties — full per-line port below).
- *
- * Stance: REPLACE — verbatim per-line transcription of the NES asm
- * body. Touches the same RAM cells (GameSubmode $13, ObjTimer+1 $30,
- * Sprites OAM mirror, HeartValues, HeartPartial, GameMode,
- * IsUpdatingMode, DynTileBuf) as the transpiled equivalent that
- * lives at src/zelda_translated/z_05.asm.
- *
- * State machine (mirrors NES asm):
- *   Entry: ASL GameSubmode. Carry set (high bit set) -> animating
- *     selection. Carry clear -> input poll.
- *   Input poll:
- *     - Start pressed: ORA #$80 into GameSubmode (mark animating),
- *       ObjTimer+1 = $40 (flash 64 frames).
- *     - Select pressed: Tune0Request = 1 (rupee sound), GameSubmode
- *       cycles 0->1->2->0.
- *     - Else: redraw cursor sprite.
- *   Animate:
- *     - ObjTimer+1 = 0: handle activated; reset Link state, set
- *       GameMode per selection table, restore 3 hearts.
- *     - Else: flash NT attribute every 4 frames.
- *
- * Selection table (Mode8SelectionToMode):
- *   submode 0 = $03 Continue
- *   submode 1 = $0D Save
- *   submode 2 = $00 Retry  -> retry path also INC IsUpdatingMode
+ * The Genesis screen (blank, text, cursor, flash) is drawn by
+ * RoomRom/src/main.c hooks; this file only touches NES RAM and calls them.
  */
 
 #include "platform_abi.h"
-#include "../../state/inventory.h"
+#include "mode_continue_question.h"
+#include "../room/room_dispatch.h"   /* room_patch_and_cue_level_palettes_transfer,
+                                        room_clear_room_history */
 
-/* NES RAM cells (per reference/aldonunez/Variables.inc + CommonVars.inc). */
-#define MODE8_GAME_SUBMODE      RAM(0x0013u)
-#define MODE8_OBJ_TIMER_1       RAM(0x0030u)  /* ObjTimer[1] = Link's timer */
-#define MODE8_GAME_MODE         RAM(0x0012u)
-#define MODE8_IS_UPDATING_MODE  RAM(0x0011u)
-#define MODE8_TUNE0_REQUEST     RAM(0x0089u)
-#define MODE8_HEART_VALUES      RAM(0x066Fu)  /* HeartValues */
-#define MODE8_HEART_PARTIAL     RAM(0x0670u)  /* HeartPartial */
+/* NES Variables.inc. */
+#define M8_IS_UPDATING_MODE   RAM(0x0011u)
+#define M8_GAME_MODE          RAM(0x0012u)
+#define M8_GAME_SUBMODE       RAM(0x0013u)
+#define M8_TILE_BUF_SELECTOR  RAM(0x0014u)
+#define M8_OBJ_TIMER_1        RAM(0x0029u)   /* ObjTimer+1 */
+#define M8_UNDERGROUND_EXIT   RAM(0x005Au)
+#define M8_OBJ_STATE          RAM(0x00ACu)   /* ObjState (Link) */
+#define M8_BUTTONS_PRESSED    RAM(0x00F8u)
+#define M8_EFFECT_REQUEST     RAM(0x0603u)
+#define M8_TUNE0_REQUEST      RAM(0x0604u)
+#define M8_TUNE0              RAM(0x0605u)
+#define M8_TUNE1              RAM(0x0607u)
+#define M8_INV_CLOCK          RAM(0x066Cu)
+#define M8_HEART_VALUES       RAM(0x066Fu)
+#define M8_HEART_PARTIAL      RAM(0x0670u)
+#define M8_SPRITES            0x0200u        /* Sprites (OAM shadow) */
+#define M8_DYN_TILE_BUF       0x0302u        /* DynTileBuf */
 
-/* OAM mirror — first sprite slot (selection cursor sprite). NES OAM
- * lives at $0200..$02FF; Sprites+0 = Y, Sprites+1 = tile, Sprites+2
- * = attr, Sprites+3 = X. */
-#define MODE8_SPRITE_Y          RAM(0x0200u)
-#define MODE8_SPRITE_TILE       RAM(0x0201u)
-#define MODE8_SPRITE_ATTR       RAM(0x0202u)
-#define MODE8_SPRITE_X          RAM(0x0203u)
+#define M8_BTN_SELECT 0x20u
+#define M8_BTN_START  0x10u
 
-/* DynTileBuf — dynamic VRAM-write queue at $0500 (NES). 5-byte
- * transfer records: { vram_addr_hi, vram_addr_lo, ?, fill_byte,
- * terminator $FF }. */
-#define MODE8_DYN_TILE_BUF(off) RAM((unsigned short)(0x0500u + (off)))
+static const unsigned char k_base_sprite_values[3] = { 0xF3u, 0x02u, 0x40u };
+static const unsigned char k_sprite_ys[3]          = { 0x4Fu, 0x67u, 0x7Fu };
+static const unsigned char k_selection_to_mode[3]  = { 0x03u, 0x0Du, 0x00u };
+static const unsigned char k_flash_record[5]       = { 0x23u, 0xD2u, 0x43u, 0x00u, 0xFFu };
+static const unsigned char k_flash_attrs_lo[3]     = { 0xD2u, 0xDAu, 0xE2u };
 
-/* NES Z_05.asm:2192-2206 static tables, verbatim. */
-static const unsigned char k_mode8_base_sprite_values[3] = {
-    0xF3u, 0x02u, 0x40u  /* tile, attr, X */
-};
-static const unsigned char k_mode8_sprite_ys[3] = {
-    0x4Fu, 0x67u, 0x7Fu  /* selection 0/1/2 cursor Y positions */
-};
-static const unsigned char k_mode8_selection_to_mode[3] = {
-    0x03u, 0x0Du, 0x00u  /* Continue / Save / Retry */
-};
-static const unsigned char k_mode8_flash_transfer_record[5] = {
-    0x23u, 0xD2u, 0x43u, 0x00u, 0xFFu  /* DynTileBuf header for NT-attr flash */
-};
-static const unsigned char k_mode8_flash_attrs_addr_lo[3] = {
-    0xD2u, 0xDAu, 0xE2u  /* per-selection NT-attr low-byte */
-};
+/* Mode8TextTileBuffer: attributes $23C0-$23FF = 0, then CONTINUE at NT
+ * $214A (row 10, col 10), SAVE at $21AA (row 13), RETRY at $220A (row 16). */
+static const unsigned char k_text_continue[8] = { 0x0Cu, 0x18u, 0x17u, 0x1Du, 0x12u, 0x17u, 0x1Eu, 0x0Eu };
+static const unsigned char k_text_save[4]     = { 0x1Cu, 0x0Au, 0x1Fu, 0x0Eu };
+static const unsigned char k_text_retry[5]    = { 0x1Bu, 0x0Eu, 0x1Du, 0x1Bu, 0x22u };
+static const unsigned char *const k_text[3]   = { k_text_continue, k_text_save, k_text_retry };
+static const unsigned char k_text_len[3]      = { 8u, 4u, 5u };
+static const unsigned char k_text_row[3]      = { 10u, 13u, 16u };
+#define M8_TEXT_COL 10u
 
-/* NES Z_05.asm:1378 ButtonsPressed bit layout:
- *   bit 7 = right, 6 = left, 5 = down, 4 = up,
- *   bit 3 = start, 2 = select, 1 = B, 0 = A.
- * Z_05.asm:2214 AND #$10 = Start; :2217 AND #$20 = Select.
- * Adapter must populate RAM($00F7) ButtonsPressed before this call. */
-#define MODE8_BUTTONS_PRESSED   RAM(0x00F7u)
-#define MODE8_BTN_START         0x10u
-#define MODE8_BTN_SELECT        0x20u
+/* Genesis presentation (RoomRom/src/main.c). */
+extern void roomrom_mode8_blank(void);    /* TurnOffVideoAndClearArtifacts */
+extern void roomrom_mode8_text(unsigned char nes_row, unsigned char nes_col,
+                               const unsigned char *tiles, unsigned char n,
+                               unsigned char subpal);
+extern void roomrom_mode8_cursor(void);   /* draws Sprites+0..3 */
+extern void roomrom_mode8_show(void);     /* display on */
 
-/* External — Phase 9.7 follow-up: ResetPlayerState, EndGameMode,
- * SilenceAllSound are NES routines not yet drained. Mode 8 calls
- * them at HandleActivated. Stubs here keep the link clean; real
- * drains land per their respective subsystem ports. */
-static void mode8_reset_player_state(void)  { /* stub: ResetPlayerState NES Z_07.asm */ }
-static void mode8_end_game_mode(void)       { /* stub: EndGameMode NES Z_07.asm */ }
-static void mode8_silence_all_sound(void)   { /* stub: SilenceAllSound NES Z_07.asm */ }
-
-/* ----- Sub-paths ----- */
-
-static void mode8_draw_cursor(void)
+/* The selection's text drawn with BG palette row 0 or 1 (the NES flashes
+ * the attribute bytes of its 4x4-tile blocks between $00 and $55). */
+static void draw_selection(unsigned char sel, unsigned char subpal)
 {
-    unsigned char submode = MODE8_GAME_SUBMODE & 0x03u;
-    /* NES :2230-2235 — copy 3 bytes (tile, attr, X) into Sprites+1..+3
-     * using NES "LDA Mode8BaseSpriteValues,Y / STA Sprites+1,Y / DEY /
-     * BPL :-" loop with Y starting at 2. */
-    MODE8_SPRITE_TILE = k_mode8_base_sprite_values[0];
-    MODE8_SPRITE_ATTR = k_mode8_base_sprite_values[1];
-    MODE8_SPRITE_X    = k_mode8_base_sprite_values[2];
-    /* NES :2238-2240 — set Y by submode. */
-    MODE8_SPRITE_Y = k_mode8_sprite_ys[submode];
+    roomrom_mode8_text(k_text_row[sel], M8_TEXT_COL, k_text[sel], k_text_len[sel], subpal);
 }
 
-static void mode8_activate_option(void)
+static void init_mode8(void)
 {
-    /* NES :2243-2249. */
-    MODE8_GAME_SUBMODE = (unsigned char)(MODE8_GAME_SUBMODE | 0x80u);
-    MODE8_OBJ_TIMER_1  = 0x40u;
-}
-
-static void mode8_animate_selection(void)
-{
-    unsigned char timer = MODE8_OBJ_TIMER_1;
-    unsigned char submode_index;
     unsigned char i;
-
-    /* NES :2252-2253. */
-    if (timer == 0u) {
-        /* @HandleActivated. */
-        MODE8_GAME_SUBMODE = (unsigned char)(MODE8_GAME_SUBMODE & 0x03u);
-        submode_index = MODE8_GAME_SUBMODE;
-        mode8_reset_player_state();
-        MODE8_GAME_MODE = k_mode8_selection_to_mode[submode_index];
-        /* NES :2293-2298 — heart restore. */
-        MODE8_HEART_VALUES  = (unsigned char)((MODE8_HEART_VALUES & 0xF0u) | 0x02u);
-        MODE8_HEART_PARTIAL = 0xFFu;
-        mode8_end_game_mode();
-        /* NES :2300-2304 — Retry path increments IsUpdatingMode. */
-        if (submode_index == 0x02u) {
-            MODE8_GAME_SUBMODE = (unsigned char)(submode_index - 1u);
-            MODE8_IS_UPDATING_MODE = (unsigned char)(MODE8_IS_UPDATING_MODE + 1u);
-        }
-        mode8_silence_all_sound();
+    if (M8_GAME_SUBMODE == 0u) {
+        M8_UNDERGROUND_EXIT = 0u;
+        roomrom_mode8_blank();
+        room_patch_and_cue_level_palettes_transfer();   /* $14 = $18, sub 1 */
+        room_clear_room_history();
         return;
     }
-
-    /* NES :2256-2261 — copy 5-byte flash transfer record to DynTileBuf. */
-    for (i = 0u; i < 5u; ++i) {
-        MODE8_DYN_TILE_BUF(i) = k_mode8_flash_transfer_record[i];
-    }
-    /* NES :2265-2269 — patch lo byte by selection. */
-    MODE8_DYN_TILE_BUF(1) = k_mode8_flash_attrs_addr_lo[MODE8_GAME_SUBMODE & 0x03u];
-    /* NES :2270-2278 — every 4 frames pick attr 0x00 vs 0x55. */
-    MODE8_DYN_TILE_BUF(3) = ((timer & 0x04u) != 0u) ? 0x55u : 0x00u;
+    /* Sub1: cue Mode8TextTileBuffer, BeginUpdateMode. */
+    M8_TILE_BUF_SELECTOR = 0x04u;
+    for (i = 0u; i < 3u; ++i) draw_selection(i, 0u);
+    roomrom_mode8_show();                        /* video back on */
+    M8_GAME_SUBMODE = 0u;
+    M8_IS_UPDATING_MODE = (unsigned char)(M8_IS_UPDATING_MODE + 1u);
 }
 
-/* ----- Entry ----- */
+static void draw_cursor(void)
+{
+    RAM(M8_SPRITES + 1u) = k_base_sprite_values[0];
+    RAM(M8_SPRITES + 2u) = k_base_sprite_values[1];
+    RAM(M8_SPRITES + 3u) = k_base_sprite_values[2];
+    RAM(M8_SPRITES + 0u) = k_sprite_ys[M8_GAME_SUBMODE];
+    roomrom_mode8_cursor();
+}
+
+static void handle_activated(void)
+{
+    unsigned char sel = (unsigned char)(M8_GAME_SUBMODE & 0x03u);
+    M8_GAME_SUBMODE = sel;
+    M8_OBJ_STATE = 0u;                           /* ResetPlayerState */
+    M8_INV_CLOCK = 0u;
+    M8_GAME_MODE = k_selection_to_mode[sel];
+    /* Start again with 3 full hearts. */
+    M8_HEART_VALUES = (unsigned char)((M8_HEART_VALUES & 0xF0u) | 0x02u);
+    M8_HEART_PARTIAL = 0xFFu;
+    M8_IS_UPDATING_MODE = 0u;                    /* EndGameMode */
+    M8_GAME_SUBMODE = 0u;
+    if (sel == 0x02u) {                          /* Retry: submode 1, updating */
+        M8_GAME_SUBMODE = 0x01u;
+        M8_IS_UPDATING_MODE = (unsigned char)(M8_IS_UPDATING_MODE + 1u);
+    }
+    M8_TUNE0_REQUEST = 0x80u;                    /* SilenceAllSound */
+    M8_EFFECT_REQUEST = 0x80u;
+    M8_TUNE0 = 0u;
+    M8_TUNE1 = 0u;
+}
+
+static void animate_selection(void)
+{
+    unsigned char i, sel, attr;
+    if (M8_OBJ_TIMER_1 == 0u) {
+        handle_activated();
+        return;
+    }
+    for (i = 0u; i < 5u; ++i) RAM(M8_DYN_TILE_BUF + i) = k_flash_record[i];
+    sel = (unsigned char)(M8_GAME_SUBMODE & 0x03u);
+    RAM(M8_DYN_TILE_BUF + 1u) = k_flash_attrs_lo[sel];
+    attr = (M8_OBJ_TIMER_1 & 0x04u) ? 0x55u : 0x00u;
+    RAM(M8_DYN_TILE_BUF + 3u) = attr;
+    draw_selection(sel, attr ? 1u : 0u);
+}
 
 void mode8_continue_question_update(void)
 {
-    unsigned char submode = MODE8_GAME_SUBMODE;
-    unsigned char buttons;
-
-    /* NES :2208-2212 — ASL GameSubmode; carry set = animating. */
-    if ((submode & 0x80u) != 0u) {
-        mode8_animate_selection();
+    if (M8_IS_UPDATING_MODE == 0u) {
+        init_mode8();
         return;
     }
-
-    buttons = MODE8_BUTTONS_PRESSED;
-
-    /* NES :2213-2215 — Start pressed -> activate. */
-    if ((buttons & MODE8_BTN_START) != 0u) {
-        mode8_activate_option();
+    if (M8_GAME_SUBMODE & 0x80u) {
+        animate_selection();
         return;
     }
-
-    /* NES :2216-2228 — Select pressed -> cycle submode 0->1->2->0. */
-    if ((buttons & MODE8_BTN_SELECT) != 0u) {
-        MODE8_TUNE0_REQUEST = 0x01u;
-        submode = (unsigned char)(submode + 1u);
-        if (submode == 0x03u) submode = 0x00u;
-        MODE8_GAME_SUBMODE = submode;
+    if (M8_BUTTONS_PRESSED & M8_BTN_START) {
+        M8_GAME_SUBMODE = (unsigned char)(M8_GAME_SUBMODE | 0x80u);
+        M8_OBJ_TIMER_1 = 0x40u;                  /* flash $40 frames */
+        return;
     }
-
-    mode8_draw_cursor();
+    if (M8_BUTTONS_PRESSED & M8_BTN_SELECT) {
+        M8_TUNE0_REQUEST = 0x01u;                /* rupee-taken blip */
+        M8_GAME_SUBMODE = (unsigned char)(M8_GAME_SUBMODE + 1u);
+        if (M8_GAME_SUBMODE == 0x03u) M8_GAME_SUBMODE = 0u;
+    }
+    draw_cursor();
 }

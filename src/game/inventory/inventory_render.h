@@ -29,6 +29,11 @@ unsigned char inventory_subscreen_is_active(void);
 /* Query: scroll-out finished (gameplay should resume + room reload). */
 unsigned char inventory_subscreen_scrolled_out(void);
 
+/* NES UpdateMenuActive state: menu fully down, taking input. */
+unsigned char inventory_subscreen_menu_active(void);
+/* Drop the subscreen at once (GameMode 8 from the menu, T-013). */
+void inventory_subscreen_abort(void);
+
 /* Phase 8: NES HUD B-item slot. Look up Genesis VRAM tile for given
  * cursor slot 0..8. Returns 0xFFFF if slot is unmapped (e.g. raft/ring
  * not extracted). Caller emits SAT entry at HUD B-box position. */

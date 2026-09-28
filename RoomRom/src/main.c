@@ -40,6 +40,9 @@
 #include "../../src/abi/audio_abi.h"                     /* Phase 8 W6/W7: audio_sfx_play */
 #include "../../src/game/world/transfer_buf_drain.h"     /* Plan v5b: TRANSFER_BUF -> CRAM bridge (unblocks Mode 11 palette cycle) */
 #include "../../src/game/world/mode_endlevel.h"             /* T-013: GameMode $12 */
+#include "../../src/game/world/mode_continue_question.h"    /* T-013: GameMode 8 */
+#include "../../src/game/world/mode_save.h"                 /* T-013: GameMode $0D */
+#include "roomrom_vram_map.h"                                /* ROOMROM_BG_TILE_BASE */
 #include "../../src/game/world/progress_dispatch.h"      /* Tier 2: triforce fanfare driver */
 #include "../../src/game/world/world_dispatch.h"     /* world_animate_world_fading */
 #include "../../src/game/dungeon/uw_dark.h"
@@ -2254,9 +2257,21 @@ static void level_hud_static_only(void)
  * button held across one is not a new press afterwards. ObjInputDir ($3F8)
  * is only set by mode 5 (T-013: $FA kept the last Up through the level
  * exit, t013_route t8465). */
+/* T-013: controller 2 -> ButtonsPressed+1 / ButtonsDown+1 ($F9/$FB), read
+ * with pad 1 every tick (NES ReadInputs). No A/B swap option on pad 2. */
+static u16 s_joy2_prev = 0u;
+static void nes_pad2_read(void)
+{
+    u16 joy = JOY_readJoypad(JOY_2);
+    u16 pressed = joy & ~s_joy2_prev;
+    s_joy2_prev = joy;
+    nes_ram_sync_input2(joy, pressed);
+}
+
 static void nes_pad_read_between_modes(void)
 {
     u16 joy = JOY_readJoypad(JOY_1);
+    nes_pad2_read();
     u16 pressed = joy & ~s_joy_prev;
     u8 input_dir = nes_ram[0x03F8u];
     s_joy_prev = joy;
@@ -2331,6 +2346,142 @@ void roomrom_mode12_exit(void)
     s_lvl_exit_steps = NES_MODE12_EXIT_FC_STEPS;
     s_lvl_exiting = 1u;
     s_lvl_phase = LVL_EXIT_LOAD;
+}
+
+/* T-013 P2.6: GameMode 8 (src/game/world/mode_continue_question.c) and
+ * $0D screen. NES TurnOffVideoAndClearArtifacts hides every sprite and
+ * fills both name tables with blank tiles, status bar included. Genesis:
+ * HUD window off, plane rows 0-31 blank, scroll 0 (so NES name-table row r
+ * is plane row r - 1: the Genesis frame is the NES frame without its top 8
+ * lines), every SAT entry parked off screen (links kept). */
+extern const unsigned short bg_sparse_tile_lut[256][4];
+
+void roomrom_mode8_blank(void)
+{
+    u16 row;
+    u8 i;
+    /* TurnOffAllVideo: with the display off the plane fill runs at full
+     * VRAM speed (with it on, the fill spilled into the next frame: a lag
+     * frame that put the tick's row a tick late, t013_save t133/t254). The
+     * display comes back on in the same tick (SGDK's VBlank wait needs
+     * it); the screen is blank by then. */
+    render_display_enable(0u);
+    VDP_setWindowOnTop(0u);
+    for (row = 0u; row < 32u; ++row) render_plane_fill_row(0u, 0u, row, 64u, 0u);
+    render_display_enable(1u);
+    s_scroll_hold = 0u;
+    VDP_setHorizontalScrollVSync(BG_A, 0);
+    VDP_setVerticalScrollVSync(BG_A, 0);
+    VDP_setHorizontalScrollVSync(BG_B, 0);
+    VDP_setVerticalScrollVSync(BG_B, 0);
+    for (i = 0u; i < 80u; ++i) vdpSpriteCache[i].y = 0;
+    VDP_updateSprites(80u, DMA_QUEUE);
+}
+
+void roomrom_mode8_show(void)
+{
+    render_display_enable(1u);
+}
+
+/* NES name-table text (screen rows) with BG palette row subpal. */
+void roomrom_mode8_text(unsigned char nes_row, unsigned char nes_col,
+                        const unsigned char *tiles, unsigned char n,
+                        unsigned char subpal)
+{
+    u8 i;
+    for (i = 0u; i < n; ++i) {
+        u16 s = bg_sparse_tile_lut[tiles[i]][subpal & 3u];
+        render_set_plane_a_word((u16)(nes_col + i), (u16)(nes_row - 1u),
+                                s == 0xFFFFu ? 0u : (u16)(ROOMROM_BG_TILE_BASE + s));
+    }
+}
+
+/* Sprites+0..3 ($200-$203) as the Genesis sprite pair in Link's slots
+ * (hidden in mode 8). NES 8x16: an odd tile id takes pattern table $1000
+ * (the background tiles), top (id & $FE) over bottom (id | 1); the BG tile
+ * copy for sprite palette row (attr & 3) under RENDER_PAL1 (NES sprite
+ * palettes). NES sprite Y + 1 is the first line; Genesis line = NES - 8. */
+void roomrom_mode8_cursor(void)
+{
+    u8 y = nes_ram[0x0200u], t = nes_ram[0x0201u], a = nes_ram[0x0202u];
+    u8 x = nes_ram[0x0203u];
+    u8 sp = (u8)(a & 3u);
+    u16 top = bg_sparse_tile_lut[t & 0xFEu][sp];
+    u16 bot = bg_sparse_tile_lut[t | 1u][sp];
+    VDPSprite *s0 = &vdpSpriteCache[ROOMROM_SPRITE_SLOT_LINK];
+    VDPSprite *s1 = &vdpSpriteCache[ROOMROM_SPRITE_SLOT_LINK_R];
+    s0->y = (s16)(y + 1 - 8 + 0x80);
+    s1->y = (s16)(y + 1 - 8 + 8 + 0x80);
+    s0->x = s1->x = (s16)(x + 0x80);
+    s0->size = s1->size = SPRITE_SIZE(1, 1);
+    /* The planes are low priority: a priority-0 sprite shows over them as
+     * the NES front sprite does (the mode 8 cursor, attr 2). */
+    s0->attribut = RENDER_TILE_ATTR_FULL(RENDER_PAL1, 0,
+                                         (a & 0x80u) ? 1 : 0, (a & 0x40u) ? 1 : 0,
+                                         top == 0xFFFFu ? 0u : ROOMROM_BG_TILE_BASE + top);
+    s1->attribut = RENDER_TILE_ATTR_FULL(RENDER_PAL1, 0,
+                                         (a & 0x80u) ? 1 : 0, (a & 0x40u) ? 1 : 0,
+                                         bot == 0xFFFFu ? 0u : ROOMROM_BG_TILE_BASE + bot);
+    VDP_updateSprites(80u, DMA_QUEUE);
+}
+
+/* T-013 P2.6: mode 8 CONTINUE -> GameMode 3 (Z_07.asm InitMode3 Sub0-8):
+ * ClearRoomHistory; Sub1 room = the level's StartRoomId in a dungeon, else
+ * CaveSourceRoomId when valid, else StartRoomId (room_init_mode3_sub1);
+ * Sub2-7 palettes, attributes, status bar, map, "LEVEL-X"; Sub8
+ * LayOutRoom, curtain columns, Link at X $78, Y LevelInfo_StartY facing
+ * up. Then UpdateMode3Unfurl (the Genesis curtain, LVL_CURTAIN) and, with
+ * UndergroundExitType 0 (InitMode8), GoToNextModePlayLevelSong: mode 4
+ * walk-in. The Genesis loads in one tick and runs the skipped NES frame
+ * work up to the curtain's first frame. */
+#define NES_MODE8_CONTINUE_FC_STEPS 9u
+
+static void begin_mode8_continue(void)
+{
+    rr_warp_outcome_t out = {0};
+    room_clear_room_history();                  /* InitMode3_Sub0 */
+    room_init_mode3_sub1();                      /* RoomId, palette cue */
+    nes_ram[0x0013u] = 0u;
+    out.dest_scene = (nes_ram[0x0010u] != 0u) ? SCENE_UW : SCENE_OW;
+    out.dest_level = nes_ram[0x0010u];
+    out.dest_quest = roomrom_main_current_quest();
+    out.dest_room_id = nes_ram[0x00EBu];
+    out.dest_link_x = 0x78;
+    out.dest_link_y = (short)nes_ram[0x6BA6u];   /* LevelInfo_StartY */
+    out.dest_link_face = LINK_FACE_UP;
+    out.dest_redux_flag = current_redux_flag();
+    s_lvl_exit_fc = (u8)(nes_ram[0x0015u] - 1u);
+    s_lvl_exit_steps = NES_MODE8_CONTINUE_FC_STEPS;
+    render_display_enable(0u);
+    VDP_setWindowOnTop(ROOMROM_HUD_ROWS);
+    roomrom_main_apply_warp_outcome(&out);
+    s_underground_exit_type = 0u;
+    players[0].x = 0x78;
+    players[0].y = (short)nes_ram[0x6BA6u];
+    players[0].face = LINK_FACE_UP;
+    s_link_dir = LINK_DIR_UP;
+    s_link_grid_offset = 0;
+    nes_ram[0x0070u] = 0x78u;
+    nes_ram[0x0084u] = nes_ram[0x6BA6u];
+    nes_ram[0x0098u] = 0x08u;
+    nes_ram[0x0394u] = 0u;
+    curtain_hide();
+    level_hud_static_only();
+    roomrom_sprites_set_link_pose((short)-32, (short)-32, players[0].face, 0u);
+    enemy_render_reset_oam();
+    enemy_render_native_sweep();
+    VDP_updateSprites(80u, DMA_QUEUE);
+    render_display_enable(1u);
+    nes_ram[0x0012u] = 0x03u;
+    nes_ram[0x0013u] = 0u;
+    while ((u8)(nes_ram[0x0015u] - s_lvl_exit_fc) < s_lvl_exit_steps) {
+        nes_ram[0x0015u] = (unsigned char)(nes_ram[0x0015u] + 1u);
+        nes_frame_timers_and_random();
+    }
+    s_lvl_exiting = 0u;
+    s_lvl_step = 0u;
+    s_lvl_timer = 0u;
+    s_lvl_phase = LVL_CURTAIN;
 }
 
 /* T-132 exit: NES EndGameMode12 when NextRoomId >= $80 (start room S
@@ -2752,6 +2903,10 @@ void roomrom_debug_enter(void)
      * UpdateMode_JumpTable. GameSubmode = 0 to enter sub-state 0. */
     nes_ram[0x0012u] = 0x05u;
     nes_ram[0x0013u] = 0x00u;
+    /* Play is running (InitMode5Play done): IsUpdatingMode 1, as on the
+     * NES from the first play frame (tick-0 residue $0011 NES 01 GEN 00; a
+     * staged save then ran InitModeD, save_roundtrip t130). */
+    nes_ram[0x0011u] = 0x01u;
 
     s_joy_prev = 0u;
     init_video();
@@ -3261,8 +3416,11 @@ static void nes_frame_timers_and_random(void)
      * StunCycle ($26) wraps every 9 frames; on wrap, extends the
      * loop range up to $4E (ChaseLongTimer + others) per NES asm.
      *
-     * Skip MenuState / Paused gate (debug-mode always ticks). */
-    {
+     * T-013: NES @UpdateTimers skips the whole block while MenuState or
+     * Paused is set (Z_07.asm:469); the Genesis pause flag is both (the
+     * pause menu). Timers ran through the menu (t013_save StunCycle $26
+     * t62, ChaseLongTimer $4A t71). */
+    if (!roomrom_pause_is_active()) {
         unsigned char loop_end;
         unsigned char stun = nes_ram[0x0026u];
         stun = (unsigned char)(stun - 1u);
@@ -3389,6 +3547,19 @@ void roomrom_debug_tick(void)
             nes_pad_read_between_modes();
             mode12_endlevel_update();
             transfer_buf_drain();
+            return;
+        }
+
+        /* T-013 P2.6: GameMode 8 (continue / save / retry question) and
+         * $0D (save) run only their mode routine too. Mode 8 leaves to
+         * $0D (save), 0 submode 1 (retry: the Genesis File Select,
+         * a4_probe_main.c) or 3 (continue: level reload + curtain). */
+        if (nes_ram[0x0012u] == 0x08u || nes_ram[0x0012u] == 0x0Du) {
+            nes_pad_read_between_modes();
+            if (nes_ram[0x0012u] == 0x08u) mode8_continue_question_update();
+            else mode13_save_update();
+            transfer_buf_drain();
+            if (nes_ram[0x0012u] == 0x03u) begin_mode8_continue();
             return;
         }
 
@@ -3623,6 +3794,7 @@ void roomrom_debug_tick(void)
         } else {
             nes_ram_sync_input(joy, pressed);
         }
+        nes_pad2_read();
 
         /* SCENE_CAVE harness: tick the native cave gamemode each frame.
          * C+START exit chord hands off to cave_fade sequencer. Other
@@ -4021,6 +4193,22 @@ void roomrom_debug_tick(void)
                 /* Should not happen — paused but scroll-out done. Defensive. */
             }
             inventory_subscreen_tick((unsigned char)(joy & 0x00FFu));
+            /* UpdateMenuActive (Z_05.asm): after the submenu draw and
+             * selection, controller 2 Up+A held -> EndGameMode, MenuState
+             * 0, GameMode 8, SongEnvelopeSelector 0, SilenceSound. */
+            if (inventory_subscreen_menu_active() &&
+                (nes_ram[0x00FBu] & 0x88u) == 0x88u) {
+                inventory_subscreen_abort();
+                g_paused = ROOMROM_PAUSE_OFF;
+                nes_ram[0x0011u] = 0u;                 /* EndGameMode */
+                nes_ram[0x0013u] = 0u;
+                nes_ram[0x00E1u] = 0u;                 /* MenuState */
+                nes_ram[0x0012u] = 0x08u;
+                nes_ram[0x0619u] = 0u;                 /* SongEnvelopeSelector */
+                nes_ram[0x0604u] = 0x80u;              /* SilenceSound */
+                nes_ram[0x0603u] = 0x80u;
+                return;
+            }
             if (inventory_subscreen_scrolled_out()) {
                 /* Scroll-out animation just finished — drop pause flag,
                  * reload room to restore gameplay BG. */

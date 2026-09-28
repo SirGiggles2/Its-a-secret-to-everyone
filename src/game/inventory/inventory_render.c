@@ -936,6 +936,23 @@ void inventory_subscreen_exit(void)
     }
 }
 
+/* NES UpdateMenuActive (MenuState 7 UW / 8 OW): the menu is down and
+ * takes input. */
+unsigned char inventory_subscreen_menu_active(void)
+{
+    return (unsigned char)(s_active && s_scroll_state == SCROLL_ACTIVE);
+}
+
+/* T-013: UpdateMenuActive pad 2 Up+A -> GameMode 8 (MenuState 0): the
+ * menu goes at once, no scroll-out; mode 8 redraws the whole screen. */
+void inventory_subscreen_abort(void)
+{
+    extern void roomrom_hud_set_bottom_mode(unsigned char bottom);
+    s_active = 0u;
+    s_scroll_state = SCROLL_IDLE;
+    roomrom_hud_set_bottom_mode(0u);
+}
+
 /* Query: is scroll-out done (so main.c knows to call load_room)? */
 unsigned char inventory_subscreen_scrolled_out(void)
 {

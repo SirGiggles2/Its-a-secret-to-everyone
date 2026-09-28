@@ -74,6 +74,12 @@ void nes_ram_sync_input(u16 held, u16 edge_pressed)
     nes_ram[0x03F8u] = (unsigned char)(nes_ram[NES_RAM_BUTTONS_DOWN] & 0x0Fu);
 }
 
+void nes_ram_sync_input2(u16 held, u16 edge_pressed)
+{
+    nes_ram[NES_RAM_BUTTONS_PRESSED + 1u] = sgdk_to_nes_buttons(edge_pressed);
+    nes_ram[NES_RAM_BUTTONS_DOWN + 1u]    = sgdk_to_nes_buttons(held);
+}
+
 /* Per-frame sync: nes_ram is canonical for drained combat
  * (link_collision_link_be_harmed writes LINK_HEARTS = RAM($066F) directly).
  * Pull back into g_inventory so Genesis-side readers (HUD, options) see
