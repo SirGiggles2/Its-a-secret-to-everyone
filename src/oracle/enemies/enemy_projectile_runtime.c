@@ -292,7 +292,8 @@ static const unsigned char k_boomerang_qspeed_y[9] = {
 /* NES Z_07.asm:4202 AnimateBoomerangAndCheckCollision through
  * CalcBoomerangFrame. State $3x/$4x/$5x advances its minor frame every
  * two frames, tests Link collision, then renders the matching phase. */
-static void enrt_boomerang_animate(unsigned int slot)
+/* Returns 1 when the counter ran out and the spin advanced this frame. */
+static unsigned char enrt_boomerang_animate(unsigned int slot)
 {
     /* NES DEC is byte-wrapping: a zero counter becomes $FF and does not
      * advance the animation until the next complete countdown. */
@@ -301,16 +302,21 @@ static void enrt_boomerang_animate(unsigned int slot)
         ENEMY_ANIM_TIMER(slot) = 2u;
         ENEMY_STATE_TIMER(slot) =
             (unsigned char)((ENEMY_STATE_TIMER(slot) + 1u) & 0x77u);
+        return 1u;
     }
+    return 0u;
 }
 
 /* NES DrawBoomerangAndCheckCollision (Z_07.asm:4227). */
 static void enrt_boomerang_draw_check(unsigned int slot)
 {
     if (slot < 0x0Du) {
-        ENEMY_COLLISION_FLAG = 0u;
+        /* NES DrawBoomerangAndCheckCollision (Z_07.asm:4226) tests
+         * ShotCollidesWithLink ($034B = ROOM_MONSTER_COLLISION_COUNT), which
+         * CheckLinkCollision sets for a hit AND a shield parry; [06] is
+         * cleared by the parry (T-147: t129 Link facing the boomerang). */
         z01_check_link_collision(slot);
-        if (ENEMY_COLLISION_FLAG != 0u) {
+        if (ROOM_MONSTER_COLLISION_COUNT != 0u) {
             ENEMY_ANIM_TIMER(slot) = 3u;
             ENEMY_STATE_TIMER(slot) = 0x20u;
         }
@@ -334,7 +340,13 @@ static void set_boomerang_speed(unsigned int slot, unsigned char q)
 /* NES AnimateBoomerangAndCheckCollision (Z_07.asm:4209). */
 static void enrt_boomerang_animate_draw(unsigned int slot)
 {
-    enrt_boomerang_animate(slot);
+    /* T-147: when the spin advances, a monster boomerang (slot < $D)
+     * branches straight to CalcBoomerangFrame (Z_07.asm:4222 BCC): no Link
+     * collision check that frame (t129: NES parried a tick later). */
+    if (enrt_boomerang_animate(slot) && slot < 0x0Du) {
+        c_draw_boomerang(slot);
+        return;
+    }
     enrt_boomerang_draw_check(slot);
 }
 
