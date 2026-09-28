@@ -6,16 +6,17 @@ completion JSON) is history or evidence, not the work queue.
 ## 60-second protocol (both agents)
 
 1. `git log --oneline -5` and read **Current state** + the last 3 **Handoff log** entries.
-2. Pick the top `TODO` task you can do (see **Agents**). Set it `ACTIVE`, put your name in Owner,
-   list the files you will touch in Scope. Commit that one-line change: `[T-###] claim`.
-3. Work only inside your Scope. Need a file in someone else's Scope? Log it and wait or pick another task.
+2. Pick the top task you can advance (see **Agents**). Set it `ACTIVE`, add your name in Owner,
+   list likely files in Scope. Joining another agent's ACTIVE task is allowed. Commit the claim: `[T-###] claim`.
+3. Scope is coordination, not an edit lock (user 2026-09-28). Both agents may edit shared files.
+   Before editing, inspect current diff; preserve the other agent's work and stage only intended changes.
 4. Finish = acceptance met with evidence. Commit code + evidence path + board row + one handoff
    entry together: `[T-###] <what>`. Status `DONE` (or `REVIEW` if the other agent must verify).
 5. Stopping mid-task: commit WIP as `[T-###] wip: <state>`, handoff entry says exactly where you stopped.
    **Never end a session with uncommitted work.** (13 days of work sat uncommitted once; a stale
    `.git/index.lock` from 2026-09-14 blocked every commit and nobody noticed.)
 
-Rules: one ACTIVE task per agent. New work found mid-task becomes a new `TODO` row, not scope creep.
+Rules: one ACTIVE task per agent; an ACTIVE task may have both agents. New work found mid-task becomes a new `TODO` row, not scope creep.
 Evidence rules, NES-first capture rules and task IDs `P#.#` from `docs/plans/2026-09-10-project-completion.md`
 and `CLAUDE.md` still apply. Handoff entries: newest on top, max 5 lines, facts only.
 
@@ -133,7 +134,7 @@ Status: `TODO` · `ACTIVE` · `BLOCKED` · `REVIEW` · `DONE`. Plan ref = task I
 | T-140 | Level exit (mode $12 → 2 → 3 → 4): count NES FrameCounter steps of the exit load and add the catch-up (entry uses 12) when T-013 reaches the exit | P2.5 | DONE | Claude | Edge tick now ends in GameMode 6 like NES; exit load catches up to NES curtain-start FC (16 steps from the edge, t132 NES fc $78 -> $88); Link placed at the OW step-out spot before AssignObjSpawnPositions (NES method 1 order; SpawnCycle was 2 vs NES 0). t132_uw_exit GATE PASS all 1042 ticks, baseline re-blessed (12 cells improved). |
 | T-138 | Link hurt flash: NES Anim_WriteSpritePair uses sub-palette `ObjInvincibilityTimer & 3` (Z_01.asm:5152); Genesis cycles CRAM PAL0-3 by its own tick count (`draw_link_pending`), colors unverified | P3 | TODO | | Framebuffer/CRAM vs NES over one hurt flash |
 | T-137 | T-012 route: Genesis Link hit early in room $67 and died. FrameCounter/Random/timers 20 NES frames behind after the fast cave load + exit; stairs start a frame late; walk-in and step-out missing NES frames; room enemies and shots initialized at spawn (NES: first update) | P2.3 | DONE | Claude | `t012_route` play clock: FC + Random equal to NES every tick of 1748; Link/enemy/HP cells equal through room $67 (see T-012 evidence) |
-| T-013 | L1 full → Aquamentus → heart + triforce → exit | P2.5, P1.1–1.7 | ACTIVE | Claude | Real fight, reward, exit; save/reload once (P2.6) |
+| T-013 | L1 full → Aquamentus → heart + triforce → exit | P2.5, P1.1–1.7 | ACTIVE | Claude + Astra | Real fight, reward, exit; save/reload once (P2.6). Shared scope: existing `RoomRom/src/main.c`, `tools/lockstep/presets/t013_continue.json`, `tools/lockstep/presets/t013_retry.json`; inspect dirty diff before editing. |
 | T-014 … T-021 | L2 … L9 (one row each, add when reached) | P8.1–8.2 | TODO | | Entry, key items, boss, reward, exit |
 | T-022 | Ganon → Zelda → ending | P6.1, P8.3 | TODO | | Unassisted fight; ending mode + credits (renderer stubs → T-051) |
 
