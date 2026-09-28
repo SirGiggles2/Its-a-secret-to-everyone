@@ -261,6 +261,27 @@ static void anim_write_sprite_pair_not_flashing(void)
         (obj_idx_initial == 0u ||
          (obj_idx_initial <= 11u && OBJ_TYPE(obj_idx_initial) == 0x3Eu));
 
+    if (!write_oam && obj_idx_initial <= 11u &&
+        (unsigned char)DRAW_HAS_TWO_SIDES == 1u) {
+        const unsigned char x = (unsigned char)DRAW_X;
+        const unsigned char y = (unsigned char)DRAW_Y;
+        const unsigned char sep = (unsigned char)DRAW_X_SEPARATION;
+        const unsigned char right_x = (unsigned char)(x + sep);
+        const unsigned char marker = g_draw_in_item_context ? 0x08u : 0u;
+        enemy_render_publish_native_pair(
+            (unsigned char)DRAW_LEFT_TILE,
+            (unsigned char)((unsigned char)DRAW_LEFT_ATTR | marker),
+            (unsigned char)DRAW_RIGHT_TILE,
+            (unsigned char)((unsigned char)DRAW_RIGHT_ATTR | marker),
+            x, right_x, y);
+        DRAW_X = right_x;
+        sprite_cycle_cur_sprite_index();
+        DRAW_X = (uint8_t)(right_x + sep);
+        sprite_cycle_cur_sprite_index();
+        DRAW_HAS_TWO_SIDES = 0xFFu;
+        return;
+    }
+
     do {
         const unsigned char tile =
             (unsigned char)RAM(0x0002u + d3); /* TMP2/3 */

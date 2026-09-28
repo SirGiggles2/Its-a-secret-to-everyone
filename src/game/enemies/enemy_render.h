@@ -62,6 +62,13 @@ void enemy_render_publish_pair_left(unsigned char tile,
                                     unsigned char attrs,
                                     unsigned char x,
                                     unsigned char y);
+void enemy_render_publish_native_pair(unsigned char left_tile,
+                                      unsigned char left_attrs,
+                                      unsigned char right_tile,
+                                      unsigned char right_attrs,
+                                      unsigned char left_x,
+                                      unsigned char right_x,
+                                      unsigned char y);
 
 /* Phase D 2026-05-15 — death-spark + spawn-cloud frame publisher.
  * NES Z_07.asm:4977 AnimateAndDrawMetaObject draws the spark or cloud

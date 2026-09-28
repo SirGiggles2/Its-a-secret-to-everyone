@@ -169,6 +169,44 @@ void enemy_render_publish_pair_left(unsigned char tile,
     }
 }
 
+/* NES source: Z_01.asm Anim_WriteSpritePairNotFlashing; drained C:
+ * draw_dispatch.c; coverage: ordinary two-sided native enemies; stance:
+ * EXTEND. Submit both halves with one slot/count lookup. */
+void enemy_render_publish_native_pair(unsigned char left_tile,
+                                      unsigned char left_attrs,
+                                      unsigned char right_tile,
+                                      unsigned char right_attrs,
+                                      unsigned char left_x,
+                                      unsigned char right_x,
+                                      unsigned char y)
+{
+    unsigned char slot = ENEMY_THROWER_SLOT;
+    unsigned char n;
+    enemy_render_entry_t *e;
+    if (slot > ENEMY_LOOP_SLOT_LAST) {
+        enemy_render_publish_pair_left(left_tile, left_attrs, left_x, y);
+        enemy_render_publish_pair_left(right_tile, right_attrs, right_x, y);
+        return;
+    }
+    n = s_enemy_count[slot];
+    if (n >= ENEMY_RENDER_MAX_PER_SLOT) return;
+    e = &s_enemy_entries[slot][n];
+    e->tile = left_tile;
+    e->attrs = left_attrs;
+    e->x = left_x;
+    e->y = y;
+    ++n;
+    if (n < ENEMY_RENDER_MAX_PER_SLOT) {
+        ++e;
+        e->tile = right_tile;
+        e->attrs = right_attrs;
+        e->x = right_x;
+        e->y = y;
+        ++n;
+    }
+    s_enemy_count[slot] = n;
+}
+
 /* Phase D 2026-05-15 — meta-object (spark / cloud) frame publisher.
  * Reads ENEMY_METASTATE(slot), picks a frame tile from the cloud or
  * spark table, and overwrites the slot's cache entry so the native
