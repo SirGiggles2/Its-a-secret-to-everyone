@@ -82,7 +82,7 @@ static void sat_write(unsigned char slot, unsigned short y,
  *   8  wand       ($65F, NES tile $4A)
  *   9  raft       (InvRaft $660, NES tile $6C — NOT in atlas, placeholder)
  *   A  book       (InvBook $661, NES tile $42)
- *   B  ring       (InvRing $662, NES tile $76 — NOT in atlas, placeholder)
+ *   B  ring       (InvRing $662, NES pause tile $46; atlas idx 64)
  *   C  ladder     (InvLadder $663, NES tile $2C)
  *   D  magic_key  (InvMagicKey $664, NES tile $4E)
  *   E  bracelet   (InvBracelet $665, NES tile $4C)
