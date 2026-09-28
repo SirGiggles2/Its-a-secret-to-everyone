@@ -1,6 +1,6 @@
 # T-121 — pause ring icon tile identity
 
-**Result: PASS.** The task title had conflated two different ring drawings. The live NES pause icon uses `$46/$47`; `$76/$77` is the world pickup art and is tracked separately as T-155.
+**Result: PASS.** The task title had conflated item tiles. The live NES pause icon uses `$46/$47`. T-155 subsequently captured the world ring pickup and found that it also uses `$46/$47`; the extracted item-frame table assigns `$76/$77` to the ladder.
 
 With `InvRing=2` in the same NES/Genesis save card, `tools/lockstep/presets/t121_ring2.json` opened the overworld pause screen and settled for 150 play ticks. The final NES OAM shows the ring at slot 56, x164/y30, tile `$46`, sub-palette 2. Genesis SAT shows the corresponding x164/y23 sprite at tile `$3F7`, PAL3 (the documented seven-pixel crop offset). `src/game/inventory/inventory_render.c` selects atlas index 64 for this pause icon; the current build's atlas base makes that `$3F7`.
 

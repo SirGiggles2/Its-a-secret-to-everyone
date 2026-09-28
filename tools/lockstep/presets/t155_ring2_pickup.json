@@ -1,0 +1,12 @@
+{
+  "name": "t155_ring2_pickup",
+  "file_name": "LINK",
+  "quest": 0,
+  "items": {},
+  "clock": "tick",
+  "script": [[40, ""], [20, ""], [20, ""]],
+  "stages": [
+    [40, "for slot=1,11 do wr(0x34F+slot,0); if sys=='GEN' then wr(0x492+slot,0) end end\nlocal slot=2\nwr(0x34F+slot,0x60)\nif sys=='GEN' then wr(0x492+slot,1); wr(0x405+slot,0) end\nwr(0xAC+slot,0x13)\nwr(0x3A8+slot,0x90)\nwr(0x70+slot,0xC0); wr(0x84+slot,0x90)\nlog(string.format('ring item staged id=%02X type=%02X',rd(0xAC+slot),rd(0x34F+slot)))"],
+    [60, "wr(0x70,0xC0); wr(0x84,0x90); wr(0x98,8); wr(0x394,0); gen_link_pos(0xC0,0x90,8); log(string.format('ring contact: item=%02X ring=%02X',rd(0x351),rd(0x662)))"]
+  ]
+}
