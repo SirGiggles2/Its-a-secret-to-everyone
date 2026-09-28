@@ -35,6 +35,11 @@ void ow_scroll_enter_room_uw(short *x);
 /* Native renderer stages one column on each of the first 16 prepare ticks. */
 unsigned char ow_scroll_column(void); /* 0..15, or 0xff */
 unsigned short ow_scroll_pixels(void);
+/* Picture only (NES RAM keeps the row steps): the camera distance and
+ * Link's sprite Y to show this frame. Room scroll SMOOTH glides vertical
+ * scrolls at the horizontal speed; otherwise ow_scroll_pixels() / y. */
+unsigned short ow_scroll_display_pixels(void);
+short ow_scroll_display_link_y(short y);
 /* NES mode 7 in the UW hides every sprite (DrawSpritesBetweenRooms; the
  * UW Link_EndMoveAndAnimateBetweenRooms draws nothing). */
 unsigned char ow_scroll_link_hidden(void);

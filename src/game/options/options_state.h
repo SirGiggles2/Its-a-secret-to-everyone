@@ -113,8 +113,12 @@ typedef enum {
 #define OPTIONS_DARK_COUNT         3u
 
 /* room_scroll enum. */
-#define OPTIONS_SCROLL_SMOOTH      0u  /* default - Genesis-native 32 frames */
-#define OPTIONS_SCROLL_CLASSIC     1u  /* original debug cadence - 64 frames */
+/* NES room scroll (ow_scroll.c): SMOOTH glides vertical scrolls at the
+ * horizontal speed (OW 4 / UW 2 px a frame; picture only, NES RAM and
+ * timing unchanged); CLASSIC shows the NES 8 px row steps. The non-NES
+ * move style uses them as 32 / 64 frame fixed scrolls. */
+#define OPTIONS_SCROLL_SMOOTH      0u  /* default */
+#define OPTIONS_SCROLL_CLASSIC     1u
 #define OPTIONS_SCROLL_COUNT       2u
 
 /* start_hearts numeric — clamp range. */

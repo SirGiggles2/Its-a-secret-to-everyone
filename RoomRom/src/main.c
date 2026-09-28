@@ -507,8 +507,28 @@ static void clear_hud_underlay_for_row_base(u8 row_base)
 
 static void set_bg_scroll(short h_scroll, short v_scroll)
 {
+    /* Transition smoothness probe (stack page, masked by the lockstep
+     * diff, like the T-125 cells $01FE/$01FF): VDP V counter when this
+     * tick last wrote the plane scroll. */
+    nes_ram[0x01FDu] = (u8)(*(volatile u16 *)0xC00008u >> 8);
     set_plane_scroll(s_active_plane, h_scroll, v_scroll);
     set_plane_scroll((u8)(s_active_plane ^ 1u), h_scroll, v_scroll);
+}
+
+/* Room transitions: the plane scroll goes out in the next VBlank, with the
+ * sprite table this tick queued (VDP_updateSprites DMA_QUEUE). Written at
+ * once, the frame showed this tick's camera with the previous tick's
+ * sprites: Link jumped 8 px against the room on every vertical row step
+ * (tools/lockstep/transition_smooth.py, t013_route OW-V "world" +-8).
+ * Both planes get the same values (set_bg_scroll). */
+static void set_bg_scroll_with_sprites(short h_scroll, short v_scroll)
+{
+    if (s_scroll_hold) return;
+    nes_ram[0x01FDu] = 0xFFu;   /* committed in VBlank */
+    VDP_setHorizontalScrollVSync(BG_A, h_scroll);
+    VDP_setVerticalScrollVSync(BG_A, v_scroll);
+    VDP_setHorizontalScrollVSync(BG_B, h_scroll);
+    VDP_setVerticalScrollVSync(BG_B, v_scroll);
 }
 
 /* NES PutLinkBehindBackground (UpdateMode10Stairs): stamp the plane cells
@@ -3454,16 +3474,23 @@ void roomrom_debug_tick(void)
                         roomrom_ow_room_render_fill_one_col_at(s_transition_target,
                             c, plane_col_for_slot(c, slot), s_transition_row_base);
                 }
-                distance = (short)ow_scroll_pixels();
+                distance = (short)ow_scroll_display_pixels();
                 h_scroll = s_scroll_start_x;
                 v_scroll = s_scroll_start_y;
                 if (s_scroll_state == SCROLL_H_RIGHT) h_scroll -= distance;
                 if (s_scroll_state == SCROLL_H_LEFT) h_scroll += distance;
                 if (s_scroll_state == SCROLL_V_DOWN) v_scroll += distance;
                 if (s_scroll_state == SCROLL_V_UP) v_scroll -= distance;
-                /* After the room is entered (mode 4) the camera rests on
-                 * the new room. */
-                if (nes_ram[0x0012u] != 0x06u && nes_ram[0x0012u] != 0x07u) {
+                /* After the room is entered (mode 4 InitMode_EnterRoom,
+                 * scroll_finalize_room above) the camera rests on the new
+                 * room. Mode 4 Sub1-3 (dark-room re-copy, fade) run before
+                 * it with IsUpdatingMode 0: the camera stays at the end of
+                 * the scroll (it snapped back to the old room for those
+                 * frames, transition_smooth.py: every transition +-176 /
+                 * 256 px for 2 frames). */
+                if (nes_ram[0x0012u] != 0x06u && nes_ram[0x0012u] != 0x07u &&
+                    (s_lvl_enter_only || nes_ram[0x0012u] != 0x04u ||
+                     nes_ram[0x0011u] != 0u)) {
                     h_scroll = s_active_scroll_x;
                     v_scroll = s_active_scroll_y;
                 }
@@ -3476,12 +3503,13 @@ void roomrom_debug_tick(void)
                     roomrom_sprites_set_link_pose((short)-32, (short)-32,
                                                   players[0].face, 0u);
                 else
-                    roomrom_sprites_set_link_pose(players[0].x, players[0].y,
+                    roomrom_sprites_set_link_pose(players[0].x,
+                                                  ow_scroll_display_link_y(players[0].y),
                                                   players[0].face, s_link_frame);
                 VDP_updateSprites(80u, DMA_QUEUE);
                 transfer_buf_drain();            /* mode 7/4 fade palettes */
             } else scroll_advance_fixed_point(&h_scroll, &v_scroll);
-            set_bg_scroll(h_scroll, v_scroll);
+            set_bg_scroll_with_sprites(h_scroll, v_scroll);
             /* NES Z1 UW: Link is drawn behind door tiles during the
              * scroll (Z_07.asm ShowLinkSpritesBehindHorizontalDoors).
              * We approximate by hiding the sprite off-screen for the

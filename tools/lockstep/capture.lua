@@ -337,6 +337,14 @@ local prev_tick = -1
 -- and per-frame log lines are written only with PRESET.frames = true
 -- (run_lockstep --frame-dump). Per-tick log lines replace them otherwise.
 local FRAME_DUMP = PRESET.frames == true
+-- Per-video-frame video state (<OUT>.fvdp): GEN 648 bytes (VSRAM 4, H scroll
+-- 4, SAT 640), NES 256 bytes (OAM). Only with FRAME_DUMP.
+local fvdp = FRAME_DUMP and io.open(OUT .. ".fvdp", "wb") or nil
+if FRAME_DUMP then
+    for _, d in ipairs(sys == "GEN" and { "VSRAM", "VRAM" } or { "OAM" }) do
+        if not names[d] then fail("fvdp: no memory domain " .. d) return end
+    end
+end
 -- Run the core as fast as it goes and skip drawing frames nobody looks
 -- at; drawing comes back 40 ticks before a snapshot and at the end
 -- (client.screenshot needs a drawn frame; memory dumps do not).
@@ -459,6 +467,21 @@ while tick < total and f < FRAME_CAP do
         bytes = bytes or memory.read_bytes_as_array(RAM_BASE, 0x800, RAM_DOM)
         fram:write(row_of(bytes))
         frtick:write(string.char((tick >> 8) & 0xFF, tick & 0xFF))
+        -- Room-transition smoothness (tools/lockstep/transition_smooth.py):
+        -- the video state this frame ends with. GEN: VSRAM words 0-1
+        -- (plane A/B V scroll), H scroll table $F000 words 0-1 (per-plane
+        -- mode; VDP_setHScrollTableAddress in RoomRom/src/main.c init_video),
+        -- the 80-entry SAT at $F400 (VDP_setSpriteListAddress, same place).
+        -- NES: the 256-byte OAM.
+        if sys == "GEN" then
+            local v = memory.read_bytes_as_array(0, 4, "VSRAM")
+            local h = memory.read_bytes_as_array(0xF000, 4, "VRAM")
+            local s = memory.read_bytes_as_array(0xF400, 640, "VRAM")
+            fvdp:write(string.char(table.unpack(v)), string.char(table.unpack(h)))
+            for i = 1, 640, 128 do fvdp:write(string.char(table.unpack(s, i, i + 127))) end
+        else
+            fvdp:write(string.char(table.unpack(memory.read_bytes_as_array(0, 256, "OAM"))))
+        end
         meta:write(string.format("f=%d t=%d in=%s gm=%02X sub=%02X fc=%02X room=%02X\n",
             f, tick, tostring(seq[tick + 1]), bytes[0x13], bytes[0x14], bytes[0x16], bytes[0xEC]))
     end
@@ -503,6 +526,7 @@ while tick < total and f < FRAME_CAP do
 end
 fram:close()
 frtick:close()
+if fvdp then fvdp:close() end
 padf:close()
 if botlog then
     botlog:write("# " .. (BOT.done and BOT.why or "tick budget spent") .. "\n")

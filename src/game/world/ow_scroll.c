@@ -13,6 +13,12 @@
  * false/bombable walls, 2 px/frame horizontal and every-4th-frame vertical
  * scrolling, dark-room fades, walk in through the entered door), replacing
  * the fixed-duration Genesis dungeon scroll.
+ * Smooth vertical scroll (user 2026-09-28, option Room scroll = SMOOTH,
+ * the default): ScrollWorld moves the camera and Link 8 px on every 2nd
+ * (OW) / 4th (UW) frame. The NES RAM keeps that exact cadence; only the
+ * picture glides, 4 px (OW) / 2 px (UW) every frame, the horizontal
+ * speeds, and lands on the last row step (measured with
+ * tools/lockstep/transition_smooth.py). CLASSIC shows the NES steps.
  */
 #include "ow_scroll.h"
 #include "platform_abi.h"
@@ -20,6 +26,8 @@
 #include "../dungeon/door_state.h"       /* uw_door_state_get_type */
 #include "../dungeon/uw_dark.h"          /* uw_dark_is_dark_room */
 #include "../room/room_dispatch.h"       /* room_save_kill_count_uw/_ow */
+#include "../options/options_consumer.h" /* options_consumer_get_room_scroll */
+#include "../options/options_state.h"    /* OPTIONS_SCROLL_SMOOTH */
 
 #define UPD nes_ram[0x11u]
 #define MODE nes_ram[0x12u]
@@ -38,6 +46,11 @@ static unsigned char column;
 static unsigned short pixels;
 static unsigned char link_hidden;
 static unsigned char s_catch_up;   /* NES frames to replay (T-145) */
+/* Smooth vertical picture: frames since the first row step (0xFF = none
+ * yet), Link's Y before it, and the Y where ScrollWorld stops moving him. */
+static unsigned char s_vk = 0xFFu;
+static short s_vstart_y;
+static short s_vfinal_y;
 
 unsigned char ow_scroll_take_catch_up(void)
 {
@@ -66,6 +79,7 @@ void ow_scroll_begin(unsigned char dir, unsigned char target)
     pixels = 0u;
     column = 0xFFu;
     link_hidden = 0u;
+    s_vk = 0xFFu;
     MODE = 6u;
     SUB = UPD = 0u;
     if (CUR_LEVEL == 0u) GRID = 0u;
@@ -93,6 +107,37 @@ void ow_scroll_begin_enter(unsigned char nes_dir)
 
 unsigned char ow_scroll_column(void) { return column; }
 unsigned short ow_scroll_pixels(void) { return pixels; }
+
+static unsigned char smooth_v_active(void)
+{
+    return MODE == 7u && direction >= 3u && s_vk != 0xFFu &&
+           options_consumer_get_room_scroll() == OPTIONS_SCROLL_SMOOTH;
+}
+
+unsigned short ow_scroll_display_pixels(void)
+{
+    unsigned short d;
+    if (!smooth_v_active()) return pixels;
+    /* First row step frame shows one speed's worth; 22 steps x 8 px =
+     * 176 px are reached (k + 1) * speed = 176, i.e. 21 periods + the
+     * period's remaining frames after the first step: the frame the last
+     * row step lands on (OW k = 43 / UW k = 87, mode 7 Sub4-7). */
+    d = (unsigned short)((s_vk + 1u) * (CUR_LEVEL != 0u ? 2u : 4u));
+    return d < 176u ? d : 176u;
+}
+
+short ow_scroll_display_link_y(short y)
+{
+    short d;
+    if (!smooth_v_active()) return y;
+    d = (short)ow_scroll_display_pixels();
+    if (direction == 3u) {                  /* down: Link rides up */
+        d = (short)(s_vstart_y - d);
+        return d > s_vfinal_y ? d : s_vfinal_y;
+    }
+    d = (short)(s_vstart_y + d);            /* up: Link rides down */
+    return d < s_vfinal_y ? d : s_vfinal_y;
+}
 unsigned char ow_scroll_link_hidden(void) { return link_hidden; }
 
 /* Door type (FindDoorAttrByDoorBit) of the doorway in NES direction d. */
@@ -198,6 +243,7 @@ unsigned char ow_scroll_tick(short *x, short *y)
             break;
         }
     } else if (MODE == 7u) {
+        if (s_vk != 0xFFu && s_vk < 0xFEu) ++s_vk;
         switch (SUB) {
         case 0u:
             SUB = direction == 4u ? 1u : 2u;
@@ -217,6 +263,17 @@ unsigned char ow_scroll_tick(short *x, short *y)
                 if (direction == 2u && *x < 0xF0) *x += speed;
                 if (pixels == 256u) SUB = 4u;
             } else if ((nes_ram[0x15u] & (uw ? 3u : 1u)) == nes_ram[0xE6u]) {
+                if (s_vk == 0xFFu) {
+                    /* First row step: where ScrollWorld will leave Link
+                     * (down: while Y >= $3E, Y -= 8; up: while Y < $DD,
+                     * Y += 8). */
+                    short f = *y;
+                    if (direction == 4u) { while (f < 0xDD) f += 8; }
+                    else { while (f >= 0x3E) f -= 8; }
+                    s_vk = 0u;
+                    s_vstart_y = *y;
+                    s_vfinal_y = f;
+                }
                 if (direction == 4u) {
                     if (*y < 0xDD) *y += 8;
                     /* Up has a final row-underflow tick with no camera move. */
