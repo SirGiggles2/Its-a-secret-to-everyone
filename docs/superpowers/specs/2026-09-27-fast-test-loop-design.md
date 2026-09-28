@@ -82,12 +82,36 @@ when its `.d` depfile (`-MMD`) shows no newer input and its flag stamp
 matches. `Debug.bat` stays the only build; a clean build is the same
 command after deleting `build/debug_project/out`.
 
-### 6. Route segments
+### 6. Route segments — dropped (measured)
 
-Long routes split into card-started segments (save card + disclosed
-staging) that run in parallel; the connected route runs at milestones
-with `--full`. Before splitting: probe whether an NES save card can start
-inside a level (RULE ZERO). Segment work starts after 1–5 are measured.
+With the NES cached, the full t013_route (7768 ticks) runs on the
+Genesis in 20 s, and fail-fast reaches its first mismatch in 5 s.
+Splitting routes into card-started segments would save seconds at the
+cost of staging; not built.
+
+### 7. Deterministic capture start (found during rollout)
+
+EmuHawk runs a load-dependent number of frames before the Lua script
+attaches (one parallel batch gave FrameCounter $2D instead of $2C at
+sync). capture.lua now reboots the core and runs exactly one input-free
+frame, the attach timing every recorded route was built with.
+
+### 8. Presets on the play clock (found during rollout)
+
+Tick-clock presets misaligned after any load the Genesis finishes in
+fewer ticks. All but save_roundtrip were converted exactly: an old
+tick's input is kept iff that tick started in play; stage ticks are
+remapped. Proof: every NES golden is byte-identical to the old capture
+mapped to play ticks.
+
+## Results (2026-09-27)
+
+| | before | after |
+|---|---|---|
+| Debug.bat | 24 s | 12 s clean, 9 s no change (ROM SHA identical) |
+| t013_route to first mismatch | 106 s | 5 s |
+| t013_route full | 106 s | 20 s |
+| suite (46 presets) | 338 s, all DIVERGE | 60 s, 30/46 PASS + 16 real failures as tracker rows |
 
 ## Test levels
 
