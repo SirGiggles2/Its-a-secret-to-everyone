@@ -105,11 +105,13 @@ void enrt_update_candle(void) {
     }
 }
 
+/* NES UpdateBoulderSet (Z_04.asm:2168). T-146: a running timer only
+ * returns (LDA ObjTimer,X / BNE @Exit); the drain added Random to it every
+ * update, so the spawner's timer never ran down (t123_slow_tiles room $17:
+ * NES timer 04 03 02 01 -> boulder at t818, Genesis 04 15 9D E0). */
 void enrt_update_boulder_set(unsigned int slot) {
-    if (ENEMY_MOVE_TIMER(slot) != 0) {
-        ENEMY_MOVE_TIMER(slot) = (unsigned char)(ENEMY_MOVE_TIMER(slot) + ENEMY_RNG_B(slot));
+    if (ENEMY_MOVE_TIMER(slot) != 0)
         return;
-    }
     if (ENEMY_BOULDER_SET_COUNT == 3) {
         ENEMY_MOVE_TIMER(slot) = (unsigned char)(ENEMY_MOVE_TIMER(slot) + ENEMY_RNG_B(slot));
         return;
