@@ -11,7 +11,7 @@
    ""
   ],
   [
-   240,
+   138,
    "L"
   ],
   [
@@ -27,6 +27,7 @@
    ""
   ]
  ],
- "stage_at": 380,
- "stage": "wr(0x656, 1)\ngen_b_item(3)\nlocal k = nil\nfor s = 1, 11 do local t = rd(0x34F + s); if t == 0x0D or t == 0x0E then k = s; break end end\nif not k then log('no tektite in slots 1-11'); return end\nwr(0x70 + k, (rd(0x70) - 0x10) & 0xFF)\nwr(0x84 + k, rd(0x84))\nwr(0x3D + k, 0xFF)\nwr(0x28 + k, 0)\nwr(0xC0 + k, 0)\nlog(string.format('slot=%d type=%02X at %02X,%02X hp=%02X link %02X,%02X dir %02X', k, rd(0x34F + k), rd(0x70 + k), rd(0x84 + k), rd(0x485 + k), rd(0x70), rd(0x84), rd(0x98)))"
+ "stage_at": 278,
+ "stage": "wr(0x656, 1)\ngen_b_item(3)\nlocal k = nil\nfor s = 1, 11 do local t = rd(0x34F + s); if t == 0x0D or t == 0x0E then k = s; break end end\nif not k then log('no tektite in slots 1-11'); return end\nwr(0x70 + k, (rd(0x70) - 0x10) & 0xFF)\nwr(0x84 + k, rd(0x84))\nwr(0x3D + k, 0xFF)\nwr(0x28 + k, 0)\nwr(0xC0 + k, 0)\nlog(string.format('slot=%d type=%02X at %02X,%02X hp=%02X link %02X,%02X dir %02X', k, rd(0x34F + k), rd(0x70 + k), rd(0x84 + k), rd(0x485 + k), rd(0x70), rd(0x84), rd(0x98)))",
+ "clock": "play"
 }

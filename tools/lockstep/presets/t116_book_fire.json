@@ -29,5 +29,6 @@
   ]
  ],
  "stage_at": 20,
- "stage": "wr(0x15, 0x40)\nwr(0x656, 8)\ngen_b_item(5)"
+ "stage": "wr(0x15, 0x40)\nwr(0x656, 8)\ngen_b_item(5)",
+ "clock": "play"
 }

@@ -1,20 +1,21 @@
 {
-  "name": "t105_horizontal",
-  "file_name": "LINK",
-  "quest": 0,
-  "items": {},
-  "script": [
-    [
-      30,
-      ""
-    ],
-    [
-      220,
-      "L"
-    ],
-    [
-      20,
-      ""
-    ]
+ "name": "t105_horizontal",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {},
+ "script": [
+  [
+   30,
+   ""
+  ],
+  [
+   118,
+   "L"
+  ],
+  [
+   20,
+   ""
   ]
+ ],
+ "clock": "play"
 }

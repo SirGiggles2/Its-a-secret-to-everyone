@@ -28,5 +28,6 @@
   ]
  ],
  "stage_at": 20,
- "stage": "wr(0x15, 0x40)"
+ "stage": "wr(0x15, 0x40)",
+ "clock": "play"
 }

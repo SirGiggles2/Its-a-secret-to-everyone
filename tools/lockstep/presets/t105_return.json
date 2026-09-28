@@ -1,24 +1,25 @@
 {
-  "name": "t105_return",
-  "file_name": "LINK",
-  "quest": 0,
-  "items": {},
-  "script": [
-    [
-      30,
-      ""
-    ],
-    [
-      95,
-      "U"
-    ],
-    [
-      200,
-      "D"
-    ],
-    [
-      30,
-      ""
-    ]
+ "name": "t105_return",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {},
+ "script": [
+  [
+   30,
+   ""
+  ],
+  [
+   60,
+   "U"
+  ],
+  [
+   71,
+   "D"
+  ],
+  [
+   30,
+   ""
   ]
+ ],
+ "clock": "play"
 }

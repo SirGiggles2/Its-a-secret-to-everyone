@@ -62,9 +62,26 @@ else
     fail("unknown system " .. tostring(sys)) return
 end
 
+-- T-141: EmuHawk runs the core for a frame or more before this script
+-- attaches, and how many depends on host load (parallel suite). A
+-- different count shifts the NES menu timing and so every later byte,
+-- which would poison the NES golden cache. Reboot to power-on frame 0,
+-- then run exactly ATTACH_FRAMES input-free frames: 1 is the attach
+-- timing every recorded route/preset was built with (probe 2026-09-27:
+-- framecount 1 at script start on NES and Genesis).
+local ATTACH_FRAMES = 1
+local pre_frames = emu.framecount()
+client.reboot_core()
+if emu.framecount() ~= 0 then
+    fail(string.format("reboot_core left framecount %d (was %d)", emu.framecount(), pre_frames)) return
+end
+for _ = 1, ATTACH_FRAMES do joypad.set({}, 1); emu.frameadvance() end
+if emu.framecount() ~= ATTACH_FRAMES then
+    fail(string.format("framecount %d after %d attach frames", emu.framecount(), ATTACH_FRAMES)) return
+end
 local meta = io.open(OUT .. ".txt", "w")
-meta:write(string.format("system=%s ram=%s+%X save=%s domains=%s preset=%s\n",
-    sys, RAM_DOM, RAM_BASE, SAVE_DOM, table.concat(domlist, ","), PRESET.name))
+meta:write(string.format("system=%s ram=%s+%X save=%s domains=%s preset=%s pre_script_frames=%d\n",
+    sys, RAM_DOM, RAM_BASE, SAVE_DOM, table.concat(domlist, ","), PRESET.name, pre_frames))
 
 -- 2. preset into cart RAM (before frame 1)
 local wrote = 0

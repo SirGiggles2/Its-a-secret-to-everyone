@@ -11,103 +11,103 @@
    ""
   ],
   [
-   40,
+   1,
    "R"
   ],
   [
-   160,
+   97,
    ""
   ],
   [
-   40,
+   1,
    "R"
   ],
   [
-   160,
+   97,
    ""
   ],
   [
-   40,
+   1,
    "R"
   ],
   [
-   160,
+   97,
    ""
   ],
   [
-   40,
+   1,
    "R"
   ],
   [
-   160,
+   97,
    ""
   ],
   [
-   40,
+   1,
    "U"
   ],
   [
-   160,
+   116,
    ""
   ],
   [
-   40,
+   1,
    "U"
   ],
   [
-   160,
+   116,
    ""
   ],
   [
-   40,
+   1,
    "U"
   ],
   [
-   160,
+   116,
    ""
   ],
   [
-   40,
+   1,
    "U"
   ],
   [
-   160,
+   116,
    ""
   ],
   [
-   40,
+   1,
    "U"
   ],
   [
-   160,
+   116,
    ""
   ],
   [
-   40,
+   1,
    "R"
   ],
   [
-   160,
+   97,
    ""
   ],
   [
-   40,
+   1,
    "U"
   ],
   [
-   160,
+   116,
    ""
   ],
   [
-   40,
+   1,
    "L"
   ],
   [
-   160,
+   97,
    ""
   ],
   [
-   100,
+   17,
    "U"
   ],
   [
@@ -115,7 +115,7 @@
    ""
   ],
   [
-   100,
+   17,
    "U"
   ],
   [
@@ -123,7 +123,7 @@
    ""
   ],
   [
-   100,
+   17,
    "U"
   ],
   [
@@ -131,31 +131,27 @@
    ""
   ],
   [
-   100,
+   17,
    "U"
   ],
   [
-   160,
+   360,
    ""
   ],
   [
-   200,
-   ""
-  ],
-  [
-   80,
+   12,
    "U"
   ],
   [
-   320,
+   225,
    ""
   ],
   [
-   100,
+   37,
    "U"
   ],
   [
-   200,
+   72,
    ""
   ],
   [
@@ -173,76 +169,77 @@
    "wr(0x70, 240)\nwr(0x84, 141)\nwr(0x98, 1)\nwr(0x394, 0)\ngen_link_pos(240, 141, 1)\nlog(string.format('cross 77->78 #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
   ],
   [
-   230,
+   128,
    "wr(0x70, 240)\nwr(0x84, 93)\nwr(0x98, 1)\nwr(0x394, 0)\ngen_link_pos(240, 93, 1)\nlog(string.format('cross 78->79 #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
   ],
   [
-   430,
+   226,
    "wr(0x70, 240)\nwr(0x84, 141)\nwr(0x98, 1)\nwr(0x394, 0)\ngen_link_pos(240, 141, 1)\nlog(string.format('cross 79->7A #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
   ],
   [
-   630,
+   324,
    "wr(0x70, 240)\nwr(0x84, 141)\nwr(0x98, 1)\nwr(0x394, 0)\ngen_link_pos(240, 141, 1)\nlog(string.format('cross 7A->7B #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
   ],
   [
-   830,
+   422,
    "wr(0x70, 176)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(176, 61, 8)\nlog(string.format('cross 7B->6B #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
   ],
   [
-   1030,
+   539,
    "wr(0x70, 16)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(16, 61, 8)\nlog(string.format('cross 6B->5B #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
   ],
   [
-   1230,
+   656,
    "wr(0x70, 16)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(16, 61, 8)\nlog(string.format('cross 5B->4B #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
   ],
   [
-   1430,
+   773,
    "wr(0x70, 192)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(192, 61, 8)\nlog(string.format('cross 4B->3B #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
   ],
   [
-   1630,
+   890,
    "wr(0x70, 16)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(16, 61, 8)\nlog(string.format('cross 3B->2B #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
   ],
   [
-   1830,
+   1007,
    "wr(0x70, 240)\nwr(0x84, 93)\nwr(0x98, 1)\nwr(0x394, 0)\ngen_link_pos(240, 93, 1)\nlog(string.format('cross 2B->2C #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
   ],
   [
-   2030,
+   1105,
    "wr(0x70, 48)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(48, 61, 8)\nlog(string.format('cross 2C->1C #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
   ],
   [
-   2230,
+   1222,
    "wr(0x70, 0)\nwr(0x84, 141)\nwr(0x98, 2)\nwr(0x394, 0)\ngen_link_pos(0, 141, 2)\nlog(string.format('cross 1C->1B #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
   ],
   [
-   2430,
+   1320,
    "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('cross 1B->0B #0 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
   ],
   [
-   2690,
+   1497,
    "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('cross 1B->0B #1 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
   ],
   [
-   2950,
+   1674,
    "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('cross 1B->0B #2 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
   ],
   [
-   3210,
+   1851,
    "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('cross 1B->0B #3 room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
   ],
   [
-   3670,
+   2228,
    "wr(0x70, 112)\nwr(0x84, 141)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 141, 8)\nlog(string.format('L5 entrance room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
   ],
   [
-   4070,
+   2465,
    "wr(0x70, 120)\nwr(0x84, 109)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(120, 109, 8)\nlog(string.format('L5 $76 north door room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
   ],
   [
-   4370,
+   2574,
    "wr(0x656, 4)\ngen_b_item(4)\nwr(0x70, 120)\nwr(0x84, 157)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(120, 157, 8)\nlog(string.format('candle room %02X lvl %02X gm %02X link %02X,%02X maze %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x52F)))"
   ]
- ]
+ ],
+ "clock": "play"
 }

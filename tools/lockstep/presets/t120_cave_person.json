@@ -5,15 +5,11 @@
  "items": {},
  "script": [
   [
-   30,
+   50,
    ""
   ],
   [
-   20,
-   ""
-  ],
-  [
-   400,
+   303,
    "U"
   ],
   [
@@ -26,5 +22,6 @@
    40,
    "wr(0x70, 64)\nwr(0x84, 93)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(64, 93, 8)\nlog(string.format('room %02X link %02X,%02X', rd(0xEB), rd(0x70), rd(0x84)))"
   ]
- ]
+ ],
+ "clock": "play"
 }

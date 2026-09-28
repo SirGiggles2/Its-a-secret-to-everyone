@@ -12,7 +12,7 @@
    ""
   ],
   [
-   250,
+   148,
    "R"
   ],
   [
@@ -20,74 +20,71 @@
    ""
   ],
   [
-   40,
+   1,
    "U"
   ],
   [
-   160,
+   116,
    ""
   ],
   [
-   40,
+   1,
    "R"
   ],
   [
-   160,
+   97,
    ""
   ],
   [
-   40,
+   1,
    "U"
   ],
   [
-   160,
+   116,
    ""
   ],
   [
-   40,
+   1,
    "U"
   ],
   [
-   160,
+   116,
    ""
   ],
   [
-   40,
+   1,
    "U"
   ],
   [
-   160,
-   ""
-  ],
-  [
-   600,
+   716,
    ""
   ]
  ],
  "stages": [
   [
-   300,
+   198,
    "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('room %02X link %02X,%02X hearts %02X/%02X s1 %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x66F), rd(0x670), rd(0x350)))"
   ],
   [
-   500,
+   315,
    "wr(0x70, 240)\nwr(0x84, 141)\nwr(0x98, 1)\nwr(0x394, 0)\ngen_link_pos(240, 141, 1)\nlog(string.format('room %02X link %02X,%02X hearts %02X/%02X s1 %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x66F), rd(0x670), rd(0x350)))"
   ],
   [
-   700,
+   413,
    "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('room %02X link %02X,%02X hearts %02X/%02X s1 %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x66F), rd(0x670), rd(0x350)))"
   ],
   [
-   900,
+   530,
    "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('room %02X link %02X,%02X hearts %02X/%02X s1 %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x66F), rd(0x670), rd(0x350)))"
   ],
   [
-   1100,
+   647,
    "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('room %02X link %02X,%02X hearts %02X/%02X s1 %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x66F), rd(0x670), rd(0x350)))"
   ],
   [
-   1300,
+   764,
    "wr(0x70, 120)\nwr(0x84, 173)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(120, 173, 8)\nlog(string.format('room %02X link %02X,%02X hearts %02X/%02X s1 %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x66F), rd(0x670), rd(0x350)))"
   ]
- ]
+ ],
+ "clock": "play"
 }

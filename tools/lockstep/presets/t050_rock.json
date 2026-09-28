@@ -1,7 +1,21 @@
 {
-  "name": "t050_rock",
-  "file_name": "LINK",
-  "quest": 0,
-  "items": {},
-  "script": [[30, ""], [420, "R"], [60, ""]]
+ "name": "t050_rock",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {},
+ "script": [
+  [
+   30,
+   ""
+  ],
+  [
+   318,
+   "R"
+  ],
+  [
+   60,
+   ""
+  ]
+ ],
+ "clock": "play"
 }

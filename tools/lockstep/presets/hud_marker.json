@@ -1,7 +1,21 @@
 {
-  "name": "hud_marker",
-  "file_name": "LINK",
-  "quest": 0,
-  "items": {},
-  "script": [[30, ""], [200, "U"], [120, ""]]
+ "name": "hud_marker",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {},
+ "script": [
+  [
+   30,
+   ""
+  ],
+  [
+   117,
+   "U"
+  ],
+  [
+   120,
+   ""
+  ]
+ ],
+ "clock": "play"
 }

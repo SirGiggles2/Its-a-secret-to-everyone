@@ -12,7 +12,7 @@
    ""
   ],
   [
-   250,
+   148,
    "R"
   ],
   [
@@ -20,67 +20,67 @@
    ""
   ],
   [
-   40,
+   1,
    "U"
   ],
   [
-   160,
+   116,
    ""
   ],
   [
-   40,
+   1,
    "U"
   ],
   [
-   160,
+   116,
    ""
   ],
   [
-   40,
+   1,
    "U"
   ],
   [
-   160,
+   116,
    ""
   ],
   [
-   40,
+   1,
    "U"
   ],
   [
-   160,
+   116,
    ""
   ],
   [
-   40,
+   1,
    "L"
   ],
   [
-   160,
+   97,
    ""
   ],
   [
-   80,
+   23,
    "U"
   ],
   [
-   320,
+   211,
    ""
   ],
   [
-   100,
+   46,
    "U"
   ],
   [
-   200,
+   116,
    ""
   ],
   [
-   100,
+   37,
    "U"
   ],
   [
-   200,
+   125,
    ""
   ],
   [
@@ -94,40 +94,41 @@
  ],
  "stages": [
   [
-   300,
+   198,
    "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X keys %d bombs %d doors %02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x66E), rd(0x658), rd(0xEE)))"
   ],
   [
-   500,
+   315,
    "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X keys %d bombs %d doors %02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x66E), rd(0x658), rd(0xEE)))"
   ],
   [
-   700,
+   432,
    "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X keys %d bombs %d doors %02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x66E), rd(0x658), rd(0xEE)))"
   ],
   [
-   900,
+   549,
    "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X keys %d bombs %d doors %02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x66E), rd(0x658), rd(0xEE)))"
   ],
   [
-   1100,
+   666,
    "wr(0x70, 0)\nwr(0x84, 141)\nwr(0x98, 2)\nwr(0x394, 0)\ngen_link_pos(0, 141, 2)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X keys %d bombs %d doors %02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x66E), rd(0x658), rd(0xEE)))"
   ],
   [
-   1300,
+   764,
    "wr(0x70, 112)\nwr(0x84, 157)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 157, 8)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X keys %d bombs %d doors %02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x66E), rd(0x658), rd(0xEE)))"
   ],
   [
-   1700,
+   998,
    "wr(0x70, 120)\nwr(0x84, 109)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(120, 109, 8)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X keys %d bombs %d doors %02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x66E), rd(0x658), rd(0xEE)))"
   ],
   [
-   2000,
+   1160,
    "wr(0x70, 120)\nwr(0x84, 109)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(120, 109, 8)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X keys %d bombs %d doors %02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x66E), rd(0x658), rd(0xEE)))"
   ],
   [
-   2300,
+   1322,
    "wr(0x656, 1)\ngen_b_item(3)\nwr(0x70, 120)\nwr(0x84, 109)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(120, 109, 8)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X keys %d bombs %d doors %02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x66E), rd(0x658), rd(0xEE)))"
   ]
- ]
+ ],
+ "clock": "play"
 }
