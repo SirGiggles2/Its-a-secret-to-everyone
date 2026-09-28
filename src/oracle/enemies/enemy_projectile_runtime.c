@@ -18,8 +18,11 @@ static const unsigned char enrt_shot_bounce_heights[] = {
 /* Diagonal-speed lookup tables for fireballs. Index 0..8 picks paired
  * X/Y q-speeds whose magnitudes sum to a constant arc.
  */
+/* NES FireballQSpeedsX has 8 bytes; speed index 8 (straight down/up)
+ * reads the next ROM byte, FireballQSpeedsY[0] = $00 (T-147: read past
+ * the C array, t129 t6582 X speed $01). */
 static const unsigned char enrt_fireball_qspeeds_x[] = {
-    0x70, 0x68, 0x60, 0x58, 0x50, 0x3C, 0x26, 0x10
+    0x70, 0x68, 0x60, 0x58, 0x50, 0x3C, 0x26, 0x10, 0x00
 };
 
 static const unsigned char enrt_fireball_qspeeds_y[] = {
