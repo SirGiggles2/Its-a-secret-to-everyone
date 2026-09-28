@@ -108,6 +108,10 @@ unsigned char object_bound_by_room_with_dir(unsigned char direction,
 
 void object_move_object(unsigned short slot)
 {
+    /* NES source: reference/aldonunez/Z_07.asm:MoveObject.
+     * Drained C: src/oracle/world/object_runtime.c:objrt_move_object.
+     * Coverage: FULL. Stance: EXTEND (cache intermediate quarter steps).
+     * No call or interrupt-visible publication occurs inside this loop. */
     /* NES MoveObject. Drain at object_runtime.c:8-72.
      *
      * Sets per-frame grid limits (slot 0 = Link uses tighter $08/$F8;
@@ -137,69 +141,33 @@ void object_move_object(unsigned short slot)
         return;
     }
 
-    /* NES MoveObject (Z_07.asm:2719) explicitly calls
-     * @ApplyQSpeedToPosition 4× per call: "To allow a wide speed
-     * range, we keep the quarter speed. Here, apply it 4 times to
-     * get the full speed." */
-    for (int i = 0; i < 4; i++) {
-        unsigned char old_frac;
-        unsigned char frac;
-        unsigned char speed;
-        unsigned char grid_off;
+    /* MoveObject applies quarter speed four times. Keep each intermediate
+     * fraction/grid/position in registers; no other routine can observe it
+     * until this call returns. Preserve direction priority and 8-bit wrap. */
+    const unsigned char positive = (unsigned char)((dir & 0x01u) ||
+        (!(dir & 0x03u) && (dir & 0x04u)));
+    const unsigned short axis = (dir & 0x03u) ? NES_OBJ_X : NES_OBJ_Y;
+    const unsigned char speed = (unsigned char)OBJ(NES_OBJ_QSPD_FRAC, slot);
+    unsigned char frac = (unsigned char)OBJ(NES_OBJ_POS_FRAC, slot);
+    unsigned char grid = (unsigned char)OBJ(NES_OBJ_GRID_OFFSET, slot);
+    unsigned char pos = (unsigned char)OBJ(axis, slot);
+    for (unsigned int i = 0u; i < 4u; ++i) {
+        const unsigned char old_frac = frac;
         unsigned char step;
-
-        if (dir & 0x01u) {  /* right */
-            old_frac = (unsigned char)OBJ(NES_OBJ_POS_FRAC, slot);
-            frac = (unsigned char)(old_frac + OBJ(NES_OBJ_QSPD_FRAC, slot));
-            step = (unsigned char)((frac < old_frac) ? 1u : 0u);
-            OBJ(NES_OBJ_POS_FRAC, slot) = frac;
-            grid_off = (unsigned char)OBJ(NES_OBJ_GRID_OFFSET, slot);
-            if (grid_off == RAM(NES_POS_GRID_LIMIT) ||
-                grid_off == RAM(NES_NEG_GRID_LIMIT)) {
-                step = 0u;
-            }
-            OBJ(NES_OBJ_GRID_OFFSET, slot) = (unsigned char)(grid_off + step);
-            OBJ(NES_OBJ_X, slot) = (unsigned char)(OBJ(NES_OBJ_X, slot) + step);
-        } else if (dir & 0x02u) {  /* left */
-            old_frac = (unsigned char)OBJ(NES_OBJ_POS_FRAC, slot);
-            speed = (unsigned char)OBJ(NES_OBJ_QSPD_FRAC, slot);
-            step = (unsigned char)((old_frac < speed) ? 1u : 0u);
-            frac = (unsigned char)(old_frac - speed);
-            OBJ(NES_OBJ_POS_FRAC, slot) = frac;
-            grid_off = (unsigned char)OBJ(NES_OBJ_GRID_OFFSET, slot);
-            if (grid_off == RAM(NES_POS_GRID_LIMIT) ||
-                grid_off == RAM(NES_NEG_GRID_LIMIT)) {
-                step = 0u;
-            }
-            OBJ(NES_OBJ_GRID_OFFSET, slot) = (unsigned char)(grid_off - step);
-            OBJ(NES_OBJ_X, slot) = (unsigned char)(OBJ(NES_OBJ_X, slot) - step);
-        } else if (dir & 0x04u) {  /* down */
-            old_frac = (unsigned char)OBJ(NES_OBJ_POS_FRAC, slot);
-            frac = (unsigned char)(old_frac + OBJ(NES_OBJ_QSPD_FRAC, slot));
-            step = (unsigned char)((frac < old_frac) ? 1u : 0u);
-            OBJ(NES_OBJ_POS_FRAC, slot) = frac;
-            grid_off = (unsigned char)OBJ(NES_OBJ_GRID_OFFSET, slot);
-            if (grid_off == RAM(NES_POS_GRID_LIMIT) ||
-                grid_off == RAM(NES_NEG_GRID_LIMIT)) {
-                step = 0u;
-            }
-            OBJ(NES_OBJ_GRID_OFFSET, slot) = (unsigned char)(grid_off + step);
-            OBJ(NES_OBJ_Y, slot) = (unsigned char)(OBJ(NES_OBJ_Y, slot) + step);
-        } else {  /* up (dir & 0x08) — NES has no else-test so neither does drain */
-            old_frac = (unsigned char)OBJ(NES_OBJ_POS_FRAC, slot);
-            speed = (unsigned char)OBJ(NES_OBJ_QSPD_FRAC, slot);
-            step = (unsigned char)((old_frac < speed) ? 1u : 0u);
-            frac = (unsigned char)(old_frac - speed);
-            OBJ(NES_OBJ_POS_FRAC, slot) = frac;
-            grid_off = (unsigned char)OBJ(NES_OBJ_GRID_OFFSET, slot);
-            if (grid_off == RAM(NES_POS_GRID_LIMIT) ||
-                grid_off == RAM(NES_NEG_GRID_LIMIT)) {
-                step = 0u;
-            }
-            OBJ(NES_OBJ_GRID_OFFSET, slot) = (unsigned char)(grid_off - step);
-            OBJ(NES_OBJ_Y, slot) = (unsigned char)(OBJ(NES_OBJ_Y, slot) - step);
+        if (positive) {
+            frac = (unsigned char)(frac + speed);
+            step = (unsigned char)(frac < old_frac);
+        } else {
+            step = (unsigned char)(old_frac < speed);
+            frac = (unsigned char)(frac - speed);
         }
+        if (grid == pos_limit || grid == neg_limit) step = 0u;
+        grid = (unsigned char)(positive ? grid + step : grid - step);
+        pos = (unsigned char)(positive ? pos + step : pos - step);
     }
+    OBJ(NES_OBJ_POS_FRAC, slot) = frac;
+    OBJ(NES_OBJ_GRID_OFFSET, slot) = grid;
+    OBJ(axis, slot) = pos;
 }
 
 unsigned int object_add_q_speed_to_position_fraction(unsigned int slot)
