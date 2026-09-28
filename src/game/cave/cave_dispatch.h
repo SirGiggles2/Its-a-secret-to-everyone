@@ -44,6 +44,10 @@ typedef unsigned char cave_id_t;
  * cave_id changes. Returns 0 on success, -1 on invalid cave_id. */
 int cave_init(cave_id_t cave_id);
 
+/* T-143: NES InitCave (Z_01.asm:69) — InitObject of the cave person in
+ * `slot` (types >= $6A), run by the enemy object loop. */
+void cave_init_person(unsigned int slot);
+
 /* Per-frame cave tick. Called once per VBlank from gameplay loop.
  * Currently stub (returns immediately). NPC/shop/text logic ports
  * per-function from oracle reference in subsequent commits. */

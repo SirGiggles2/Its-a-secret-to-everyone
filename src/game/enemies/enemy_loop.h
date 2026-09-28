@@ -53,7 +53,7 @@ void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id,
  * cave_init so caves start on a NES-fresh object page (no surviving OW
  * enemy whose work-cell ENEMY_PUSH_TIMER $0412+slot aliases the cave text
  * char index $0416 at slot 4). */
-void enemy_loop_clear_all_slots(void);
+void enemy_loop_enter_cave_slots(void);   /* T-143: NES InitMode_EnterRoom object reset for a cave */
 
 /* Called every frame INSIDE the scroll-stable branch of the gameplay
  * tick (Q2=c). Iterates slots 1..11, dispatches

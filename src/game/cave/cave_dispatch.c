@@ -25,7 +25,7 @@
 #include "cave_state.h"
 #include "combat_state.h"               /* LINK_HEARTS = RAM(0x066F) */
 #include "enemy_state.h"                /* ENEMY_THROWER_SLOT = RAM($0340) */
-#include "enemy_loop.h"                  /* enemy_loop_clear_all_slots (cave-fresh objects) */
+#include "enemy_loop.h"                  /* enemy_loop_enter_cave_slots (T-143) */
 #include "world/progress_dispatch.h"    /* progress_set_room_flag_uw_item_state */
 #include "world/sprite_dispatch.h"      /* sprite_anim_fetch_obj_pos */
 #include "world/draw_dispatch.h"        /* draw_object_mirrored,
@@ -49,8 +49,6 @@
  * (e.g. the cave-6A wood sword) never drew. Read from the blob instead. */
 #include "../../../data/rooms/overworld_offsets.h"
 
-/* T-011: NES InitCave halts Link on the person's first object update. */
-static unsigned char s_cave_halt_pending = 0u;
 extern const unsigned char rooms_overworld[];
 
 /* NES Z_01.asm:559 TextboxCharTransferRecTemplate — 5-byte VRAM
@@ -126,7 +124,11 @@ int cave_init(cave_id_t cave_id)
      * were unaffected — which masqueraded as a "cave_flags bit 6" issue.
      * Clear all enemy slots here so the cave starts NES-fresh; cave_init
      * then re-establishes the person (slot 1) + two bonfires (slots 2/3). */
-    enemy_loop_clear_all_slots();
+    /* T-143: NES InitModeB_EnterCave_Bank5 runs InitMode_EnterRoom:
+     * ClearRam0300UpTo $051F, then slots $B..1 flagged uninitialized with
+     * metastate 1 (spawn cloud). The person and the bonfires are set up
+     * later, by InitCave, when the object loop initializes slot 1. */
+    enemy_loop_enter_cave_slots();
     cave_room_type_set(cave_id);          /* RAM($0350) */
     CAVE_PERSON_STATE      = 0u;          /* RAM($00AD) */
     CAVE_TEXT_CHAR_INDEX   = 0u;          /* RAM($0416) */
@@ -142,39 +144,46 @@ int cave_init(cave_id_t cave_id)
     CAVE_LINK_ACTION_TIMER = 0u;          /* RAM($00AC) */
     CAVE_LINK_INPUT_FLAGS  = 0u;          /* RAM($00F8) */
 
-    /* NES Z_01.asm:69-74 InitCave + :271-293 SetUpCommonCaveObjects port.
-     * Person at ($78, $80) slot 1; bonfires (type $40) slot 2/3 at
-     * ($48, $80) and ($A8, $80). Slot 1 ObjType already = cave_id via
-     * cave_room_type_set(); slot 1 ObjAttr = $81 + ObjHP = 0. Halt Link
-     * (slot 0 ObjState = $40). Without this port slot 1 OBJ_X/OBJ_Y stayed
-     * 0 → NPC drew at top-left = invisible (Plan v6-C2 follow-up
-     * 2026-05-24, probed via gen_cave_npc.png). */
-    RAM(0x0070u + 1u) = 0x78u;            /* ObjX+1  = slot 1 X */
-    RAM(0x0084u + 1u) = 0x80u;            /* ObjY+1  = slot 1 Y */
-    RAM(0x0485u + 1u) = 0x00u;            /* ObjHP+1 = 0 */
-    /* ObjAttr $4BF (was written to $3A5). NES RAM in a cave: $81 on the
-     * person and both bonfires, metastate 0 (t120_cave_person); attr bit 0
-     * keeps the object loop from drawing the fires a second time (T-133). */
-    RAM(0x04BFu + 1u) = 0x81u;            /* ObjAttr+1 = $81 */
-    RAM(0x04BFu + 2u) = 0x81u;
-    RAM(0x04BFu + 3u) = 0x81u;
-    RAM(0x0405u + 1u) = 0u;               /* ObjMetastate */
-    RAM(0x0405u + 2u) = 0u;
-    RAM(0x0405u + 3u) = 0u;
-    /* T-011: Link is halted (ObjState $40) by NES InitCave, which runs in
-     * the object loop on the first play tick -- after that tick's
-     * UpdatePlayer has moved Link (Up held through the walk-in: NES Link
-     * ends at $D4, not $D5). Deferred to the person's first update. */
-    s_cave_halt_pending = 1u;
-    /* Bonfires slot 2/3 — fixed positions flanking the NPC. */
-    RAM(0x034Fu + 2u) = 0x40u;            /* ObjType+2 = $40 (StandingFire) */
-    RAM(0x034Fu + 3u) = 0x40u;            /* ObjType+3 = $40 (StandingFire) */
-    RAM(0x0070u + 2u) = 0x48u;            /* ObjX+2    = $48 */
-    RAM(0x0070u + 3u) = 0xA8u;            /* ObjX+3    = $A8 */
-    RAM(0x0084u + 2u) = 0x80u;            /* ObjY+2    = $80 */
-    RAM(0x0084u + 3u) = 0x80u;            /* ObjY+3    = $80 */
-    /* The bonfires stay uninitialized ($492 = $FF from the room load,
-     * NES SetUpCommonCaveObjects); UpdateObject initializes them. */
+    g_active_cave = cave_id;
+    return 0;
+}
+
+/* T-143: NES InitCave (Z_01.asm:69), the InitObject of a cave person
+ * (types >= $6A; Z_07.asm InitObject JMP InitCave), run by the object
+ * loop on the person's first update -- after that tick's UpdatePlayer, so
+ * Link is halted where the walk-in left him (NES $D4 with Up held).
+ * The person then spends its spawn cloud (metastate 1 from the room entry)
+ * in UpdateMetaObject before UpdateCavePerson runs; the bonfires typed
+ * here are initialized on the next update and spend their own cloud. */
+void cave_init_person(unsigned int slot)
+{
+    const unsigned char cave_id = (unsigned char)ENEMY_TYPE(slot);
+
+    /* SetUpCommonCaveObjects (Z_01.asm:271): person at ($78, $80), HP 0,
+     * attr $81; halt Link; bonfires $40 in the next two slots at
+     * ($48, $80) and ($A8, $80). */
+    RAM(0x0070u + slot) = 0x78u;          /* ObjX */
+    RAM(0x0084u + slot) = 0x80u;          /* ObjY */
+    RAM(0x0485u + slot) = 0x00u;          /* ObjHP */
+    RAM(0x04BFu + slot) = 0x81u;          /* ObjAttr */
+    RAM(0x00ACu) = 0x40u;                 /* ObjState (Link) = halted */
+    RAM(0x034Fu + 2u) = 0x40u;            /* ObjType+2 = StandingFire */
+    RAM(0x034Fu + 3u) = 0x40u;            /* ObjType+3 */
+    RAM(0x0070u + slot + 1u) = 0x48u;     /* ObjX+1,X */
+    RAM(0x0070u + slot + 2u) = 0xA8u;     /* ObjX+2,X */
+    RAM(0x0084u + slot + 1u) = 0x80u;     /* ObjY+1,X */
+    RAM(0x0084u + slot + 2u) = 0x80u;     /* ObjY+2,X */
+
+    /* @TakeType: give-item ($6A-$6D, $71, $72) and door-charge/money
+     * ($7B+) people show nothing once their item was taken: destroy the
+     * person and unhalt Link. */
+    if (cave_id == 0x72u || cave_id == 0x71u || cave_id >= 0x7Bu || cave_id < 0x6Eu) {
+        if (progress_get_room_flag_uw_item_state() != 0u) {
+            RAM(0x034Fu + 1u) = 0u;       /* ObjType+1 */
+            RAM(0x00ACu) = 0u;            /* UnhaltLink */
+            return;
+        }
+    }
 
     /* NES InitCaveContinue (Z_01.asm:105-170) port:
      * 1) cave_idx = cave_id - $6A.
@@ -211,9 +220,6 @@ int cave_init(cave_id_t cave_id)
                                                    (ware_flag_1 >> 2));
         cave_flags_set(cave_flags);
     }
-
-    g_active_cave = cave_id;
-    return 0;
 }
 
 void cave_exit(void)
@@ -572,10 +578,6 @@ void cave_write_prices_transfer_buf(void)
 
 void cave_update_cave_person(unsigned int slot)
 {
-    if (s_cave_halt_pending) {                /* NES InitCave (see cave_init) */
-        s_cave_halt_pending = 0u;
-        RAM(0x00ACu) = 0x40u;                 /* ObjState (Link) = $40 (halt) */
-    }
     /* NES UpdateCavePerson (Z_01.asm:300). Drain at
      * src/oracle/cave/cave_runtime.c:326-353. Drain MATCH per Gate 1
      * finding 3_4n_h_cave_update_cave_person.md. */

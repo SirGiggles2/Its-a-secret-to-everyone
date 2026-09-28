@@ -1137,29 +1137,49 @@ static void clear_slot_scratch(unsigned int slot)
     ENEMY_ALIVE_FLAG(slot)     = 0xFFu;       /* ObjUninitialized: InitMode_EnterRoom DEC from 0 */
 }
 
-/* Public: empty-clear every enemy slot (1..11) WITHOUT respawning. Mirrors
- * the room-load clear below (TYPE/ALIVE/pos + the scratch cells every
- * per-frame walker/AI path reads), but with no monster-list reload. Used by
- * cave_init so a cave starts on a NES-fresh object page: without it, a live
- * overworld enemy survives the OW->cave transition and keeps running its AI
- * in the cave. Critically that stops a stale slot-4 WANDERER from writing
- * ENEMY_PUSH_TIMER ($0412+slot) over CAVE_TEXT_CHAR_INDEX ($0416 = $0412+4)
- * and garbling shop-cave dialogue. */
-void enemy_loop_clear_all_slots(void)
+/* Public (T-143): NES InitMode_EnterRoom object reset for a cave entry
+ * (InitModeB_EnterCave_Bank5 -> InitMode_EnterRoom, Z_05.asm:1543).
+ * NES clears $0300-$051F (ClearRam0300UpTo) and rebuilds the room-global
+ * cells it holds (bounds $346-$34A, RoomObjCount, Link's slot-0 cells)
+ * right after; the Genesis cave path has already set those before
+ * cave_init, so only what the clear leaves for the objects is applied
+ * here: every object array cell of slots 1..11 in that range, and the
+ * cave text/ware block $413-$450 (InitCave refills it). Then, for slots
+ * $B..1 (Z_05.asm:1684-1699): DEC ObjUninitialized, ResetShoveInfo,
+ * ObjState/ObjDir/ObjStunTimer = 0, INC ObjAnimCounter, INC ObjMetastate
+ * (first cloud state), ObjQSpeedFrac = $20. ObjX/ObjY (outside the
+ * range) keep their values. A fresh object page also stops a stale
+ * overworld wanderer (slot 4) writing $0412+4 = CAVE_TEXT_CHAR_INDEX. */
+static const unsigned short k_obj_arrays_0300[] = {
+    0x034Fu, /* ObjType */            0x0380u, /* ObjMovingLimit */
+    0x0394u, /* ObjGridOffset */      0x03A8u, /* ObjPosFrac */
+    0x03BCu, /* ObjQSpeedFrac */      0x03D0u, /* ObjAnimCounter */
+    0x03E4u, /* ObjAnimFrame */       0x03F8u, /* ObjInputDir */
+    0x0405u, /* ObjMetastate */       0x0412u, /* ENEMY_PUSH_TIMER (unnamed in Variables.inc) */
+    0x0451u, /* ObjShootTimer */      0x0485u, /* ObjHP */
+    0x0492u, /* ObjUninitialized */   0x049Eu, /* ObjCollidedTile */
+    0x04B2u, /* ObjInvincibilityMask */ 0x04BFu, /* ObjAttr */
+    0x04F0u, /* ObjInvincibilityTimer */
+};
+
+void enemy_loop_enter_cave_slots(void)
 {
-    unsigned int slot;
-    for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
-        ENEMY_TYPE(slot)            = 0u;   /* type 0 = DoNothing = empty */
-        ENEMY_ALIVE_FLAG(slot)      = 0xFFu; /* NES DEC from 0 */
-        ENEMY_X(slot)               = 0u;
-        ENEMY_Y(slot)               = 0u;
-        ENEMY_OBJ_SHOVE_DIR(slot)   = 0u;   /* $00C0+slot */
-        OBJ(0x00D3u, slot)          = 0u;   /* shove distance */
-        OBJ(NES_OBJ_POS_FRAC, slot) = 0u;   /* $03A8+slot */
-        OBJ(NES_OBJ_GRID_OFFSET, slot) = 0u;/* $0394+slot */
-        ENEMY_STUN_TIMER(slot)      = 0u;   /* $003D+slot */
-        ENEMY_HIT_REACTION(slot)    = 0u;   /* $04F0+slot */
-        ENEMY_PUSH_TIMER(slot)      = 0u;   /* $0412+slot (aliases cave text idx at slot 4) */
+    unsigned int slot, i;
+    for (i = 0u; i < sizeof(k_obj_arrays_0300) / sizeof(k_obj_arrays_0300[0]); ++i)
+        for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot)
+            RAM(k_obj_arrays_0300[i] + slot) = 0u;
+    for (i = 0x0413u; i <= 0x0450u; ++i)
+        RAM(i) = 0u;
+    for (slot = ENEMY_LOOP_SLOT_LAST; slot >= ENEMY_LOOP_SLOT_FIRST; --slot) {
+        RAM(0x0492u + slot) = (unsigned char)(RAM(0x0492u + slot) - 1u); /* ObjUninitialized */
+        RAM(0x00C0u + slot) = 0u;         /* ObjShoveDir */
+        RAM(0x00D3u + slot) = 0u;         /* ObjShoveDistance */
+        RAM(0x00ACu + slot) = 0u;         /* ObjState */
+        RAM(0x0098u + slot) = 0u;         /* ObjDir */
+        RAM(0x003Du + slot) = 0u;         /* ObjStunTimer */
+        RAM(0x03D0u + slot) = (unsigned char)(RAM(0x03D0u + slot) + 1u); /* ObjAnimCounter */
+        RAM(0x0405u + slot) = (unsigned char)(RAM(0x0405u + slot) + 1u); /* ObjMetastate */
+        RAM(0x03BCu + slot) = 0x20u;      /* ObjQSpeedFrac */
     }
 }
 
@@ -1439,6 +1459,10 @@ static void enemy_loop_init_object(unsigned int slot, unsigned char t)
     if (cloud) ENEMY_MOVE_TIMER(slot) = (unsigned char)slot;
     native_init_obj_attr(slot, t);  /* NES Z_07.asm:5566 @FetchAttrs */
     native_init_obj_hp(slot, t);    /* NES Z_07.asm:5576 HP nibble */
+    if (t >= 0x6Au) {               /* Z_07.asm:5581 JMP InitCave */
+        cave_init_person(slot);
+        return;
+    }
     fn = enemy_init_fns[t];
     if (fn != (enemy_init_fn)0) fn(slot);
 }
@@ -1705,15 +1729,7 @@ void enemy_loop_tick(void)
     for (slot = ENEMY_LOOP_SLOT_LAST; slot >= ENEMY_LOOP_SLOT_FIRST; --slot) {
         unsigned char t;
         enemy_update_fn fn;
-        /* NES UpdateObject (Z_07.asm:5285): object types >= $6A are cave
-         * people, updated here by UpdateCavePerson (T-133; the person was
-         * drawn before the object phase cleared the sprite cache). */
         t = (unsigned char)ENEMY_TYPE(slot);
-        if (t >= 0x6Au && t < ENEMY_LOOP_TYPE_MAX) {
-            ENEMY_THROWER_SLOT = (unsigned char)slot;
-            cave_update_cave_person(slot);
-            continue;
-        }
         if (t == 0u || t >= ENEMY_LOOP_TYPE_MAX) continue;
         ENEMY_THROWER_SLOT = (unsigned char)slot;
         /* NES UpdateObject checks ObjUninitialized ($492, nonzero) before
@@ -1739,6 +1755,15 @@ void enemy_loop_tick(void)
         }
         t = (unsigned char)ENEMY_TYPE(slot);
         if (t >= ENEMY_LOOP_TYPE_MAX) continue;
+        if (t >= 0x6Au) {
+            /* UpdateObject (Z_07.asm:5285): types >= $6A are cave people,
+             * updated by UpdateCavePerson once initialized and out of
+             * their spawn cloud (T-133, T-143). */
+            ENEMY_THROWER_SLOT = (unsigned char)slot;
+            cave_update_cave_person(slot);
+            loop_object_wrapper(slot);
+            continue;
+        }
         fn = enemy_update_fns[t];
         /* Task 7.4 step 2a — write CurObjIndex per-slot. NES UpdateObject
          * uses the X register implicitly; drained C primitives that call
