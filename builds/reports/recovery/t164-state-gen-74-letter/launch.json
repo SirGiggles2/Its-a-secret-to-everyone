@@ -1,0 +1,19 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\builds\\Debug.md",
+  "rom_sha256": "0ab095342bc183b48beaee41378576d1b175b7a00d2c3fe1072dd29f4202d7b3",
+  "script": "tools\\probes\\t164_cave_state_gen.lua",
+  "script_sha256": "2fc09473fa7ab0556e1c9fa022726b18a2874aacbf4c118f2f62b6f496dcdb09",
+  "symbols": {
+    "players": "0xFF0F80",
+    "s_in_gameplay": "0xFF32C8",
+    "s_lvl_phase": "0xFF32DA",
+    "s_mode": "0xFF32AA",
+    "s_move_style": "0xFF32C4",
+    "s_raw_tiles": "0xFF2FCC",
+    "s_scene": "0xFF3868"
+  },
+  "exit_code": 0,
+  "collected": [
+    "t164_state_gen_74_letter.txt"
+  ]
+}

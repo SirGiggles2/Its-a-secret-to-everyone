@@ -101,6 +101,17 @@ static const unsigned char k_overworld_person_text_selectors[20] = {
     0xDEu, 0x62u, 0x62u, 0x62u
 };
 
+/* NES Z_01.asm:MoneyGameLossAmounts/Permutations/PermutationEndIndexes.
+ * InitCaveContinue shuffles one winning amount and two losses on entry. */
+static const unsigned char k_money_game_loss_amounts[2] = { 0x0Au, 0x28u };
+static const unsigned char k_money_game_permutations[18] = {
+    0u, 1u, 2u, 1u, 2u, 0u, 2u, 0u, 1u,
+    0u, 2u, 1u, 2u, 1u, 0u, 1u, 0u, 2u
+};
+static const unsigned char k_money_game_perm_ends[6] = {
+    2u, 5u, 8u, 11u, 14u, 17u
+};
+
 #define NES_SRAM_LBA_E_BASE  0x6A7Eu     /* LevelBlockAttrsE (Variables.inc:331) */
 #define NES_SRAM_LBA_E_PRICE 0x6ABAu     /* LBA_E + 60 (prices region) */
 
@@ -219,6 +230,27 @@ void cave_init_person(unsigned int slot)
                                                    (ware_flag_2 >> 4)   |
                                                    (ware_flag_1 >> 2));
         cave_flags_set(cave_flags);
+
+        if (cave_flags & 0x20u) {
+            /* NES InitCaveContinue @ChoosePermutation uses unsigned 6502
+             * subtraction and the current Random+1/Random+2 bytes. */
+            unsigned char threshold = 0xFFu;
+            unsigned char perm_idx = 6u;
+            while (threshold >= CAVE_RANDOM_A) {
+                threshold = (unsigned char)(threshold - 0x2Bu);
+                if (--perm_idx == 0u) break;
+            }
+            unsigned char end = k_money_game_perm_ends[perm_idx];
+            for (unsigned char j = 0u; j < 3u; ++j) {
+                CAVE_MONEY_GAME_PERM(j) = k_money_game_permutations[end - 2u + j];
+            }
+            CAVE_MONEY_GAME_AMOUNT(0) = k_money_game_loss_amounts[CAVE_RANDOM_B & 1u];
+            CAVE_MONEY_GAME_AMOUNT(1) = 0x0Au;
+            CAVE_MONEY_GAME_AMOUNT(2) = (CAVE_RANDOM_B & 2u) ? 0x32u : 0x14u;
+            for (unsigned char j = 0u; j < 3u; ++j) {
+                CAVE_PRIZE_ORDER(j) = CAVE_MONEY_GAME_AMOUNT(CAVE_MONEY_GAME_PERM(j));
+            }
+        }
     }
 }
 

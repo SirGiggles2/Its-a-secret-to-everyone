@@ -1,0 +1,5 @@
+ow_room=01 selector=5C
+armed scene=00 raw=24 ram=24 x=78 y=7D
+after_trigger mode=10 cave=02 sentinel=00 x=70 y=7D
+state lvl_phase=00 mode_state=00 style=00 tile=00 room=01
+mode=0B cave=71 room=01 state=08 flags=00 wares=3F,3F,3F prices=00,00,00 rupees=31 add=00 sub=13 roomflag=10 reached=true

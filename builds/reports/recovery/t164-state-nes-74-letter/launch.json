@@ -1,0 +1,11 @@
+{
+  "rom": "roms\\Legend of Zelda, The (USA).nes",
+  "rom_sha256": "8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac",
+  "script": "tools\\probes\\t164_cave_state_nes.lua",
+  "script_sha256": "82b5b77d77122cd1070dcf074e467d5a8d7a1e3e8d9426285d52f81d7c849a51",
+  "symbols": {},
+  "exit_code": 0,
+  "collected": [
+    "t164_state_nes_74_letter.txt"
+  ]
+}

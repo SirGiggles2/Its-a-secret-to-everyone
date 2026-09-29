@@ -1,0 +1,20 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\builds\\Debug.md",
+  "rom_sha256": "0ab095342bc183b48beaee41378576d1b175b7a00d2c3fe1072dd29f4202d7b3",
+  "script": "tools\\probes\\t164_secret_gen.lua",
+  "script_sha256": "4f051e9c5721ce4405c86d4e8b902fbb57e2851a3c6a92d8a38221d3a65f5b8b",
+  "symbols": {
+    "players": "0xFF0F80",
+    "s_in_gameplay": "0xFF32C8",
+    "s_lvl_phase": "0xFF32DA",
+    "s_mode": "0xFF32AA",
+    "s_move_style": "0xFF32C4",
+    "s_raw_tiles": "0xFF2FCC",
+    "s_scene": "0xFF3868",
+    "s_tick_start_link_y": "0xFF32C2"
+  },
+  "exit_code": 0,
+  "collected": [
+    "t164_secret_gen_7B.txt"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "rom": "roms\\Legend of Zelda, The (USA).nes",
+  "rom_sha256": "8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac",
+  "script": "tools\\probes\\t164_money_nes.lua",
+  "script_sha256": "646c828ba1d5c827bfdf645739904ba10dd492f4e3b74b259a29e8fac5d59cc4",
+  "symbols": {},
+  "exit_code": 0,
+  "collected": [
+    "t164_money_nes_lose.txt"
+  ]
+}

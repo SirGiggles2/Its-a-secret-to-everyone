@@ -1,0 +1,9 @@
+ow_room=10 selector=58
+armed scene=00 raw=24 ram=24 x=78 y=7D
+after_trigger mode=10 cave=01 sentinel=00 x=70 y=7D
+state lvl_phase=00 mode_state=00 style=00 tile=00 room=10
+mode=0B cave=70 room=10 state=02 flags=AD wares=98,98,D8 hearts=FF rupees=FF text_done=true
+outcome=lose amounts=0A,0A,14 choice=0
+under_min state=05 rupees=09 add=00 sub=00
+played state=08 rupees=62 add=00 sub=08
+settled rupees=5A expected=5A add=00 sub=00 PASS

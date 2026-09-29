@@ -1,0 +1,5 @@
+mode=0B cave=70 room=10 state=02 flags=AD wares=98,98,D8 hearts=22 rupees=00 text_done=true
+outcome=win amounts=0A,14,0A choice=1
+under_min state=05 rupees=09 add=00 sub=00
+played state=08 rupees=0B add=13 sub=00
+settled rupees=1E expected=1E add=00 sub=00 PASS
