@@ -865,12 +865,12 @@ static const unsigned char k_cave_layout_shortcut[16] = {
  * pattern (Z_05.asm:6628). */
 #define CAVE_PALETTE_ROOM_ID 0x44u
 
-/* Cave-id $7B+ = shortcut cave (NES Z_05.asm CheckCaveEdge / cave
- * indexing). All other valid cave-ids ($6A..$7A) use the regular
- * layout. cave_id=0 (no active cave) defaults to regular. */
+/* HandleWarpOW selects Mode $0C only for selector $50. Its cave index
+ * is ($50-$40)/4=4, hence cave id $6E. Cave ids $7B-$7D are ordinary
+ * one-time rupee rooms and use the regular Mode $0B layout. */
 static const unsigned char *cave_layout_for(unsigned char cave_id)
 {
-    if (cave_id >= 0x7Bu) return k_cave_layout_shortcut;
+    if (cave_id == 0x6Eu) return k_cave_layout_shortcut;
     return k_cave_layout_regular;
 }
 

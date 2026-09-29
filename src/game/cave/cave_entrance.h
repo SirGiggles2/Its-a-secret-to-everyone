@@ -22,4 +22,12 @@
 /* Tier 1: per-room cave_id derivation via LevelBlockAttrsB[room_id]. */
 cave_id_t cave_entrance_check(unsigned char tile, unsigned char room_id);
 
+/* NES CheckSubroom Mode $0C: return the OW room reached by one of the
+ * three shortcut stairs, or $FF when Link is not on a stair. Reads the
+ * four installed LevelInfo_CellarRoomIdArray entries at $6BB2. */
+unsigned char cave_shortcut_destination(unsigned char source_room,
+                                        unsigned char link_x,
+                                        unsigned char link_y,
+                                        unsigned char grid_offset);
+
 #endif /* SRC_GAME_CAVE_CAVE_ENTRANCE_H */

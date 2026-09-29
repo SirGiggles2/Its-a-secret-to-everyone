@@ -1,0 +1,11 @@
+{
+  "rom": "roms\\Legend of Zelda, The (USA).nes",
+  "rom_sha256": "8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac",
+  "script": "tools\\probes\\t164_shortcut_nes.lua",
+  "script_sha256": "966c574d6be6a7225a4a2d308b2fc72e4774baad98302b447c300229c5e85c55",
+  "symbols": {},
+  "exit_code": 0,
+  "collected": [
+    "t164_shortcut_nes_80.txt"
+  ]
+}

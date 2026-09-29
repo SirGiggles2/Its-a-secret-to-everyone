@@ -1,0 +1,8 @@
+ow_room=1D selector=50
+armed scene=00 raw=24 ram=24 x=78 y=7D
+after_trigger mode=10 cave=1A sentinel=00 x=70 y=7D
+state lvl_phase=00 mode_state=00 style=00 tile=00 room=1D
+mode=0C cave=6E source=1D array=1D,23,49,79
+pre_stair mode=0C x=B0 y=9D grid=00
+stair_frame mode=0A room=79 x=B0 y=9D grid=00 expected=79
+exit mode=05 room=79 x=60 y=6D PASS

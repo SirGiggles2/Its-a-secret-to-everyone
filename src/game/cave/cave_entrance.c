@@ -36,6 +36,7 @@
 
 #include "cave_entrance.h"
 #include "../world/ow_meta.h"
+#include "platform_abi.h"
 
 cave_id_t cave_entrance_check(unsigned char tile, unsigned char room_id)
 {
@@ -67,4 +68,22 @@ cave_id_t cave_entrance_check(unsigned char tile, unsigned char room_id)
     /* Z_05.asm:7346-7353 — cave dispatch (Mode B unless $50 → Mode C).
      * Cave-id derived per the OverworldPersonTextSelectors index. */
     return (cave_id_t)roomrom_ow_meta_cave_id_from_selector(selector);
+}
+
+unsigned char cave_shortcut_destination(unsigned char source_room,
+                                        unsigned char link_x,
+                                        unsigned char link_y,
+                                        unsigned char grid_offset)
+{
+    unsigned char offset, i;
+    if (grid_offset != 0u || link_y != 0x9Du) return 0xFFu;
+    offset = link_x == 0x50u ? 1u :
+             link_x == 0x80u ? 2u :
+             link_x == 0xB0u ? 3u : 0u;
+    if (offset == 0u) return 0xFFu;
+    for (i = 0u; i < 4u; ++i) {
+        if ((unsigned char)RAM(0x6BB2u + i) == source_room)
+            return (unsigned char)RAM(0x6BB2u + ((i + offset) & 3u));
+    }
+    return 0xFFu;
 }

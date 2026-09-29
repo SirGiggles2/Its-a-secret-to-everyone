@@ -1808,6 +1808,30 @@ static unsigned char link_walkable_at(short x, short y, link_dir_t dir)
  *  - else, clamp at the edge (no transition).
  * Resets sub-pixel/grid/anim state on transition so movement starts clean
  * in the new room. */
+static unsigned char shortcut_cave_exit_if_stair(void)
+{
+    unsigned char dest;
+    unsigned char exit_y;
+    if (s_scene != SCENE_CAVE || nes_ram[0x0012u] != 0x0Cu) return 0u;
+    /* CheckSubroom runs before MoveObject. Checking after movement loses
+     * the grid-zero test and can walk Link a pixel past the stair. */
+    dest = cave_shortcut_destination(s_cave_return_room,
+                (u8)players[0].x, (u8)players[0].y,
+                (u8)s_link_grid_offset);
+    if (dest == 0xFFu) return 0u;
+    /* GoToModeAFromCellar marks the destination visited before Mode A.
+     * InitMode_EnterRoom method 1 then reads its installed OW attrs. */
+    exit_y = (u8)(((nes_ram[0x6AFEu + dest] & 7u) << 4) + 0x4Du);
+    s_room_id = dest;
+    nes_ram[0x00EBu] = dest;
+    room_mark_room_visited();
+    s_cave_return_room = dest;
+    s_cave_return_x = (u8)(nes_ram[0x687Eu + dest] & 0xF0u);
+    s_cave_return_y = (u8)(exit_y - 16u);
+    begin_cave_exit();
+    return 1u;
+}
+
 static void edge_load_or_clamp(void)
 {
     /* NES CheckCaveEdge -> CheckScreenEdge: walking south to Y=$DD
@@ -4458,6 +4482,9 @@ void roomrom_debug_tick(void)
                         uw_person_check_person_blocking();
                     if (nes_ram[0x000Fu] == 0u) moving_dir = LINK_DIR_NONE;
                 }
+
+                if (moving_dir != LINK_DIR_NONE && shortcut_cave_exit_if_stair())
+                    moving_dir = LINK_DIR_NONE;
 
                 s_ow_edge = 0u;
                 if (s_scene == SCENE_OW && moving_dir != LINK_DIR_NONE) {
