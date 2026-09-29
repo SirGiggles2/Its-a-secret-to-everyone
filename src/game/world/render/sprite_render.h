@@ -51,13 +51,16 @@ void roomrom_sprites_set_link_sat(short x, short y,
 void roomrom_sprites_set_link_pose(short x, short y,
                                    link_face_t face, unsigned char frame);
 
-/* Pose with explicit palette index (RENDER_PAL0..PAL3). Used by the
- * invincibility-flash path: when LINK_STUN_TIMER > 0, caller cycles
- * pal_index across (FrameCounter & $03) so Link visually flickers
- * through 4 palettes. Default rendering uses PAL1. */
+/* Pose with explicit Genesis palette index (RENDER_PAL0..PAL3). */
 void roomrom_sprites_set_link_pose_pal(short x, short y,
                                        link_face_t face, unsigned char frame,
                                        unsigned char pal_index);
+
+/* NES Anim_WriteSpritePair: hit flash uses ObjInvincibilityTimer & 3.
+ * Sprite sub-pal 3 selects the permanent biased Link walk bank. */
+void roomrom_sprites_set_link_hurt_pose(short x, short y,
+                                       link_face_t face, unsigned char frame,
+                                       unsigned char invincibility_timer);
 
 
 /* S7 v4 combat. */

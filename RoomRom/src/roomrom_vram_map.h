@@ -170,10 +170,19 @@
 #define ROOMROM_HUD_MARKER_TILE_COUNT 2u
 /* T-011: Link lifting an item, NES common sprite pair $78/$79 (8x16). Its
  * SPR_TILE_BASE+$78 copy lies inside the SCENE_OBJ overlay (SPR+44) and
- * holds enemy art in play. 1376..1440 are unused in OW / cave / UW / boss
- * VRAM snapshots (t011, t131, t129). */
+ * holds enemy art in play. The 1376..1440 gap was unused in OW / cave /
+ * UW / boss captures (t011, t131, t129); T-138 reserves 1378..1425 for
+ * Link hurt-flash poses, leaving 1426..1440 free. */
 #define ROOMROM_LINK_LIFT_TILE_BASE 1376u
 #define ROOMROM_LINK_LIFT_TILE_COUNT 2u
+/* T-138: 8 walk poses x 4 tiles, color indices 1..3 biased to 13..15.
+ * PAL1[13..15] holds NES sprite sub-palette 3; the unmodified walk bank
+ * covers sub-palettes 0..2 via PAL1/PAL2/PAL3. 1378..1409 is reserved
+ * below the VDP tables and does not overlap the lift pair. */
+#define ROOMROM_LINK_FLASH3_TILE_BASE 1378u
+#define ROOMROM_LINK_FLASH3_TILE_COUNT 32u
+#define ROOMROM_LINK_ATTACK_FLASH3_TILE_BASE 1410u
+#define ROOMROM_LINK_ATTACK_FLASH3_TILE_COUNT 16u
 /* The pause inventory owns 1280..1295. Its ROM-derived marker pair
  * (indices 14/15) is also uploaded at gameplay boot for the Original HUD. */
 #define ROOMROM_SUBSCREEN_SPRITE_TILE_BASE 1280u

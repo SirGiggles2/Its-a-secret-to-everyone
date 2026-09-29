@@ -73,10 +73,24 @@ extern const unsigned char demo_chr[8768];   /* T-011: NES sprite tiles $70.. */
 #define LINK_TILES_PER_POSE     4u
 #define LINK_POSE_COUNT         8u   /* 4 facings x 2 walk frames */
 
+_Static_assert(ROOMROM_LINK_FLASH3_TILE_BASE ==
+                   ROOMROM_LINK_LIFT_TILE_BASE + ROOMROM_LINK_LIFT_TILE_COUNT,
+               "Link flash tiles must follow the item-lift pair");
+_Static_assert(ROOMROM_LINK_FLASH3_TILE_COUNT ==
+                   LINK_POSE_COUNT * LINK_TILES_PER_POSE,
+               "Link flash bank must hold every walk pose");
+_Static_assert(ROOMROM_LINK_ATTACK_FLASH3_TILE_BASE ==
+                   ROOMROM_LINK_FLASH3_TILE_BASE + ROOMROM_LINK_FLASH3_TILE_COUNT,
+               "Link attack flash tiles must follow walk flash tiles");
+
 /* S7 v4: attack poses follow the 8 walk poses. 4 attack poses (one per
  * facing), 4 tiles each = 16 contiguous tiles. */
 #define ATTACK_POSE_COUNT       4u
 #define ATTACK_VRAM_TILE        (LINK_VRAM_TILE + LINK_POSE_COUNT * LINK_TILES_PER_POSE)
+
+_Static_assert(ROOMROM_LINK_ATTACK_FLASH3_TILE_COUNT ==
+                   ATTACK_POSE_COUNT * LINK_TILES_PER_POSE,
+               "Link attack flash bank must hold every attack pose");
 
 /* HUD backdrop sprite strip retired 2026-05-15. H32 SAT is gameplay-only;
  * opaque black HUD underlay comes from BG_A tile 0 (PAL0 color 0) via
@@ -246,7 +260,8 @@ static void hflip_tile_inplace(unsigned char *t)
 #endif
 
 static void upload_pose(unsigned short vram_tile_base,
-                        const link_pose_def_t *pose)
+                        const link_pose_def_t *pose,
+                        unsigned char pixel_bias)
 {
     unsigned char t, i;
     unsigned char buf[32];
@@ -259,6 +274,15 @@ static void upload_pose(unsigned short vram_tile_base,
         }
         if (pose->per_tile_hflip & (1u << t)) {
             hflip_tile_inplace(buf);
+        }
+        if (pixel_bias != 0u) {
+            for (i = 0u; i < 32u; ++i) {
+                const unsigned char hi = (unsigned char)(buf[i] >> 4);
+                const unsigned char lo = (unsigned char)(buf[i] & 0x0Fu);
+                buf[i] = (unsigned char)
+                    (((hi ? (unsigned char)(hi + pixel_bias) : 0u) << 4) |
+                     (lo ? (unsigned char)(lo + pixel_bias) : 0u));
+            }
         }
         render_chr_upload(
             (unsigned short)((vram_tile_base + t) * 32u),
@@ -290,7 +314,20 @@ void roomrom_sprites_upload_persistent_chr(void)
         for (p = 0; p < LINK_POSE_COUNT; p++) {
             upload_pose(
                 (unsigned short)(LINK_VRAM_TILE + p * LINK_TILES_PER_POSE),
-                &link_poses[p]);
+                &link_poses[p], 0u);
+        }
+    }
+
+    /* NES Anim_WriteSpritePair may choose sprite sub-pal 3 while Link is
+     * hurt. Keep one permanent biased walk bank for PAL1[13..15]; no
+     * per-frame CHR upload or BG-palette mutation. */
+    {
+        unsigned char p;
+        for (p = 0u; p < LINK_POSE_COUNT; ++p) {
+            upload_pose(
+                (unsigned short)(ROOMROM_LINK_FLASH3_TILE_BASE +
+                                 p * LINK_TILES_PER_POSE),
+                &link_poses[p], 12u);
         }
     }
 
@@ -300,7 +337,11 @@ void roomrom_sprites_upload_persistent_chr(void)
         for (p = 0; p < ATTACK_POSE_COUNT; p++) {
             upload_pose(
                 (unsigned short)(ATTACK_VRAM_TILE + p * LINK_TILES_PER_POSE),
-                &attack_poses[p]);
+                &attack_poses[p], 0u);
+            upload_pose(
+                (unsigned short)(ROOMROM_LINK_ATTACK_FLASH3_TILE_BASE +
+                                 p * LINK_TILES_PER_POSE),
+                &attack_poses[p], 12u);
         }
     }
 
@@ -471,11 +512,38 @@ void roomrom_sprites_set_link_pose_pal(short x, short y,
     set_link_halves(x, y, tile, pal_index);
 }
 
+void roomrom_sprites_set_link_hurt_pose(short x, short y,
+                                       link_face_t face, unsigned char frame,
+                                       unsigned char invincibility_timer)
+{
+    unsigned char subpal = (unsigned char)(invincibility_timer & 3u);
+    unsigned short pose_idx = (unsigned short)face * 2u + (unsigned short)frame;
+    unsigned short tile = LINK_VRAM_TILE + pose_idx * LINK_TILES_PER_POSE;
+    unsigned char pal = (unsigned char)(RENDER_PAL1 + subpal);
+    if (subpal == 3u) {
+        tile = (unsigned short)(ROOMROM_LINK_FLASH3_TILE_BASE +
+                                pose_idx * LINK_TILES_PER_POSE);
+        pal = RENDER_PAL1;
+    }
+    set_link_halves(x, y, tile, pal);
+}
+
 void roomrom_sprites_set_link_attack_pose(short x, short y, link_face_t face)
 {
     unsigned short pose_idx = (unsigned short)face;
     unsigned short tile = ATTACK_VRAM_TILE + pose_idx * LINK_TILES_PER_POSE;
-    set_link_halves(x, y, tile, RENDER_PAL1);
+    const unsigned char timer = nes_ram[0x04F0u];
+    unsigned char pal = RENDER_PAL1;
+    if (timer != 0u) {
+        const unsigned char subpal = (unsigned char)(timer & 3u);
+        if (subpal == 3u) {
+            tile = (unsigned short)(ROOMROM_LINK_ATTACK_FLASH3_TILE_BASE +
+                                    pose_idx * LINK_TILES_PER_POSE);
+        } else {
+            pal = (unsigned char)(RENDER_PAL1 + subpal);
+        }
+    }
+    set_link_halves(x, y, tile, pal);
 }
 
 void roomrom_sprites_spawn_link(short x, short y)

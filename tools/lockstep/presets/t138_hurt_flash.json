@@ -1,0 +1,74 @@
+{
+  "name": "t138_hurt_flash",
+  "file_name": "LINK",
+  "quest": 0,
+  "items": {
+    "InvBracelet": 1
+  },
+  "script": [
+    [
+      30,
+      ""
+    ],
+    [
+      148,
+      "R"
+    ],
+    [
+      10,
+      ""
+    ],
+    [
+      7,
+      "R"
+    ],
+    [
+      121,
+      ""
+    ],
+    [
+      60,
+      "U"
+    ],
+    [
+      60,
+      ""
+    ],
+    [
+      7,
+      "L"
+    ],
+    [
+      121,
+      ""
+    ],
+    [
+      7,
+      "R"
+    ],
+    [
+      151,
+      ""
+    ]
+  ],
+  "stages": [
+    [
+      188,
+      "wr(0x70, 232)\nwr(0x84, 141)\nwr(0x98, 1)\nwr(0x394, 0)\ngen_link_pos(232, 141, 1)\nlog(string.format('room %02X link %02X,%02X slot11 %02X at %02X,%02X st %02X flags79 %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x35A), rd(0x7B), rd(0x8F), rd(0xB7), rd(0x67F+0x79)))"
+    ],
+    [
+      316,
+      "wr(0x70, 128)\nwr(0x84, 157)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(128, 157, 8)\nlog(string.format('room %02X link %02X,%02X slot11 %02X at %02X,%02X st %02X flags79 %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x35A), rd(0x7B), rd(0x8F), rd(0xB7), rd(0x67F+0x79)))"
+    ],
+    [
+      436,
+      "wr(0x70, 8)\nwr(0x84, 141)\nwr(0x98, 2)\nwr(0x394, 0)\ngen_link_pos(8, 141, 2)\nlog(string.format('room %02X link %02X,%02X slot11 %02X at %02X,%02X st %02X flags79 %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x35A), rd(0x7B), rd(0x8F), rd(0xB7), rd(0x67F+0x79)))"
+    ],
+    [
+      564,
+      "wr(0x70, 232)\nwr(0x84, 141)\nwr(0x98, 1)\nwr(0x394, 0)\ngen_link_pos(232, 141, 1)\nlog(string.format('room %02X link %02X,%02X slot11 %02X at %02X,%02X st %02X flags79 %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x35A), rd(0x7B), rd(0x8F), rd(0xB7), rd(0x67F+0x79)))"
+    ]
+  ],
+  "clock": "play",
+  "_note": "T-138 focused natural Link damage in the OW rock-push route. Compare NES OAM/PALRAM to Genesis SAT/CRAM for hurt ticks. Run --frames 370 --snap 317,318,319,320,321,322,323,324,325 --full --no-cache."
+}

@@ -4,7 +4,7 @@
 
 **Historical atlas manifest, not the active item-ID dispatch.** The item names/IDs below describe the uncalled fixed-slot renderer and include stale mappings (for example, ring is not `$0C`). See [active_item_draw.md](active_item_draw.md) for the linked runtime path and NES-verified ring `$12/$13` mapping.
 
-**Verifier output (live):** `verify_vram_budget: OK  BG=tiles 1..663  SPR=tiles 664..950  ITEM=tiles 951..1060  BOSS=SCENE_OBJ-shared (NES parity)  BOSS_PAL3=tiles 1061..1124  CLOUD=tiles 1300..1305  FIREBALL=tiles 1306..1307  SPARK=tiles 1308..1311  HUD_MARKER=tiles 1312..1313  SUBSCREEN_SPRITE=tiles 1280..1295  contiguous_tail_headroom=222 tiles before VDP tables
+**Verifier output (live):** `verify_vram_budget: OK  BG=tiles 1..663  SPR=tiles 664..950  ITEM=tiles 951..1060  BOSS=SCENE_OBJ-shared (NES parity)  BOSS_PAL3=tiles 1061..1124  CLOUD=tiles 1300..1305  FIREBALL=tiles 1306..1307  SPARK=tiles 1308..1311  HUD_MARKER=tiles 1312..1313  SUBSCREEN_SPRITE=tiles 1280..1295  LINK_FLASH3=tiles 1378..1409  LINK_ATTACK_FLASH3=tiles 1410..1425  contiguous_tail_headroom=110 tiles before VDP tables
   hscroll_table_unused=1020 bytes (HSCROLL_PLANE mode uses 4 B of 1 KB allocated; available as SAT-extension scratch only)`
 
 ## CRAM / palette routing
@@ -78,7 +78,7 @@ Genesis SAT has 80 slots in H32 mode. Slots 0..9 are gameplay-owned (player + it
 
 | Slot # | Name | Owner | Set fn | Clear fn | Tile source | Dispatch | Sub-pal | Priority | Chain link → |
 |---:|---|---|---|---|---|---|---|---|---|
-| 0 | `ROOMROM_SPRITE_SLOT_LINK` | Link runtime | `roomrom_sprites_set_link_pose / _pal` | `(implicit; spawn_link off-screen init)` | common.c (LINK_VRAM_TILE + 4 tiles/pose) | 2x2 | 0 only (Link's tunic; PAL1) | above-BG via OAM | `ROOMROM_SPRITE_SLOT_SWORD` |
+| 0 | `ROOMROM_SPRITE_SLOT_LINK` | Link runtime | `roomrom_sprites_set_link_pose / _hurt_pose / _attack_pose` | `(implicit; spawn_link off-screen init)` | common.c walk/attack poses; flash-3 biased copies at tiles 1378..1425 | 2x2 | 0 normal; hurt timer & 3 selects 0/1/2/3 with sub-pal 3 in PAL1[13..15] | above-BG via OAM | `ROOMROM_SPRITE_SLOT_SWORD` |
 | 1 | `ROOMROM_SPRITE_SLOT_SWORD` | combat_runtime | `roomrom_sprites_set_sword_vertical/horizontal/diagonal` | `roomrom_sprites_clear_sword` | items_chr_x4 SWORD_VERT/SWORD_HORZ/SWORD_DIAG | 1x2 / 2x2 / 1x2 | 0/1/2 (wood/white/magic; via ROOMROM_SUBPAL_PAL) | above-BG | `ROOMROM_SPRITE_SLOT_BEAM` |
 | 2 | `ROOMROM_SPRITE_SLOT_BEAM` | (unused) | `(none: sword shot $0E drawn via enemy_render weapon cache, T-116)` | `(spawn_link off-screen init)` | - | - | - | - | `ROOMROM_SPRITE_SLOT_BOOMERANG` |
 | 3 | `ROOMROM_SPRITE_SLOT_BOOMERANG` | items_runtime | `roomrom_sprites_set_boomerang` | `roomrom_sprites_clear_boomerang` | items_chr_x4 BOOMERANG (8-phase cycle) | 1x2 | 0 (NES base attr = 0; ROOMROM_SUBPAL_PAL) | above-BG | `ROOMROM_SPRITE_SLOT_ARROW` |

@@ -1,0 +1,55 @@
+{
+  "name": "t138_hurt_attack",
+  "file_name": "LINK",
+  "quest": 0,
+  "items": {
+    "InvBracelet": 1,
+    "Items": 1
+  },
+  "script": [
+    [
+      30,
+      ""
+    ],
+    [
+      148,
+      "R"
+    ],
+    [
+      10,
+      ""
+    ],
+    [
+      7,
+      "R"
+    ],
+    [
+      121,
+      ""
+    ],
+    [
+      11,
+      "U"
+    ],
+    [
+      1,
+      "A"
+    ],
+    [
+      50,
+      ""
+    ]
+  ],
+  "stages": [
+    [
+      188,
+      "wr(0x70, 232)\nwr(0x84, 141)\nwr(0x98, 1)\nwr(0x394, 0)\ngen_link_pos(232, 141, 1)\nlog(string.format('room %02X link %02X,%02X slot11 %02X at %02X,%02X st %02X flags79 %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x35A), rd(0x7B), rd(0x8F), rd(0xB7), rd(0x67F+0x79)))"
+    ],
+    [
+      316,
+      "wr(0x70, 128)\nwr(0x84, 157)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(128, 157, 8)\nlog(string.format('room %02X link %02X,%02X slot11 %02X at %02X,%02X st %02X flags79 %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x35A), rd(0x7B), rd(0x8F), rd(0xB7), rd(0x67F+0x79)))"
+    ]
+  ],
+  "clock": "play",
+  "_note": "T-138 named consumer: normal sword input during natural rock-room hurt flash. Bracelet route from t050_rock_push; sword owned from file card. Run --frames 350 --snap 327,328,329,330,331,332,333,334,335 --full --no-cache."
+}

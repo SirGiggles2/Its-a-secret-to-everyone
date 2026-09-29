@@ -225,13 +225,34 @@ unsigned char roomrom_ow_room_render_get_map(void)
 void roomrom_ow_room_render_load_palette(unsigned char room_id)
 {
     unsigned char map = (s_roomrom_map_id == ROOMROM_MAP_REDUX) ? 1u : 0u;
-    /* Live NES PALRAM extracted from each ROM's LevelInfoOW transfer buffer.
-     * Loads Gen PAL0 (NES BG sub-pals 0..3 packed) and Gen PAL1 (NES SPR
-     * sub-pals 0..3 packed). PAL2 holds NES SPR sub-pal 3 (level palette)
-     * which is per-room patched below. */
-    roomrom_bg_palette_load_palram_full(g_roomrom_ow_palram[map]);
+    unsigned char palram[32];
+    unsigned char i;
+    for (i = 0u; i < 32u; ++i) palram[i] = g_roomrom_ow_palram[map][i];
+    if (map == 0u) {
+        /* NES Z_07.asm:@ChooseTileObjPalette chooses row 7 by tile-object
+         * type and installed LevelBlockAttrsB. Z_06.asm transfer buffers
+         * give the four exact bytes for each row. The old per-room scan
+         * table misses the brown rock in $79; the live NES hurt capture
+         * shows $0F/$17/$37/$12, not that table's default red row. */
+        static const unsigned char k_ghost[4] = {0x0Fu, 0x30u, 0x00u, 0x12u};
+        static const unsigned char k_green[4] = {0x0Fu, 0x1Au, 0x37u, 0x12u};
+        static const unsigned char k_brown[4] = {0x0Fu, 0x17u, 0x37u, 0x12u};
+        static const unsigned char k_red[4]   = {0x0Fu, 0x0Fu, 0x1Cu, 0x16u};
+        const unsigned char *row = k_red;
+        unsigned char tile_type, tile_x, tile_y;
+        const unsigned char attrs_b = nes_ram[0x68FEu + room_id];
+        roomrom_ow_room_tile_object(room_id, &tile_type, &tile_x, &tile_y);
+        if (tile_type == 0x65u || (tile_type == 0x66u && (attrs_b & 1u)))
+            row = k_ghost;
+        else if (tile_type == 0x66u || (tile_type == 0x62u && !(attrs_b & 1u)))
+            row = k_green;
+        else if (tile_type == 0x62u)
+            row = k_brown;
+        for (i = 0u; i < 4u; ++i) palram[28u + i] = row[i];
+    }
+    /* PAL1 packs NES sprite sub-palettes 0..3 into slots 0..15. */
+    roomrom_bg_palette_load_palram_full(palram);
     roomrom_ow_palette_patch_bg_per_room(room_id);
-    roomrom_ow_palette_patch_subpal3(room_id);
 }
 
 static unsigned char normalize_primary_tile(unsigned char raw)

@@ -568,9 +568,8 @@ static void draw_link_pending(void)
     s_link_draw_pending = 0u;
     if (s_cave_load_blank) return;
     if (nes_ram[0x04F0u] != 0u)
-        roomrom_sprites_set_link_pose_pal(players[0].x, players[0].y,
-            players[0].face, s_link_frame,
-            (unsigned char)(((unsigned char)s_frame_counter) & 0x03u));
+        roomrom_sprites_set_link_hurt_pose(players[0].x, players[0].y,
+            players[0].face, s_link_frame, nes_ram[0x04F0u]);
     else
         roomrom_sprites_set_link_pose(players[0].x, players[0].y,
                                       players[0].face, s_link_frame);
@@ -4350,18 +4349,14 @@ void roomrom_debug_tick(void)
                  * behind BG. Genesis equivalent = single low-prio sprite
                  * + wide BG-prio stamp. Split-sprite removed. */
                 {
-                    /* Invincibility palette flash: when LINK_STUN_TIMER > 0,
-                     * cycle Link's sprite palette index across PAL0..PAL3
-                     * keyed on FrameCounter & $03. NES Z_01.asm:5367-5371
-                     * applies sub-palette XOR; on Genesis we cycle the
-                     * sprite palette bank (PAL1 normal). */
+                    /* NES Anim_WriteSpritePair uses invincibility timer
+                     * low bits for Link's four sprite sub-palettes. */
                     unsigned char stun = nes_ram[0x04F0u];
                     if (stun != 0u) {
-                        unsigned char pal = (unsigned char)
-                            (((unsigned char)s_frame_counter) & 0x03u);
-                        roomrom_sprites_set_link_pose_pal(players[0].x, players[0].y,
-                                                          players[0].face,
-                                                          s_link_frame, pal);
+                        roomrom_sprites_set_link_hurt_pose(players[0].x,
+                                                           players[0].y,
+                                                           players[0].face,
+                                                           s_link_frame, stun);
                     } else {
                         roomrom_sprites_set_link_pose(players[0].x, players[0].y,
                                                       players[0].face, s_link_frame);
