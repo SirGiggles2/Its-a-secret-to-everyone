@@ -129,6 +129,8 @@ def build(spec: dict) -> dict:
 
     return {"name": spec["name"], "nes_wram": nes, "gen_slot0": gen,
             "items": items, "script": spec.get("script", []),
+            "postscript": spec.get("postscript", []),
+            "post_expect_save": spec.get("post_expect_save", []),
             "stages": stages_of(spec),
             "gen_entry": spec.get("gen_entry", "fs"),
             # T-012: "play" = the script advances only on play-mode ticks
@@ -189,6 +191,10 @@ def to_lua(p: dict) -> str:
         out += f'PRESET.pc_profile = {{{int(a)}, {int(b)}}}\n'
     if p.get("snap"):
         out += "PRESET.snap = {" + ",".join(str(int(f)) for f in p["snap"]) + "}\n"
+    if p.get("postscript"):
+        out += "PRESET.postscript = " + lua_value(p["postscript"]) + "\n"
+    if p.get("post_expect_save"):
+        out += "PRESET.post_expect_save = " + lua_value(p["post_expect_save"]) + "\n"
     return out
 
 

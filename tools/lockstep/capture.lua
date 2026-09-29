@@ -559,6 +559,43 @@ if PCP then
     fh:close()
     meta:write(string.format("pc_profile samples=%d\n", pc_samples))
 end
+-- A connected route may finish with a non-play action such as Pause -> Save.
+-- Keep the established play-clock RAM rows intact, then drive this short
+-- tail by video frames. The final .wram/.sram dumps below include its result.
+if PRESET.postscript then
+    if client.invisibleemulation then client.invisibleemulation(false) end
+    local post_frames = 0
+    for _, step in ipairs(PRESET.postscript) do
+        local count, buttons = tonumber(step[1]), step[2]
+        if not count or count < 0 or count > 10000 then
+            meta:close(); fail("postscript: invalid frame count") return
+        end
+        for _ = 1, count do
+            set_pads(buttons)
+            emu.frameadvance()
+        end
+        post_frames = post_frames + count
+        meta:write(string.format("post frames=%d in=%s gm=%02X sub=%02X room=%02X rupees=%02X hearts=%02X triforce=%02X\n",
+            post_frames, buttons, gm(), srd(0x13), room(),
+            srd(0x66D), srd(0x66F), srd(0x671)))
+    end
+    set_pads("")
+    for _, pair in ipairs(PRESET.post_expect_save or {}) do
+        local k, want = tonumber(pair[1]), tonumber(pair[2])
+        if not k or not want or k < 0 or k >= 0x530 or want < 0 or want > 255 then
+            meta:close(); fail("postscript: invalid save expectation") return
+        end
+        local a = (sys == "GEN") and (2 * k + 1) or (0x6000 + k - SAVE_BASE)
+        local got = memory.read_u8(a, SAVE_DOM)
+        meta:write(string.format("post save logical=%03X got=%02X want=%02X\n", k, got, want))
+        if got ~= want then
+            meta:close()
+            fail(string.format("postscript: save logical %03X got %02X want %02X", k, got, want))
+            return
+        end
+    end
+end
+
 client.screenshot(OUT .. ".png")
 
 -- Final-frame full video dump (RULE V3: every domain, full range).
