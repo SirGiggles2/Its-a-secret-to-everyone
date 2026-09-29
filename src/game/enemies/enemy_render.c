@@ -603,10 +603,26 @@ static unsigned char s_boss_bank_active = 0u;
 static unsigned char s_fireball_chr_uploaded;
 static void ensure_fireball_chr(void)
 {
+    unsigned char tile, i;
+    unsigned char biased[32];
     if (s_fireball_chr_uploaded) return;
     render_chr_upload((unsigned short)(ROOMROM_FIREBALL_TILE_BASE * 32u),
                       common_chr + 0x44u * 32u,
                       ROOMROM_FIREBALL_TILE_COUNT * 32u);
+    /* NES sprite sub-pal 3 lives in PAL1[13..15]. Keep its $44/$45
+     * fireball art ROM-derived, and leave transparent pixels at zero. */
+    for (tile = 0u; tile < ROOMROM_FIREBALL_SUBPAL3_TILE_COUNT; ++tile) {
+        for (i = 0u; i < 32u; ++i) {
+            unsigned char pixel_pair = common_chr[(0x44u + tile) * 32u + i];
+            unsigned char hi = (unsigned char)(pixel_pair >> 4);
+            unsigned char lo = (unsigned char)(pixel_pair & 0x0Fu);
+            biased[i] = (unsigned char)
+                (((hi ? (unsigned char)(hi + 12u) : 0u) << 4) |
+                 (lo ? (unsigned char)(lo + 12u) : 0u));
+        }
+        render_chr_upload((unsigned short)((ROOMROM_FIREBALL_SUBPAL3_TILE_BASE + tile) * 32u),
+                          biased, 32u);
+    }
     s_fireball_chr_uploaded = 1u;
 }
 
@@ -639,6 +655,8 @@ static inline unsigned short translate_tile(unsigned char nes_tile,
     }
     if (nes_tile == 0x44u || nes_tile == 0x45u) {
         ensure_fireball_chr();
+        if ((nes_attrs & 0x03u) == 3u)
+            return (unsigned short)(ROOMROM_FIREBALL_SUBPAL3_TILE_BASE + nes_tile - 0x44u);
         return (unsigned short)(ROOMROM_FIREBALL_TILE_BASE + nes_tile - 0x44u);
     }
     if (nes_tile >= NES_FIRE_TILE_FIRST && nes_tile <= NES_FIRE_TILE_LAST) {
@@ -713,6 +731,10 @@ static inline unsigned short translate_attrs(unsigned char nes_attrs,
         tile_id < ROOMROM_BOSS_SUBPAL3_TILE_BASE + ROOMROM_BOSS_SUBPAL3_TILE_COUNT) {
         pal_bank = RENDER_PAL1;
     }
+    if (tile_id >= ROOMROM_FIREBALL_SUBPAL3_TILE_BASE &&
+        tile_id < ROOMROM_FIREBALL_SUBPAL3_TILE_BASE + ROOMROM_FIREBALL_SUBPAL3_TILE_COUNT) {
+        pal_bank = RENDER_PAL1;
+    }
 
     unsigned short sat = (unsigned short)(tile_id & 0x07FFu);
     sat |= (unsigned short)(pal_bank << 13);
@@ -769,8 +791,10 @@ static inline unsigned short xlat_sat(unsigned char tile, unsigned char attrs)
         tid = (unsigned short)(ROOMROM_BOSS_SUBPAL3_TILE_BASE +
                                (unsigned short)(tile - 0xC0u));
     sat = (unsigned short)(s_xlat_attr[attrs] | (tid & 0x07FFu));
-    if (tid >= ROOMROM_BOSS_SUBPAL3_TILE_BASE &&
-        tid < ROOMROM_BOSS_SUBPAL3_TILE_BASE + ROOMROM_BOSS_SUBPAL3_TILE_COUNT)
+    if ((tid >= ROOMROM_BOSS_SUBPAL3_TILE_BASE &&
+         tid < ROOMROM_BOSS_SUBPAL3_TILE_BASE + ROOMROM_BOSS_SUBPAL3_TILE_COUNT) ||
+        (tid >= ROOMROM_FIREBALL_SUBPAL3_TILE_BASE &&
+         tid < ROOMROM_FIREBALL_SUBPAL3_TILE_BASE + ROOMROM_FIREBALL_SUBPAL3_TILE_COUNT))
         sat = (unsigned short)((sat & 0x9FFFu) | (RENDER_PAL1 << 13));
     return sat;
 }

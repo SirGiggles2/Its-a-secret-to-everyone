@@ -86,6 +86,8 @@ def parse_constants():
                  "ROOMROM_BOSS_SUBPAL3_TILE_COUNT",
                  "ROOMROM_CLOUD_TILE_BASE", "ROOMROM_CLOUD_TILE_COUNT",
                  "ROOMROM_FIREBALL_TILE_BASE", "ROOMROM_FIREBALL_TILE_COUNT",
+                 "ROOMROM_FIREBALL_SUBPAL3_TILE_BASE",
+                 "ROOMROM_FIREBALL_SUBPAL3_TILE_COUNT",
                  "ROOMROM_SPARK_TILE_BASE", "ROOMROM_SPARK_TILE_COUNT",
                  "ROOMROM_HUD_MARKER_TILE_BASE", "ROOMROM_HUD_MARKER_TILE_COUNT",
                  "ROOMROM_SUBSCREEN_SPRITE_TILE_BASE",
@@ -220,7 +222,7 @@ def main():
         fail(f"Boss palette-3 bank ends at {boss_subpal3_end}, beyond VDP tables")
     banks = {"BG": bg_range, "SPR": spr_range, "ITEM": item_range,
              "BOSS_PAL3": tile_range_bytes(item_end_tile, c["ROOMROM_BOSS_SUBPAL3_TILE_COUNT"])}
-    for name in ("SUBSCREEN_SPRITE", "CLOUD", "FIREBALL", "SPARK",
+    for name in ("SUBSCREEN_SPRITE", "CLOUD", "FIREBALL", "FIREBALL_SUBPAL3", "SPARK",
                  "HUD_MARKER", "LINK_LIFT", "LINK_FLASH3", "LINK_ATTACK_FLASH3"):
         region = tile_range_bytes(c[f"ROOMROM_{name}_TILE_BASE"], c[f"ROOMROM_{name}_TILE_COUNT"])
         if region[1] > TILE_DATA_LIMIT_BYTES:
@@ -257,6 +259,7 @@ def main():
         f"BOSS_PAL3=tiles {item_end_tile}..{boss_subpal3_end - 1}  "
         f"CLOUD=tiles {c['ROOMROM_CLOUD_TILE_BASE']}..{c['ROOMROM_CLOUD_TILE_BASE'] + c['ROOMROM_CLOUD_TILE_COUNT'] - 1}  "
         f"FIREBALL=tiles {c['ROOMROM_FIREBALL_TILE_BASE']}..{c['ROOMROM_FIREBALL_TILE_BASE'] + c['ROOMROM_FIREBALL_TILE_COUNT'] - 1}  "
+        f"FIREBALL_PAL3=tiles {c['ROOMROM_FIREBALL_SUBPAL3_TILE_BASE']}..{c['ROOMROM_FIREBALL_SUBPAL3_TILE_BASE'] + c['ROOMROM_FIREBALL_SUBPAL3_TILE_COUNT'] - 1}  "
         f"SPARK=tiles {c['ROOMROM_SPARK_TILE_BASE']}..{c['ROOMROM_SPARK_TILE_BASE'] + c['ROOMROM_SPARK_TILE_COUNT'] - 1}  "
         f"HUD_MARKER=tiles {c['ROOMROM_HUD_MARKER_TILE_BASE']}..{c['ROOMROM_HUD_MARKER_TILE_BASE'] + c['ROOMROM_HUD_MARKER_TILE_COUNT'] - 1}  "
         f"SUBSCREEN_SPRITE=tiles {c['ROOMROM_SUBSCREEN_SPRITE_TILE_BASE']}..{c['ROOMROM_SUBSCREEN_SPRITE_TILE_BASE'] + c['ROOMROM_SUBSCREEN_SPRITE_TILE_COUNT'] - 1}  "

@@ -183,6 +183,9 @@
 #define ROOMROM_LINK_FLASH3_TILE_COUNT 32u
 #define ROOMROM_LINK_ATTACK_FLASH3_TILE_BASE 1410u
 #define ROOMROM_LINK_ATTACK_FLASH3_TILE_COUNT 16u
+/* T-160: NES fireball $44/$45 with OAM sub-pal 3 uses PAL1[13..15]. */
+#define ROOMROM_FIREBALL_SUBPAL3_TILE_BASE 1426u
+#define ROOMROM_FIREBALL_SUBPAL3_TILE_COUNT 2u
 /* The pause inventory owns 1280..1295. Its ROM-derived marker pair
  * (indices 14/15) is also uploaded at gameplay boot for the Original HUD. */
 #define ROOMROM_SUBSCREEN_SPRITE_TILE_BASE 1280u
