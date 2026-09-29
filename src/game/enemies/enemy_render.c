@@ -255,6 +255,7 @@ void enemy_render_publish_native_pair(unsigned char left_tile,
  * translate_tile can detect meta entries and emit raw Genesis tile
  * index instead of going through common-bank translation. */
 #define ENEMY_RENDER_META_VRAM_TILE ROOMROM_CLOUD_TILE_BASE
+#define ENEMY_RENDER_META_SPARK_OFFSET (ROOMROM_SPARK_TILE_BASE - ENEMY_RENDER_META_VRAM_TILE)
 #define META_ATTR_MARKER            0x10u
 
 /* ITEM_ATTR_MARKER (NES OAM attr bit 3, unused). Set by anim_write_
@@ -307,16 +308,40 @@ static unsigned char s_cloud_chr_uploaded = 0u;
 static unsigned char s_spark_chr_uploaded = 0u;
 extern const unsigned char common_chr[];
 
+/* PAL1[13..15] contains NES sprite sub-pal 3. Bias only opaque ROM-derived
+ * pixels; tile index zero must stay transparent. */
+static void upload_sprite_subpal3(unsigned short vram_tile,
+                                  const unsigned char *source,
+                                  unsigned char tile_count)
+{
+    unsigned char tile, i;
+    unsigned char biased[32];
+    for (tile = 0u; tile < tile_count; ++tile) {
+        for (i = 0u; i < 32u; ++i) {
+            unsigned char pixel_pair = source[(unsigned short)tile * 32u + i];
+            unsigned char hi = (unsigned char)(pixel_pair >> 4);
+            unsigned char lo = (unsigned char)(pixel_pair & 0x0Fu);
+            biased[i] = (unsigned char)
+                (((hi ? (unsigned char)(hi + 12u) : 0u) << 4) |
+                 (lo ? (unsigned char)(lo + 12u) : 0u));
+        }
+        render_chr_upload((unsigned short)((vram_tile + tile) * 32u), biased, 32u);
+    }
+}
+
 /* NES DrawSpark selects item-slot $24 frames $62/$64. The ROM-derived
  * common_chr contains both 8x16 pairs at $62..$65, but the transient
  * enemy bank overwrites their usual VRAM addresses. Copy them into a
- * stable slot. The spark's NES sub-pal 1 routes directly to PAL2. */
+ * stable slot. Hit invincibility can flash through all four sub-pals. */
 static void spark_chr_ensure_uploaded(void)
 {
     if (s_spark_chr_uploaded) return;
     render_chr_upload((unsigned short)(ROOMROM_SPARK_TILE_BASE * 32u),
                       common_chr + 0x62u * 32u,
                       ROOMROM_SPARK_TILE_COUNT * 32u);
+    upload_sprite_subpal3(ROOMROM_SPARK_SUBPAL3_TILE_BASE,
+                          common_chr + 0x62u * 32u,
+                          ROOMROM_SPARK_SUBPAL3_TILE_COUNT);
     s_spark_chr_uploaded = 1u;
 }
 
@@ -603,26 +628,13 @@ static unsigned char s_boss_bank_active = 0u;
 static unsigned char s_fireball_chr_uploaded;
 static void ensure_fireball_chr(void)
 {
-    unsigned char tile, i;
-    unsigned char biased[32];
     if (s_fireball_chr_uploaded) return;
     render_chr_upload((unsigned short)(ROOMROM_FIREBALL_TILE_BASE * 32u),
                       common_chr + 0x44u * 32u,
                       ROOMROM_FIREBALL_TILE_COUNT * 32u);
-    /* NES sprite sub-pal 3 lives in PAL1[13..15]. Keep its $44/$45
-     * fireball art ROM-derived, and leave transparent pixels at zero. */
-    for (tile = 0u; tile < ROOMROM_FIREBALL_SUBPAL3_TILE_COUNT; ++tile) {
-        for (i = 0u; i < 32u; ++i) {
-            unsigned char pixel_pair = common_chr[(0x44u + tile) * 32u + i];
-            unsigned char hi = (unsigned char)(pixel_pair >> 4);
-            unsigned char lo = (unsigned char)(pixel_pair & 0x0Fu);
-            biased[i] = (unsigned char)
-                (((hi ? (unsigned char)(hi + 12u) : 0u) << 4) |
-                 (lo ? (unsigned char)(lo + 12u) : 0u));
-        }
-        render_chr_upload((unsigned short)((ROOMROM_FIREBALL_SUBPAL3_TILE_BASE + tile) * 32u),
-                          biased, 32u);
-    }
+    upload_sprite_subpal3(ROOMROM_FIREBALL_SUBPAL3_TILE_BASE,
+                          common_chr + 0x44u * 32u,
+                          ROOMROM_FIREBALL_SUBPAL3_TILE_COUNT);
     s_fireball_chr_uploaded = 1u;
 }
 
@@ -633,6 +645,11 @@ static inline unsigned short translate_tile(unsigned char nes_tile,
      * tile field as direct Genesis VRAM offset from ENEMY_RENDER_META_VRAM_TILE.
      * publish_meta uses this for sub-pal 1 biased cloud tiles. */
     if (nes_attrs & META_ATTR_MARKER) {
+        if ((nes_attrs & 0x03u) == 3u &&
+            nes_tile >= ENEMY_RENDER_META_SPARK_OFFSET &&
+            nes_tile < ENEMY_RENDER_META_SPARK_OFFSET + ROOMROM_SPARK_TILE_COUNT)
+            return (unsigned short)(ROOMROM_SPARK_SUBPAL3_TILE_BASE +
+                                    nes_tile - ENEMY_RENDER_META_SPARK_OFFSET);
         return (unsigned short)(ENEMY_RENDER_META_VRAM_TILE +
                                 (unsigned short)nes_tile);
     }
@@ -735,6 +752,10 @@ static inline unsigned short translate_attrs(unsigned char nes_attrs,
         tile_id < ROOMROM_FIREBALL_SUBPAL3_TILE_BASE + ROOMROM_FIREBALL_SUBPAL3_TILE_COUNT) {
         pal_bank = RENDER_PAL1;
     }
+    if (tile_id >= ROOMROM_SPARK_SUBPAL3_TILE_BASE &&
+        tile_id < ROOMROM_SPARK_SUBPAL3_TILE_BASE + ROOMROM_SPARK_SUBPAL3_TILE_COUNT) {
+        pal_bank = RENDER_PAL1;
+    }
 
     unsigned short sat = (unsigned short)(tile_id & 0x07FFu);
     sat |= (unsigned short)(pal_bank << 13);
@@ -794,7 +815,9 @@ static inline unsigned short xlat_sat(unsigned char tile, unsigned char attrs)
     if ((tid >= ROOMROM_BOSS_SUBPAL3_TILE_BASE &&
          tid < ROOMROM_BOSS_SUBPAL3_TILE_BASE + ROOMROM_BOSS_SUBPAL3_TILE_COUNT) ||
         (tid >= ROOMROM_FIREBALL_SUBPAL3_TILE_BASE &&
-         tid < ROOMROM_FIREBALL_SUBPAL3_TILE_BASE + ROOMROM_FIREBALL_SUBPAL3_TILE_COUNT))
+         tid < ROOMROM_FIREBALL_SUBPAL3_TILE_BASE + ROOMROM_FIREBALL_SUBPAL3_TILE_COUNT) ||
+        (tid >= ROOMROM_SPARK_SUBPAL3_TILE_BASE &&
+         tid < ROOMROM_SPARK_SUBPAL3_TILE_BASE + ROOMROM_SPARK_SUBPAL3_TILE_COUNT))
         sat = (unsigned short)((sat & 0x9FFFu) | (RENDER_PAL1 << 13));
     return sat;
 }
@@ -823,12 +846,9 @@ static unsigned int emit_native_entries(unsigned int sat_slot)
         if (n == 0u) continue;
         if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
 
-        /* Phase C live hit-flash: compute once per slot since flash
-         * affects all latched entries equally. Sub-pal bits 1..0 of
-         * attrs override with FrameCounter & 0x03 if ObjInvincibility
-         * Timer ($04F0+slot) is non-zero. NES Z_01.asm:5367-5371 logic,
-         * applied at sweep-time instead of latch-time so the palette
-         * cycles every frame regardless of when the enemy last drew. */
+        /* Normal Anim_WriteSprite flashes with FrameCounter bits. The
+         * spark uses Anim_WriteSpritePair instead, which flashes with
+         * ObjInvincibilityTimer bits (NES Z_01.asm:5151-5165). */
         unsigned char inv_active = (ENEMY_RENDER_INV_TIMER(slot) != 0u);
         unsigned char fc_pal = (unsigned char)(RAM(NES_FRAME_COUNTER) & 0x03u);
 
@@ -840,7 +860,12 @@ static unsigned int emit_native_entries(unsigned int sat_slot)
 
             unsigned char render_attrs = e->attrs;
             if (inv_active) {
-                render_attrs = (unsigned char)((render_attrs & 0xFCu) | fc_pal);
+                unsigned char flash_pal = fc_pal;
+                if ((e->attrs & META_ATTR_MARKER) &&
+                    e->tile >= ENEMY_RENDER_META_SPARK_OFFSET &&
+                    e->tile < ENEMY_RENDER_META_SPARK_OFFSET + ROOMROM_SPARK_TILE_COUNT)
+                    flash_pal = (unsigned char)(ENEMY_RENDER_INV_TIMER(slot) & 0x03u);
+                render_attrs = (unsigned char)((render_attrs & 0xFCu) | flash_pal);
             }
             unsigned short sat_attrs = xlat_sat(e->tile, render_attrs);
             /* Phase E: each cache entry = one NES OAM (8x16). Render

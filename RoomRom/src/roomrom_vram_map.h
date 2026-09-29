@@ -172,7 +172,8 @@
  * SPR_TILE_BASE+$78 copy lies inside the SCENE_OBJ overlay (SPR+44) and
  * holds enemy art in play. The 1376..1440 gap was unused in OW / cave /
  * UW / boss captures (t011, t131, t129); T-138 reserves 1378..1425 for
- * Link hurt-flash poses, leaving 1426..1440 free. */
+ * Link hurt-flash poses; fireball/spark palette-3 copies now use
+ * 1426..1431, leaving 1432..1440 free. */
 #define ROOMROM_LINK_LIFT_TILE_BASE 1376u
 #define ROOMROM_LINK_LIFT_TILE_COUNT 2u
 /* T-138: 8 walk poses x 4 tiles, color indices 1..3 biased to 13..15.
@@ -186,6 +187,9 @@
 /* T-160: NES fireball $44/$45 with OAM sub-pal 3 uses PAL1[13..15]. */
 #define ROOMROM_FIREBALL_SUBPAL3_TILE_BASE 1426u
 #define ROOMROM_FIREBALL_SUBPAL3_TILE_COUNT 2u
+/* T-161: death-spark $62..$65 also flashes through NES sub-pal 3. */
+#define ROOMROM_SPARK_SUBPAL3_TILE_BASE 1428u
+#define ROOMROM_SPARK_SUBPAL3_TILE_COUNT 4u
 /* The pause inventory owns 1280..1295. Its ROM-derived marker pair
  * (indices 14/15) is also uploaded at gameplay boot for the Original HUD. */
 #define ROOMROM_SUBSCREEN_SPRITE_TILE_BASE 1280u
