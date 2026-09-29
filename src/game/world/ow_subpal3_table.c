@@ -1,5 +1,5 @@
-/* Auto-captured from NES Z1 via tools/parity/probe_nes_ow_subpal3_scan.lua. */
-/* DO NOT EDIT BY HAND. Regen by re-running the probe. */
+/* Historical, unlinked NES Z1 scan from tools/parity/probe_nes_ow_subpal3_scan.lua.
+ * This is not active palette truth; see T-138/T-159 before reusing it. */
 #include "ow_subpal3_table.h"
 
 const unsigned char k_ow_subpal3_per_room[128][4] = {
