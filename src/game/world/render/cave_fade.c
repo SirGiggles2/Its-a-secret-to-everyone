@@ -148,6 +148,12 @@ void cave_fade_begin_enter(cave_id_t cid)
     if (s_phase != CAVE_FADE_IDLE) {
         return;
     }
+    /* Z_05.asm:SetTargetMode: non-cellar warps silence current song before
+     * Mode $10 stairs. $50 selects Mode $0C shortcut; all other cave
+     * selectors use Mode $0B. Let audio_requests consume the NES request
+     * on the next tick, including when OW music belongs to XGM. */
+    RAM(0x005Bu) = (cid == 0x6Eu) ? 0x0Cu : 0x0Bu;
+    RAM(0x0604u) = 0x80u;
     s_pending_cid   = cid;
     s_frame_counter = 0u;
     s_step_idx      = 0u;

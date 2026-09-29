@@ -1,0 +1,7 @@
+quest_mirror=00 mode=05
+room=0E blob=63 installed=7B cave=78 expected=7B/78 PASS
+room=0F blob=8B installed=83 cave=7A expected=83/7A PASS
+room=22 blob=18 installed=84 cave=7B expected=84/7B PASS
+room=34 blob=83 installed=0F cave=00 expected=0F/00 PASS
+room=74 blob=0F installed=7A cave=78 expected=7A/78 PASS
+PASS

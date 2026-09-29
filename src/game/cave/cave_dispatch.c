@@ -424,7 +424,7 @@ void cave_update_talk_shop_or_door_charge(void)
         if (cave_flags_get() & 0x40u) {
             const unsigned char min_hearts =
                 (cave_room_type_get() == 0x6Cu) ? 64u : 0xB0u;
-            if (min_hearts < LINK_HEARTS) {
+            if (LINK_HEARTS < min_hearts) {
                 return;
             }
         }

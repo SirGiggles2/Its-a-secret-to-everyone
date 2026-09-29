@@ -22,6 +22,7 @@
 
 extern void music_play(unsigned char song_bitmap);
 extern void music_tick(void);
+extern void music_silence(void);
 
 /* Driver storage is linker-owned; fixed low-RAM addresses collide with C BSS.
  * Native RAM base follows platform_abi (A4 Debug or pointer RoomRom). */
@@ -115,6 +116,17 @@ void audio_pcm_play(unsigned char id, unsigned char prio, unsigned char ch)
 void audio_music_play(unsigned char song)
 {
     const u8 *xgm_song = xgm_blob_for_song(song);
+
+    /* NES Tune0Request bit 7 silences the song. Stopping XGM releases
+     * the chip for cave event tunes; key-off also clears legacy voices. */
+    if (song == 0u) {
+        if (*xgm_owns_chip_ptr) XGM_stopPlay();
+        *xgm_owns_chip_ptr = 0u;
+        s_current_xgm_song = 0u;
+        *music_song_req_ptr = 0u;
+        music_silence();
+        return;
+    }
 
     /* OW and UW route through SGDK's XGM Z80 driver. The checked-in
      * ow_theme_xgm.c and uw_theme_xgm.c arrays are compiled XGC-style

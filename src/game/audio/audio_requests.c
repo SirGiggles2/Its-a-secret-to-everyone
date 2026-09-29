@@ -2,6 +2,7 @@
 #include "platform_abi.h"
 
 extern void audio_pcm_play(unsigned char id, unsigned char prio, unsigned char ch);
+extern void audio_music_play(unsigned char song_bitmap);
 
 /* T-127: NES sound requests -> Genesis PCM, the only place gameplay sound
  * is started.
@@ -115,6 +116,10 @@ static void drive_tunes(void)
     /* Tune0 (square 0). */
     if (r0 & 0x80u) {
         s_tune0 = 0u;
+        /* NES DriveTune0 routes bit 7 to SilenceSong, which clears the
+         * currently playing song as well as Tune0. The XGM-owned OW track
+         * bypasses legacy music_tick, so consume that request here. */
+        audio_music_play(0u);
     } else if (r0 != 0u && !(r0 == 0x40u && s_tune0 != 0u)) {
         unsigned char b = lowest_bit(r0);
         s_tune0 = (unsigned char)(1u << b);

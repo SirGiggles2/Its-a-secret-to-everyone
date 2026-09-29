@@ -8,6 +8,7 @@
  */
 
 #include "ow_meta.h"
+#include "platform_abi.h"
 #include "../../../data/rooms/overworld_offsets.h"
 
 extern const unsigned char rooms_overworld[];
@@ -25,7 +26,10 @@ unsigned char roomrom_ow_meta_attr_b(unsigned char room_id)
     if (room_id >= ROOMROM_OW_ROOM_COUNT) {
         return 0u;
     }
-    return rooms_overworld[ROOMROM_OW_LEVELBLOCK_ATTRS_B_OFFSET + room_id];
+    /* HandleWarpOW reads installed LevelBlockAttrsB. Quest 2 patches
+     * selected bytes after the ROM blob is copied to NES SRAM; using the
+     * unpatched blob routes Q2 cave doors to Q1 destinations. */
+    return (unsigned char)RAM(0x68FEu + room_id);
 }
 
 unsigned char roomrom_ow_meta_level_selector(unsigned char room_id)

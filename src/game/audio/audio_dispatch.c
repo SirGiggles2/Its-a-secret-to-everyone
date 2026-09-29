@@ -42,6 +42,8 @@ extern void audio_music_play(unsigned char song_bitmap);
 #define GM_REGISTER          0x0Eu  /* UpdateModeERegister */
 #define GM_ELIMINATION       0x0Fu  /* UpdateModeFElimination */
 #define GM_STAIRS            0x10u  /* UpdateMode10Stairs */
+#define GM_CAVE              0x0Bu  /* UpdateMode5Play in a regular cave */
+#define GM_SHORTCUT_CAVE     0x0Cu  /* UpdateMode5Play in a shortcut cave */
 #define GM_DEATH             0x11u  /* UpdateMode11Death — fires own dirge */
 #define GM_END_LEVEL         0x12u  /* UpdateMode12EndLevel */
 #define GM_WIN_GAME          0x13u  /* UpdateMode13WinGame */
@@ -95,14 +97,15 @@ static unsigned char resolve_song(unsigned char gm, unsigned char scene)
         /* Transient — keep last song through the transition. */
         return s_last_song;
 
+    case GM_CAVE:
+    case GM_SHORTCUT_CAVE:
+        /* HandleWarpOW -> SetTargetMode silences music before the stairs.
+         * Cave mode must not restart OW while Link is underground. */
+        return SONG_SILENCE;
+
     case GM_PLAY:
         if (scene == SCENE_UW)   return SONG_UW;
-        /* NES Z_01 InitCave does NOT STA SongRequest — caves let the
-         * prior OW track keep playing (verified Z_01.asm:69+, no
-         * SongRequest writer in the cave-entry path). Force SONG_OW
-         * so caves entered after Demo/FS transitions get the right
-         * track even if s_last_song drifted to silence. */
-        if (scene == SCENE_CAVE) return SONG_OW;
+        if (scene == SCENE_CAVE) return SONG_SILENCE;
         return SONG_OW;
 
     case GM_DEATH:

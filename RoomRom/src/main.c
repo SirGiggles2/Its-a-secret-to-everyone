@@ -741,7 +741,7 @@ static void cave_fade_load_blank_handler(unsigned char stage)
          * on the same frame. NES enters mode $0B (cave) here and stays
          * in it while in the cave (T-011: TakeItem lifts the item only
          * outside mode 5). */
-        nes_ram[0x0012u] = 0x0Bu;
+        nes_ram[0x0012u] = nes_ram[0x005Bu];  /* Mode B or shortcut Mode C */
         nes_ram[0x0013u] = 0u;
         s_nes_load_base = s_frame_counter;
         s_cave_load_blank = 1u;
@@ -1317,7 +1317,10 @@ void roomrom_main_apply_warp_outcome(const rr_warp_outcome_t *out)
                 s_scene == SCENE_UW ? roomrom_uw_room_render_get_level() : 0u,
                 s_scene == SCENE_UW ? roomrom_uw_room_render_get_quest() : 0u);
     request_boss_chr_if_boss_room();
-    audio_music_play((s_scene == SCENE_UW) ? 0x40 : 0x01);
+    /* Cave exit is still Mode $0A here. NES resumes OW music only when
+     * StepOutside finishes; audio_dispatch_tick owns that edge. */
+    if (s_lvl_phase != LVL_CAVE_EXIT)
+        audio_music_play((s_scene == SCENE_UW) ? 0x40 : 0x01);
 
     /* Phase C (2026-05-24) — UET state per NES dispatch (Z_01.asm:2990,
      * Z_05.asm:6717+7493, Z_07.asm:3200).

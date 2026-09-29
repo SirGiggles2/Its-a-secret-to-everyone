@@ -1,0 +1,9 @@
+{
+  "rom": "builds\\Debug.md",
+  "rom_sha256": "8c635e7dda435b4c200e6727c28079da422aa036b1cc84ab076cd91a360a011e",
+  "script": "tools\\probes\\t164_q2_cave_routes.lua",
+  "script_sha256": "c0d58afb48280c9ac170d6a4f3fdf2a4adb9574783d1a2051d03dd3217c20c5e",
+  "symbols": {},
+  "exit_code": 0,
+  "collected": []
+}

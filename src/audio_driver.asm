@@ -1315,6 +1315,7 @@ noise_decay_tick:
 ;==============================================================================
 ; music_silence — Full silence: key-off all channels, clear song state
 ;==============================================================================
+    xdef    music_silence
 music_silence:
     clr.b   (m_song).l
     bsr     key_off_sq1

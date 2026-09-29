@@ -1,0 +1,11 @@
+{
+  "rom": "builds\\Debug.md",
+  "rom_sha256": "8c635e7dda435b4c200e6727c28079da422aa036b1cc84ab076cd91a360a011e",
+  "script": "tools\\probes\\t164_cave_audio_trace.lua",
+  "script_sha256": "ba97b062304fff88ed6dfa46af54d732964d62f8beced1bbef47c4d71dd20498",
+  "symbols": {
+    "audio_music_state": "0xFF0124"
+  },
+  "exit_code": 0,
+  "collected": []
+}
