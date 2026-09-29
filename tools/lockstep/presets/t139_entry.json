@@ -1,0 +1,124 @@
+{
+  "name": "t139_entry",
+  "file_name": "LINK",
+  "quest": 0,
+  "items": {},
+  "script": [
+    [
+      30,
+      ""
+    ],
+    [
+      1,
+      "R"
+    ],
+    [
+      97,
+      ""
+    ],
+    [
+      1,
+      "U"
+    ],
+    [
+      116,
+      ""
+    ],
+    [
+      1,
+      "U"
+    ],
+    [
+      116,
+      ""
+    ],
+    [
+      1,
+      "U"
+    ],
+    [
+      116,
+      ""
+    ],
+    [
+      1,
+      "U"
+    ],
+    [
+      116,
+      ""
+    ],
+    [
+      1,
+      "U"
+    ],
+    [
+      116,
+      ""
+    ],
+    [
+      1,
+      "L"
+    ],
+    [
+      97,
+      ""
+    ],
+    [
+      1,
+      "U"
+    ],
+    [
+      116,
+      ""
+    ],
+    [
+      70,
+      "U"
+    ],
+    [
+      20,
+      ""
+    ]
+  ],
+  "stages": [
+    [
+      30,
+      "wr(0x70, 240)\nwr(0x84, 141)\nwr(0x98, 1)\nwr(0x394, 0)\ngen_link_pos(240, 141, 1)\nlog(string.format('cross 77->78 room %02X link %02X,%02X spd %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x3BC)))"
+    ],
+    [
+      128,
+      "wr(0x70, 48)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(48, 61, 8)\nlog(string.format('cross 78->68 room %02X link %02X,%02X spd %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x3BC)))"
+    ],
+    [
+      245,
+      "wr(0x70, 48)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(48, 61, 8)\nlog(string.format('cross 68->58 room %02X link %02X,%02X spd %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x3BC)))"
+    ],
+    [
+      362,
+      "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('cross 58->48 room %02X link %02X,%02X spd %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x3BC)))"
+    ],
+    [
+      479,
+      "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('cross 48->38 room %02X link %02X,%02X spd %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x3BC)))"
+    ],
+    [
+      596,
+      "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('cross 38->28 room %02X link %02X,%02X spd %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x3BC)))"
+    ],
+    [
+      713,
+      "wr(0x70, 0)\nwr(0x84, 93)\nwr(0x98, 2)\nwr(0x394, 0)\ngen_link_pos(0, 93, 2)\nlog(string.format('cross 28->27 room %02X link %02X,%02X spd %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x3BC)))"
+    ],
+    [
+      811,
+      "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('cross 27->17 room %02X link %02X,%02X spd %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x3BC)))"
+    ],
+    [
+      928,
+      "wr(0x70, 64)\nwr(0x84, 141)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(64, 141, 8)\nlog(string.format('slow tiles room %02X link %02X,%02X spd %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x3BC)))"
+    ]
+  ],
+  "clock": "play",
+  "_note": "T-139 focused current-ROM OW $77->$78 room entry. Stage and route inherited from accepted t123_slow_tiles; run --frames 145."
+}
