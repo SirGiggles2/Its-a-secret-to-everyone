@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""COMPLETE byte-exact UW room nametable generator from NES data tables.
+"""Original UW room nametable generator from NES data tables and captures.
 Every UW room nt = global wall-frame (constant) (+) decoded floor (LayoutUWFloor,
 uid = per-block LBA_D[room]&0x3F + 22) (+) door overlays (per (block,region,type),
-per-cell majority from captures = NES load-state). Gate A verifies the generator
-reproduces all 626 captured blobs byte-exact. Then emits the uncaptured boss
-rooms. Offline; no ROM. RULE ZERO: every tile traced to NES data or NES capture.
+per-cell majority from captures = NES load-state). The CLI requires all captured
+Original rooms to match; Redux door-state variants remain reported separately.
+Offline; no ROM. RULE ZERO: every tile traced to NES data or NES capture.
 """
 import re, pathlib, sys, collections
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -114,16 +114,19 @@ def compose(block,q,room):
 
 if __name__ == "__main__":
     # ----- Gate A: reproduce every captured blob byte-exact -----
-    exact=0; total=0; fails=[]; underrun=[]
+    exact=0; total=0; orig_exact=0; orig_total=0; fails=[]; underrun=[]
     for e,row in enumerate(INDEX):
         if len(row)!=4: continue
         mp,q,lv,room=row; blk=block_of(lv); total+=1
+        if mp==0: orig_total+=1
         try:
             gen=compose(blk,q,room)
         except IndexError:
             underrun.append((lv,q,room,uid_of(blk,q,room))); continue
         cap=nt_of(e)
-        if gen==cap: exact+=1
+        if gen==cap:
+            exact+=1
+            if mp==0: orig_exact+=1
         else:
             diff=sum(1 for i in range(704) if gen[i]!=cap[i])
             fails.append((lv,q,room,diff))
@@ -131,6 +134,7 @@ if __name__ == "__main__":
         print("UNDERRUN (uid+22 out of heap range) %d rooms; sample uids:" % len(underrun),
               sorted(set(u for *_,u in underrun))[:12])
     print("GATE A: %d/%d captured rooms reproduced byte-exact" % (exact,total))
+    print("  Original: %d/%d byte-exact" % (orig_exact,orig_total))
     # categorize every mismatch: which region holds the diff?
     door_only=0; floor_bad=0; frame_bad=0
     for e,row in enumerate(INDEX):
@@ -152,3 +156,5 @@ if __name__ == "__main__":
         elif df: door_only+=1
     print("  mismatch breakdown: door-state-only=%d  frame=%d  FLOOR(decoder)=%d  underrun=%d"
           % (door_only,frame_bad,floor_bad,len(underrun)))
+    if orig_exact != orig_total or floor_bad or frame_bad or underrun:
+        sys.exit(1)
