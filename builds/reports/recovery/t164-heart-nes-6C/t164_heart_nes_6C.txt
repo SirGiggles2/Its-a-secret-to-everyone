@@ -1,0 +1,4 @@
+mode=0B cave=6C room=0A state=02 flags=45 wares=7F,02,7F hearts=22 rupees=00 text_done=true
+low state=02 ware=02 hearts=22 flag=00
+high state=04 ware=FF hearts=40 flag=10
+ware_index=1 item=02 PASS

@@ -1,0 +1,11 @@
+{
+  "rom": "roms\\Legend of Zelda, The (USA).nes",
+  "rom_sha256": "8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac",
+  "script": "tools\\probes\\t164_heart_nes.lua",
+  "script_sha256": "995dd240e0b33eff54037f56a2d765eef7034ae1d6319c70208df1d180a739da",
+  "symbols": {},
+  "exit_code": 0,
+  "collected": [
+    "t164_heart_nes_6D.txt"
+  ]
+}
