@@ -1,0 +1,15 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\builds\\Debug.md",
+  "rom_sha256": "779e7e2be7df5036b46df8ec195254284dfd42b93517dde2f3f423785ab5a962",
+  "script": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\tools\\lockstep\\capture.lua",
+  "script_sha256": "4f8d02ceb24e8e620acf78bf2d3b1b1c09d91aa82f667dcf2a055e0eba8e7325",
+  "seed_gen_save_sha256": null,
+  "symbols": {
+    "players": "0xFF0F80",
+    "s_b_item": "0xFF004C",
+    "s_link_dir": "0xFF388A",
+    "s_link_grid_offset": "0xFF3890"
+  },
+  "exit_code": 0,
+  "collected": []
+}

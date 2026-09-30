@@ -1,0 +1,43 @@
+{
+  "name": "t054_tree_enter",
+  "file_name": "LINK",
+  "quest": 0,
+  "items": {
+    "InvCandle": 1
+  },
+  "script": [
+    [
+      30,
+      ""
+    ],
+    [
+      148,
+      "R"
+    ],
+    [
+      20,
+      ""
+    ],
+    [
+      2,
+      "B"
+    ],
+    [
+      200,
+      ""
+    ],
+    [
+      150,
+      ""
+    ]
+  ],
+  "stage_at": 188,
+  "stage": "wr(0x656, 4)\ngen_b_item(4)\nwr(0x70, 0x40)\nwr(0x84, 0x8D)\nwr(0x98, 0x04)\nwr(0x394, 0)\ngen_link_pos(0x40, 0x8D, 0x04)\nlog(string.format('room %02X link %02X,%02X dir %02X slot11 %02X at %02X,%02X flags %02X', rd(0xEB), rd(0x70), rd(0x84), rd(0x98), rd(0x35A), rd(0x7B), rd(0x8F), rd(0x67F+0x78)))",
+  "clock": "play",
+  "stages": [
+    [
+      360,
+      "wr(0x70,0x40)\nwr(0x84,0x9D)\nwr(0x98,0x04)\nwr(0x394,0)\ngen_link_pos(0x40,0x9D,0x04)"
+    ]
+  ]
+}

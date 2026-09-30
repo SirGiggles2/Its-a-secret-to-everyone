@@ -3228,6 +3228,9 @@ static unsigned char play_update_objects(void)
         DBG_SENTINEL(0x1Du) = standing_tile;
         cave_id_t cid = cave_entrance_check(standing_tile, s_room_id);
         if (cid != (cave_id_t)0) {
+            /* HandleWarpOW saves the current room's kill count before
+             * SetTargetMode; cave departures must retain that low flag. */
+            room_save_kill_count_ow(s_room_id);
             /* NES enters caves ONLY at a $10-aligned column:
              * HandleWarpOW/CheckWarps gate on ObjX&$0F==0
              * (Z_05.asm:7213), so the descent (Mode $10) and
@@ -3256,6 +3259,7 @@ static unsigned char play_update_objects(void)
                 (unsigned char)(DBG_SENTINEL(0x1Cu) + 1u);
             s_cave_return_room = s_room_id;
             s_cave_entrance_tile = standing_tile;   /* T-135 */
+            nes_ram[0x0065u] = standing_tile;   /* HandleWarpOW */
             s_cave_return_face = players[0].face;
             s_cave_return_x    = (unsigned char)players[0].x;
             s_cave_return_y    = (unsigned char)players[0].y;
@@ -3264,9 +3268,9 @@ static unsigned char play_update_objects(void)
              * high priority so Link sprite (prio=0) renders
              * BEHIND the arch lip during descend — NES sprite-
              * priority effect. plane row = (Y >> 3) + 7 HUD. */
-            mark_link_behind_bg();
-            /* NES InitMode10 fires the stairs SFX at the cave-entry
-             * trigger (EffectRequest=$08, Z_05.asm:1408). Play the
+            mark_link_behind_bg();  /* UpdateMode10Stairs_Full, all entrances */
+            /* NES InitMode10 fires the stairs SFX only for a $24 pad
+             * (EffectRequest=$08, Z_05.asm:1400). Play the
              * Genesis synth stairs SFX (#8 -> XGM id 71). We do NOT
              * mirror the NES EffectRequest cell ($0603): on NES it is a
              * transient request the sound engine consumes+clears next
@@ -3274,11 +3278,12 @@ static unsigned char play_update_objects(void)
              * so a static write would DIVERGE worse than leaving it. SFX
              * parity is functional (audio_requests + the $07F0 sentinel);
              * EffectRequest is REPORTED, not byte-gated (like GameMode). */
-            nes_ram[0x0603u] |= 0x08u;   /* stairs effect (audio_requests) */
+            if (standing_tile == 0x24u)
+                nes_ram[0x0603u] |= 0x08u;   /* InitMode10 stairs effect */
             cave_fade_set_callbacks(&k_cave_fade_callbacks);
             nes_ram[0x0012u] = 0x10u;         /* T-011: NES mode $10 stairs */
             end_prepare_mode();
-            cave_fade_begin_enter(cid);
+            cave_fade_begin_enter(cid, standing_tile);
             inventory_rupee_tick(nes_ram[0x0015u]); /* @FinishUpdatePlay */
             return 1u;
         }

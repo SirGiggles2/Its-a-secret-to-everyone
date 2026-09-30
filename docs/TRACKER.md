@@ -159,7 +159,7 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 | T-051 | Ending renderer stubs (sprites, credits, finalize) | P7.4 / P8.3 | TODO | |
 | T-052 | Items/secrets table | P4.1–4.3 | TODO | | T-164 verified cave metadata, payment and routing into shared `item_take_item`; finish item-specific inventory effects and secrets at this owner. |
 | T-053 | Death/continue lifecycle | P7.3 | TODO | |
-| T-054 | OW/UW secret objects `$61–$68` (dock, rocks/graves, bomb walls, tree, UW push block) + bombs open UW bombable doors | P4.3/P5.3 | ACTIVE | Astra | Quest 2 OW renderer now reads installed A/B/D; Q2 rooms `$74/$0B/$3C` are 704/704 NES tile+palette exact, and `$74`'s natural `$24` pad enters cave `$78` on both. Q1 bomb-wall/tree runs remain 400/400 KEY with flag `$80`. Evidence `docs/audit/drain_findings/t054-q2-ow-layout.md`; `Debug.bat` SHA `7d6253ea`. Continue distinct natural reveal mechanisms, then UW secret objects/doors. Preserve Claude's unrelated dirty work. |
+| T-054 | OW/UW secret objects `$61–$68` (dock, rocks/graves, bomb walls, tree, UW push block) + bombs open UW bombable doors | P4.3/P5.3 | ACTIVE | Astra | Quest 2 OW renderer reads installed A/B/D; Q2 rooms `$74/$0B/$3C` are 704/704 NES tile+palette exact, and `$74`'s natural `$24` pad enters cave `$78`. Q1 revealed tree stairs skip the 64-frame descent (both reach cave `$74` at play tick 362; Genesis video 1 frame sooner). Q1 bomb wall `$24` takes full descent to cave `$70`, 550/550 KEY and flag `$82` on both. Strict tree KEY/frame and new-preset full-RAM ratchet do not pass; see `docs/audit/drain_findings/t054-ow-secret-entry.md` and `t054-q2-ow-layout.md`. `Debug.bat` SHA `779e7e2b`. Next: natural rock/grave/Armos/dock, then UW secrets/doors. Preserve Claude's dirty work. |
 | T-055 | Flute: whirlwind `$2E`, FluteTimer `$3C`, `$5E` update (Digdogger, L7 entrance) | P4 | TODO | |
 | T-056 | `Link_EndMoveAndAnimate`: ladder, raft, water | P4 | TODO | |
 | T-057 | Bait object, potion on B, candle relight | P4 | TODO | |
@@ -180,6 +180,8 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 | T-080 | Builder: clean-staging build from user ROM, no live captures, drag-and-drop shell, reproducibility | P10 | TODO |
 
 ## Handoff log (newest first)
+
+- 2026-09-30 Astra: T-054 ACTIVE. NES tile-specific mode-10 cave entry fixed: revealed tree stairs now skip false 64-frame descent; `$24` bomb-wall opening retains full descent and room kill flag. Focused tree/wall outcomes and timing limits in `docs/audit/drain_findings/t054-ow-secret-entry.md`; final `Debug.bat` SHA `779e7e2b`. ROM-derived cave/object inventory added. Next: live rock/grave/Armos/dock cases, then UW push block/doors. Claude's unrelated `main.c`/report edits preserved.
 
 - 2026-09-29 Astra: T-164 DONE at cave-runtime scope. Repaired NES money-game amount initialization; all 20 cave IDs now have static capture plus focused class coverage, all 12 shop wares settle, and distinct gift/hint/medicine/secret/door/shortcut behaviors match NES. Live `$7B` payout/flag survived controller Save and fresh-process SRAM Continue. `Debug.bat` SHA `a84d848e`; audit `docs/audit/drain_findings/t164-overworld-caves.md`. Natural Q2 secret-opening actions stay T-054; shared item effects stay T-052; broader audible balance stays P7.5. Claude's unrelated dirty work preserved. Next cave-related work: T-054 natural hidden entrances, not another cave interior sweep.
 

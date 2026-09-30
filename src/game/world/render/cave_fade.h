@@ -1,24 +1,10 @@
-/* cave_fade.h — NES cave entry / exit Link-descend animation.
+/* cave_fade.h — NES cave entry/exit transition sequencer.
  *
- * Matches NES Z_05.asm:2308 UpdateMode10Stairs_Full + InitMode10
- * (Z_05.asm:1400). NES sequence on entry:
- *   1. Link standing on entrance tile $24 (or stairs $70-$73, $88).
- *   2. EffectRequest = $08 (stairs effect), StairsTargetY = ObjY + $10.
- *   3. Each frame: every 4th frame (FrameCounter & 3 == 0), increment
- *      ObjY by 1 (Link walks down one pixel). 16 px total = 64 frames.
- *      Link upper-half sprites get priority bit $20 set so background
- *      entrance arch covers them ("Link sinks into hole" effect).
- *   4. When ObjY == StairsTargetY: GameMode = TargetMode (cave). Scene
- *      swaps instantly to cave with Link at bottom-center.
- *
- * Exit mirrors with ObjY -= 1 every 4 frames until target reached.
- * For Tier 1 simplicity, exit uses a snap (no ascend anim) — user
- * hits C+START chord to leave; Link snaps to OW return position.
- *
- * Phase order on entry:
- *   IDLE -> LINK_DESCEND (64 frames) -> SWAP_ENTRY (1) -> IDLE.
- * Phase order on exit:
- *   IDLE -> SWAP_EXIT (1, instant) -> IDLE.
+ * Z_05.asm:InitMode10 and UpdateMode10Stairs_Full: entrance tile $24
+ * requests the stairs sound and walks Link down 16 pixels at one pixel
+ * per four frames. Other entrance tiles enter the target mode on the
+ * next update without that descent. Both paths then load the cave and
+ * walk Link into it. Exit ascends before restoring the overworld.
  */
 
 #ifndef CAVE_FADE_H
@@ -32,7 +18,7 @@ extern "C" {
 
 typedef enum {
     CAVE_FADE_IDLE         = 0,
-    CAVE_FADE_LINK_DESCEND = 1,
+    CAVE_FADE_LINK_DESCEND = 1, /* $24 descends; other tiles skip to load */
     CAVE_FADE_SWAP_ENTRY   = 2,
     CAVE_FADE_LINK_ASCEND  = 3,  /* cave exit: Link walks UP, Y-=1 per 4 frames */
     CAVE_FADE_SWAP_EXIT    = 4,
@@ -80,7 +66,8 @@ typedef struct {
      * existing positional initializer order. */
     void (*on_anim_tick)(unsigned char counter, unsigned char frame);
     /* T-134: NES mode $0B submode 2 blanks the playfield (the HUD stays)
-     * until the cave appears. stage 0 at the descent end (owner hides
+     * until the cave appears. stage 0 at the descent end or immediate
+     * stairs-mode handoff (owner hides
      * Link: sprite writes land a frame after plane writes), stage 1 on the
      * next tick (owner blanks the play area). Appended last. */
     void (*on_load_blank)(unsigned char stage);
@@ -91,7 +78,8 @@ typedef struct {
 
 void              cave_fade_set_callbacks(const cave_fade_callbacks_t *cb);
 
-void              cave_fade_begin_enter(cave_id_t cid);
+void              cave_fade_begin_enter(cave_id_t cid,
+                                        unsigned char entrance_tile);
 void              cave_fade_begin_exit(unsigned char return_room_id);
 
 unsigned char     cave_fade_is_active(void);

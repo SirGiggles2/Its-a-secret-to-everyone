@@ -1,0 +1,224 @@
+ticks compared: 550  (nes 550, gen 550)  padded rows skipped: 0
+
+== KEY mismatches (first 0) ==
+
+== full-RAM ratchet vs baseline (none cells): new 98, earlier 0, improved 0 ==
+  NEW     t=    0 $0014 TileBufSelector                  NES 7A  GEN 00
+  NEW     t=    0 $0028 ObjTimer                         NES 02  GEN 00
+  NEW     t=    0 $0052 ProcessedNarrowObj               NES 01  GEN 00
+  NEW     t=    0 $007D ObjX+13                          NES 21  GEN 00
+  NEW     t=    0 $00E8 CurColumn                        NES FF  GEN 00
+  NEW     t=    0 $00EF CurOpenedDoors+1                 NES 02  GEN 00
+  NEW     t=    0 $00F4 InitializedGame                  NES 01  GEN 00
+  NEW     t=    0 $00F5 TransferredCommonPatterns        NES 5A  GEN 00
+  NEW     t=    0 $00F6 TransferredDemoPatterns          NES 10  GEN 00
+  NEW     t=    0 $00FE CurPpuMask_2001                  NES 1E  GEN 00
+  NEW     t=    0 $00FF CurPpuControl_2000               NES B4  GEN 00
+  NEW     t=    0 $0340 CurObjIndex                      NES 0B  GEN 00
+  NEW     t=    0 $0341 RollingSpriteIndex               NES 01  GEN 00
+  NEW     t=    0 $0343 LeftSpriteOffset                 NES 48  GEN 00
+  NEW     t=    0 $0344 RightSpriteOffset                NES 4C  GEN 00
+  NEW     t=    0 $034D RoomAllDead                      NES 00  GEN 01
+  NEW     t=    0 $049E ObjCollidedTile                  NES 00  GEN 26
+  NEW     t=    0 $04CE ShutterTrigger                   NES 00  GEN 01
+  NEW     t=    0 $0528 SkippedDemo                      NES 5A  GEN 00
+  NEW     t=    0 $0530 PlayAreaAttrs                    NES AA  GEN 00
+  NEW     t=    0 $0531 PlayAreaAttrs+1                  NES AA  GEN 00
+  NEW     t=    0 $0532 PlayAreaAttrs+2                  NES AA  GEN 00
+  NEW     t=    0 $0533 PlayAreaAttrs+3                  NES AA  GEN 00
+  NEW     t=    0 $0534 PlayAreaAttrs+4                  NES AA  GEN 00
+  NEW     t=    0 $0535 PlayAreaAttrs+5                  NES AA  GEN 00
+  NEW     t=    0 $0536 PlayAreaAttrs+6                  NES AA  GEN 00
+  NEW     t=    0 $0537 PlayAreaAttrs+7                  NES AA  GEN 00
+  NEW     t=    0 $0538 PlayAreaAttrs+8                  NES AA  GEN 00
+  NEW     t=    0 $0539 PlayAreaAttrs+9                  NES AA  GEN 00
+  NEW     t=    0 $053A PlayAreaAttrs+10                 NES AA  GEN 00
+  NEW     t=    0 $053B PlayAreaAttrs+11                 NES AA  GEN 00
+  NEW     t=    0 $053C PlayAreaAttrs+12                 NES AA  GEN 00
+  NEW     t=    0 $053D PlayAreaAttrs+13                 NES AA  GEN 00
+  NEW     t=    0 $053E PlayAreaAttrs+14                 NES AA  GEN 00
+  NEW     t=    0 $053F PlayAreaAttrs+15                 NES AA  GEN 00
+  NEW     t=    0 $0540 PlayAreaAttrs+16                 NES AA  GEN 00
+  NEW     t=    0 $0541 PlayAreaAttrs+17                 NES AA  GEN 00
+  NEW     t=    0 $0542 PlayAreaAttrs+18                 NES AA  GEN 00
+  NEW     t=    0 $0543 PlayAreaAttrs+19                 NES AA  GEN 00
+  NEW     t=    0 $0544 PlayAreaAttrs+20                 NES AA  GEN 00
+  NEW     t=    0 $0545 PlayAreaAttrs+21                 NES AA  GEN 00
+  NEW     t=    0 $0546 PlayAreaAttrs+22                 NES AA  GEN 00
+  NEW     t=    0 $0547 PlayAreaAttrs+23                 NES AA  GEN 00
+  NEW     t=    0 $0548 PlayAreaAttrs+24                 NES AA  GEN 00
+  NEW     t=    0 $0549 PlayAreaAttrs+25                 NES AA  GEN 00
+  NEW     t=    0 $054A PlayAreaAttrs+26                 NES AA  GEN 00
+  NEW     t=    0 $054B PlayAreaAttrs+27                 NES AA  GEN 00
+  NEW     t=    0 $054C PlayAreaAttrs+28                 NES AA  GEN 00
+  NEW     t=    0 $054D PlayAreaAttrs+29                 NES AA  GEN 00
+  NEW     t=    0 $054E PlayAreaAttrs+30                 NES AA  GEN 00
+  NEW     t=    0 $054F PlayAreaAttrs+31                 NES AA  GEN 00
+  NEW     t=    0 $0550 PlayAreaAttrs+32                 NES AA  GEN 00
+  NEW     t=    0 $0551 PlayAreaAttrs+33                 NES AA  GEN 00
+  NEW     t=    0 $0552 PlayAreaAttrs+34                 NES AA  GEN 00
+  NEW     t=    0 $0553 PlayAreaAttrs+35                 NES AA  GEN 00
+  NEW     t=    0 $0554 PlayAreaAttrs+36                 NES AA  GEN 00
+  NEW     t=    0 $0555 PlayAreaAttrs+37                 NES AA  GEN 00
+  NEW     t=    0 $0556 PlayAreaAttrs+38                 NES AA  GEN 00
+  NEW     t=    0 $0557 PlayAreaAttrs+39                 NES AA  GEN 00
+  NEW     t=    0 $0558 PlayAreaAttrs+40                 NES AA  GEN 00
+  NEW     t=    0 $0559 PlayAreaAttrs+41                 NES AA  GEN 00
+  NEW     t=    0 $055A PlayAreaAttrs+42                 NES AA  GEN 00
+  NEW     t=    0 $055B PlayAreaAttrs+43                 NES AA  GEN 00
+  NEW     t=    0 $055C PlayAreaAttrs+44                 NES AA  GEN 00
+  NEW     t=    0 $055D PlayAreaAttrs+45                 NES AA  GEN 00
+  NEW     t=    0 $055E PlayAreaAttrs+46                 NES AA  GEN 00
+  NEW     t=    0 $055F PlayAreaAttrs+47                 NES AA  GEN 00
+  NEW     t=    0 $0636 IsRegisterSaveFileOptionEnabled  NES 01  GEN 00
+  NEW     t=    0 $0637 IsEliminateSaveFileOptionEnabled NES 01  GEN 00
+  NEW     t=    0 $0656 SelectedItemSlot                 NES 01  GEN 00
+  NEW     t=    1 $0342 FirstSpriteIndex                 NES 01  GEN 00
+  NEW     t=   35 $0065 UndergroundEntranceTile          NES 26  GEN 00
+  NEW     t=  120 $00EC NextRoomId                       NES 00  GEN 76
+  NEW     t=  121 $0054 TriggeredDoorCmd                 NES 02  GEN 00
+  NEW     t=  121 $0055 TriggeredDoorDir                 NES 01  GEN 00
+  NEW     t=  121 $00EE CurOpenedDoors                   NES 01  GEN 00
+  NEW     t=  267 $002B ObjTimer+3                       NES 00  GEN 05
+  NEW     t=  361 $00C3 ObjShoveDir+3                    NES 00  GEN C8
+  NEW     t=  361 $00D6 ObjShoveDistance+3               NES 00  GEN 40
+  NEW     t=  361 $0408 ObjMetastate+3                   NES 01  GEN 00
+  NEW     t=  365 $03D0 ObjAnimCounter                   NES 05  GEN 06
+  NEW     t=  366 $00E3 IsSprite0CheckActive             NES 01  GEN 00
+  NEW     t=  366 $00E9 CurRow                           NES 00  GEN FF
+  NEW     t=  366 $0412 TriforceGlowTimer                NES 5D  GEN 00
+  NEW     t=  367 $0011 IsUpdatingMode                   NES 01  GEN 00
+  NEW     t=  367 $005A UndergroundExitType              NES 01  GEN 00
+  NEW     t=  367 $034E RoomObjCount                     NES 02  GEN 04
+  NEW     t=  367 $034F RoomKillCount                    NES 00  GEN 02
+  NEW     t=  367 $049F ObjCollidedTile+1                NES 24  GEN 00
+  NEW     t=  367 $04A0 ObjCollidedTile+2                NES 24  GEN 00
+  NEW     t=  367 $04A1 ObjCollidedTile+3                NES 24  GEN 00
+  NEW     t=  367 $04A2 ObjCollidedTile+4                NES 24  GEN 00
+  NEW     t=  367 $04A3 ObjCollidedTile+5                NES 24  GEN 00
+  NEW     t=  367 $04A4 ObjCollidedTile+6                NES 24  GEN 00
+  NEW     t=  367 $04A5 ObjCollidedTile+7                NES 24  GEN 00
+  NEW     t=  367 $04A6 ObjCollidedTile+8                NES 24  GEN 00
+  NEW     t=  367 $04A7 ObjCollidedTile+9                NES 24  GEN 00
+  NEW     t=  367 $0524 SpawnCycle                       NES 05  GEN 02
+
+== tick 0: 70 unmasked cells differ ==
+  $0014 TileBufSelector                  NES 7A  GEN 00
+  $0028 ObjTimer                         NES 02  GEN 00
+  $0052 ProcessedNarrowObj               NES 01  GEN 00
+  $007D ObjX+13                          NES 21  GEN 00
+  $00E8 CurColumn                        NES FF  GEN 00
+  $00EF CurOpenedDoors+1                 NES 02  GEN 00
+  $00F4 InitializedGame                  NES 01  GEN 00
+  $00F5 TransferredCommonPatterns        NES 5A  GEN 00
+  $00F6 TransferredDemoPatterns          NES 10  GEN 00
+  $00FE CurPpuMask_2001                  NES 1E  GEN 00
+  $00FF CurPpuControl_2000               NES B4  GEN 00
+  $0340 CurObjIndex                      NES 0B  GEN 00
+  $0341 RollingSpriteIndex               NES 01  GEN 00
+  $0343 LeftSpriteOffset                 NES 48  GEN 00
+  $0344 RightSpriteOffset                NES 4C  GEN 00
+  $034D RoomAllDead                      NES 00  GEN 01
+  $049E ObjCollidedTile                  NES 00  GEN 26
+  $04CE ShutterTrigger                   NES 00  GEN 01
+  $0528 SkippedDemo                      NES 5A  GEN 00
+  $0530 PlayAreaAttrs                    NES AA  GEN 00
+  $0531 PlayAreaAttrs+1                  NES AA  GEN 00
+  $0532 PlayAreaAttrs+2                  NES AA  GEN 00
+  $0533 PlayAreaAttrs+3                  NES AA  GEN 00
+  $0534 PlayAreaAttrs+4                  NES AA  GEN 00
+  $0535 PlayAreaAttrs+5                  NES AA  GEN 00
+  $0536 PlayAreaAttrs+6                  NES AA  GEN 00
+  $0537 PlayAreaAttrs+7                  NES AA  GEN 00
+  $0538 PlayAreaAttrs+8                  NES AA  GEN 00
+  $0539 PlayAreaAttrs+9                  NES AA  GEN 00
+  $053A PlayAreaAttrs+10                 NES AA  GEN 00
+  $053B PlayAreaAttrs+11                 NES AA  GEN 00
+  $053C PlayAreaAttrs+12                 NES AA  GEN 00
+  $053D PlayAreaAttrs+13                 NES AA  GEN 00
+  $053E PlayAreaAttrs+14                 NES AA  GEN 00
+  $053F PlayAreaAttrs+15                 NES AA  GEN 00
+  $0540 PlayAreaAttrs+16                 NES AA  GEN 00
+  $0541 PlayAreaAttrs+17                 NES AA  GEN 00
+  $0542 PlayAreaAttrs+18                 NES AA  GEN 00
+  $0543 PlayAreaAttrs+19                 NES AA  GEN 00
+  $0544 PlayAreaAttrs+20                 NES AA  GEN 00
+  $0545 PlayAreaAttrs+21                 NES AA  GEN 00
+  $0546 PlayAreaAttrs+22                 NES AA  GEN 00
+  $0547 PlayAreaAttrs+23                 NES AA  GEN 00
+  $0548 PlayAreaAttrs+24                 NES AA  GEN 00
+  $0549 PlayAreaAttrs+25                 NES AA  GEN 00
+  $054A PlayAreaAttrs+26                 NES AA  GEN 00
+  $054B PlayAreaAttrs+27                 NES AA  GEN 00
+  $054C PlayAreaAttrs+28                 NES AA  GEN 00
+  $054D PlayAreaAttrs+29                 NES AA  GEN 00
+  $054E PlayAreaAttrs+30                 NES AA  GEN 00
+  $054F PlayAreaAttrs+31                 NES AA  GEN 00
+  $0550 PlayAreaAttrs+32                 NES AA  GEN 00
+  $0551 PlayAreaAttrs+33                 NES AA  GEN 00
+  $0552 PlayAreaAttrs+34                 NES AA  GEN 00
+  $0553 PlayAreaAttrs+35                 NES AA  GEN 00
+  $0554 PlayAreaAttrs+36                 NES AA  GEN 00
+  $0555 PlayAreaAttrs+37                 NES AA  GEN 00
+  $0556 PlayAreaAttrs+38                 NES AA  GEN 00
+  $0557 PlayAreaAttrs+39                 NES AA  GEN 00
+  $0558 PlayAreaAttrs+40                 NES AA  GEN 00
+  $0559 PlayAreaAttrs+41                 NES AA  GEN 00
+  $055A PlayAreaAttrs+42                 NES AA  GEN 00
+  $055B PlayAreaAttrs+43                 NES AA  GEN 00
+  $055C PlayAreaAttrs+44                 NES AA  GEN 00
+  $055D PlayAreaAttrs+45                 NES AA  GEN 00
+  $055E PlayAreaAttrs+46                 NES AA  GEN 00
+  $055F PlayAreaAttrs+47                 NES AA  GEN 00
+  $0636 IsRegisterSaveFileOptionEnabled  NES 01  GEN 00
+  $0637 IsEliminateSaveFileOptionEnabled NES 01  GEN 00
+  $0656 SelectedItemSlot                 NES 01  GEN 00
+
+== cells equal at tick 0 that diverge later: 42 ==
+  t=    1 $0342 FirstSpriteIndex                 NES 01  GEN 00
+  t=   35 $0065 UndergroundEntranceTile          NES 26  GEN 00
+  t=  120 $00EC NextRoomId                       NES 00  GEN 76
+  t=  121 $0054 TriggeredDoorCmd                 NES 02  GEN 00
+  t=  121 $0055 TriggeredDoorDir                 NES 01  GEN 00
+  t=  121 $00EE CurOpenedDoors                   NES 01  GEN 00
+  t=  267 $002B ObjTimer+3                       NES 00  GEN 05
+  t=  361 $00C3 ObjShoveDir+3                    NES 00  GEN C8
+  t=  361 $00D6 ObjShoveDistance+3               NES 00  GEN 40
+  t=  361 $0408 ObjMetastate+3                   NES 01  GEN 00
+  t=  365 $03D0 ObjAnimCounter                   NES 05  GEN 06
+  t=  366 $00E3 IsSprite0CheckActive             NES 01  GEN 00
+  t=  366 $00E9 CurRow                           NES 00  GEN FF
+  t=  366 $0412 TriforceGlowTimer                NES 5D  GEN 00
+  t=  367 $0011 IsUpdatingMode                   NES 01  GEN 00
+  t=  367 $005A UndergroundExitType              NES 01  GEN 00
+  t=  367 $0074 ObjX+4                           NES A0  GEN 34
+  t=  367 $0075 ObjX+5                           NES A0  GEN 70
+  t=  367 $0076 ObjX+6                           NES C0  GEN 70
+  t=  367 $0077 ObjX+7                           NES 30  GEN A0
+  t=  367 $0078 ObjX+8                           NES 50  GEN A0
+  t=  367 $0079 ObjX+9                           NES 80  GEN 30
+  t=  367 $007B ObjX+11                          NES 00  GEN 60
+  t=  367 $0088 ObjY+4                           NES 5D  GEN BC
+  t=  367 $0089 ObjY+5                           NES 9D  GEN 7D
+  t=  367 $008A ObjY+6                           NES 6D  GEN 9D
+  t=  367 $008B ObjY+7                           NES 6D  GEN 5D
+  t=  367 $008C ObjY+8                           NES 9D  GEN BD
+  t=  367 $008D ObjY+9                           NES 8D  GEN 6D
+  t=  367 $008F ObjY+11                          NES 00  GEN 50
+  t=  367 $034E RoomObjCount                     NES 02  GEN 04
+  t=  367 $034F RoomKillCount                    NES 00  GEN 02
+  t=  367 $049F ObjCollidedTile+1                NES 24  GEN 00
+  t=  367 $04A0 ObjCollidedTile+2                NES 24  GEN 00
+  t=  367 $04A1 ObjCollidedTile+3                NES 24  GEN 00
+  t=  367 $04A2 ObjCollidedTile+4                NES 24  GEN 00
+  t=  367 $04A3 ObjCollidedTile+5                NES 24  GEN 00
+  t=  367 $04A4 ObjCollidedTile+6                NES 24  GEN 00
+  t=  367 $04A5 ObjCollidedTile+7                NES 24  GEN 00
+  t=  367 $04A6 ObjCollidedTile+8                NES 24  GEN 00
+  t=  367 $04A7 ObjCollidedTile+9                NES 24  GEN 00
+  t=  367 $0524 SpawnCycle                       NES 05  GEN 02
+
+masked cells differing at tick 0: 381 (not evaluated)
+
+GATE: FAIL  key=550 fails=0  ratchet new=98 earlier=0 improved=0 baseline=NONE  allow=0
+VERDICT: DIVERGE (112 unmasked cells ever differ)

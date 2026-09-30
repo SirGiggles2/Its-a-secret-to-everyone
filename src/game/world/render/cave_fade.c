@@ -71,8 +71,8 @@ void cave_fade_forget_arch(void)
     s_arch_n = 0u;   /* plane redrawn: the raised cells are gone */
 }
 
-/* NES InitMode10 + UpdateMode10Stairs: 16 pixels down, 1 px every 4
- * frames = 64 frames total. */
+/* NES InitMode10 + UpdateMode10Stairs: a $24 pad descends 16 pixels,
+ * 1 px every 4 frames. Stairs and $88 skip that descent. */
 #define CAVE_DESCEND_PIXELS   16u
 #define CAVE_DESCEND_FRAMES_PER_PX 4u
 #define CAVE_DESCEND_TOTAL_FRAMES \
@@ -95,6 +95,7 @@ static cave_fade_phase_t     s_phase          = CAVE_FADE_IDLE;
 static unsigned char         s_frame_counter  = 0u;  /* 0..63 for descend */
 static unsigned char         s_step_idx       = 0u;  /* 0..15 px steps emitted */
 static cave_id_t             s_pending_cid    = 0u;
+static unsigned char         s_entrance_tile  = 0u;
 static unsigned char         s_return_room_id = 0u;
 static cave_fade_callbacks_t s_cb             = { 0, 0, 0, 0, 0, 0, 0, 0 };
 /* LINK_EMERGE running state (NES MoveObject accumulator). */
@@ -143,7 +144,7 @@ void cave_fade_set_callbacks(const cave_fade_callbacks_t *cb)
     }
 }
 
-void cave_fade_begin_enter(cave_id_t cid)
+void cave_fade_begin_enter(cave_id_t cid, unsigned char entrance_tile)
 {
     if (s_phase != CAVE_FADE_IDLE) {
         return;
@@ -155,6 +156,7 @@ void cave_fade_begin_enter(cave_id_t cid)
     RAM(0x005Bu) = (cid == 0x6Eu) ? 0x0Cu : 0x0Bu;
     RAM(0x0604u) = 0x80u;
     s_pending_cid   = cid;
+    s_entrance_tile = entrance_tile;
     s_frame_counter = 0u;
     s_step_idx      = 0u;
     s_anim_counter  = CAVE_ANIM_ENTRY_SEED;   /* align first pose-flip to NES */
@@ -243,6 +245,16 @@ void cave_fade_tick(void)
 
     switch (s_phase) {
     case CAVE_FADE_LINK_DESCEND: {
+        /* Z_05.asm:UpdateMode10Stairs_Full skips the 16-pixel descent
+         * for stairs $70-$73 and rock-pile $88. Only the $24 pad walks
+         * Link behind the background. The first mode-10 update still
+         * enters the target cave mode before its load submodes. */
+        if (s_entrance_tile != 0x24u) {
+            s_load_counter = CAVE_LOAD_HOLD_FRAMES;
+            s_phase = CAVE_FADE_LOAD_HOLD;
+            if (s_cb.on_load_blank != 0) s_cb.on_load_blank(0u);
+            break;
+        }
         /* NES UpdateMode10Stairs_Full (Z_05.asm:2314): INC ObjY when
          * FrameCounter & 3 == 0, from the frame after InitMode10's own
          * (T-012: a private 4-frame count was a frame late at fc $6C;
