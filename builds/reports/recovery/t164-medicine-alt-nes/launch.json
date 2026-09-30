@@ -1,0 +1,11 @@
+{
+  "rom": "roms\\Legend of Zelda, The (USA).nes",
+  "rom_sha256": "8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac",
+  "script": "tools\\probes\\t164_medicine_alt_nes.lua",
+  "script_sha256": "6c180f34c7c40632072d52edcb9fd4974f0467d0e6448fe97ee28040cf73aee7",
+  "symbols": {},
+  "exit_code": 0,
+  "collected": [
+    "t164_medicine_alt_nes.txt"
+  ]
+}

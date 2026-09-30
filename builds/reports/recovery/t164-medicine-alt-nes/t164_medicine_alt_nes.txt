@@ -1,0 +1,5 @@
+letter_use state=01 letter=02 selected=0F
+mode=0B cave=74 room=02 state=02 flags=0F wares=1F,3F,E0 prices=28,00,44 rupees=32 add=00 sub=00 roomflag=00 letter=02 selected=0F reached=true
+potion_reject state=02 ware=E0 flag=00
+potion_buy state=04 ware=FF flag=10 potion=02 debit=43
+potion_settled rupees=00 debit=00 PASS
