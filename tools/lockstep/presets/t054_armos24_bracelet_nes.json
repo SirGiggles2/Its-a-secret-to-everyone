@@ -1,0 +1,13 @@
+{
+  "name": "t054_armos24_bracelet_nes",
+  "file_name": "LINK",
+  "quest": 0,
+  "items": {},
+  "script": [[150, ""], [100, "U"], [40, ""]],
+  "clock": "frame",
+  "stages": [
+    [5, "wr(0x12,0x02)\nwr(0x13,0)"],
+    [7, "wr(0x526,0x24)"],
+    [150, "wr(0x70,0xE0)\nwr(0x84,0x8D)\nwr(0x98,0x08)\nwr(0x394,0)\ngen_link_pos(0xE0,0x8D,0x08)"]
+  ]
+}

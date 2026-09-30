@@ -1,0 +1,15 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\builds\\Debug.md",
+  "rom_sha256": "5925eb7d486c210eaaa013f94801c650d044fb14bfdef8a99606baffa2fc18b1",
+  "script": "tools\\probes\\t054_armos24_bracelet_gen.lua",
+  "script_sha256": "a648c4be59de7fc37c563f62c7053181c335786ba056f6ac15efdf9845a15861",
+  "seed_gen_save_sha256": null,
+  "symbols": {
+    "players": "0xFF0F80",
+    "s_in_gameplay": "0xFF32CC",
+    "s_link_dir": "0xFF388A",
+    "s_link_grid_offset": "0xFF3890"
+  },
+  "exit_code": "timeout",
+  "collected": []
+}

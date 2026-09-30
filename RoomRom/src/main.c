@@ -3352,6 +3352,24 @@ static unsigned char play_update_objects(void)
             enemy_render_weapon_reset(0x13u);
         }
     }
+    /* NES MoveAndDrawRoomItem / TryTakeRoomItem also run on the OW. The
+     * room-$24 Armos activates slot 19 with item $14 (bracelet); keeping
+     * this behind the UW-only native item path made the reward invisible
+     * and impossible to take even though the statue awakened correctly. */
+    if (s_scene == SCENE_OW && s_room_id == 0x24u &&
+        nes_ram[0x00ABu] == 0x14u &&
+        (nes_ram[0x00BFu] & 0x80u) == 0u &&
+        progress_get_room_flag_uw_item_state() == 0u) {
+        unsigned char saved_cur = nes_ram[0x0340u];
+        nes_ram[0x0340u] = 0x13u;
+        draw_animate_item_object(0x14u, 0x13u);
+        nes_ram[0x0340u] = saved_cur;
+        cave_try_take_room_item();
+        if (progress_get_room_flag_uw_item_state() != 0u) {
+            enemy_render_weapon_reset(0x13u);
+            inventory_hud_mark_dirty();
+        }
+    }
     /* NES UpdateMode5Play ends in UpdateHeartsAndRupees (Z_07.asm:2033),
      * after the object loop and TryTakeRoomItem: a rupee picked up this
      * frame is counted this frame (t013_route t6773). */
