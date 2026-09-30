@@ -139,6 +139,9 @@ def main() -> int:
     ap.add_argument("--snap", metavar="F1,F2,...",
                     help="also dump the video domains at these game ticks (T-136) "
                          "(<plat>.fNNNNN.<oam|nt|pal|vram|cram|vsram>)")
+    ap.add_argument("--vframes", metavar="T0,T1[,MAX]",
+                    help="dump the video domains + screenshot of every video frame whose "
+                         "tick is in [T0,T1] (at most MAX, default 200) as <plat>.vNNNNN.*")
     ap.add_argument("--full", action="store_true",
                     help="no fail-fast: the Genesis runs the whole script (milestone evidence, --bless)")
     ap.add_argument("--no-cache", action="store_true", help="rerun the NES capture")
@@ -154,6 +157,9 @@ def main() -> int:
         p["frames"] = True
     if a.snap:
         p["snap"] = [int(x) for x in a.snap.split(",")]
+    if a.vframes:
+        v = [int(x) for x in a.vframes.split(",")]
+        p["vframes"] = v + [200] if len(v) == 2 else v
     out = ROOT / "builds" / "reports" / "lockstep" / p["name"]
     out.mkdir(parents=True, exist_ok=True)
     for f in out.glob("*"):
@@ -164,7 +170,8 @@ def main() -> int:
 
     # Long scripts and --snap dumps outrun a fixed emulator timeout.
     frames = min(a.frames, sum(n for n, _ in p["script"]))
-    timeout = 300 + frames // 10 + 20 * len(p.get("snap", []))
+    timeout = (300 + frames // 10 + 20 * len(p.get("snap", []))
+               + 2 * (p.get("vframes") or [0, 0, 0])[2])
     if nes_cached(p, out, "nes", a.frames, timeout, not a.no_cache) == "fail":
         err = out / "nes.err"
         why = err.read_text(encoding="utf-8", errors="replace").strip() if err.exists() else "incomplete (timeout?)"

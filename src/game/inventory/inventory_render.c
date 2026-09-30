@@ -204,6 +204,16 @@ static unsigned char tile_is_narrow(unsigned char nes_tile)
 
 static unsigned char s_active = 0u;
 
+/* T-167: the menu is drawn in the plane slot the room does not use (cols
+ * 0-31 or 32-63; roomrom_main_menu_col_base) and H scroll points there,
+ * like the NES drawing it in its other name table. The room's cells
+ * (cave interior, person text, opened secrets) stay in the plane and come
+ * back on close. Before, the menu filled the whole plane and the close
+ * rebuilt the room with load_room: in a cave that drew the overworld. */
+extern unsigned char roomrom_main_menu_col_base(void);
+extern void roomrom_main_set_hscroll(short h);
+static unsigned char s_col_base = 0u;
+
 /* P6.5 cursor state — hoisted so inventory_subscreen_enter can reference. */
 #define B_ITEM_SLOT_COUNT  8u
 static unsigned char  s_cursor_slot  = 0u;
@@ -412,12 +422,12 @@ static void write_inventory_row(unsigned short gen_row)
 {
     unsigned short cells[32];
     unsigned short i;
+    const unsigned short addr = (unsigned short)(PLANE_A_BASE + gen_row * 128u + s_col_base * 2u);
     /* Gen row 0 = NES NT row 9 after the visible-frame crop. */
     unsigned short nes_row = (unsigned short)(gen_row + NES_VSCROLL_NES_ROW_OFFSET);
     if (nes_row >= 30u) {
         unsigned short blank_attr = RENDER_TILE_ATTR_FULL(0u, 0, 0, 0, BLANK_TILE);
-        for (i = 0; i < 32u; ++i) cells[i] = blank_attr;
-        render_plane_a_write_row(gen_row, cells, 32u);
+        render_plane_fill_row(0u, s_col_base, gen_row, 32u, blank_attr);
         return;
     }
     for (i = 0; i < 32u; ++i) {
@@ -433,7 +443,8 @@ static void write_inventory_row(unsigned short gen_row)
         unsigned short vram = tile_for(tid, sp);
         cells[i] = RENDER_TILE_ATTR_FULL(0u, 0, 0, 0, vram);
     }
-    render_plane_a_write_row(gen_row, cells, 32u);
+    render_vram_open_write(addr);
+    for (i = 0; i < 32u; ++i) *((volatile unsigned short *)0xC00000) = cells[i];
 }
 
 /* L2 (Phase 7 v2): NES SubmenuItemXs table from Z_05.asm:7803.
@@ -746,9 +757,7 @@ void inventory_subscreen_enter(void)
         unsigned char lvl = nes_ram[0x0010u];
         unsigned short c = (lvl >= 1u && lvl <= 9u)
             ? roomrom_bg_palette_nes_to_cram(nes_ram[0x6B9Eu]) : 0u;
-        *((volatile unsigned long *)0xC00004u)  = 0xC0000000UL
-                                                | ((unsigned long)(25u * 2u) << 16);
-        *((volatile unsigned short *)0xC00000u) = c;
+        render_cram_write_color(25u, c);
     }
 
     /* Upload the 8 live-extracted subscreen item-icon tiles to free VRAM
@@ -773,11 +782,11 @@ void inventory_subscreen_enter(void)
         roomrom_hud_set_bottom_mode(1u);
     }
 
-    /* Reset HSCROLL — gameplay leaves Plane A scrolled. VSRAM left
-     * alone for now; row-by-row scroll-in mechanism replaces gameplay
-     * rows from top down. */
-    *((volatile unsigned long *)0xC00004) = 0x7C000003UL;
-    *((volatile unsigned long *)0xC00000) = 0x00000000UL;
+    /* H scroll onto the menu's plane slot (both planes). The old reset
+     * wrote control $7C000003 = VRAM $FC00, not the H scroll table $F000,
+     * so it never took effect (harmless while the menu used column 0). */
+    s_col_base = roomrom_main_menu_col_base();
+    roomrom_main_set_hscroll(s_col_base ? -256 : 0);
 
     /* Hide all sprites during scroll-in (so frozen gameplay sprites
      * don't render over partially-built subscreen). */
@@ -800,11 +809,15 @@ void inventory_subscreen_enter(void)
      * with BG_A (main.c:634-635), so the Plane A fill below clears both. */
 
     /* Phase B: the gameplay plane is ALREADY V64 (main.c:639) — no plane-
-     * size toggle. Clear the full V64 plane ($C000-$DFFF; HScroll $F000 +
-     * SAT $F400 are outside it) and write the FULL menu to rows 0..27 in one
-     * shot; the animation is a real VSRAM ramp, NOT progressive tile writes.
+     * size toggle. Clear the menu's 32-column plane slot (all 64 rows; the
+     * room's slot is left alone, T-167) and write the FULL menu to rows
+     * 0..27 in one shot; the animation is a real VSRAM ramp, NOT
+     * progressive tile writes.
      * Park the viewport 174 px above the menu; tick ramps it down. */
-    render_plane_fill(PLANE_A_BASE, blank_attr, 64u * 64u);
+    {
+        unsigned short r;
+        for (r = 0u; r < 64u; ++r) render_plane_fill_row(0u, s_col_base, r, 32u, blank_attr);
+    }
     {
         unsigned short r;
         for (r = 0u; r < SCROLL_TOTAL_ROWS; ++r) write_inventory_row(r);

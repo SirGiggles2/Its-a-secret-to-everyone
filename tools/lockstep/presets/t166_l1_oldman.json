@@ -1,0 +1,115 @@
+{
+ "name": "t166_l1_oldman",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {
+  "InvBombs": 4,
+  "InvKeys": 1
+ },
+ "script": [
+  [
+   30,
+   ""
+  ],
+  [
+   148,
+   "R"
+  ],
+  [
+   20,
+   ""
+  ],
+  [
+   1,
+   "U"
+  ],
+  [
+   116,
+   ""
+  ],
+  [
+   1,
+   "U"
+  ],
+  [
+   116,
+   ""
+  ],
+  [
+   1,
+   "U"
+  ],
+  [
+   116,
+   ""
+  ],
+  [
+   1,
+   "U"
+  ],
+  [
+   116,
+   ""
+  ],
+  [
+   1,
+   "L"
+  ],
+  [
+   97,
+   ""
+  ],
+  [
+   23,
+   "U"
+  ],
+  [
+   63,
+   ""
+  ],
+  [
+   65,
+   "U"
+  ],
+  [
+   30,
+   ""
+  ],
+  [
+   400,
+   ""
+  ]
+ ],
+ "stages": [
+  [
+   198,
+   "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X keys %d bombs %d doors %02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x66E), rd(0x658), rd(0xEE)))"
+  ],
+  [
+   315,
+   "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X keys %d bombs %d doors %02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x66E), rd(0x658), rd(0xEE)))"
+  ],
+  [
+   432,
+   "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X keys %d bombs %d doors %02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x66E), rd(0x658), rd(0xEE)))"
+  ],
+  [
+   549,
+   "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X keys %d bombs %d doors %02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x66E), rd(0x658), rd(0xEE)))"
+  ],
+  [
+   666,
+   "wr(0x70, 0)\nwr(0x84, 141)\nwr(0x98, 2)\nwr(0x394, 0)\ngen_link_pos(0, 141, 2)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X keys %d bombs %d doors %02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x66E), rd(0x658), rd(0xEE)))"
+  ],
+  [
+   764,
+   "wr(0x70, 112)\nwr(0x84, 157)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 157, 8)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X keys %d bombs %d doors %02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x66E), rd(0x658), rd(0xEE)))"
+  ],
+  [
+   810,
+   "wr(0x6BAD,0x41)\nwr(0x11,0)\nwr(0x12,3)\nwr(0x13,0)\nlog(string.format(\"reload lvl=%02X start=%02X room=%02X\",rd(0x10),rd(0x6BAD),rd(0xEB)))"
+  ]
+ ],
+ "clock": "play",
+ "_note": "T-166 (user 2026-09-30: L1 old man text in the wrong spot): natural entry into L1 (t054_uw_block42_nes route), then the NES mode-3 reload trick (StartRoomId $6BAD = $41, GameMode 3, IsUpdatingMode 0) into the L1Q1 person room $41 (template $4C). Play clock."
+}

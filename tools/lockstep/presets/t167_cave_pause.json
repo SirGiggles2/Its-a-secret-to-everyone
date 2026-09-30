@@ -1,0 +1,44 @@
+{
+ "name": "t167_cave_pause",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {},
+ "script": [
+  [
+   50,
+   ""
+  ],
+  [
+   53,
+   "U"
+  ],
+  [
+   97,
+   ""
+  ],
+  [
+   1,
+   "S"
+  ],
+  [
+   80,
+   ""
+  ],
+  [
+   1,
+   "S"
+  ],
+  [
+   79,
+   ""
+  ]
+ ],
+ "stages": [
+  [
+   40,
+   "wr(0x70, 64)\nwr(0x84, 93)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(64, 93, 8)\nlog(string.format('room %02X link %02X,%02X', rd(0xEB), rd(0x70), rd(0x84)))"
+  ]
+ ],
+ "clock": "play",
+ "_note": "T-167 (user 2026-09-30: pausing in the first cave changes the background): t011_sword_cave entry, Start at t200 (menu), Start at t281 (close), play to t360. Play clock."
+}

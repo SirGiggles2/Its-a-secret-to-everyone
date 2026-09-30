@@ -1,0 +1,58 @@
+{
+ "name": "t168_trans_ow",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {},
+ "script": [
+  [
+   50,
+   ""
+  ],
+  [
+   41,
+   "L"
+  ],
+  [
+   185,
+   "U"
+  ],
+  [
+   250,
+   ""
+  ],
+  [
+   8,
+   "R"
+  ],
+  [
+   100,
+   "U"
+  ],
+  [
+   200,
+   ""
+  ],
+  [
+   150,
+   "D"
+  ],
+  [
+   100,
+   ""
+  ],
+  [
+   40,
+   "R"
+  ],
+  [
+   170,
+   "U"
+  ],
+  [
+   6,
+   "R"
+  ]
+ ],
+ "clock": "play",
+ "_note": "T-168 (user 2026-09-30: red line / HUD black goes away in transitions): t013_route prefix to t1300 ($77 -> $67 vertical up at t1223)."
+}

@@ -12,14 +12,15 @@ attributes, PALRAM; OAM sprites (8x16 when PPUCTRL bit 5: odd tile ids
 from table $1000), OAM order priority, behind-BG bit, Y + 1. Each NES
 color goes through data/misc/palettes.c misc_palettes (the port's
 NES-color -> CRAM table, roomrom_bg_palette_nes_to_cram). Supported only
-for screens at scroll 0 without the sprite-0 split: CurHScroll $FD,
-CurVScroll $FC, PPUCTRL name-table bits and IsSprite0CheckActive $E3
-must be 0, else the tool stops (it does not model scrolling screens).
+for screens at scroll 0: CurHScroll $FD, CurVScroll $FC and the PPUCTRL
+name-table bits must be 0 (a settled room: the sprite-0 split then changes
+nothing), else the tool stops (it does not model scrolling screens).
 
 Genesis (256x224): the gameplay VDP layout from RoomRom/src/main.c
 init_video (plane A and B at $C000, 64x64 cells, H scroll table $F000 per
 plane, SAT $F400); VSRAM words 0/1. The HUD window is not modelled: use
-only for screens that turn it off (GameMode 8 / $0D, roomrom_mode8_blank).
+only for screens that turn it off (GameMode 8 / $0D, roomrom_mode8_blank), or
+pass --window-rows 7 for gameplay (window at $E000, 32 cells a row in H32).
 Planes B/A and sprites with priority bits, SAT link chain from slot 0,
 backdrop = CRAM 0.
 
@@ -46,9 +47,11 @@ def nes_to_cram() -> list[int]:
 
 def nes_frame(nt: bytes, chr_: bytes, pal: bytes, oam: bytes, ram: bytes) -> list[list[int]]:
     ctrl = ram[0xFF]
-    if ram[0xFD] or ram[0xFC] or (ctrl & 3) or ram[0xE3]:
-        raise SystemExit(f"NES screen scrolled/split (H {ram[0xFD]:02X} V {ram[0xFC]:02X} "
-                         f"ctrl {ctrl:02X} sprite0 {ram[0xE3]:02X}): not supported")
+    # The sprite-0 split (status bar over the play area) changes nothing
+    # while both parts sit at scroll 0 in name table 0 (a settled room).
+    if ram[0xFD] or ram[0xFC] or (ctrl & 3):
+        raise SystemExit(f"NES screen scrolled (H {ram[0xFD]:02X} V {ram[0xFC]:02X} "
+                         f"ctrl {ctrl:02X}): not supported")
     bg_tab = 0x1000 if ctrl & 0x10 else 0
     tall = bool(ctrl & 0x20)
     spr_tab = 0x1000 if ctrl & 0x08 else 0
@@ -101,7 +104,7 @@ def nes_frame(nt: bytes, chr_: bytes, pal: bytes, oam: bytes, ram: bytes) -> lis
     return img
 
 
-def gen_frame(vram: bytes, cram: bytes, vsram: bytes) -> list[list[int]]:
+def gen_frame(vram: bytes, cram: bytes, vsram: bytes, window_rows: int = 0) -> list[list[int]]:
     cw = [(cram[2 * i] << 8) | cram[2 * i + 1] for i in range(64)]
 
     def word(a: int) -> int:
@@ -130,6 +133,19 @@ def gen_frame(vram: bytes, cram: bytes, vsram: bytes) -> list[list[int]]:
                 out[y][x] = (((w >> 13) & 3) * 16 + c if c else 0, w >> 15)
         return out
     pb, pa = plane(1), plane(0)
+    # HUD window (VDP_setWindowOnTop(ROOMROM_HUD_ROWS) in init_video): the
+    # top window_rows cell rows show the window plane at $E000 (32 cells a
+    # row in H32) instead of plane A.
+    for y in range(window_rows * 8):
+        for x in range(256):
+            w = word(0xE000 + ((y >> 3) * 32 + (x >> 3)) * 2)
+            tx, ty = x & 7, y & 7
+            if w & 0x0800:
+                tx = 7 - tx
+            if w & 0x1000:
+                ty = 7 - ty
+            c = tile_px(w & 0x7FF, tx, ty)
+            pa[y][x] = (((w >> 13) & 3) * 16 + c if c else 0, w >> 15)
     spr = [[(0, 0)] * 256 for _ in range(224)]
     sat, seen, s = 0xF400, set(), 0
     order = []
@@ -174,6 +190,8 @@ def main() -> int:
     ap.add_argument("dir", type=Path)
     ap.add_argument("tick", type=int)
     ap.add_argument("--png", action="store_true")
+    ap.add_argument("--window-rows", type=int, default=0,
+                    help="HUD window rows on the Genesis (gameplay: 7)")
     a = ap.parse_args()
     d, t = a.dir, f"f{a.tick:05d}"
     ram = (d / "nes.ram").read_bytes()[a.tick * 0x800:(a.tick + 1) * 0x800]
@@ -181,7 +199,7 @@ def main() -> int:
     nes = nes_frame((d / f"nes.{t}.nt").read_bytes(), (d / f"nes.{t}.chr").read_bytes(),
                     (d / f"nes.{t}.pal").read_bytes(), (d / f"nes.{t}.oam").read_bytes(), ram)
     gen = gen_frame((d / f"gen.{t}.vram").read_bytes(), (d / f"gen.{t}.cram").read_bytes(),
-                    (d / f"gen.{t}.vsram").read_bytes())
+                    (d / f"gen.{t}.vsram").read_bytes(), a.window_rows)
     bad = {}
     for y in range(224):
         for x in range(256):

@@ -56,6 +56,10 @@ unsigned char roomrom_main_current_redux_flag(void);
  * coordinator's check_warp gate uses this to short-circuit warp
  * detection when not in OW. */
 unsigned char roomrom_main_current_scene(void);
+/* Plane cell showing NES name-table cell (col, nt_row) in the current room
+ * (scroll-aware; the Genesis frame starts at NES line 8). */
+void roomrom_main_nt_cell_to_plane(unsigned char col, unsigned char nt_row,
+                                   unsigned short *pc, unsigned short *pr);
 
 /* Read the current OW room id. Coordinator passes this to the OW
  * metadata accessor for selector resolution. */

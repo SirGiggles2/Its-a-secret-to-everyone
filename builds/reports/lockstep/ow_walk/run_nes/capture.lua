@@ -125,14 +125,34 @@ if sys == "GEN" and PRESET.gen_entry == "xyz" then
     if not ok then fail("X+Y+Z chord not accepted (6-button pad configured?)") return end
     meta:write("gen_entry=xyz (debug chord, all items unlocked)\n")
 else
-    idle(120); press({ Start = true }, 6); idle(120); press({ Start = true }, 6)
+    idle(120); press({ Start = true }, 6); idle(240); press({ Start = true }, 6)
 end
 local sync = -1
 for i = 1, 1500 do
     if gm() == 0x05 and room() ~= 0 then sync = i; break end
+    if i <= 40 or i % 30 == 1 then     -- boot timeline (read on a no-sync failure)
+        local rg = emu.getregisters()
+        meta:write(string.format("boot pc=%X a4=%X ", rg["M68K PC"] or 0, rg["M68K A4"] or 0))
+        meta:write(string.format("boot i=%d gm=%02X sub=%02X room=%02X\n", i, gm(),
+            memory.read_u8(RAM_BASE + 0x13, RAM_DOM), room()))
+    end
     idle(1)
 end
-if sync < 0 then fail(string.format("GameMode never reached $05 (last $%02X)", gm())) return end
+if sync < 0 then
+    client.screenshot(OUT .. ".nosync.png")   -- what the front end shows
+    do  -- 68K registers (A4 must hold the NES RAM base $FF8000)
+        local regs = emu.getregisters()
+        local ks = {}
+        for k, v in pairs(regs) do ks[#ks + 1] = string.format("%s=%X", k, v) end
+        table.sort(ks)
+        meta:write("nosync regs " .. table.concat(ks, " ") .. "\n")
+    end
+    local fh = io.open(OUT .. ".nosync.ram", "wb")
+    local b = memory.read_bytes_as_array(RAM_BASE, 0x800, RAM_DOM)
+    for i = 1, 0x800, 256 do fh:write(string.char(table.unpack(b, i, i + 255))) end
+    fh:close()
+    fail(string.format("GameMode never reached $05 (last $%02X)", gm())) return
+end
 -- Sync on the first LIVE gameplay tick: FrameCounter ($15) advancing.
 -- Genesis installs the room a few frames before its tick starts.
 local live = -1
@@ -211,14 +231,14 @@ end
 -- places Link on NES ($70/$84/$98/$394) calls gen_link_pos(x, y, nes_dir)
 -- to place him on Genesis. face: 0 down, 1 up, 2 left, 3 right
 -- (RoomRom/src/roomrom_main_state.h). No-op on NES. Read back.
-local GEN_PLAYERS = tonumber("0xFF0F80")
+local GEN_PLAYERS = tonumber("0xFF0F84")
 -- Link's movement state proper lives in RoomRom/src/main.c statics:
 -- s_link_dir (link_dir_t, 4-byte int: 1 down, 2 up, 3 left, 4 right) and
 -- s_link_grid_offset (s8, NES ObjGridOffset $394 equivalent). A teleport
 -- must reset them as the NES stage resets $98/$394, else the next turn
 -- snaps Link toward a stale grid point.
-local GEN_LINK_DIR = tonumber("0xFF388A")
-local GEN_LINK_GRID = tonumber("0xFF3890")
+local GEN_LINK_DIR = tonumber("0xFF3912")
+local GEN_LINK_GRID = tonumber("0xFF3918")
 local NES_DIR_TO_LINK_DIR = { [0x01] = 4, [0x02] = 3, [0x04] = 1, [0x08] = 2 }
 local NES_DIR_TO_FACE = { [0x01] = 3, [0x02] = 2, [0x04] = 0, [0x08] = 1 }
 local function gen_link_pos(x, y, nes_dir)
@@ -337,6 +357,13 @@ local prev_tick = -1
 -- and per-frame log lines are written only with PRESET.frames = true
 -- (run_lockstep --frame-dump). Per-tick log lines replace them otherwise.
 local FRAME_DUMP = PRESET.frames == true
+-- Video frame dumps (PRESET.vframes = {T0, T1, MAX}): every video frame
+-- whose play tick is in [T0, T1] (a room transition holds the tick still,
+-- so one tick covers the whole scroll on both consoles), at most MAX
+-- frames: the snapshot set (screenshot + video domains) as <OUT>.vNNNNN.*
+-- with NNNNN = video frame.
+local VF = PRESET.vframes
+local vf_count = 0
 -- Per-video-frame video state (<OUT>.fvdp): GEN 648 bytes (VSRAM 4, H scroll
 -- 4, SAT 640), NES 256 bytes (OAM). Only with FRAME_DUMP.
 local fvdp = FRAME_DUMP and io.open(OUT .. ".fvdp", "wb") or nil
@@ -354,6 +381,7 @@ local invisible = nil
 local function video_for(t)
     -- 40 ticks ahead: a load catch-up jumps FrameCounter by up to 32.
     local want = t >= total - 2
+    if VF and t >= VF[1] - 40 and t <= VF[2] then want = true end
     for sf in pairs(SNAP) do if sf >= t and sf <= t + 40 then want = true end end
     local inv = not want
     if client.invisibleemulation and inv ~= invisible then
@@ -484,6 +512,10 @@ while tick < total and f < FRAME_CAP do
         end
         meta:write(string.format("f=%d t=%d in=%s gm=%02X sub=%02X fc=%02X room=%02X\n",
             f, tick, tostring(seq[tick + 1]), bytes[0x13], bytes[0x14], bytes[0x16], bytes[0xEC]))
+    end
+    if VF and tick >= VF[1] and tick <= VF[2] and vf_count < VF[3] then
+        snap_video(string.format(".v%05d", f))
+        vf_count = vf_count + 1
     end
     set_pads(seq[tick + 1])
     emu.frameadvance()

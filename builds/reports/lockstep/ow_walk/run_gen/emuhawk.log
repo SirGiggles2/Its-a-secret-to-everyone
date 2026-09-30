@@ -1,8 +1,8 @@
 parsing command-line flags: --config=C:\tmp\claude_probe\ow_walk_run_gen\config.ini --lua=C:\tmp\claude_probe\ow_walk_run_gen\capture.lua C:\tmp\claude_probe\ow_walk_run_gen\rom\game.md
 Using SDL2 for host input (keyboard + gamepads)
 Connected SDL gamepad, device index 0, instance ID 1, name Xbox 360 Controller
-Game was not in DB. CRC: AE9A712B MD5: D72100162A3767EE3D4D25B37AFDF14D
-MemoryBlock created for address 36f00000000:36f034ff000 with mirror 2d15e020000:2d16151f000
+Game was not in DB. CRC: 81B9E397 MD5: 7284E3A3C96FA180DEAEC9A0078CF376
+MemoryBlock created for address 36f00000000:36f034ff000 with mirror 14e230e0000:14e265df000
 Mouting `gpgx.wbx` @36f00000000
   Sections:
     @0:0     `` 0 bytes
@@ -58,8 +58,8 @@ GPGX Controller report:
   D:DEVICE_NONE
   D:DEVICE_NONE
   D:DEVICE_NONE
-Game was not in DB. CRC: AE9A712B MD5: D72100162A3767EE3D4D25B37AFDF14D
-MemoryBlock created for address 36f00000000:36f034ff000 with mirror 2d15b850000:2d15ed4f000
+Game was not in DB. CRC: 81B9E397 MD5: 7284E3A3C96FA180DEAEC9A0078CF376
+MemoryBlock created for address 36f00000000:36f034ff000 with mirror 14e27b40000:14e2b03f000
 Mouting `gpgx.wbx` @36f00000000
   Sections:
     @0:0     `` 0 bytes

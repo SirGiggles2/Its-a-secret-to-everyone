@@ -143,6 +143,11 @@ extern void core_reset_obj_metastate(unsigned int slot);
 static void uw_person_init_dispatch_by_level(unsigned int slot)
 {
     unsigned char level = (unsigned char)RAM(0x0010u);  /* CUR_LEVEL */
+    /* Z_01.asm:1003 preamble: PersonTextPtr ($045F) = TextboxLineAddrsLo+2
+     * ($A4, front of the first line). T-166: missing, so the first line
+     * streamed from whatever the pointer held (L1 old man: NT $2103+, the
+     * room's top wall). */
+    RAM(0x045Fu) = 0xA4u;
     switch (level) {
     case 1: case 2: case 5: case 7:
         uw_person_init_underworld_person_a(slot); break;

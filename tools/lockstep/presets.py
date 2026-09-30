@@ -191,6 +191,8 @@ def to_lua(p: dict) -> str:
         out += f'PRESET.pc_profile = {{{int(a)}, {int(b)}}}\n'
     if p.get("snap"):
         out += "PRESET.snap = {" + ",".join(str(int(f)) for f in p["snap"]) + "}\n"
+    if p.get("vframes"):
+        out += "PRESET.vframes = {" + ",".join(str(int(f)) for f in p["vframes"]) + "}\n"
     if p.get("postscript"):
         out += "PRESET.postscript = " + lua_value(p["postscript"]) + "\n"
     if p.get("post_expect_save"):

@@ -15,7 +15,6 @@
  * at 0 for text writes (cave NPC dialogue, UW person text all use
  * sub-pal 0). HUD offset = +7 plane rows for playfield region. */
 extern const unsigned short bg_sparse_tile_lut[256][4];
-#define PLANE_BRIDGE_HUD_ROWS  7u
 #define PLANE_BRIDGE_BLANK_TILE 0u
 
 /* Maximum buffer span. NES NMI clears DynTileBuf and resets length
@@ -182,18 +181,11 @@ static void emit_nametable_record(unsigned char hi,
     }
     unsigned char nes_row  = (unsigned char)(ppu_off >> 5);   /* /32 */
     unsigned char nes_col  = (unsigned char)(ppu_off & 0x1Fu);/* mod 32 */
-    /* OW/UW dynamic transfers carry PLAYFIELD-RELATIVE rows -> +7 HUD bridge.
-     * CAVE NPC-dialogue transfers carry SCREEN-ABSOLUTE NT rows (line 1 =
-     * $21A4 = row 13), so the +7 double-counts the HUD and dropped the text
-     * ~2 rows below NES (Gen row 15/20 vs NES rows 13/14). Map the absolute
-     * NT row to the Plane A row for caves. T-135: the Genesis frame is the
-     * NES frame without its top 8 lines (room row 0 = NT row 8 is plane row
-     * 7), so NT row r is plane row r - 1; r drew the text 8 px low
-     * (framebuffer vs NES, t134_cave_exit f540). */
-    unsigned char plane_row =
-        (roomrom_main_current_scene() == ROOMROM_MAIN_SCENE_CAVE)
-            ? (unsigned char)(nes_row - 1u)
-            : (unsigned char)(nes_row + PLANE_BRIDGE_HUD_ROWS);
+    /* Name-table rows are screen rows (person text line 1 = $21A4 = row
+     * 13). The plane cell comes from the room's scroll
+     * (roomrom_main_nt_cell_to_plane: NT row r at screen line 8r - 8).
+     * T-135 used r - 1 for caves (scroll 0); T-166: UW person text used
+     * r + 7 without the scroll and landed below/left of the NES text. */
 
     unsigned char src_avail = (unsigned char)((src_off < src_end)
                                               ? (src_end - src_off) : 0u);
@@ -225,12 +217,9 @@ static void emit_nametable_record(unsigned char hi,
         unsigned short tile = (raw_slot == 0xFFFFu)
             ? (unsigned short)PLANE_BRIDGE_BLANK_TILE
             : (unsigned short)(ROOMROM_BG_TILE_BASE + raw_slot);
-        unsigned short col = (unsigned short)cell_col;
-        /* Wrap col within plane width (64). */
-        col = (unsigned short)(col & 0x3Fu);
-        render_set_plane_a_word(col,
-                                (unsigned short)(plane_row + (vertical ? i : 0u)),
-                                tile);
+        unsigned short pc, pr;
+        roomrom_main_nt_cell_to_plane((unsigned char)(cell_col & 0x1Fu), cell_row, &pc, &pr);
+        render_set_plane_a_word(pc, pr, tile);
     }
 }
 
