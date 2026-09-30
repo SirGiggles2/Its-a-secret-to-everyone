@@ -1,8 +1,8 @@
 {
   "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\builds\\Debug.md",
   "rom_sha256": "af1dba30444bcbde0deb82b254c84ff530a665788df249060f65da034d995645",
-  "script": "tools\\probes\\t054_grave_gen.lua",
-  "script_sha256": "9a9abfea978296fffa7817ab13d63b4575a4244e32f06be41db8ba254ebea353",
+  "script": "tools\\probes\\t054_armos34_gen.lua",
+  "script_sha256": "80b80531afb83dbd3750516fa86e9da8c7f85ed6557940f8fb7c7bde53377f5a",
   "seed_gen_save_sha256": null,
   "symbols": {
     "players": "0xFF0F80",
@@ -12,8 +12,6 @@
   },
   "exit_code": 0,
   "collected": [
-    "t054_grave21_gen.txt",
-    "t054_grave21_gen.bin",
-    "t054_grave21_gen.png"
+    "t054_armos34_after.txt"
   ]
 }

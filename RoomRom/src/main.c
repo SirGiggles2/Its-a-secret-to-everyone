@@ -45,6 +45,7 @@
 #include "roomrom_vram_map.h"                                /* ROOMROM_BG_TILE_BASE */
 #include "../../src/game/world/progress_dispatch.h"      /* Tier 2: triforce fanfare driver */
 #include "../../src/game/world/world_dispatch.h"     /* world_animate_world_fading */
+#include "../../src/game/world/trap_dispatch.h"     /* CheckPassiveTileObjects on OW collision */
 #include "../../src/game/dungeon/uw_dark.h"
 #include "../../src/game/dungeon/link_doorway.h"  /* T-131 */
 #include "../../src/game/audio/audio_requests.h"         /* T-127: NES sound request cells */              /* T-111: dark rooms by palette */
@@ -4535,6 +4536,16 @@ void roomrom_debug_tick(void)
                     }
                 } else if (moving_dir != LINK_DIR_NONE && s_link_grid_offset == 0) {
                     if (!link_walkable_at(players[0].x, players[0].y, moving_dir)) {
+                        /* NES PlayerUnwalkable checks passive OW statues
+                         * before stopping Link. The drained checker creates
+                         * Armos/Flying Ghini from collided $BC..$C3 tiles. */
+                        if (s_scene == SCENE_OW) {
+                            nes_ram[0x0070u] = (unsigned char)players[0].x;
+                            nes_ram[0x0084u] = (unsigned char)players[0].y;
+                            nes_ram[0x0098u] = link_nes_bit_of(moving_dir);
+                            nes_ram[0x0394u] = 0u;
+                            trap_check_passive_tile_objects();
+                        }
                         moving_dir = LINK_DIR_NONE;
                     }
                 }
