@@ -1,0 +1,9 @@
+ow_room=1A selector=6C
+armed scene=00 raw=24 ram=24 x=78 y=7D
+after_trigger mode=10 cave=0E sentinel=00 x=70 y=7D
+state lvl_phase=00 mode_state=00 style=00 tile=00 room=1A
+mode=0B cave=75 room=1A state=02 flags=9F wares=98,58,D8 hearts=FF rupees=FF text_done=true
+reject state=02 ware=98 rupees=00 debit=00 flag=00
+hint state=07 selector=14 flags=97 rupees=03 debit=03 flag=00
+settled rupees=00 debit=00
+ware_index=0 price=5 selector=14 PASS
