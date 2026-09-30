@@ -159,7 +159,7 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 | T-051 | Ending renderer stubs (sprites, credits, finalize) | P7.4 / P8.3 | TODO | |
 | T-052 | Items/secrets table | P4.1–4.3 | TODO | | T-164 verified cave metadata, payment and routing into shared `item_take_item`; finish item-specific inventory effects and secrets at this owner. |
 | T-053 | Death/continue lifecycle | P7.3 | TODO | |
-| T-054 | OW/UW secret objects `$61–$68` (dock, rocks/graves, bomb walls, tree, UW push block) + bombs open UW bombable doors | P4.3/P5.3 | TODO | | T-164 verified Q2 installed selectors and cave entry after a trigger; finish natural hidden-door opening, including changed Q2 cave locations, here. |
+| T-054 | OW/UW secret objects `$61–$68` (dock, rocks/graves, bomb walls, tree, UW push block) + bombs open UW bombable doors | P4.3/P5.3 | ACTIVE | Astra | First slice: natural hidden OW cave openings in Q1/Q2 using existing object, bomb and candle paths; preserve Claude's unrelated `main.c` work | T-164 verified Q2 installed selectors and cave entry after a trigger. Identify unique natural reveal mechanisms, compare focused NES/Genesis cases, and repair confirmed differences. UW secret objects/doors remain part of this task but outside the first slice. |
 | T-055 | Flute: whirlwind `$2E`, FluteTimer `$3C`, `$5E` update (Digdogger, L7 entrance) | P4 | TODO | |
 | T-056 | `Link_EndMoveAndAnimate`: ladder, raft, water | P4 | TODO | |
 | T-057 | Bait object, potion on B, candle relight | P4 | TODO | |
