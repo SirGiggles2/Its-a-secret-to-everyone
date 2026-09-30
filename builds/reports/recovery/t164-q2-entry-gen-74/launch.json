@@ -1,0 +1,19 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\builds\\Debug.md",
+  "rom_sha256": "a84d848e4bea7f7111b309bcf5a876198ebe90de6fb503f0ab9cd9a34ab1f732",
+  "script": "tools\\probes\\t164_q2_cave_entry.lua",
+  "script_sha256": "fc2b1ab627f0cb06d4071d6d6daa3dc4e0ce1d25be176185965878d0aa199397",
+  "symbols": {
+    "players": "0xFF0F80",
+    "s_in_gameplay": "0xFF32C8",
+    "s_lvl_phase": "0xFF32DA",
+    "s_mode": "0xFF32AA",
+    "s_move_style": "0xFF32C4",
+    "s_raw_tiles": "0xFF2FCC",
+    "s_scene": "0xFF3868"
+  },
+  "exit_code": 0,
+  "collected": [
+    "t164_q2_entry_gen_74.txt"
+  ]
+}

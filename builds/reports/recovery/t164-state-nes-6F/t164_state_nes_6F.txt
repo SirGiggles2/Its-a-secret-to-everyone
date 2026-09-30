@@ -1,0 +1,1 @@
+mode=0B cave=6F room=1C state=02 flags=00 wares=3F,3F,3F prices=00,00,00 rupees=00 add=00 sub=00 roomflag=00 letter=00 selected=00 reached=true

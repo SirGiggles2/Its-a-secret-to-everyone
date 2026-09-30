@@ -1,0 +1,19 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\builds\\Debug.md",
+  "rom_sha256": "a84d848e4bea7f7111b309bcf5a876198ebe90de6fb503f0ab9cd9a34ab1f732",
+  "script": "tools\\probes\\t164_gift_gen.lua",
+  "script_sha256": "898f9b057ae3290d7561bbc54ac230e99732609ec797cc9e687fd5ffe32dd1fd",
+  "symbols": {
+    "players": "0xFF0F80",
+    "s_in_gameplay": "0xFF32C8",
+    "s_lvl_phase": "0xFF32DA",
+    "s_mode": "0xFF32AA",
+    "s_move_style": "0xFF32C4",
+    "s_raw_tiles": "0xFF2FCC",
+    "s_scene": "0xFF3868"
+  },
+  "exit_code": 0,
+  "collected": [
+    "t164_gift_gen_6B_0.txt"
+  ]
+}

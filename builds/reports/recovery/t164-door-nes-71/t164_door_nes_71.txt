@@ -1,0 +1,4 @@
+mode=0B cave=71 room=01 state=08 flags=00 wares=3F,3F,3F prices=00,00,00 rupees=31 add=00 sub=13 roomflag=10 letter=00 selected=00 reached=true
+settled rupees=1E debit=00 flag=10
+outside mode=05 room=01 flag=10
+revisit mode=0B person=00 flag=10 PASS

@@ -1,0 +1,7 @@
+ow_room=0E selector=60
+armed scene=00 raw=24 ram=24 x=78 y=7D
+after_trigger mode=10 cave=00 sentinel=00 x=70 y=7D
+state lvl_phase=00 mode_state=00 style=00 tile=00 room=0E
+mode=0B cave=72 room=0E state=02 flags=05 wares=3F,15,7F hearts=FF rupees=FF text_done=true
+take state=04 ware=FF item=15 slot=0F inv=01 flag=10
+ware_index=1 item=15 PASS
