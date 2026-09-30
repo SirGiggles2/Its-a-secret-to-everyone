@@ -1,0 +1,11 @@
+{
+  "rom": "roms\\Legend of Zelda, The (USA).nes",
+  "rom_sha256": "8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac",
+  "script": "tools\\probes\\t164_shortcut_rotate_nes.lua",
+  "script_sha256": "4efc24d9f22452ceada61dbe727baa56320ee0e21f7616bd1913e4c5783097b1",
+  "symbols": {},
+  "exit_code": 0,
+  "collected": [
+    "t164_rotate_nes_79_80.txt"
+  ]
+}

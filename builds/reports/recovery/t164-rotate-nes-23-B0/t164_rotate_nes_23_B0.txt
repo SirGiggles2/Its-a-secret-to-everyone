@@ -1,0 +1,3 @@
+mode=0C cave=6E source=23 array=1D,23,49,79
+stair_frame mode=0A room=1D x=B0 y=9D grid=00
+exit mode=05 room=1D x=20 y=6D expected=1D PASS
