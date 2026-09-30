@@ -5,8 +5,9 @@
  *                Z_05.asm:FindAndCreatePushBlockObject (5461-5514)
  *                Variables.inc:137 (BlockPushComplete = $4CF)
  *
- * Stance: GREENFIELD (drain audit 2026-05-07: zero rows for
- * UpdateBlock / BlockObj / PushBlock / BlockPushComplete).
+ * Stance: REPAIR the linked native state machine. The direct oracle
+ * candidate at src/oracle/enemies/enemy_block_runtime.c is unlinked and
+ * inverts the NES RoomAllDead gate; it is not an accepted replacement.
  *
  * Slice-1: NES-faithful state machine for L1Q1 manifest only.
  * Render uses snap-on-completion (no sub-tile sprite movement);
@@ -137,7 +138,9 @@ void roomrom_pushblock_publish_persist(void)
     for (i = 0u; i < 256u; i++) dst[i] = s_pb_state_per_room[i];
 }
 
-#define ROOMROM_PLAYFIELD_TOP_PX  ((short)(ROOMROM_HUD_ROWS * 8u))
+/* Link and ObjY use NES screen coordinates. Genesis crops the top 8 video
+ * lines for rendering, but the block collision origin is still NES $40. */
+#define ROOMROM_PLAYFIELD_TOP_PX  ((short)0x40u)
 
 /* Block top-left link_x / link_y. Block is 2x2 BG tiles = 16x16 px,
  * top-left at metatile col*16, row*16 + playfield_top. */
@@ -382,6 +385,10 @@ void roomrom_pushblock_tick(void)
             if (s_pb_state_per_room[room_id] < 1u) {
                 s_pb_state_per_room[room_id] = 1u;  /* NES BlockPushComplete += 1 */
             }
+            /* CheckUnderworldSecrets reads the NES room cell, not the
+             * native per-room cache. Keep both sides of the boundary in
+             * sync when the block finishes its 16-pixel move. */
+            RAM(0x04CFu) = (unsigned char)(RAM(0x04CFu) + 1u);
         }
         break;
     }

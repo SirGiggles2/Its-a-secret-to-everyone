@@ -1,0 +1,114 @@
+{
+  "name": "t054_uw_block22_nes",
+  "file_name": "LINK",
+  "quest": 0,
+  "items": {
+    "InvBombs": 4,
+    "InvKeys": 1
+  },
+  "script": [
+    [
+      30,
+      ""
+    ],
+    [
+      148,
+      "R"
+    ],
+    [
+      20,
+      ""
+    ],
+    [
+      1,
+      "U"
+    ],
+    [
+      116,
+      ""
+    ],
+    [
+      1,
+      "U"
+    ],
+    [
+      116,
+      ""
+    ],
+    [
+      1,
+      "U"
+    ],
+    [
+      116,
+      ""
+    ],
+    [
+      1,
+      "U"
+    ],
+    [
+      116,
+      ""
+    ],
+    [
+      1,
+      "L"
+    ],
+    [
+      97,
+      ""
+    ],
+    [
+      23,
+      "U"
+    ],
+    [
+      63,
+      ""
+    ],
+    [
+      65,
+      "U"
+    ],
+    [
+      30,
+      ""
+    ]
+  ],
+  "stages": [
+    [
+      198,
+      "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X keys %d bombs %d doors %02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x66E), rd(0x658), rd(0xEE)))"
+    ],
+    [
+      315,
+      "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X keys %d bombs %d doors %02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x66E), rd(0x658), rd(0xEE)))"
+    ],
+    [
+      432,
+      "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X keys %d bombs %d doors %02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x66E), rd(0x658), rd(0xEE)))"
+    ],
+    [
+      549,
+      "wr(0x70, 112)\nwr(0x84, 61)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 61, 8)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X keys %d bombs %d doors %02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x66E), rd(0x658), rd(0xEE)))"
+    ],
+    [
+      666,
+      "wr(0x70, 0)\nwr(0x84, 141)\nwr(0x98, 2)\nwr(0x394, 0)\ngen_link_pos(0, 141, 2)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X keys %d bombs %d doors %02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x66E), rd(0x658), rd(0xEE)))"
+    ],
+    [
+      764,
+      "wr(0x70, 112)\nwr(0x84, 157)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(112, 157, 8)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X keys %d bombs %d doors %02X', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x66E), rd(0x658), rd(0xEE)))"
+    ],
+    [
+      810,
+      "wr(0x6BAD,0x22)\nwr(0x11,0)\nwr(0x12,3)\nwr(0x13,0)\nlog(string.format(\"reload lvl=%02X start=%02X room=%02X\",rd(0x10),rd(0x6BAD),rd(0xEB)))"
+    ],
+    [
+      850,
+      "wr(0x70,0x60)\nwr(0x84,0x9D)\nwr(0x98,8)\nwr(0x394,0)\nwr(0x34D,1)\ngen_link_pos(0x60,0x9D,8)\nlog(string.format(\"block room=%02X lvl=%02X type=%02X at=%02X,%02X dead=%02X\",rd(0xEB),rd(0x10),rd(0x35A),rd(0x7B),rd(0x8F),rd(0x34D)))"
+    ]
+  ],
+  "clock": "play"
+}

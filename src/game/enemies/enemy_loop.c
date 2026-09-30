@@ -1828,7 +1828,9 @@ void enemy_loop_tick(void)
         unsigned int triggered = 0u;
         if (secret == 3u) {
             triggered = room_check_secret_trigger_last_boss();
-        } else if (RAM(0x034Du) != 0u) {
+        } else if (secret == 4u) {
+            triggered = room_check_secret_trigger_block_door();
+        } else if ((secret == 1u || secret == 7u) && RAM(0x034Du) != 0u) {
             triggered = room_check_secret_trigger_all_dead();
         }
         if (triggered && uw_door_state_has_shutters()) {
