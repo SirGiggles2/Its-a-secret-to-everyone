@@ -1,0 +1,1 @@
+room=0B mode=05 attrs=73,17,7B object=00,00,00

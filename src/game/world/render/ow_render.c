@@ -422,11 +422,20 @@ static void column_squares(const unsigned char *col_dirs, unsigned char src_col,
     }
 }
 
+static unsigned char ow_layout_id(unsigned char room_id)
+{
+    const unsigned char *rooms = roomrom_rooms();
+    /* Z_05.asm:LayoutRoomOW reads the installed LevelBlockAttrsD. Quest 2
+     * patches three entries after the base OW block is copied to SRAM. */
+    return ((s_roomrom_map_id == ROOMROM_MAP_REDUX)
+        ? rooms[OW_ATTRS_D_OFFSET + room_id]
+        : nes_ram[0x69FEu + room_id]) & 0x7Fu;
+}
+
 static const unsigned char *ow_col_dirs(unsigned char room_id)
 {
     const unsigned char *rooms = roomrom_rooms();
-    unsigned char unique_id = rooms[OW_ATTRS_D_OFFSET + room_id] & 0x7F;
-    return &rooms[OW_LAYOUTS_OFFSET + (unsigned short)unique_id * 16];
+    return &rooms[OW_LAYOUTS_OFFSET + (unsigned short)ow_layout_id(room_id) * 16];
 }
 
 /* NES OW world flags (LevelInfo_WorldFlagsAddr = $067F for the OW):
@@ -469,6 +478,7 @@ static const unsigned char s_tile_object_types[6] = {
 typedef struct {
     unsigned char room_id;
     unsigned char valid;
+    unsigned char map_id, layout_id, flags;
     unsigned char obj_type, obj_x, obj_y;
     unsigned char shortcut;          /* 1 = CheckShortcut writes a square */
     unsigned char sc_col, sc_row;    /* metatile position */
@@ -486,15 +496,21 @@ static const ow_room_layout_t *ow_room_layout(unsigned char room_id)
 {
     const unsigned char *col_dirs;
     unsigned char flags;
+    unsigned char layout_id;
     unsigned char col, row;
     unsigned char sqs[11];
     ow_room_layout_t *L = &s_layout_cache;
-    if (L->valid && L->room_id == room_id) return L;
+    flags = ow_room_flags(room_id);
+    layout_id = ow_layout_id(room_id);
+    if (L->valid && L->room_id == room_id && L->map_id == s_roomrom_map_id &&
+        L->flags == flags && L->layout_id == layout_id) return L;
     L->room_id = room_id;
+    L->map_id = s_roomrom_map_id;
+    L->flags = flags;
+    L->layout_id = layout_id;
     L->obj_type = L->obj_x = L->obj_y = 0u;
     L->shortcut = 0u;
     col_dirs = ow_col_dirs(room_id);
-    flags = ow_room_flags(room_id);
     for (col = 0u; col < 16u; ++col) {
         column_squares(col_dirs, col, sqs);
         for (row = 0u; row < 11u; ++row) {
@@ -583,9 +599,13 @@ static void compute_metatile_col(unsigned char room_id,
      * collides with real OW room $44, so we cannot gate on room_id). */
     const unsigned char *rooms = roomrom_rooms();
     unsigned char outer_pal = s_rendering_cave
-        ? 3u : (unsigned char)(rooms[OW_ATTRS_A_OFFSET + room_id] & 0x03u);
+        ? 3u : (unsigned char)(((s_roomrom_map_id == ROOMROM_MAP_REDUX)
+            ? rooms[OW_ATTRS_A_OFFSET + room_id]
+            : nes_ram[0x687Eu + room_id]) & 0x03u);
     unsigned char inner_pal = s_rendering_cave
-        ? 2u : (unsigned char)(rooms[OW_ATTRS_B_OFFSET + room_id] & 0x03u);
+        ? 2u : (unsigned char)(((s_roomrom_map_id == ROOMROM_MAP_REDUX)
+            ? rooms[OW_ATTRS_B_OFFSET + room_id]
+            : nes_ram[0x68FEu + room_id]) & 0x03u);
     const unsigned char *col_dirs = col_dirs_override
         ? col_dirs_override
         : ow_col_dirs(room_id);

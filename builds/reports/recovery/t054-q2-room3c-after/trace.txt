@@ -1,0 +1,1 @@
+room=3C mode=05 attrs=72,0B,7B object=00,00,00

@@ -1,0 +1,13 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\builds\\Debug.md",
+  "rom_sha256": "a251be04f0b3b4946ce083b2c2c4e3987ef7d7d78095f2fc4b14901261f4377a",
+  "script": "tools\\probes\\t054_q2_room_gen.lua",
+  "script_sha256": "f5498d5b1fc99c22c1c90d999a3fc0253d6e65859a29aebbce42714be1ce877e",
+  "seed_gen_save_sha256": null,
+  "symbols": {
+    "s_in_gameplay": "0xFF32CC",
+    "s_raw_tiles": "0xFF2FD0"
+  },
+  "exit_code": 0,
+  "collected": []
+}

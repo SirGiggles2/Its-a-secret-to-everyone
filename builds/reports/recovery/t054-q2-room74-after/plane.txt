@@ -1,0 +1,2 @@
+NES NT0 -> plane $C000 offsets row 7 col 0
+t054-q2-room74-after: plane playfield 704/704 exact; tile identity 704/704; sub-palette mismatches 0 -> PASS
