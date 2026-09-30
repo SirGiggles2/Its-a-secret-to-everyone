@@ -76,7 +76,7 @@ static unsigned char   s_pb_dst_col_mt;
 static unsigned char   s_pb_dst_row_mt;
 static unsigned char   s_pb_active_room;
 static unsigned char   s_pb_complete_count;
-static unsigned char   s_pb_state_per_room[256];
+static unsigned char   s_pb_state_per_room[256]; /* current-entry probe mirror */
 
 /* Latched copy of last-tick room id so we detect room changes. */
 static unsigned char   s_pb_last_seen_room = 0xFFu;
@@ -256,7 +256,7 @@ static void paint_metatile(unsigned char col_mt, unsigned char row_mt,
     roomrom_uw_room_render_set_walkable_tile((unsigned char)(c + 1u), (unsigned char)(r + 1u), walk);
 }
 
-/* Reset to IDLE (clears in-flight gates but preserves room persistence). */
+/* Reset to IDLE; the room-entry path also clears the pushed flag. */
 static void reset_to_idle(void)
 {
     s_pb_state = PB_S_IDLE;
@@ -285,13 +285,11 @@ void roomrom_pushblock_room_load(unsigned char level,
     s_pb_active_room = 0xFFu;
     s_pb_last_seen_room = room_id;
     cache_room_meta(level, quest, room_id);
-
-    if (s_pb_cached_has_meta != 0u && s_pb_state_per_room[room_id] >= 1u) {
-        paint_metatile(s_pb_cached_meta.block_col_mt,
-                       s_pb_cached_meta.block_row_mt,
-                       PB_TILE_FLOOR_TL, PB_TILE_FLOOR_TR,
-                       PB_TILE_FLOOR_BL, PB_TILE_FLOOR_BR, 1u);
-    }
+    /* NES InitMode4 rebuilds the room and FindAndCreatePushBlockObject
+     * seeds the original source block again, even after a successful push.
+     * Door-open room flags survive separately. The old per-room latch made
+     * a revisit erase the block altogether. */
+    s_pb_state_per_room[room_id] = 0u;
 }
 
 void roomrom_pushblock_tick(void)
@@ -322,9 +320,8 @@ void roomrom_pushblock_tick(void)
                         room_id);
     }
 
-    /* If this room's persistent state is DONE, mirror collision into
-     * the live walkability caches each tick (room render path resets
-     * caches on scene reload, so persistence has to re-apply). */
+    /* Once pushed during this entry, stop the private state machine.
+     * room_load resets this latch on the next entry, as the NES does. */
     if (s_pb_state_per_room[room_id] >= 1u) {
         return;
     }

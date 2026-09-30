@@ -15,8 +15,8 @@
  * timer phase distinctly from the no-input idle phase. State $03 maps
  * back to NES BlockPushComplete-driven semantics on room re-entry.
  *
- * Per-room persistence: s_pb_state_per_room[room_id] ∈ {0, 1, 2}.
- *   0 = pristine, 1 = pushed (collision opened), 2 = secret consumed.
+ * Per-room debug mirror: s_pb_state_per_room[room_id] ∈ {0, 1}.
+ * It resets on room entry; persistent door state has a separate owner.
  */
 
 #ifndef ROOMROM_PUSHBLOCK_H

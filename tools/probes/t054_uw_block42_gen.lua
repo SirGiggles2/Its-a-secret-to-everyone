@@ -65,5 +65,15 @@ for t = 2, 81 do
     if t == 30 then client.screenshot("@SHOTMOVE@") end
     if t == 60 then client.screenshot("@SHOTDONE@") end
 end
+if "@REENTRY@" == "1" then
+    press({X=true}, 8)
+    press({Right=true}, 16)
+    snap(90)
+    press({Left=true}, 16)
+    press({X=true}, 8)
+    step(30)
+    snap(100)
+    client.screenshot("@SHOTREENTRY@")
+end
 out:close()
 client.exit()
