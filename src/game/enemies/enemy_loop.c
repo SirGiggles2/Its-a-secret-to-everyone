@@ -35,6 +35,7 @@
 #include "combat_state.h"                 /* MON_HP for HP init */
 #include "../items/item_object.h"         /* Plan v5c $60 UpdateItem */
 #include "../world/render/ow_render.h"      /* T-050 roomrom_ow_room_tile_object */
+#include "../world/pushblock.h"             /* T-054 moving block sprite */
 
 /* NES Z_07.asm:5227 ObjectTypeToHpPairs — packed HP, 2 per byte.
  * Indexed by ObjType/2. Even-type uses high nibble (AND #$F0); odd-type
@@ -1092,6 +1093,7 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x65] = room_update_rock_or_gravestone,  /* Gravestone */
     [0x66] = room_update_rock_or_gravestone,
     [0x67] = room_update_rock_wall,
+    [0x68] = roomrom_pushblock_draw_object,         /* UW block moving sprite */
 };
 
 /* Internal: clear an enemy slot's scratch state per NES room-init

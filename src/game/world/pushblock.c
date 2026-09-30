@@ -18,8 +18,15 @@
 #include "../../../RoomRom/src/roomrom_main_state.h"
 #include "../dungeon/push_block_meta.h"  /* Phase 12.2 promoted */
 #include "../dungeon/uw_render.h"      /* Phase 12.2 promoted */
-#include "render/ow_render.h"          /* ROOMROM_HUD_ROWS - Phase 12.2 promoted */
+#include "draw_dispatch.h"            /* NES DrawBlock sprite path */
 #include "platform_abi.h"              /* RAM macro for $034D RoomAllDead */
+
+#define PB_SLOT 11u
+#define PB_OBJ_X       RAM(0x0070u + PB_SLOT)
+#define PB_OBJ_Y       RAM(0x0084u + PB_SLOT)
+#define PB_OBJ_DIR     RAM(0x0098u + PB_SLOT)
+#define PB_OBJ_STATE   RAM(0x00ACu + PB_SLOT)
+#define PB_OBJ_GRID    RAM(0x0394u + PB_SLOT)
 
 /* NES BlockPushDirections layout (Z_04.asm:615-616).
  *   idx 0 = $08 (UP / N)    -- Link below, pushing up
@@ -61,6 +68,7 @@ typedef enum {
 static pb_s_t          s_pb_state;
 static unsigned char   s_pb_timer;
 static unsigned char   s_pb_offset;
+static unsigned char   s_pb_motion_phase;
 static unsigned char   s_pb_dir_bit;        /* 0x08/0x04/0x02/0x01 */
 static unsigned char   s_pb_block_col_mt;
 static unsigned char   s_pb_block_row_mt;
@@ -102,6 +110,7 @@ void roomrom_pushblock_init(void)
     s_pb_state = PB_S_IDLE;
     s_pb_timer = 0u;
     s_pb_offset = 0u;
+    s_pb_motion_phase = 0u;
     s_pb_dir_bit = 0u;
     s_pb_block_col_mt = 0u;
     s_pb_block_row_mt = 0u;
@@ -136,6 +145,18 @@ void roomrom_pushblock_publish_persist(void)
         (volatile unsigned char *)ROOMROM_DEBUG_PUSHBLOCK_PERSIST_BASE;
     unsigned short i;
     for (i = 0u; i < 256u; i++) dst[i] = s_pb_state_per_room[i];
+}
+
+/* NES UpdateBlock calls DrawBlock only while ObjState=1. The sprite is
+ * submitted during the native object loop, before the renderer consumes
+ * OAM. The private state machine advances slot 11 later in the frame. */
+void roomrom_pushblock_draw_object(unsigned int slot)
+{
+    if (slot != PB_SLOT || (unsigned char)PB_OBJ_STATE != 1u) return;
+    RAM(0x0000u) = (unsigned char)PB_OBJ_X;
+    RAM(0x0001u) = (unsigned char)((unsigned char)PB_OBJ_Y - 1u);
+    RAM(0x000Fu) = 0u;
+    draw_object_not_mirrored(0u, slot);
 }
 
 /* Link and ObjY use NES screen coordinates. Genesis crops the top 8 video
@@ -241,6 +262,7 @@ static void reset_to_idle(void)
     s_pb_state = PB_S_IDLE;
     s_pb_timer = 0u;
     s_pb_offset = 0u;
+    s_pb_motion_phase = 0u;
     s_pb_dir_bit = 0u;
 }
 
@@ -368,12 +390,33 @@ void roomrom_pushblock_tick(void)
                            PB_TILE_FLOOR_BL, PB_TILE_FLOOR_BR, 1u);
             s_pb_state = PB_S_MOVING;
             s_pb_offset = 0u;
+            s_pb_motion_phase = 0u;
+            PB_OBJ_STATE = 1u;
+            PB_OBJ_DIR = s_pb_dir_bit;
+            PB_OBJ_GRID = 0u;
         }
         break;
     }
 
     case PB_S_MOVING: {
+        /* NES MoveObject carries a half-pixel speed fraction for the
+         * block: its position/grid advances once every two play ticks. */
+        s_pb_motion_phase++;
+        if ((s_pb_motion_phase & 1u) != 0u) break;
         s_pb_offset++;
+        if (s_pb_dir_bit == PB_DIR_BIT_N) {
+            PB_OBJ_Y = (unsigned char)((unsigned char)PB_OBJ_Y - 1u);
+            PB_OBJ_GRID = (unsigned char)(0u - s_pb_offset);
+        } else if (s_pb_dir_bit == PB_DIR_BIT_S) {
+            PB_OBJ_Y = (unsigned char)((unsigned char)PB_OBJ_Y + 1u);
+            PB_OBJ_GRID = s_pb_offset;
+        } else if (s_pb_dir_bit == PB_DIR_BIT_W) {
+            PB_OBJ_X = (unsigned char)((unsigned char)PB_OBJ_X - 1u);
+            PB_OBJ_GRID = (unsigned char)(0u - s_pb_offset);
+        } else if (s_pb_dir_bit == PB_DIR_BIT_E) {
+            PB_OBJ_X = (unsigned char)((unsigned char)PB_OBJ_X + 1u);
+            PB_OBJ_GRID = s_pb_offset;
+        }
         if (s_pb_offset >= PB_OFFSET_FULL) {
             /* MOVING -> DONE: paint destination as block, mark
              * destination unwalkable, latch persistent state. */
@@ -381,6 +424,7 @@ void roomrom_pushblock_tick(void)
                            PB_TILE_BLOCK_TL, PB_TILE_BLOCK_TR,
                            PB_TILE_BLOCK_BL, PB_TILE_BLOCK_BR, 0u);
             s_pb_state = PB_S_DONE;
+            PB_OBJ_STATE = 2u;
             if (s_pb_complete_count < 0xFFu) s_pb_complete_count++;
             if (s_pb_state_per_room[room_id] < 1u) {
                 s_pb_state_per_room[room_id] = 1u;  /* NES BlockPushComplete += 1 */

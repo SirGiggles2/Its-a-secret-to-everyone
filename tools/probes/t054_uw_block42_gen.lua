@@ -5,6 +5,8 @@ local ready_addr = tonumber("@SYM:s_in_gameplay@") - 0xFF0000
 local players = tonumber("@SYM:players@") - 0xFF0000
 local link_dir = tonumber("@SYM:s_link_dir@") - 0xFF0000
 local link_grid = tonumber("@SYM:s_link_grid_offset@") - 0xFF0000
+local target_room = tonumber("@ROOM@", 16) or 0x42
+local block_x = tonumber("@BLOCKX@", 16) or 0x70
 local out = assert(io.open("@OUT@", "w"))
 local function r(a) return memory.read_u8(a, "68K RAM") end
 local function nr(a) return r(0x8000 + a) end
@@ -33,23 +35,23 @@ step(60)
 press({X=true}, 8)
 for _ = 1, 64 do
     local room = nr(0xEB)
-    if room == 0x42 then break end
+    if room == target_room then break end
     local col, row = room & 0x0F, room >> 4
-    if col < 2 then press({Right=true}, 16)
-    elseif col > 2 then press({Left=true}, 16)
-    elseif row < 4 then press({Down=true}, 16)
+    if col < (target_room & 0x0F) then press({Right=true}, 16)
+    elseif col > (target_room & 0x0F) then press({Left=true}, 16)
+    elseif row < (target_room >> 4) then press({Down=true}, 16)
     else press({Up=true}, 16) end
 end
 press({X=true}, 8)
 step(30)
-if nr(0xEB) ~= 0x42 or nr(0x10) ~= 1 then
+if nr(0xEB) ~= target_room or nr(0x10) ~= 1 then
     out:write(string.format("FAIL room=%02X lvl=%02X\n", nr(0xEB), nr(0x10)))
     out:close(); client.exit(); return
 end
 snap(0)
-nw(0x70, 0x70); nw(0x84, 0x9D); nw(0x98, 0x08); nw(0x394, 0)
+nw(0x70, block_x); nw(0x84, 0x9D); nw(0x98, 0x08); nw(0x394, 0)
 nw(0x34D, 1)
-memory.write_u16_be(players, 0x70, "68K RAM")
+memory.write_u16_be(players, block_x, "68K RAM")
 memory.write_u16_be(players + 2, 0x9D, "68K RAM")
 memory.write_u8(players + 6, 0x08, "68K RAM")
 memory.write_u8(players + 7, 1, "68K RAM")
@@ -60,6 +62,8 @@ snap(1)
 for t = 2, 81 do
     step(1, {Up=true})
     if t <= 10 or t % 5 == 0 then snap(t) end
+    if t == 30 then client.screenshot("@SHOTMOVE@") end
+    if t == 60 then client.screenshot("@SHOTDONE@") end
 end
 out:close()
 client.exit()
