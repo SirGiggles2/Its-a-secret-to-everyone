@@ -226,10 +226,6 @@ t=217 f=219 in= gm=05 sub=00 fc=05 room=24
 t=218 f=220 in= gm=05 sub=00 fc=06 room=24
 t=219 f=221 in= gm=05 sub=00 fc=07 room=24
 t=220 f=222 in= gm=05 sub=00 fc=08 room=24
-dump OAM -> .f00220.oam (256 bytes)
-dump PALRAM -> .f00220.pal (32 bytes)
-dump CIRAM (nametables) -> .f00220.nt (2048 bytes)
-dump VRAM -> .f00220.chr (8192 bytes)
 t=221 f=223 in= gm=05 sub=00 fc=09 room=24
 t=222 f=224 in= gm=05 sub=00 fc=0A room=24
 t=223 f=225 in= gm=05 sub=00 fc=0B room=24

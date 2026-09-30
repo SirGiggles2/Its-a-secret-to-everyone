@@ -868,10 +868,6 @@ t=849 f=1683 in= gm=05 sub=00 fc=9D room=42
 stage at=850 run tick=850 f=1684
 stage: block room=42 lvl=01 type=68 at=70,90 dead=01
 t=850 f=1684 in=U gm=05 sub=00 fc=9E room=42
-dump OAM -> .f00850.oam (256 bytes)
-dump PALRAM -> .f00850.pal (32 bytes)
-dump CIRAM (nametables) -> .f00850.nt (2048 bytes)
-dump VRAM -> .f00850.chr (8192 bytes)
 t=851 f=1685 in=U gm=05 sub=00 fc=9F room=42
 t=852 f=1686 in=U gm=05 sub=00 fc=A0 room=42
 t=853 f=1687 in=U gm=05 sub=00 fc=A1 room=42
@@ -902,10 +898,6 @@ t=877 f=1711 in=U gm=05 sub=00 fc=B9 room=42
 t=878 f=1712 in=U gm=05 sub=00 fc=BA room=42
 t=879 f=1713 in=U gm=05 sub=00 fc=BB room=42
 t=880 f=1714 in=U gm=05 sub=00 fc=BC room=42
-dump OAM -> .f00880.oam (256 bytes)
-dump PALRAM -> .f00880.pal (32 bytes)
-dump CIRAM (nametables) -> .f00880.nt (2048 bytes)
-dump VRAM -> .f00880.chr (8192 bytes)
 t=881 f=1715 in=U gm=05 sub=00 fc=BD room=42
 t=882 f=1716 in=U gm=05 sub=00 fc=BE room=42
 t=883 f=1717 in=U gm=05 sub=00 fc=BF room=42
@@ -946,10 +938,6 @@ t=917 f=1751 in= gm=05 sub=00 fc=E1 room=42
 t=918 f=1752 in= gm=05 sub=00 fc=E2 room=42
 t=919 f=1753 in= gm=05 sub=00 fc=E3 room=42
 t=920 f=1754 in= gm=05 sub=00 fc=E4 room=42
-dump OAM -> .f00920.oam (256 bytes)
-dump PALRAM -> .f00920.pal (32 bytes)
-dump CIRAM (nametables) -> .f00920.nt (2048 bytes)
-dump VRAM -> .f00920.chr (8192 bytes)
 t=921 f=1755 in= gm=05 sub=00 fc=E5 room=42
 t=922 f=1756 in= gm=05 sub=00 fc=E6 room=42
 t=923 f=1757 in= gm=05 sub=00 fc=E7 room=42

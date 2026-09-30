@@ -953,10 +953,6 @@ t=932 f=1766 in= gm=05 sub=00 fc=F0 room=42
 t=933 f=1767 in= gm=05 sub=00 fc=F1 room=42
 t=934 f=1768 in= gm=05 sub=00 fc=F2 room=42
 t=935 f=1769 in= gm=05 sub=00 fc=F3 room=42
-dump OAM -> .f00935.oam (256 bytes)
-dump PALRAM -> .f00935.pal (32 bytes)
-dump CIRAM (nametables) -> .f00935.nt (2048 bytes)
-dump VRAM -> .f00935.chr (8192 bytes)
 t=936 f=1770 in= gm=05 sub=00 fc=F4 room=42
 t=937 f=1771 in= gm=05 sub=00 fc=F5 room=42
 t=938 f=1772 in= gm=05 sub=00 fc=F6 room=42
@@ -1044,10 +1040,6 @@ t=1017 f=2063 in= gm=05 sub=00 fc=13 room=42
 t=1018 f=2064 in= gm=05 sub=00 fc=14 room=42
 t=1019 f=2065 in= gm=05 sub=00 fc=15 room=42
 t=1020 f=2066 in= gm=05 sub=00 fc=16 room=42
-dump OAM -> .f01020.oam (256 bytes)
-dump PALRAM -> .f01020.pal (32 bytes)
-dump CIRAM (nametables) -> .f01020.nt (2048 bytes)
-dump VRAM -> .f01020.chr (8192 bytes)
 t=1021 f=2067 in= gm=05 sub=00 fc=17 room=42
 t=1022 f=2068 in= gm=05 sub=00 fc=18 room=42
 t=1023 f=2069 in= gm=05 sub=00 fc=19 room=42
@@ -1128,10 +1120,6 @@ t=1097 f=2143 in= gm=05 sub=00 fc=63 room=42
 t=1098 f=2144 in= gm=05 sub=00 fc=64 room=42
 t=1099 f=2145 in= gm=05 sub=00 fc=65 room=42
 t=1100 f=2146 in= gm=05 sub=00 fc=66 room=42
-dump OAM -> .f01100.oam (256 bytes)
-dump PALRAM -> .f01100.pal (32 bytes)
-dump CIRAM (nametables) -> .f01100.nt (2048 bytes)
-dump VRAM -> .f01100.chr (8192 bytes)
 t=1101 f=2147 in= gm=05 sub=00 fc=67 room=42
 t=1102 f=2148 in= gm=05 sub=00 fc=68 room=42
 t=1103 f=2149 in= gm=05 sub=00 fc=69 room=42

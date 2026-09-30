@@ -1,11 +1,11 @@
 # Prime Directive — Status
 
-_Generated 2026-09-24T14:48:44.459090+00:00 by `prime_refresh.py`._
+_Generated 2026-09-29T15:36:06.324505+00:00 by `prime_refresh.py`._
 
 **Phase:** 17 — Public Builder Release
 **Task:** ? — 
-**Worktree:** `feat/cave-entry-transition-parity` at `C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY`
-**Substrate writer:** False
+**Worktree:** `main` at `C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY`
+**Substrate writer:** True
 
 **Gates:** 11 passed / 11 total
 

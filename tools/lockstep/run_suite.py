@@ -1,7 +1,10 @@
-"""Run every lockstep preset (or a subset) in parallel and archive the results.
+"""Run the gated lockstep presets (or a subset) in parallel and archive the results.
 
     python tools/lockstep/run_suite.py <tag> [--jobs N] [--only NAME ...]
-           [--full] [--no-cache]
+           [--full] [--no-cache] [--all]
+
+Gated presets = those with a blessed baseline in tools/lockstep/baselines/;
+presets without one are focused diagnostics, run only with --all or --only.
 
 Each preset runs through run_lockstep.py (cached NES, Genesis with
 fail-fast, then the gate) in its own process; N presets run at once
@@ -30,6 +33,7 @@ ROOT = Path(__file__).resolve().parents[2]
 PRESETS = ROOT / "tools" / "lockstep" / "presets"
 REPORTS = ROOT / "builds" / "reports" / "lockstep"
 DURATIONS = ROOT / "build" / "lockstep_cache" / "durations.json"
+BASELINES = ROOT / "tools" / "lockstep" / "baselines"
 KEEP = ["diff.json", "diff.txt", "gen.txt", "nes.txt", "gen.err", "nes.err",
         "gen.ram", "nes.ram", "gen.vram", "gen.m68k", "gen.cram", "gen.vsram",
         "nes.wram", "nes.nt", "nes.oam", "nes.chr", "nes.pal",
@@ -67,11 +71,20 @@ def main() -> int:
     ap.add_argument("--only", nargs="*")
     ap.add_argument("--full", action="store_true")
     ap.add_argument("--no-cache", action="store_true")
+    ap.add_argument("--all", action="store_true",
+                    help="also run presets without a baseline (diagnostics)")
     a = ap.parse_args()
     extra = (["--full"] if a.full else []) + (["--no-cache"] if a.no_cache else [])
     names = sorted(p.stem for p in PRESETS.glob("*.json"))
+    # The gate suite = presets with a blessed full-RAM baseline. A preset
+    # without one is a focused diagnostic (NES-side staging, controls that
+    # diverge on purpose) until someone blesses it; --all runs those too.
+    diag = [n for n in names if not (BASELINES / f"{n}.json").exists()]
     if a.only:
         names = [n for n in names if n in a.only]
+    elif not a.all:
+        names = [n for n in names if n not in diag]
+        print(f"gate presets {len(names)}; {len(diag)} unbaselined diagnostics skipped (--all runs them)")
     out = Path(os.path.expandvars(r"%TEMP%")) / "claude" / "suite" / a.tag
     out.mkdir(parents=True, exist_ok=True)
     try:

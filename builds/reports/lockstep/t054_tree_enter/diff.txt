@@ -1,4 +1,4 @@
-ticks compared: 550  (nes 550, gen 550)  padded rows skipped: 0
+ticks compared: 392  (nes 550, gen 392)  padded rows skipped: 0
 
 == KEY mismatches (first 40) ==
   t=  362 $0015 FrameCounter                     NES FE  GEN FD
@@ -42,7 +42,7 @@ ticks compared: 550  (nes 550, gen 550)  padded rows skipped: 0
   t=  364 $0021 Random+9                         NES B4  GEN 69
   t=  364 $0022 Random+10                        NES BF  GEN 7F
 
-== full-RAM ratchet vs baseline (none cells): new 96, earlier 0, improved 0 ==
+== full-RAM ratchet vs baseline (none cells): new 93, earlier 0, improved 0 ==
   NEW     t=    0 $0014 TileBufSelector                  NES 7A  GEN 00
   NEW     t=    0 $0028 ObjTimer                         NES 02  GEN 00
   NEW     t=    0 $0052 ProcessedNarrowObj               NES 01  GEN 00
@@ -60,7 +60,7 @@ ticks compared: 550  (nes 550, gen 550)  padded rows skipped: 0
   NEW     t=    0 $0344 RightSpriteOffset                NES 4C  GEN 00
   NEW     t=    0 $034D RoomAllDead                      NES 00  GEN 01
   NEW     t=    0 $049E ObjCollidedTile                  NES 00  GEN 26
-  NEW     t=    0 $04CE ShutterTrigger                   NES 00  GEN 01
+  NEW     t=    0 $0526 CaveSourceRoomId                 NES FF  GEN 00
   NEW     t=    0 $0528 SkippedDemo                      NES 5A  GEN 00
   NEW     t=    0 $0530 PlayAreaAttrs                    NES AA  GEN 00
   NEW     t=    0 $0531 PlayAreaAttrs+1                  NES AA  GEN 00
@@ -136,9 +136,6 @@ ticks compared: 550  (nes 550, gen 550)  padded rows skipped: 0
   NEW     t=  363 $047C Gleeok_NeckYs2+3                 NES 00  GEN 23
   NEW     t=  363 $0513 UsedCandle                       NES 00  GEN 01
   NEW     t=  364 $004A ChaseLongTimer                   NES 07  GEN 06
-  NEW     t=  424 $0060 ChaseOtherTarget                 NES 00  GEN 01
-  NEW     t=  424 $0061 ChaseTargetX                     NES 70  GEN 8F
-  NEW     t=  424 $0062 ChaseTargetY                     NES D5  GEN 2A
 
 == tick 0: 70 unmasked cells differ ==
   $0014 TileBufSelector                  NES 7A  GEN 00
@@ -158,7 +155,7 @@ ticks compared: 550  (nes 550, gen 550)  padded rows skipped: 0
   $0344 RightSpriteOffset                NES 4C  GEN 00
   $034D RoomAllDead                      NES 00  GEN 01
   $049E ObjCollidedTile                  NES 00  GEN 26
-  $04CE ShutterTrigger                   NES 00  GEN 01
+  $0526 CaveSourceRoomId                 NES FF  GEN 00
   $0528 SkippedDemo                      NES 5A  GEN 00
   $0530 PlayAreaAttrs                    NES AA  GEN 00
   $0531 PlayAreaAttrs+1                  NES AA  GEN 00
@@ -212,7 +209,7 @@ ticks compared: 550  (nes 550, gen 550)  padded rows skipped: 0
   $0637 IsEliminateSaveFileOptionEnabled NES 01  GEN 00
   $0656 SelectedItemSlot                 NES 04  GEN 00
 
-== cells equal at tick 0 that diverge later: 42 ==
+== cells equal at tick 0 that diverge later: 39 ==
   t=    1 $0342 FirstSpriteIndex                 NES 01  GEN 00
   t=   36 $0065 UndergroundEntranceTile          NES 26  GEN 00
   t=  121 $00EC NextRoomId                       NES 00  GEN 78
@@ -252,11 +249,8 @@ ticks compared: 550  (nes 550, gen 550)  padded rows skipped: 0
   t=  363 $047C Gleeok_NeckYs2+3                 NES 00  GEN 23
   t=  363 $0513 UsedCandle                       NES 00  GEN 01
   t=  364 $004A ChaseLongTimer                   NES 07  GEN 06
-  t=  424 $0060 ChaseOtherTarget                 NES 00  GEN 01
-  t=  424 $0061 ChaseTargetX                     NES 70  GEN 8F
-  t=  424 $0062 ChaseTargetY                     NES D5  GEN 2A
 
 masked cells differing at tick 0: 381 (not evaluated)
 
-GATE: FAIL  key=550 fails=40  ratchet new=96 earlier=0 improved=0 baseline=NONE  allow=0
-VERDICT: DIVERGE (112 unmasked cells ever differ)
+GATE: FAIL  key=392 fails=40  ratchet new=93 earlier=0 improved=0 baseline=NONE  allow=0  [gen stopped early at tick 362]
+VERDICT: DIVERGE (109 unmasked cells ever differ)

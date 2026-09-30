@@ -27,7 +27,7 @@ dofile("C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/lockstep
 -- $18..$24 and StunCycle $26 here; they are written into Genesis at sync.
 -- From then on each console advances them with its own per-frame code.
 SEED = {}
-SEED[0x15]=0x2C SEED[0x18]=0xCF SEED[0x19]=0x7A SEED[0x1A]=0xE4 SEED[0x1B]=0x11 SEED[0x1C]=0xD9 SEED[0x1D]=0xFA SEED[0x1E]=0x49 SEED[0x1F]=0xBD SEED[0x20]=0x2E SEED[0x21]=0x54 SEED[0x22]=0x08 SEED[0x23]=0xA0 SEED[0x24]=0xB1 SEED[0x26]=0x00
+SEED[0x15]=0x2C SEED[0x18]=0xCF SEED[0x19]=0x7A SEED[0x1A]=0xE4 SEED[0x1B]=0x11 SEED[0x1C]=0xD9 SEED[0x1D]=0xFA SEED[0x1E]=0x49 SEED[0x1F]=0xBD SEED[0x20]=0x2E SEED[0x21]=0x54 SEED[0x22]=0x08 SEED[0x23]=0xA0 SEED[0x24]=0xB1 SEED[0x26]=0x00 SEED[0x4A]=0x00 SEED[0x60]=0x00 SEED[0x61]=0x00 SEED[0x62]=0x00
 
 local errf = nil
 local function fail(msg)
@@ -62,9 +62,26 @@ else
     fail("unknown system " .. tostring(sys)) return
 end
 
+-- T-141: EmuHawk runs the core for a frame or more before this script
+-- attaches, and how many depends on host load (parallel suite). A
+-- different count shifts the NES menu timing and so every later byte,
+-- which would poison the NES golden cache. Reboot to power-on frame 0,
+-- then run exactly ATTACH_FRAMES input-free frames: 1 is the attach
+-- timing every recorded route/preset was built with (probe 2026-09-27:
+-- framecount 1 at script start on NES and Genesis).
+local ATTACH_FRAMES = 1
+local pre_frames = emu.framecount()
+client.reboot_core()
+if emu.framecount() ~= 0 then
+    fail(string.format("reboot_core left framecount %d (was %d)", emu.framecount(), pre_frames)) return
+end
+for _ = 1, ATTACH_FRAMES do joypad.set({}, 1); emu.frameadvance() end
+if emu.framecount() ~= ATTACH_FRAMES then
+    fail(string.format("framecount %d after %d attach frames", emu.framecount(), ATTACH_FRAMES)) return
+end
 local meta = io.open(OUT .. ".txt", "w")
-meta:write(string.format("system=%s ram=%s+%X save=%s domains=%s preset=%s\n",
-    sys, RAM_DOM, RAM_BASE, SAVE_DOM, table.concat(domlist, ","), PRESET.name))
+meta:write(string.format("system=%s ram=%s+%X save=%s domains=%s preset=%s pre_script_frames=%d\n",
+    sys, RAM_DOM, RAM_BASE, SAVE_DOM, table.concat(domlist, ","), PRESET.name, pre_frames))
 
 -- 2. preset into cart RAM (before frame 1)
 local wrote = 0
@@ -91,7 +108,25 @@ local function idle(n) for _ = 1, n do joypad.set({}, 1); emu.frameadvance() end
 
 -- 3. front end: Start (title -> file select), Start (slot 0 -> load)
 local boot = 0
-idle(120); press({ Start = true }, 6); idle(120); press({ Start = true }, 6)
+if sys == "GEN" and PRESET.gen_entry == "xyz" then
+    -- Disclosed debug entry (Genesis FS boots Q1 only until T-099):
+    -- title X+Y+Z chord = quest 2 + debug_unlock_all_items. Arm the probe
+    -- block so the gameplay mirror publishes; wait for 'W','P' at $FF7200.
+    local function bw(a, v) memory.write_u8(0xFF0000 + a, v, "M68K BUS") end
+    local function br(a) return memory.read_u8(0xFF0000 + a, "M68K BUS") end
+    idle(30)
+    local ok = false
+    for i = 1, 1500 do
+        bw(0x73F8, 0x52); bw(0x73F9, 0x50); bw(0x73FA, 0)
+        joypad.set((i % 30 < 4) and { X = true, Y = true, Z = true } or {}, 1)
+        emu.frameadvance()
+        if br(0x7200) == 0x57 and br(0x7201) == 0x50 then ok = true; break end
+    end
+    if not ok then fail("X+Y+Z chord not accepted (6-button pad configured?)") return end
+    meta:write("gen_entry=xyz (debug chord, all items unlocked)\n")
+else
+    idle(120); press({ Start = true }, 6); idle(120); press({ Start = true }, 6)
+end
 local sync = -1
 for i = 1, 1500 do
     if gm() == 0x05 and room() ~= 0 then sync = i; break end
@@ -123,24 +158,468 @@ local function btns(s)
     end
     return t
 end
+-- T-013: a script step "p1|p2" also drives controller 2 (NES pad 2 /
+-- Genesis port 2; "|UA" = pad 2 Up+A). Pad 2 is only set on steps that
+-- press something on it (joypad.set holds for one frame).
+local function set_pads(s)
+    local p1, p2 = s:match("^([^|]*)|?(.*)$")
+    joypad.set(btns(p1), 1)
+    if p2 ~= "" then joypad.set(btns(p2), 2) end
+end
 local seq = {}
 for _, step in ipairs(PRESET.script) do
     for _ = 1, step[1] do seq[#seq + 1] = step[2] end
 end
 local ram = io.open(OUT .. ".ram", "wb")
 local total = math.min(MAXF, #seq)
-for f = 1, total do
-    local bytes = memory.read_bytes_as_array(RAM_BASE, 0x800, RAM_DOM)
-    local chunk = {}
-    for i = 1, 0x800 do chunk[i] = string.char(bytes[i]) end
-    ram:write(table.concat(chunk))
-    meta:write(string.format("f=%d in=%s gm=%02X sub=%02X fc=%02X room=%02X\n",
-        f - 1, seq[f], bytes[0x13], bytes[0x14], bytes[0x16], bytes[0xEC]))
-    joypad.set(btns(seq[f]), 1)
-    emu.frameadvance()
+-- T-013: optional route bot (tools/lockstep/bot.lua, inlined into the
+-- preset by presets.py), NES only, play clock only. After the script it
+-- picks each new tick's buttons from NES RAM and logs them to <OUT>.botin
+-- (one line per tick, then "# <why it stopped>"); bot_merge.py turns the
+-- log into script steps for the Genesis replay.
+local SCRIPT_LEN = #seq
+local botlog = nil
+if PRESET.bot and sys == "NES" then
+    if PRESET.clock ~= "play" then fail("bot presets need clock=play") return end
+    BOT.init(PRESET.bot)
+    total = math.min(MAXF, SCRIPT_LEN + (PRESET.bot.max or 3000))
+    botlog = io.open(OUT .. ".botin", "w")
 end
+local function srd(o) return memory.read_u8(RAM_BASE + o, RAM_DOM) end
+local function swr(o, v) memory.write_u8(RAM_BASE + o, v & 0xFF, RAM_DOM) end
+local function slog(msg) meta:write("stage: " .. msg .. "\n") end
+-- Genesis selects the B item from a private C static (RoomRom/src/main.c
+-- s_b_item, b_item_t = 4-byte int), not NES SelectedItemSlot $656 (T-092).
+-- A stage that selects an item on NES ($656) calls gen_b_item(v) to make
+-- the same selection on Genesis. No-op on NES. Written, then read back.
+local GEN_B_ITEM = tonumber("0xFF004C")
+local stage_failed = false
+local stage_fail_why = ""
+local function stage_fail(why) stage_failed = true; stage_fail_why = why; slog(why) end
+local function gen_b_item(v)
+    if sys ~= "GEN" then return end
+    if GEN_B_ITEM == nil then stage_fail("gen_b_item: s_b_item symbol unresolved"); return end
+    local a = (RAM_DOM == "M68K BUS") and GEN_B_ITEM or (GEN_B_ITEM - 0xFF0000)
+    memory.write_u32_be(a, v, RAM_DOM)
+    local back = memory.read_u32_be(a, RAM_DOM)
+    slog(string.format("gen s_b_item @%06X = %d (read %d)", GEN_B_ITEM, v, back))
+    if back ~= v then stage_fail("gen_b_item write did not stick") end
+end
+-- Genesis Link position/facing live in players[0] (src/state/link_state.h
+-- LinkState: s16 x @+0, s16 y @+2, u8 dir @+6, u8 face @+7, s8 grid_offset
+-- @+13); NES $70/$84/$98 are mirrored FROM it each tick, so a stage that
+-- places Link on NES ($70/$84/$98/$394) calls gen_link_pos(x, y, nes_dir)
+-- to place him on Genesis. face: 0 down, 1 up, 2 left, 3 right
+-- (RoomRom/src/roomrom_main_state.h). No-op on NES. Read back.
+local GEN_PLAYERS = tonumber("0xFF0F80")
+-- Link's movement state proper lives in RoomRom/src/main.c statics:
+-- s_link_dir (link_dir_t, 4-byte int: 1 down, 2 up, 3 left, 4 right) and
+-- s_link_grid_offset (s8, NES ObjGridOffset $394 equivalent). A teleport
+-- must reset them as the NES stage resets $98/$394, else the next turn
+-- snaps Link toward a stale grid point.
+local GEN_LINK_DIR = tonumber("0xFF388A")
+local GEN_LINK_GRID = tonumber("0xFF3890")
+local NES_DIR_TO_LINK_DIR = { [0x01] = 4, [0x02] = 3, [0x04] = 1, [0x08] = 2 }
+local NES_DIR_TO_FACE = { [0x01] = 3, [0x02] = 2, [0x04] = 0, [0x08] = 1 }
+local function gen_link_pos(x, y, nes_dir)
+    if sys ~= "GEN" then return end
+    local face = NES_DIR_TO_FACE[nes_dir]
+    if GEN_PLAYERS == nil or face == nil then
+        stage_fail("gen_link_pos: players symbol unresolved or bad dir"); return
+    end
+    local a = (RAM_DOM == "M68K BUS") and GEN_PLAYERS or (GEN_PLAYERS - 0xFF0000)
+    memory.write_u16_be(a + 0, x, RAM_DOM)
+    memory.write_u16_be(a + 2, y, RAM_DOM)
+    memory.write_u8(a + 6, nes_dir, RAM_DOM)
+    memory.write_u8(a + 7, face, RAM_DOM)
+    memory.write_u8(a + 13, 0, RAM_DOM)
+    local bx, by = memory.read_u16_be(a, RAM_DOM), memory.read_u16_be(a + 2, RAM_DOM)
+    local bd, bf = memory.read_u8(a + 6, RAM_DOM), memory.read_u8(a + 7, RAM_DOM)
+    local bg = memory.read_u8(a + 13, RAM_DOM)
+    slog(string.format("gen players[0] @%06X = %d,%d dir %02X face %d (read %d,%d dir %02X face %d grid %d)",
+        GEN_PLAYERS, x, y, nes_dir, face, bx, by, bd, bf, bg))
+    if bx ~= x or by ~= y or bd ~= nes_dir or bf ~= face or bg ~= 0 then
+        stage_fail("gen_link_pos write did not stick")
+        return
+    end
+    if GEN_LINK_DIR == nil or GEN_LINK_GRID == nil then
+        stage_fail("gen_link_pos: s_link_dir / s_link_grid_offset unresolved"); return
+    end
+    local ad = (RAM_DOM == "M68K BUS") and GEN_LINK_DIR or (GEN_LINK_DIR - 0xFF0000)
+    local ag = (RAM_DOM == "M68K BUS") and GEN_LINK_GRID or (GEN_LINK_GRID - 0xFF0000)
+    local ld = NES_DIR_TO_LINK_DIR[nes_dir]
+    memory.write_u32_be(ad, ld, RAM_DOM)
+    memory.write_u8(ag, 0, RAM_DOM)
+    local rld, rg = memory.read_u32_be(ad, RAM_DOM), memory.read_u8(ag, RAM_DOM)
+    slog(string.format("gen s_link_dir=%d (read %d) s_link_grid_offset=0 (read %d)", ld, rld, rg))
+    if rld ~= ld or rg ~= 0 then stage_fail("gen_link_pos static write did not stick") end
+end
+-- Optional 68K PC histogram (T-118 frame budget), GEN only:
+-- PRESET.pc_profile = {first, last} script frames. Every executed
+-- instruction address in that window is counted (execute callback on the
+-- "M68K BUS" scope); written to <OUT>.pcprof as "addr count" lines, mapped
+-- to functions by tools/lockstep/pc_profile.py. Zero samples = the core
+-- gave no execute callbacks: recorded as a failure, never an empty profile.
+local PCP = (sys == "GEN") and PRESET.pc_profile or nil
+local pc_hist, pc_id, pc_samples = {}, nil, 0
+local function pc_hook(addr)
+    pc_hist[addr] = (pc_hist[addr] or 0) + 1
+    pc_samples = pc_samples + 1
+end
+local function pc_stop()
+    if pc_id then event.unregisterbyid(pc_id); pc_id = nil end
+end
+-- Full video-domain dump (RULE V3: every domain, full range).
+local function dump_domain(dom, suffix)
+    if not names[dom] then meta:write("nodomain " .. dom .. "\n"); return end
+    local size = memory.getmemorydomainsize(dom)
+    local bytes = memory.read_bytes_as_array(0, size, dom)
+    local chunk = {}
+    for i = 1, size do chunk[i] = string.char(bytes[i]) end
+    local fh = io.open(OUT .. suffix, "wb"); fh:write(table.concat(chunk)); fh:close()
+    meta:write(string.format("dump %s -> %s (%d bytes)\n", dom, suffix, size))
+end
+-- Optional mid-run snapshots: PRESET.snap = {script ticks}. At tick t
+-- (same point as RAM row t: after stages, before that tick's input) dump
+-- NES OAM / PALRAM / CIRAM / CHR-RAM or Genesis VRAM (SAT $F400) / CRAM / VSRAM to
+-- <OUT>.fNNNNN.<ext> (T-131 door sprite captures).
+local SNAP = {}
+if PRESET.snap then for _, sf in ipairs(PRESET.snap) do SNAP[sf] = true end end
+local function snap_video(tag)
+    client.screenshot(OUT .. tag .. ".png")   -- rendered frame (sprite masking/priority)
+    if sys == "NES" then
+        dump_domain("OAM", tag .. ".oam"); dump_domain("PALRAM", tag .. ".pal")
+        dump_domain("CIRAM (nametables)", tag .. ".nt")
+        dump_domain("VRAM", tag .. ".chr")   -- CHR-RAM patterns at this frame
+    else
+        dump_domain("VRAM", tag .. ".vram"); dump_domain("CRAM", tag .. ".cram")
+        dump_domain("VSRAM", tag .. ".vsram")
+    end
+end
+-- T-136: the script is per GAME TICK, not per video frame. A tick is a
+-- FrameCounter ($15) change. The NES drops frames (lag) where the Genesis
+-- may not (faster loads); scripting by video frame shifted every later
+-- input on the faster console. Each script entry is held until the game
+-- has ticked once on it. <OUT>.ram gets one row per tick (the state when
+-- that tick's input is applied: row t = after t ticks), so every tool that
+-- compares NES row i with GEN row i compares the same game tick.
+-- <OUT>.fram keeps one row per video frame (lag analysis), <OUT>.frtick
+-- the tick index (u16 BE) of each of those frames. Stages, snapshots
+-- (.fNNNNN = tick NNNNN) run at tick boundaries; pc_profile stays in video
+-- frames (GEN-only budget work). A FrameCounter that does not move for
+-- STALL_FRAMES video frames, or running out of FRAME_CAP frames, FAILS the
+-- capture (no invented ticks, no truncated capture passing as complete).
+if total > 0xFFFF then fail("T-136: more than 65535 ticks (frtick is u16)") return end
+local fram = io.open(OUT .. ".fram", "wb")
+local frtick = io.open(OUT .. ".frtick", "wb")
+local STALL_FRAMES = 120
+local FRAME_CAP = total * 3 + 600
+-- T-012: play clock (PRESET.clock == "play"): GameMode $05 play, $09
+-- cellar, $0B cave, each only in submode 0 ($0B runs its cave load in
+-- submodes 1..8). Transitions add video frames without ticks. A game that
+-- ticks NOPLAY_TICKS times without one play tick (death, ending) fails.
+local PLAY_MODES = { [0x05] = true, [0x09] = true, [0x0B] = true }
+local NOPLAY_TICKS = 1200
+local noplay = 0
+if PRESET.clock == "play" then FRAME_CAP = total * 5 + 3000 end
+local tick, f, stall = 0, 0, 0
+local last_fc = srd(0x15)
+local new_tick = true
+-- T-137: the Genesis runs the NES frame work of a load it finishes early
+-- in one go (FrameCounter +N in one frame). The tick clock counts N ticks
+-- then; the skipped ticks' rows repeat the state after the jump, and
+-- stages/snapshots inside the jump run on its last tick. (Those rows
+-- differ from the NES load rows by design.)
+local prev_tick = -1
+-- Speed (T-013): the Lua side, not the core, bounded capture speed
+-- (~60 fps). Rows are built 256 bytes per string.char call; the full RAM
+-- is read only on a new tick; the per-video-frame dump (.fram/.frtick)
+-- and per-frame log lines are written only with PRESET.frames = true
+-- (run_lockstep --frame-dump). Per-tick log lines replace them otherwise.
+local FRAME_DUMP = PRESET.frames == true
+-- Per-video-frame video state (<OUT>.fvdp): GEN 648 bytes (VSRAM 4, H scroll
+-- 4, SAT 640), NES 256 bytes (OAM). Only with FRAME_DUMP.
+local fvdp = FRAME_DUMP and io.open(OUT .. ".fvdp", "wb") or nil
+if FRAME_DUMP then
+    for _, d in ipairs(sys == "GEN" and { "VSRAM", "VRAM" } or { "OAM" }) do
+        if not names[d] then fail("fvdp: no memory domain " .. d) return end
+    end
+end
+-- Run the core as fast as it goes and skip drawing frames nobody looks
+-- at; drawing comes back 40 ticks before a snapshot and at the end
+-- (client.screenshot needs a drawn frame; memory dumps do not).
+if emu.limitframerate then emu.limitframerate(false) end
+if client.speedmode then client.speedmode(6400) end
+local invisible = nil
+local function video_for(t)
+    -- 40 ticks ahead: a load catch-up jumps FrameCounter by up to 32.
+    local want = t >= total - 2
+    for sf in pairs(SNAP) do if sf >= t and sf <= t + 40 then want = true end end
+    local inv = not want
+    if client.invisibleemulation and inv ~= invisible then
+        client.invisibleemulation(inv); invisible = inv
+    end
+end
+video_for(0)
+-- T-141 fail-fast (GEN only, when the runner passes C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/lockstep/newgame/nes.ram = NES .ram):
+-- each new tick's KEY cells (PRESET.gate, emitted from tools/lockstep/
+-- gate.py so Lua and diff.py check the same cells) are compared with the
+-- NES row of that tick. First non-allowed mismatch at tick t: log
+-- "failfast t=..." in <OUT>.txt, snapshot tick t+1 (video on from t),
+-- stop at tick t+30. Padded rows (ticks inside a FrameCounter jump) are
+-- listed in <OUT>.pad and never compared.
+local GOLD_PATH = "C:/Users/Jake Diggity/Documents/GitHub/FINAL TRY/builds/reports/lockstep/newgame/nes.ram"
+local GOLD = nil
+if sys == "GEN" and GOLD_PATH ~= "" then
+    local gh = io.open(GOLD_PATH, "rb")
+    if not gh then fail("fail-fast: cannot open NES golden " .. GOLD_PATH) return end
+    GOLD = gh:read("a"); gh:close()
+    if #GOLD == 0 or #GOLD % 0x800 ~= 0 then fail("fail-fast: bad NES golden size " .. #GOLD) return end
+    if not PRESET.gate then fail("fail-fast: preset has no gate tables") return end
+end
+local failfast_at = nil
+local function gate_mismatch(t, bytes)
+    local base = t * 0x800
+    if base + 0x800 > #GOLD then return nil end   -- past the NES capture
+    local G = PRESET.gate
+    local function bad(a)
+        local x, y = string.byte(GOLD, base + a + 1), bytes[a + 1]
+        if x == y then return nil end
+        for _, e in ipairs(G.allow) do
+            if e[1] == a and e[2] == x and e[3] == y and t >= e[4] and t <= e[5] then return nil end
+        end
+        return { a, x, y }
+    end
+    for _, a in ipairs(G.global) do
+        local m = bad(a); if m then return m end
+    end
+    for i = 1, 11 do
+        local ta = G.slot_type + i
+        local m = bad(ta); if m then return m end
+        if string.byte(GOLD, base + ta + 1) ~= 0 or bytes[ta + 1] ~= 0 then
+            for _, c in ipairs(G.slot_cells) do
+                m = bad(c + i); if m then return m end
+            end
+        end
+    end
+    return nil
+end
+local padf = io.open(OUT .. ".pad", "w")
+padf:setvbuf("line")   -- fail() exits without closing it
+local function row_of(bytes)
+    local chunk = {}
+    for i = 1, 0x800, 256 do chunk[#chunk + 1] = string.char(table.unpack(bytes, i, i + 255)) end
+    return table.concat(chunk)
+end
+while tick < total and f < FRAME_CAP do
+    if PCP and f == PCP[1] then
+        pc_id = event.onmemoryexecuteany(pc_hook, "t118_pc", "M68K BUS")
+        meta:write(string.format("pc_profile start f=%d id=%s\n", f, tostring(pc_id)))
+    end
+    if PCP and f == PCP[2] + 1 then pc_stop() end
+    local bytes = nil
+    local gm0, sub0 = srd(0x12), srd(0x13)   -- this frame's mode at its start
+    if new_tick and botlog and tick >= SCRIPT_LEN and seq[tick + 1] == nil then
+        local b = BOT.decide(srd, function(a) return memory.read_u8(a - SAVE_BASE, SAVE_DOM) end)
+        seq[tick + 1] = b
+        botlog:write(b .. "\n")
+        if BOT.done then total = tick + 1; video_for(tick) end
+    end
+    if new_tick then
+        for _, st in ipairs(PRESET.stages) do
+            if st.at > prev_tick and st.at <= tick then
+                meta:write(string.format("stage at=%d run tick=%d f=%d\n", st.at, tick, f))
+                st.fn(srd, swr, slog, sys, gen_b_item, gen_link_pos)
+            end
+        end
+        if stage_failed then ram:close(); fram:close(); frtick:close(); fail(stage_fail_why) return end
+        last_fc = srd(0x15)   -- a stage may write $15: not a game tick
+        bytes = memory.read_bytes_as_array(RAM_BASE, 0x800, RAM_DOM)
+        gm0, sub0 = bytes[0x13], bytes[0x14]
+        if not FRAME_DUMP then
+            meta:write(string.format("t=%d f=%d in=%s gm=%02X sub=%02X fc=%02X room=%02X\n",
+                tick, f, tostring(seq[tick + 1]), bytes[0x13], bytes[0x14], bytes[0x16], bytes[0xEC]))
+        end
+        local row = row_of(bytes)
+        for t = prev_tick + 1, tick do
+            ram:write(row)
+            if t < tick then padf:write(t .. "\n") end
+            if SNAP[t] then snap_video(string.format(".f%05d", t)) end
+        end
+        prev_tick = tick
+        new_tick = false
+        if GOLD and not failfast_at then
+            local m = gate_mismatch(tick, bytes)
+            if m then
+                failfast_at = tick
+                total = math.min(total, tick + 30)
+                -- Snapshot tick t+1 only when the run reaches it (a mismatch on
+                -- the last script tick has no t+1 row; the end dump covers it).
+                local snap_t = (tick + 1 < total) and (tick + 1) or -1
+                if snap_t >= 0 then SNAP[snap_t] = true end
+                meta:write(string.format("failfast t=%d snap=%d addr=%03X nes=%02X gen=%02X\n",
+                    tick, snap_t, m[1], m[2], m[3]))
+            end
+        end
+        video_for(tick)
+    end
+    if FRAME_DUMP then
+        bytes = bytes or memory.read_bytes_as_array(RAM_BASE, 0x800, RAM_DOM)
+        fram:write(row_of(bytes))
+        frtick:write(string.char((tick >> 8) & 0xFF, tick & 0xFF))
+        -- Room-transition smoothness (tools/lockstep/transition_smooth.py):
+        -- the video state this frame ends with. GEN: VSRAM words 0-1
+        -- (plane A/B V scroll), H scroll table $F000 words 0-1 (per-plane
+        -- mode; VDP_setHScrollTableAddress in RoomRom/src/main.c init_video),
+        -- the 80-entry SAT at $F400 (VDP_setSpriteListAddress, same place).
+        -- NES: the 256-byte OAM.
+        if sys == "GEN" then
+            local v = memory.read_bytes_as_array(0, 4, "VSRAM")
+            local h = memory.read_bytes_as_array(0xF000, 4, "VRAM")
+            local s = memory.read_bytes_as_array(0xF400, 640, "VRAM")
+            fvdp:write(string.char(table.unpack(v)), string.char(table.unpack(h)))
+            for i = 1, 640, 128 do fvdp:write(string.char(table.unpack(s, i, i + 127))) end
+        else
+            fvdp:write(string.char(table.unpack(memory.read_bytes_as_array(0, 256, "OAM"))))
+        end
+        meta:write(string.format("f=%d t=%d in=%s gm=%02X sub=%02X fc=%02X room=%02X\n",
+            f, tick, tostring(seq[tick + 1]), bytes[0x13], bytes[0x14], bytes[0x16], bytes[0xEC]))
+    end
+    set_pads(seq[tick + 1])
+    emu.frameadvance()
+    f = f + 1
+    local fc = srd(0x15)
+    if fc ~= last_fc then
+        local fc_steps = (fc - last_fc) & 0xFF
+        last_fc = fc
+        stall = 0
+        -- T-012 play clock: only a tick that started in a play mode
+        -- consumes script input; load/transition ticks (which the Genesis
+        -- may need fewer of) hold the script position. gm0/sub0 are
+        -- GameMode $12 / GameSubmode $13 read at the top of this frame.
+        if PRESET.clock ~= "play" then
+            tick = math.min(tick + fc_steps, total)
+            new_tick = true
+            noplay = 0
+        elseif PLAY_MODES[gm0] and sub0 == 0 then
+            tick = math.min(tick + fc_steps, total)
+            new_tick = true
+            noplay = 0
+        else
+            noplay = noplay + 1
+            if noplay >= NOPLAY_TICKS then
+                ram:close(); fram:close(); frtick:close()
+                fail(string.format("T-012 play clock: %d ticks without a play tick (GameMode $%02X sub $%02X) at tick %d f %d",
+                    noplay, gm0, sub0, tick, f))
+                return
+            end
+        end
+    else
+        stall = stall + 1
+        if stall >= STALL_FRAMES then
+            ram:close(); fram:close(); frtick:close()
+            fail(string.format("T-136 stall: FrameCounter held %d frames at tick %d f %d",
+                STALL_FRAMES, tick, f))
+            return
+        end
+    end
+end
+fram:close()
+frtick:close()
+if fvdp then fvdp:close() end
+padf:close()
+if botlog then
+    botlog:write("# " .. (BOT.done and BOT.why or "tick budget spent") .. "\n")
+    botlog:close()
+end
+if tick >= total and prev_tick < total - 1 then
+    -- a FrameCounter jump crossed the script end: rows up to total - 1
+    local row = row_of(memory.read_bytes_as_array(RAM_BASE, 0x800, RAM_DOM))
+    for t = prev_tick + 1, total - 1 do
+        ram:write(row)
+        padf:write(t .. "\n")
+        if SNAP[t] then snap_video(string.format(".f%05d", t)) end
+    end
+end
+if tick < total then
+    ram:close()
+    fail(string.format("T-136 frame cap %d hit at tick %d of %d", FRAME_CAP, tick, total))
+    return
+end
+meta:write(string.format("ticks=%d video_frames=%d\n", tick, f))
 ram:close()
+pc_stop()
+if PCP then
+    if pc_samples == 0 then
+        meta:close(); fail("pc_profile: no execute callbacks from M68K BUS") return
+    end
+    local fh = io.open(OUT .. ".pcprof", "w")
+    fh:write(string.format("# frames %d..%d samples %d\n", PCP[1], PCP[2], pc_samples))
+    for a, n in pairs(pc_hist) do fh:write(string.format("%06X %d\n", a, n)) end
+    fh:close()
+    meta:write(string.format("pc_profile samples=%d\n", pc_samples))
+end
+-- A connected route may finish with a non-play action such as Pause -> Save.
+-- Keep the established play-clock RAM rows intact, then drive this short
+-- tail by video frames. The final .wram/.sram dumps below include its result.
+if PRESET.postscript then
+    if client.invisibleemulation then client.invisibleemulation(false) end
+    local post_frames = 0
+    for _, step in ipairs(PRESET.postscript) do
+        local count, buttons = tonumber(step[1]), step[2]
+        if not count or count < 0 or count > 10000 then
+            meta:close(); fail("postscript: invalid frame count") return
+        end
+        for _ = 1, count do
+            set_pads(buttons)
+            emu.frameadvance()
+        end
+        post_frames = post_frames + count
+        meta:write(string.format("post frames=%d in=%s gm=%02X sub=%02X room=%02X rupees=%02X hearts=%02X triforce=%02X\n",
+            post_frames, buttons, gm(), srd(0x13), room(),
+            srd(0x66D), srd(0x66F), srd(0x671)))
+    end
+    set_pads("")
+    for _, pair in ipairs(PRESET.post_expect_save or {}) do
+        local k, want = tonumber(pair[1]), tonumber(pair[2])
+        if not k or not want or k < 0 or k >= 0x530 or want < 0 or want > 255 then
+            meta:close(); fail("postscript: invalid save expectation") return
+        end
+        local a = (sys == "GEN") and (2 * k + 1) or (0x6000 + k - SAVE_BASE)
+        local got = memory.read_u8(a, SAVE_DOM)
+        meta:write(string.format("post save logical=%03X got=%02X want=%02X\n", k, got, want))
+        if got ~= want then
+            meta:close()
+            fail(string.format("postscript: save logical %03X got %02X want %02X", k, got, want))
+            return
+        end
+    end
+end
+
 client.screenshot(OUT .. ".png")
+
+-- Final-frame full video dump (RULE V3: every domain, full range).
+-- NES: OAM (256), PALRAM (32), VRAM = CHR-RAM patterns (8 KB), CIRAM.
+-- GEN: VRAM (64 KB; gameplay SAT at $F400 per RoomRom/src/main.c
+-- init_video VDP_setSpriteListAddress), CRAM, VSRAM.
+if sys == "NES" then
+    dump_domain("Battery RAM", ".wram")   -- NES $6000-$7FFF (LevelBlock/Info)
+    dump_domain("OAM", ".oam"); dump_domain("PALRAM", ".pal")
+    dump_domain("VRAM", ".chr"); dump_domain("CIRAM (nametables)", ".nt")
+else
+    dump_domain("VRAM", ".vram"); dump_domain("CRAM", ".cram"); dump_domain("VSRAM", ".vsram")
+    dump_domain("SRAM", ".sram")   -- cart SRAM (logical byte k at index 2k+1)
+    -- 68K work RAM (64 KB): NES mirror incl. $6000+ = $FFE000+.
+    if names["68K RAM"] then dump_domain("68K RAM", ".m68k")
+    else
+        local fh = io.open(OUT .. ".m68k", "wb")
+        local b = memory.read_bytes_as_array(0xFF0000, 0x10000, "M68K BUS")
+        local ch = {}
+        for i = 1, 0x10000 do ch[i] = string.char(b[i]) end
+        fh:write(table.concat(ch)); fh:close()
+        meta:write("dump M68K BUS FF0000-FFFFFF -> .m68k\n")
+    end
+end
 meta:write(string.format("frames=%d\n", total))
 meta:close()
 client.exit()

@@ -224,10 +224,60 @@ t=216 f=220 in=U gm=0B sub=04 fc=04 room=20
 t=217 f=221 in=U gm=0B sub=04 fc=05 room=20
 t=218 f=222 in=U gm=0B sub=04 fc=06 room=20
 t=219 f=223 in=U gm=0B sub=04 fc=07 room=20
-ticks=220 video_frames=224
+t=220 f=224 in=U gm=0B sub=04 fc=08 room=20
+t=221 f=225 in=U gm=0B sub=05 fc=09 room=20
+t=222 f=226 in=U gm=0B sub=06 fc=0A room=20
+t=223 f=227 in=U gm=0B sub=07 fc=0B room=20
+t=224 f=228 in=U gm=0B sub=08 fc=0C room=20
+t=225 f=229 in=U gm=0B sub=08 fc=0D room=20
+t=226 f=230 in=U gm=0B sub=08 fc=0E room=20
+t=227 f=231 in=U gm=0B sub=08 fc=0F room=20
+t=228 f=232 in=U gm=0B sub=08 fc=10 room=20
+t=229 f=233 in=U gm=0B sub=08 fc=11 room=20
+t=230 f=234 in= gm=0B sub=00 fc=12 room=20
+t=231 f=235 in= gm=0B sub=00 fc=13 room=20
+t=232 f=236 in= gm=0B sub=00 fc=14 room=20
+t=233 f=237 in= gm=0B sub=00 fc=15 room=20
+t=234 f=238 in= gm=0B sub=00 fc=16 room=20
+t=235 f=239 in= gm=0B sub=00 fc=17 room=20
+t=236 f=240 in= gm=0B sub=00 fc=18 room=20
+t=237 f=241 in= gm=0B sub=00 fc=19 room=20
+t=238 f=242 in= gm=0B sub=00 fc=1A room=20
+t=239 f=243 in= gm=0B sub=00 fc=1B room=20
+t=240 f=244 in= gm=0B sub=00 fc=1C room=20
+t=241 f=245 in= gm=0B sub=00 fc=1D room=20
+t=242 f=246 in= gm=0B sub=00 fc=1E room=20
+t=243 f=247 in= gm=0B sub=00 fc=1F room=20
+t=244 f=248 in= gm=0B sub=00 fc=20 room=20
+t=245 f=249 in= gm=0B sub=00 fc=21 room=20
+t=246 f=250 in= gm=0B sub=00 fc=22 room=20
+t=247 f=251 in= gm=0B sub=00 fc=23 room=20
+t=248 f=252 in= gm=0B sub=00 fc=24 room=20
+t=249 f=253 in= gm=0B sub=00 fc=25 room=20
+t=250 f=254 in= gm=0B sub=00 fc=26 room=20
+t=251 f=255 in= gm=0B sub=00 fc=27 room=20
+t=252 f=256 in= gm=0B sub=00 fc=28 room=20
+t=253 f=257 in= gm=0B sub=00 fc=29 room=20
+t=254 f=258 in= gm=0B sub=00 fc=2A room=20
+t=255 f=259 in= gm=0B sub=00 fc=2B room=20
+t=256 f=260 in= gm=0B sub=00 fc=2C room=20
+t=257 f=261 in= gm=0B sub=00 fc=2D room=20
+t=258 f=262 in= gm=0B sub=00 fc=2E room=20
+t=259 f=263 in= gm=0B sub=00 fc=2F room=20
+t=260 f=264 in= gm=0B sub=00 fc=30 room=20
+t=261 f=265 in= gm=0B sub=00 fc=31 room=20
+t=262 f=266 in= gm=0B sub=00 fc=32 room=20
+t=263 f=267 in= gm=0B sub=00 fc=33 room=20
+t=264 f=268 in= gm=0B sub=00 fc=34 room=20
+t=265 f=269 in= gm=0B sub=00 fc=35 room=20
+t=266 f=270 in= gm=0B sub=00 fc=36 room=20
+t=267 f=271 in= gm=0B sub=00 fc=37 room=20
+t=268 f=272 in= gm=0B sub=00 fc=38 room=20
+t=269 f=273 in= gm=0B sub=00 fc=39 room=20
+ticks=270 video_frames=274
 dump Battery RAM -> .wram (8192 bytes)
 dump OAM -> .oam (256 bytes)
 dump PALRAM -> .pal (32 bytes)
 dump VRAM -> .chr (8192 bytes)
 dump CIRAM (nametables) -> .nt (2048 bytes)
-frames=220
+frames=270

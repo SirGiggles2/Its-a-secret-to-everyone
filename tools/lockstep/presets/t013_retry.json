@@ -1,0 +1,61 @@
+{
+ "name": "t013_retry",
+ "_note": "T-013 P2.6: pause (Start), controller 2 Up+A -> GameMode 8 (t132), Select x2 -> RETRY, Start (t199) -> flash $40 frames -> GameMode 0 submode 1, IsUpdatingMode 1 (no save). 264 ticks (rows 0-263); tick 264 hands off to the Genesis File Select. Tick clock.",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {
+  "InvBombs": 5,
+  "InvRupees": 42,
+  "InvKeys": 2
+ },
+ "world_flags": {
+  "0x6F1": 128,
+  "0x77F": 16
+ },
+ "script": [
+  [
+   60,
+   ""
+  ],
+  [
+   1,
+   "S"
+  ],
+  [
+   70,
+   ""
+  ],
+  [
+   6,
+   "|UA"
+  ],
+  [
+   40,
+   ""
+  ],
+  [
+   1,
+   "s"
+  ],
+  [
+   10,
+   ""
+  ],
+  [
+   1,
+   "s"
+  ],
+  [
+   10,
+   ""
+  ],
+  [
+   1,
+   "S"
+  ],
+  [
+   64,
+   ""
+  ]
+ ]
+}

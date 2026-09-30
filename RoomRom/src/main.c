@@ -298,7 +298,7 @@ static u8             s_ow_edge = 0u;
 static u8             s_uw_edge = 0u;
 /* T-132: level entry from the OW (NES modes $10 / 2 / 3, then 4). */
 enum { LVL_NONE = 0, LVL_STAIRS, LVL_CURTAIN, LVL_EXIT_LOAD, LVL_STEP_OUT,
-       LVL_CAVE_EXIT, LVL_PLAY_INIT };
+       LVL_CAVE_EXIT, LVL_PLAY_INIT, LVL_MODE3_INIT };
 static u8             s_lvl_phase = LVL_NONE;
 static u8             s_lvl_target_y = 0u;
 static u8             s_lvl_step = 0u;
@@ -2459,16 +2459,48 @@ void roomrom_mode8_cursor(void)
  * LayOutRoom, curtain columns, Link at X $78, Y LevelInfo_StartY facing
  * up. Then UpdateMode3Unfurl (the Genesis curtain, LVL_CURTAIN) and, with
  * UndergroundExitType 0 (InitMode8), GoToNextModePlayLevelSong: mode 4
- * walk-in. The Genesis loads in one tick and runs the skipped NES frame
- * work up to the curtain's first frame. */
-#define NES_MODE8_CONTINUE_FC_STEPS 9u
-
+ * walk-in. One submode a tick as on the NES (t013_continue NES t214-t222);
+ * the Genesis room load runs at Sub8 (the NES LayOutRoom tick). */
 static void begin_mode8_continue(void)
 {
+    s_lvl_exiting = 0u;
+    s_lvl_phase = LVL_MODE3_INIT;
+}
+
+static void mode3_init_tick(void)
+{
     rr_warp_outcome_t out = {0};
-    room_clear_room_history();                  /* InitMode3_Sub0 */
-    room_init_mode3_sub1();                      /* RoomId, palette cue */
-    nes_ram[0x0013u] = 0u;
+    const u8 sub = nes_ram[0x0013u];
+    switch (sub) {
+    case 0u:                                     /* InitMode3_Sub0 */
+        nes_ram[0x0017u] = 1u;
+        nes_ram[0x0013u] = 1u;
+        room_clear_room_history();
+        return;
+    case 1u:                                     /* RoomId, palette cue */
+        room_init_mode3_sub1();
+        return;
+    case 2u: nes_ram[0x0014u] = 0x18u; break;    /* FillPlayAreaAttrs + palettes */
+    case 3u: case 4u: break;                     /* play-area attributes */
+    case 5u: nes_ram[0x0014u] = 0x0Eu; break;    /* status bar statics */
+    case 6u: {                                   /* status bar map (HasMap) */
+        const u8 lvl = nes_ram[0x0010u];
+        const u8 lz = (u8)(lvl - 1u);
+        if (lvl == 0u ||
+            (nes_ram[(lz >= 8u) ? 0x066Au : 0x0668u] & (u8)(1u << (lz & 7u))))
+            nes_ram[0x0014u] = 0x44u;
+        break;
+    }
+    case 7u:                                     /* "LEVEL-X" */
+        if (nes_ram[0x6BB1u] != 0u) nes_ram[0x0014u] = 0x0Cu;   /* LevelNumber */
+        break;
+    default: break;
+    }
+    if (sub < 8u) {
+        nes_ram[0x0013u] = (u8)(sub + 1u);
+        return;
+    }
+    /* InitMode3_Sub8: LayOutRoom, curtain columns, Link, BeginUpdateMode. */
     out.dest_scene = (nes_ram[0x0010u] != 0u) ? SCENE_UW : SCENE_OW;
     out.dest_level = nes_ram[0x0010u];
     out.dest_quest = roomrom_main_current_quest();
@@ -2477,8 +2509,6 @@ static void begin_mode8_continue(void)
     out.dest_link_y = (short)nes_ram[0x6BA6u];   /* LevelInfo_StartY */
     out.dest_link_face = LINK_FACE_UP;
     out.dest_redux_flag = current_redux_flag();
-    s_lvl_exit_fc = (u8)(nes_ram[0x0015u] - 1u);
-    s_lvl_exit_steps = NES_MODE8_CONTINUE_FC_STEPS;
     render_display_enable(0u);
     VDP_setWindowOnTop(ROOMROM_HUD_ROWS);
     roomrom_main_apply_warp_outcome(&out);
@@ -2492,6 +2522,9 @@ static void begin_mode8_continue(void)
     nes_ram[0x0084u] = nes_ram[0x6BA6u];
     nes_ram[0x0098u] = 0x08u;
     nes_ram[0x0394u] = 0u;
+    nes_ram[0x007Cu] = 0x10u;
+    nes_ram[0x007Du] = 0x11u;
+    nes_ram[0x0017u] = 0u;
     curtain_hide();
     level_hud_static_only();
     roomrom_sprites_set_link_pose((short)-32, (short)-32, players[0].face, 0u);
@@ -2499,13 +2532,8 @@ static void begin_mode8_continue(void)
     enemy_render_native_sweep();
     VDP_updateSprites(80u, DMA_QUEUE);
     render_display_enable(1u);
-    nes_ram[0x0012u] = 0x03u;
-    nes_ram[0x0013u] = 0u;
-    while ((u8)(nes_ram[0x0015u] - s_lvl_exit_fc) < s_lvl_exit_steps) {
-        nes_ram[0x0015u] = (unsigned char)(nes_ram[0x0015u] + 1u);
-        nes_frame_timers_and_random();
-    }
-    s_lvl_exiting = 0u;
+    nes_ram[0x0013u] = 0u;                       /* BeginUpdateMode */
+    nes_ram[0x0011u] = (u8)(nes_ram[0x0011u] + 1u);
     s_lvl_step = 0u;
     s_lvl_timer = 0u;
     s_lvl_phase = LVL_CURTAIN;
@@ -2650,6 +2678,9 @@ void roomrom_main_begin_level_entry(const rr_warp_outcome_t *out)
 {
     unsigned char tile;
     s_lvl_out = *out;
+    /* Z_05.asm @LoadLevel: CaveSourceRoomId = the OW room of the entrance
+     * (a Continue in the OW after the level starts there). */
+    if (s_scene == SCENE_OW) nes_ram[0x0526u] = s_room_id;
     nes_ram[0x0070u] = (unsigned char)players[0].x;
     nes_ram[0x0084u] = (unsigned char)players[0].y;
     tile = collision_get_collidable_tile_still(0u);
@@ -2705,6 +2736,10 @@ static void level_entry_tick(void)
         cave_exit_tick();
         return;
     }
+    if (s_lvl_phase == LVL_MODE3_INIT) {         /* T-013 mode 8 CONTINUE */
+        mode3_init_tick();
+        return;
+    }
     if (s_lvl_phase == LVL_PLAY_INIT) {
         /* T-012: InitMode5Play takes a frame of its own (Link drawn, no
          * UpdatePlayer); t012_route NES t807 Link still, Genesis moved. */
@@ -2721,6 +2756,9 @@ static void level_entry_tick(void)
         init_mode2_sub0();
         render_display_enable(0u);
         roomrom_main_apply_warp_outcome(&s_lvl_out);
+        /* InitMode3_Sub1: the OW room came from CaveSourceRoomId, which
+         * then goes back to invalid. */
+        nes_ram[0x0526u] = 0xFFu;
         s_underground_exit_type = 2u;           /* EndGameMode12 */
         roomrom_sprites_set_link_pose((short)-32, (short)-32, players[0].face, 0u);
         curtain_hide();
@@ -2854,6 +2892,9 @@ stepped_out:
     curtain_reveal((unsigned char)(16u + s_lvl_step));
     curtain_reveal((unsigned char)(15u - s_lvl_step));
     s_lvl_timer = 4u;
+    /* NES UpdateMode3Unfurl keeps the delay in Link's ObjTimer ($28 = 5,
+     * run down by the NMI timers: t013_continue NES t224-t228). */
+    nes_ram[0x0028u] = 5u;
     ++s_lvl_step;
     /* NES UpdateWorldCurtainEffect moves ObjX+12 / ObjX+13 inward-out:
      * $10/$11 -> $00/$21 over the 16 steps (T-013). */
@@ -2934,6 +2975,10 @@ void roomrom_debug_enter(void)
      * NES from the first play frame (tick-0 residue $0011 NES 01 GEN 00; a
      * staged save then ran InitModeD, save_roundtrip t130). */
     nes_ram[0x0011u] = 0x01u;
+    /* CaveSourceRoomId $FF: the NES menu (Z_02.asm:2577) sets it so mode 3
+     * puts Link at StartRoomId (tick-0 residue NES FF GEN 00; a Continue
+     * then loaded room $00, t013_continue t214). */
+    nes_ram[0x0526u] = 0xFFu;
 
     s_joy_prev = 0u;
     init_video();

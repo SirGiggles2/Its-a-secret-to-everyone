@@ -1,0 +1,53 @@
+{
+ "name": "t013_continue",
+ "_note": "T-013 P2.6: pause (Start), controller 2 Up+A -> GameMode 8 (t132), Start on CONTINUE (t150) -> flash $40 frames -> GameMode 3 (level reload + curtain) -> mode 4 -> play; then walk up. Tick clock.",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {
+  "InvBombs": 5,
+  "InvRupees": 42,
+  "InvKeys": 2
+ },
+ "world_flags": {
+  "0x6F1": 128,
+  "0x77F": 16
+ },
+ "script": [
+  [
+   60,
+   ""
+  ],
+  [
+   1,
+   "S"
+  ],
+  [
+   70,
+   ""
+  ],
+  [
+   6,
+   "|UA"
+  ],
+  [
+   12,
+   ""
+  ],
+  [
+   1,
+   "S"
+  ],
+  [
+   200,
+   ""
+  ],
+  [
+   40,
+   "U"
+  ],
+  [
+   20,
+   ""
+  ]
+ ]
+}

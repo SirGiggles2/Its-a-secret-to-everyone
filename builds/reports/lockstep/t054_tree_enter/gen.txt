@@ -1,6 +1,6 @@
 system=GEN ram=M68K BUS+FF8000 save=SRAM domains=CRAM,M68K BUS,MD CART,SRAM,VRAM,VSRAM,Waterbox PageData,Z80 RAM preset=t054_tree_enter pre_script_frames=1
 preset_bytes_written=1328
-sync_after_menu_frames=26 live_after=2 seeded=19
+sync_after_menu_frames=26 live_after=3 seeded=19
 t=0 f=0 in= gm=05 sub=00 fc=2C room=77
 t=1 f=2 in= gm=05 sub=00 fc=2D room=77
 t=2 f=3 in= gm=05 sub=00 fc=2E room=77
@@ -372,7 +372,11 @@ stage: gen s_link_dir=1 (read 1) s_link_grid_offset=0 (read 0)
 t=360 f=464 in= gm=05 sub=00 fc=FA room=78
 t=361 f=465 in= gm=10 sub=00 fc=FB room=78
 t=362 f=467 in= gm=0B sub=01 fc=FD room=78
+failfast t=362 snap=363 addr=015 nes=FE gen=FD
 t=363 f=494 in= gm=0B sub=00 fc=20 room=78
+dump VRAM -> .f00363.vram (65536 bytes)
+dump CRAM -> .f00363.cram (128 bytes)
+dump VSRAM -> .f00363.vsram (128 bytes)
 t=364 f=495 in= gm=0B sub=00 fc=21 room=78
 t=365 f=496 in= gm=0B sub=00 fc=22 room=78
 t=366 f=497 in= gm=0B sub=00 fc=23 room=78
@@ -401,168 +405,10 @@ t=388 f=519 in= gm=0B sub=00 fc=39 room=78
 t=389 f=520 in= gm=0B sub=00 fc=3A room=78
 t=390 f=521 in= gm=0B sub=00 fc=3B room=78
 t=391 f=522 in= gm=0B sub=00 fc=3C room=78
-t=392 f=523 in= gm=0B sub=00 fc=3D room=78
-t=393 f=524 in= gm=0B sub=00 fc=3E room=78
-t=394 f=525 in= gm=0B sub=00 fc=3F room=78
-t=395 f=526 in= gm=0B sub=00 fc=40 room=78
-t=396 f=527 in= gm=0B sub=00 fc=41 room=78
-t=397 f=528 in= gm=0B sub=00 fc=42 room=78
-t=398 f=529 in= gm=0B sub=00 fc=43 room=78
-t=399 f=530 in= gm=0B sub=00 fc=44 room=78
-t=400 f=531 in= gm=0B sub=00 fc=45 room=78
-t=401 f=532 in= gm=0B sub=00 fc=46 room=78
-t=402 f=533 in= gm=0B sub=00 fc=47 room=78
-t=403 f=534 in= gm=0B sub=00 fc=48 room=78
-t=404 f=535 in= gm=0B sub=00 fc=49 room=78
-t=405 f=536 in= gm=0B sub=00 fc=4A room=78
-t=406 f=537 in= gm=0B sub=00 fc=4B room=78
-t=407 f=538 in= gm=0B sub=00 fc=4C room=78
-t=408 f=539 in= gm=0B sub=00 fc=4D room=78
-t=409 f=540 in= gm=0B sub=00 fc=4E room=78
-t=410 f=541 in= gm=0B sub=00 fc=4F room=78
-t=411 f=542 in= gm=0B sub=00 fc=50 room=78
-t=412 f=543 in= gm=0B sub=00 fc=51 room=78
-t=413 f=544 in= gm=0B sub=00 fc=52 room=78
-t=414 f=545 in= gm=0B sub=00 fc=53 room=78
-t=415 f=546 in= gm=0B sub=00 fc=54 room=78
-t=416 f=547 in= gm=0B sub=00 fc=55 room=78
-t=417 f=548 in= gm=0B sub=00 fc=56 room=78
-t=418 f=549 in= gm=0B sub=00 fc=57 room=78
-t=419 f=550 in= gm=0B sub=00 fc=58 room=78
-t=420 f=551 in= gm=0B sub=00 fc=59 room=78
-t=421 f=552 in= gm=0B sub=00 fc=5A room=78
-t=422 f=553 in= gm=0B sub=00 fc=5B room=78
-t=423 f=554 in= gm=0B sub=00 fc=5C room=78
-t=424 f=555 in= gm=0B sub=00 fc=5D room=78
-t=425 f=556 in= gm=0B sub=00 fc=5E room=78
-t=426 f=557 in= gm=0B sub=00 fc=5F room=78
-t=427 f=558 in= gm=0B sub=00 fc=60 room=78
-t=428 f=559 in= gm=0B sub=00 fc=61 room=78
-t=429 f=560 in= gm=0B sub=00 fc=62 room=78
-t=430 f=561 in= gm=0B sub=00 fc=63 room=78
-t=431 f=562 in= gm=0B sub=00 fc=64 room=78
-t=432 f=563 in= gm=0B sub=00 fc=65 room=78
-t=433 f=564 in= gm=0B sub=00 fc=66 room=78
-t=434 f=565 in= gm=0B sub=00 fc=67 room=78
-t=435 f=566 in= gm=0B sub=00 fc=68 room=78
-t=436 f=567 in= gm=0B sub=00 fc=69 room=78
-t=437 f=568 in= gm=0B sub=00 fc=6A room=78
-t=438 f=569 in= gm=0B sub=00 fc=6B room=78
-t=439 f=570 in= gm=0B sub=00 fc=6C room=78
-t=440 f=571 in= gm=0B sub=00 fc=6D room=78
-t=441 f=572 in= gm=0B sub=00 fc=6E room=78
-t=442 f=573 in= gm=0B sub=00 fc=6F room=78
-t=443 f=574 in= gm=0B sub=00 fc=70 room=78
-t=444 f=575 in= gm=0B sub=00 fc=71 room=78
-t=445 f=576 in= gm=0B sub=00 fc=72 room=78
-t=446 f=577 in= gm=0B sub=00 fc=73 room=78
-t=447 f=578 in= gm=0B sub=00 fc=74 room=78
-t=448 f=579 in= gm=0B sub=00 fc=75 room=78
-t=449 f=580 in= gm=0B sub=00 fc=76 room=78
-t=450 f=581 in= gm=0B sub=00 fc=77 room=78
-t=451 f=582 in= gm=0B sub=00 fc=78 room=78
-t=452 f=583 in= gm=0B sub=00 fc=79 room=78
-t=453 f=584 in= gm=0B sub=00 fc=7A room=78
-t=454 f=585 in= gm=0B sub=00 fc=7B room=78
-t=455 f=586 in= gm=0B sub=00 fc=7C room=78
-t=456 f=587 in= gm=0B sub=00 fc=7D room=78
-t=457 f=588 in= gm=0B sub=00 fc=7E room=78
-t=458 f=589 in= gm=0B sub=00 fc=7F room=78
-t=459 f=590 in= gm=0B sub=00 fc=80 room=78
-t=460 f=591 in= gm=0B sub=00 fc=81 room=78
-t=461 f=592 in= gm=0B sub=00 fc=82 room=78
-t=462 f=593 in= gm=0B sub=00 fc=83 room=78
-t=463 f=594 in= gm=0B sub=00 fc=84 room=78
-t=464 f=595 in= gm=0B sub=00 fc=85 room=78
-t=465 f=596 in= gm=0B sub=00 fc=86 room=78
-t=466 f=597 in= gm=0B sub=00 fc=87 room=78
-t=467 f=598 in= gm=0B sub=00 fc=88 room=78
-t=468 f=599 in= gm=0B sub=00 fc=89 room=78
-t=469 f=600 in= gm=0B sub=00 fc=8A room=78
-t=470 f=601 in= gm=0B sub=00 fc=8B room=78
-t=471 f=602 in= gm=0B sub=00 fc=8C room=78
-t=472 f=603 in= gm=0B sub=00 fc=8D room=78
-t=473 f=604 in= gm=0B sub=00 fc=8E room=78
-t=474 f=605 in= gm=0B sub=00 fc=8F room=78
-t=475 f=606 in= gm=0B sub=00 fc=90 room=78
-t=476 f=607 in= gm=0B sub=00 fc=91 room=78
-t=477 f=608 in= gm=0B sub=00 fc=92 room=78
-t=478 f=609 in= gm=0B sub=00 fc=93 room=78
-t=479 f=610 in= gm=0B sub=00 fc=94 room=78
-t=480 f=611 in= gm=0B sub=00 fc=95 room=78
-t=481 f=612 in= gm=0B sub=00 fc=96 room=78
-t=482 f=613 in= gm=0B sub=00 fc=97 room=78
-t=483 f=614 in= gm=0B sub=00 fc=98 room=78
-t=484 f=615 in= gm=0B sub=00 fc=99 room=78
-t=485 f=616 in= gm=0B sub=00 fc=9A room=78
-t=486 f=617 in= gm=0B sub=00 fc=9B room=78
-t=487 f=618 in= gm=0B sub=00 fc=9C room=78
-t=488 f=619 in= gm=0B sub=00 fc=9D room=78
-t=489 f=620 in= gm=0B sub=00 fc=9E room=78
-t=490 f=621 in= gm=0B sub=00 fc=9F room=78
-t=491 f=622 in= gm=0B sub=00 fc=A0 room=78
-t=492 f=623 in= gm=0B sub=00 fc=A1 room=78
-t=493 f=624 in= gm=0B sub=00 fc=A2 room=78
-t=494 f=625 in= gm=0B sub=00 fc=A3 room=78
-t=495 f=626 in= gm=0B sub=00 fc=A4 room=78
-t=496 f=627 in= gm=0B sub=00 fc=A5 room=78
-t=497 f=628 in= gm=0B sub=00 fc=A6 room=78
-t=498 f=629 in= gm=0B sub=00 fc=A7 room=78
-t=499 f=630 in= gm=0B sub=00 fc=A8 room=78
-t=500 f=631 in= gm=0B sub=00 fc=A9 room=78
-t=501 f=632 in= gm=0B sub=00 fc=AA room=78
-t=502 f=633 in= gm=0B sub=00 fc=AB room=78
-t=503 f=634 in= gm=0B sub=00 fc=AC room=78
-t=504 f=635 in= gm=0B sub=00 fc=AD room=78
-t=505 f=636 in= gm=0B sub=00 fc=AE room=78
-t=506 f=637 in= gm=0B sub=00 fc=AF room=78
-t=507 f=638 in= gm=0B sub=00 fc=B0 room=78
-t=508 f=639 in= gm=0B sub=00 fc=B1 room=78
-t=509 f=640 in= gm=0B sub=00 fc=B2 room=78
-t=510 f=641 in= gm=0B sub=00 fc=B3 room=78
-t=511 f=642 in= gm=0B sub=00 fc=B4 room=78
-t=512 f=643 in= gm=0B sub=00 fc=B5 room=78
-t=513 f=644 in= gm=0B sub=00 fc=B6 room=78
-t=514 f=645 in= gm=0B sub=00 fc=B7 room=78
-t=515 f=646 in= gm=0B sub=00 fc=B8 room=78
-t=516 f=647 in= gm=0B sub=00 fc=B9 room=78
-t=517 f=648 in= gm=0B sub=00 fc=BA room=78
-t=518 f=649 in= gm=0B sub=00 fc=BB room=78
-t=519 f=650 in= gm=0B sub=00 fc=BC room=78
-t=520 f=651 in= gm=0B sub=00 fc=BD room=78
-t=521 f=652 in= gm=0B sub=00 fc=BE room=78
-t=522 f=653 in= gm=0B sub=00 fc=BF room=78
-t=523 f=654 in= gm=0B sub=00 fc=C0 room=78
-t=524 f=655 in= gm=0B sub=00 fc=C1 room=78
-t=525 f=656 in= gm=0B sub=00 fc=C2 room=78
-t=526 f=657 in= gm=0B sub=00 fc=C3 room=78
-t=527 f=658 in= gm=0B sub=00 fc=C4 room=78
-t=528 f=659 in= gm=0B sub=00 fc=C5 room=78
-t=529 f=660 in= gm=0B sub=00 fc=C6 room=78
-t=530 f=661 in= gm=0B sub=00 fc=C7 room=78
-t=531 f=662 in= gm=0B sub=00 fc=C8 room=78
-t=532 f=663 in= gm=0B sub=00 fc=C9 room=78
-t=533 f=664 in= gm=0B sub=00 fc=CA room=78
-t=534 f=665 in= gm=0B sub=00 fc=CB room=78
-t=535 f=666 in= gm=0B sub=00 fc=CC room=78
-t=536 f=667 in= gm=0B sub=00 fc=CD room=78
-t=537 f=668 in= gm=0B sub=00 fc=CE room=78
-t=538 f=669 in= gm=0B sub=00 fc=CF room=78
-t=539 f=670 in= gm=0B sub=00 fc=D0 room=78
-t=540 f=671 in= gm=0B sub=00 fc=D1 room=78
-t=541 f=672 in= gm=0B sub=00 fc=D2 room=78
-t=542 f=673 in= gm=0B sub=00 fc=D3 room=78
-t=543 f=674 in= gm=0B sub=00 fc=D4 room=78
-t=544 f=675 in= gm=0B sub=00 fc=D5 room=78
-t=545 f=676 in= gm=0B sub=00 fc=D6 room=78
-t=546 f=677 in= gm=0B sub=00 fc=D7 room=78
-t=547 f=678 in= gm=0B sub=00 fc=D8 room=78
-t=548 f=679 in= gm=0B sub=00 fc=D9 room=78
-t=549 f=680 in= gm=0B sub=00 fc=DA room=78
-ticks=550 video_frames=681
+ticks=392 video_frames=523
 dump VRAM -> .vram (65536 bytes)
 dump CRAM -> .cram (128 bytes)
 dump VSRAM -> .vsram (128 bytes)
 dump SRAM -> .sram (65536 bytes)
 dump M68K BUS FF0000-FFFFFF -> .m68k
-frames=550
+frames=392

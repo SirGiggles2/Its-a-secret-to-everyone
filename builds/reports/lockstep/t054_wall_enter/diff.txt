@@ -2,7 +2,7 @@ ticks compared: 550  (nes 550, gen 550)  padded rows skipped: 0
 
 == KEY mismatches (first 0) ==
 
-== full-RAM ratchet vs baseline (none cells): new 98, earlier 0, improved 0 ==
+== full-RAM ratchet vs baseline (none cells): new 97, earlier 0, improved 0 ==
   NEW     t=    0 $0014 TileBufSelector                  NES 7A  GEN 00
   NEW     t=    0 $0028 ObjTimer                         NES 02  GEN 00
   NEW     t=    0 $0052 ProcessedNarrowObj               NES 01  GEN 00
@@ -20,7 +20,6 @@ ticks compared: 550  (nes 550, gen 550)  padded rows skipped: 0
   NEW     t=    0 $0344 RightSpriteOffset                NES 4C  GEN 00
   NEW     t=    0 $034D RoomAllDead                      NES 00  GEN 01
   NEW     t=    0 $049E ObjCollidedTile                  NES 00  GEN 26
-  NEW     t=    0 $04CE ShutterTrigger                   NES 00  GEN 01
   NEW     t=    0 $0528 SkippedDemo                      NES 5A  GEN 00
   NEW     t=    0 $0530 PlayAreaAttrs                    NES AA  GEN 00
   NEW     t=    0 $0531 PlayAreaAttrs+1                  NES AA  GEN 00
@@ -102,7 +101,7 @@ ticks compared: 550  (nes 550, gen 550)  padded rows skipped: 0
   NEW     t=  367 $04A7 ObjCollidedTile+9                NES 24  GEN 00
   NEW     t=  367 $0524 SpawnCycle                       NES 05  GEN 02
 
-== tick 0: 70 unmasked cells differ ==
+== tick 0: 69 unmasked cells differ ==
   $0014 TileBufSelector                  NES 7A  GEN 00
   $0028 ObjTimer                         NES 02  GEN 00
   $0052 ProcessedNarrowObj               NES 01  GEN 00
@@ -120,7 +119,6 @@ ticks compared: 550  (nes 550, gen 550)  padded rows skipped: 0
   $0344 RightSpriteOffset                NES 4C  GEN 00
   $034D RoomAllDead                      NES 00  GEN 01
   $049E ObjCollidedTile                  NES 00  GEN 26
-  $04CE ShutterTrigger                   NES 00  GEN 01
   $0528 SkippedDemo                      NES 5A  GEN 00
   $0530 PlayAreaAttrs                    NES AA  GEN 00
   $0531 PlayAreaAttrs+1                  NES AA  GEN 00
@@ -220,5 +218,5 @@ ticks compared: 550  (nes 550, gen 550)  padded rows skipped: 0
 
 masked cells differing at tick 0: 381 (not evaluated)
 
-GATE: FAIL  key=550 fails=0  ratchet new=98 earlier=0 improved=0 baseline=NONE  allow=0
-VERDICT: DIVERGE (112 unmasked cells ever differ)
+GATE: FAIL  key=550 fails=0  ratchet new=97 earlier=0 improved=0 baseline=NONE  allow=0
+VERDICT: DIVERGE (111 unmasked cells ever differ)

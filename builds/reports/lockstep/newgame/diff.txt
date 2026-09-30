@@ -1,22 +1,25 @@
-frames compared: 266  (nes 266, gen 266)
+ticks compared: 266  (nes 266, gen 266)  padded rows skipped: 0
 
-== sync frame 0: 122 unmasked cells differ ==
-  $0011 IsUpdatingMode                   NES 01  GEN 00
+== KEY mismatches (first 0) ==
+
+== full-RAM ratchet vs baseline (82 cells): new 0, earlier 0, improved 13 ==
+  IMPROVED $0011 IsUpdatingMode (baseline t=0)
+  IMPROVED $002A ObjTimer+2 (baseline t=0)
+  IMPROVED $002B ObjTimer+3 (baseline t=0)
+  IMPROVED $002C ObjTimer+4 (baseline t=0)
+  IMPROVED $002D ObjTimer+5 (baseline t=0)
+  IMPROVED $002E ObjTimer+6 (baseline t=0)
+  IMPROVED $002F ObjTimer+7 (baseline t=0)
+  IMPROVED $0030 ObjTimer+8 (baseline t=0)
+  IMPROVED $0031 ObjTimer+9 (baseline t=0)
+  IMPROVED $0032 ObjTimer+10 (baseline t=0)
+  IMPROVED $0033 ObjTimer+11 (baseline t=0)
+  IMPROVED $04CE ShutterTrigger (baseline t=0)
+  IMPROVED $0526 CaveSourceRoomId (baseline t=0)
+
+== tick 0: 66 unmasked cells differ ==
   $0014 TileBufSelector                  NES 7A  GEN 00
   $0028 ObjTimer                         NES 02  GEN 00
-  $002A ObjTimer+2                       NES 00  GEN 01
-  $002B ObjTimer+3                       NES 00  GEN 02
-  $002C ObjTimer+4                       NES 00  GEN 03
-  $002D ObjTimer+5                       NES 00  GEN 04
-  $002E ObjTimer+6                       NES 00  GEN 05
-  $002F ObjTimer+7                       NES 00  GEN 06
-  $0030 ObjTimer+8                       NES 00  GEN 07
-  $0031 ObjTimer+9                       NES 00  GEN 08
-  $0032 ObjTimer+10                      NES 00  GEN 09
-  $0033 ObjTimer+11                      NES 00  GEN 0A
-  $0060 ChaseOtherTarget                 NES 00  GEN 01
-  $0061 ChaseTargetX                     NES 00  GEN 87
-  $0062 ChaseTargetY                     NES 00  GEN 72
   $007D ObjX+13                          NES 21  GEN 00
   $00E8 CurColumn                        NES FF  GEN 00
   $00EF CurOpenedDoors+1                 NES 02  GEN 00
@@ -29,23 +32,7 @@ frames compared: 266  (nes 266, gen 266)
   $0343 LeftSpriteOffset                 NES 48  GEN 00
   $0344 RightSpriteOffset                NES 4C  GEN 00
   $034D RoomAllDead                      NES 00  GEN 01
-  $03BC Moldorm_ObjBounceDir             NES 60  GEN 00
-  $03D0 ObjAnimCounter                   NES 03  GEN 00
-  $0493 ObjUninitialized+1               NES FF  GEN 00
-  $0494 ObjUninitialized+2               NES FF  GEN 00
-  $0495 ObjUninitialized+3               NES FF  GEN 00
-  $0496 ObjUninitialized+4               NES FF  GEN 00
-  $0497 ObjUninitialized+5               NES FF  GEN 00
-  $0498 ObjUninitialized+6               NES FF  GEN 00
-  $0499 ObjUninitialized+7               NES FF  GEN 00
-  $049A ObjUninitialized+8               NES FF  GEN 00
-  $049B ObjUninitialized+9               NES FF  GEN 00
-  $049C ObjUninitialized+10              NES FF  GEN 00
-  $049D ObjUninitialized+11              NES FF  GEN 00
   $049E ObjCollidedTile                  NES 00  GEN 26
-  $04CE ShutterTrigger                   NES 00  GEN 01
-  $0525 CurEdgeSpawnCell                 NES 40  GEN 00
-  $0526 CaveSourceRoomId                 NES FF  GEN 00
   $0528 SkippedDemo                      NES 5A  GEN 00
   $0530 PlayAreaAttrs                    NES AA  GEN 00
   $0531 PlayAreaAttrs+1                  NES AA  GEN 00
@@ -97,45 +84,13 @@ frames compared: 266  (nes 266, gen 266)
   $055F PlayAreaAttrs+47                 NES AA  GEN 00
   $0636 IsRegisterSaveFileOptionEnabled  NES 01  GEN 00
   $0637 IsEliminateSaveFileOptionEnabled NES 01  GEN 00
-  $0638 Names                            NES 15  GEN 00
-  $0639 Names+1                          NES 12  GEN 00
-  $063A Names+2                          NES 17  GEN 00
-  $063B Names+3                          NES 14  GEN 00
-  $063C Names+4                          NES 24  GEN 00
-  $063D Names+5                          NES 24  GEN 00
-  $063E Names+6                          NES 24  GEN 00
-  $063F Names+7                          NES 24  GEN 00
-  $0640 Names+8                          NES 24  GEN 00
-  $0641 Names+9                          NES 24  GEN 00
-  $0642 Names+10                         NES 24  GEN 00
-  $0643 Names+11                         NES 24  GEN 00
-  $0644 Names+12                         NES 24  GEN 00
-  $0645 Names+13                         NES 24  GEN 00
-  $0646 Names+14                         NES 24  GEN 00
-  $0647 Names+15                         NES 24  GEN 00
-  $0648 Names+16                         NES 24  GEN 00
-  $0649 Names+17                         NES 24  GEN 00
-  $064A Names+18                         NES 24  GEN 00
-  $064B Names+19                         NES 24  GEN 00
-  $064C Names+20                         NES 24  GEN 00
-  $064D Names+21                         NES 24  GEN 00
-  $064E Names+22                         NES 24  GEN 00
-  $064F Names+23                         NES 24  GEN 00
-  $0650 SaveSlotHearts                   NES 22  GEN 00
-  $0651 SaveSlotHearts+1                 NES FF  GEN 00
 
-== cells equal at frame 0 that diverge later: 10 ==
-  f=   1 $0341 RollingSpriteIndex               NES 01  GEN 00
-  f=   1 $0342 FirstSpriteIndex                 NES 01  GEN 00
-  f= 121 $0070 ObjX                             NES 76  GEN 78
-  f= 121 $0098 ObjRoomItemId                    NES 02  GEN 08
-  f= 121 $0394 ObjRemDistance                   NES FE  GEN 00
-  f= 121 $03A8 Item_ObjItemLifetime             NES 80  GEN 00
-  f= 121 $03F8 ObjInputDir                      NES 02  GEN 00
-  f= 123 $03E4 ObjAnimFrame                     NES 01  GEN 00
-  f= 125 $0065 UndergroundEntranceTile          NES 26  GEN 00
-  f= 190 $0084 ObjY                             NES 8C  GEN 8D
+== cells equal at tick 0 that diverge later: 3 ==
+  t=    1 $0341 RollingSpriteIndex               NES 01  GEN 00
+  t=    1 $0342 FirstSpriteIndex                 NES 01  GEN 00
+  t=  125 $0065 UndergroundEntranceTile          NES 26  GEN 00
 
-masked cells differing at frame 0: 386 (not evaluated)
+masked cells differing at tick 0: 381 (not evaluated)
 
-VERDICT: DIVERGE (132 unmasked cells ever differ)
+GATE: PASS  key=266 fails=0  ratchet new=0 earlier=0 improved=13 baseline=82  allow=0
+VERDICT: MATCH (69 unmasked cells ever differ)

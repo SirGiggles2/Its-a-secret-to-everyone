@@ -1,6 +1,29 @@
-parsing command-line flags: --gdi --config=C:\tmp\claude_probe\run_nes\config.ini --lua=C:\tmp\claude_probe\run_nes\capture.lua C:\tmp\claude_probe\run_nes\rom\game.nes
+parsing command-line flags: --config=C:\tmp\claude_probe\ow_walk_run_nes\config.ini --lua=C:\tmp\claude_probe\ow_walk_run_nes\capture.lua C:\tmp\claude_probe\ow_walk_run_nes\rom\game.nes
 Using SDL2 for host input (keyboard + gamepads)
 Connected SDL gamepad, device index 0, instance ID 1, name Xbox 360 Controller
+ROM was not a multiple of 1024 bytes, and not a recognized header size: 16. Assume it's purely ROM data.
+------
+BEGIN NES rom analysis:
+Found iNES header:
+pr=128,ch=0,wr=8,vr=8,ba=1,pa=0|1,brd=MAPPER001,sys=
+Since this is iNES we can (somewhat) confidently parse PRG/CHR banks to hash.
+headerless rom hash: SHA1:A12D74C73A0481599A5D832361D168F4737BBCF6
+headerless rom hash:  MD5:D9A1631D5C32D35594B9484862A26CBA
+DB: hash MD5:D9A1631D5C32D35594B9484862A26CBA not in game database.
+DB: hash SHA1:A12D74C73A0481599A5D832361D168F4737BBCF6 not in game database.
+Could not locate game in bizhawk gamedb
+Chose board from nescartdb:
+pr=128,ch=0,wr=8,vr=8,ba=1,pa=0|0,brd=NES-SNROM,sys=NES-NTSC
+Final game detection results:
+pr=128,ch=0,wr=8,vr=8,ba=1,pa=0|0,brd=NES-SNROM,sys=NES-NTSC
+"Legend of Zelda, The"
+Implemented by: class SxROM
+END NES rom analysis
+------
+Using NES system region of NTSC
+Core reported BoardID: "SxROM"
+Active firmware:
+	NES+Bios_FDS : 57FE1BDEE955BB48D357E463CCBF129496930B62
 ROM was not a multiple of 1024 bytes, and not a recognized header size: 16. Assume it's purely ROM data.
 ------
 BEGIN NES rom analysis:
