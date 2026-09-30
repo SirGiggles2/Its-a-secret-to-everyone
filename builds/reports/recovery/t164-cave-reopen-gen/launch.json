@@ -1,0 +1,12 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\builds\\Debug.md",
+  "rom_sha256": "a84d848e4bea7f7111b309bcf5a876198ebe90de6fb503f0ab9cd9a34ab1f732",
+  "script": "tools\\probes\\t164_cave_reopen_gen.lua",
+  "script_sha256": "5a49ccc15828294507aaf9cbb46611a1ac996aef99cee2ac49ad324d4fb54419",
+  "seed_gen_save_sha256": "1c1c80bccdb1ca995a367a662c1c60a9512b6f63ee74f2a6460c0b79fa1f4841",
+  "symbols": {},
+  "exit_code": 0,
+  "collected": [
+    "t164_cave_reopen_gen.txt"
+  ]
+}

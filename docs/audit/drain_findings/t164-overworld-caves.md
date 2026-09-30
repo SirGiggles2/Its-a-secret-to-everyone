@@ -1,8 +1,8 @@
-# T-164 — non-dungeon overworld cave system (in progress)
+# T-164 — non-dungeon overworld cave system
 
 - **NES source**: `reference/aldonunez/Z_05.asm:HandleWarpOW/SetTargetMode/CheckSubroom`; `Z_01.asm:InitCave/UpdateCavePerson`; `Z_00.asm:DriveTune0`.
 - **Drained C**: `src/oracle/cave/cave_runtime.c:cavert_init_cave/cavert_update_cave_person` (partial; active owner is `src/game/cave/cave_dispatch.c`).
-- **Coverage**: PARTIAL (all 20 Q1 interiors had historical static captures; one connected gift/exit route accepted; other cave interactions, shortcut traversal and Q2 connected entrances remain unverified).
+- **Coverage**: PASS at cave-runtime scope (all 20 Q1 interiors have historical static captures; distinct interactions, shortcut rotation, changed Q2 cave routing, audio handoff and a disk save/reopen now have named evidence). Natural hidden-door opening and item mechanics remain separate OW/item tasks.
 - **Stance**: EXTEND existing native cave, world-metadata and audio paths. No new game-derived assets.
 
 ## Inventory and scope
@@ -12,16 +12,16 @@
 | IDs | Behavior | Q1 representative rooms | Evidence now |
 |---|---|---|---|
 | `$6A` | one-time sword gift | `$77` | Connected entry, pickup, exit accepted in T-011; T-164 audio verified. |
-| `$6B,$72` | one-time choice/gift | `$06,$0E` | `$6B` both choices and `$72` gift set matching inventory/flag vs NES; revisit/SRAM TODO. |
-| `$6C,$6D` | heart-gated sword gifts | `$0A,$09` | NES/Genesis low-heart rejection and threshold pickup both PASS; revisit/SRAM TODO. |
+| `$6B,$72` | one-time choice/gift | `$06,$0E` | `$6B` both choices and `$72` gift set matching inventory/flag vs NES; shared one-time re-entry and serializer paths covered by `$7B/$71`. |
+| `$6C,$6D` | heart-gated sword gifts | `$0A,$09` | NES/Genesis low-heart rejection and threshold pickup both PASS; shared one-time re-entry and serializer paths covered. |
 | `$6E` | four-way shortcut cave | `$1D,$23,$49,$79` | Mode C layout, all three stair choices from `$1D`, and one rotation from each other source room match NES through OW exit. |
-| `$6F,$73` | text-only cave | `$1C,$75` | Live dialogue reaches state 2 with matching cave/ware/flag state; historical static text capture carried; exit TODO. |
-| `$70` | money game | `$10` | Minimum-stake rejection and one win/loss each PASS after native amount initialization; other random permutations TODO. |
-| `$71` | door-repair charge | `$01` | 20-rupee charge settles to 30 from 50; leave/re-enter hides person on both; SRAM reopen TODO. |
-| `$74` | medicine/letter shop | `$02` | Letter use and both potion prices/grades PASS with rejection and settled debit; revisit TODO. |
+| `$6F,$73` | text-only cave | `$1C,$75` | Live dialogue reaches state 2 with matching cave/ware/flag state; historical static text capture and T-135 common exit carried. |
+| `$70` | money game | `$10` | Minimum-stake rejection and one win/loss each PASS after source-exact native amount initialization; no exhaustive RNG seed sweep. |
+| `$71` | door-repair charge | `$01` | 20-rupee charge settles to 30 from 50; leave/re-enter hides person on both; shared serializer covered by `$7B`. |
+| `$74` | medicine/letter shop | `$02` | Letter use and both potion prices/grades PASS with rejection and settled debit; shared repeatable-stock branch covered by `$78`. |
 | `$75,$76` | paid hints | `$1A,$70` | Distinct text selectors `$14/$16/$18/$1A` covered with zero-rupee rejection and settled debit; repeated-selector slots rely on shared branch. |
 | `$77–$7A` | regular shop variants | `$25,$0C,$12,$34` | All 12 listed wares reject zero rupees, accept exact price and settle to zero on both; `$78` leave/re-enter restores stock; item-specific inventory effects remain delegated to shared item system. |
-| `$7B–$7D` | one-time secret rupee awards | `$13,$0F,$2B` | All three payouts PASS vs NES (30/100/10); `$7B` leave/re-enter hides person; SRAM reopen TODO. |
+| `$7B–$7D` | one-time secret rupee awards | `$13,$0F,$2B` | All three payouts PASS vs NES (30/100/10); `$7B` hides person on revisit and its flag/payout survive a real SRAM close/reopen. |
 
 The historical `docs/parity/cave_status.md` 20/20 claim covers static backgrounds, sprites and text stream integrity at a sampled frame. It does **not** establish shopping, payment, secret flags, shortcuts or connected Quest 2 routing. T-011/T-133/T-134/T-135/T-143 remain accepted at their recorded scopes.
 
@@ -45,9 +45,12 @@ The historical `docs/parity/cave_status.md` 20/20 claim covers static background
 16. **Other hint selectors.** `$75` first hint rejects zero rupees, charges 5 and selects text `$14`; `$76` middle hint rejects zero, charges 30 and selects `$18`. Both settle to zero on NES and Genesis. Combined with the third-hint probes above, the distinct selectors `$14/$16/$18/$1A` and both cave branches are exercised. Evidence `builds/reports/recovery/t164-hint-other-{nes,gen}-{75-0,76-1}/`. The remaining `$75` middle and `$76` first slots use the already exercised `$14` selector and common payment branch; their displayed price data is source-derived, but those two transactions are not separately replayed.
 17. **Medicine second potion.** After letter use, the right ware `$E0` rejects zero rupees and accepts 68, setting potion grade 2, ware `$FF` and room bit `$10`; both systems settle to zero rupees/debit. Evidence `builds/reports/recovery/t164-medicine-alt-{nes,gen}/`. Together with the first potion check, both distinct stock items are covered.
 18. **Shop revisit.** After buying `$78`'s first ware for 160, both systems settle to zero, leave to OW mode 5, and re-enter cave `$78` with its person and original `$1C` ware restored. The room-taken bit stays `$10`, but regular shops ignore it when initializing repeatable stock, as in NES `InitCave`. Evidence `builds/reports/recovery/t164-shop-revisit-{nes,gen}-78/`. Other shop IDs share this branch; a fresh per-shop revisit matrix would repeat the same code path.
+19. **Disk SRAM persistence.** A live Genesis `$7B` cave payout set room `$13`'s taken flag `$0692=$10`, paid 30 rupees, exited to OW, then used controller Start → pad-2 Up+A → C/Select → Start to save. Mode 8 choice and mode 0 File Select return were observed; the saved logical flag byte `$60A5=$10` and 65,536-byte private SaveRAM file were written on process exit. A **new** hidden EmuHawk process seeded only with that private SaveRAM (`SHA-256 1c1c80bccdb1ca995a367a662c1c60a9512b6f63ee74f2a6460c0b79fa1f4841`) loaded the same ROM (`a84d848e…`) and selected Continue by controller. One frame after OW room `$77` appeared, rupees `$1E` and live flag `$0692=$10` matched disk; verdict PASS. Evidence `builds/reports/recovery/t164-cave-{save,reopen}-gen/{launch.json,t164_cave_*_gen.txt}`. The private save image and game ROM are **not** committed or distributed. `tools/debug/run_probe.py --seed-gen-save` copies a supplied private SaveRAM into a fresh isolated profile before launch; it never touches the user's emulator session.
 
 `Debug.bat` built the initial repair SHA above, then the shortcut revision SHA-256 `0ab095342bc183b48beaee41378576d1b175b7a00d2c3fe1072dd29f4202d7b3`, and finally the money-game repair SHA-256 `a84d848e4bea7f7111b309bcf5a876198ebe90de6fb503f0ab9cd9a34ab1f732`. The connected sword cave `t011_sword_cave` passed **1117/1117 KEY ticks** on the shortcut build, full-RAM ratchet new 0/earlier 0/improved 13. The short Q2 overworld consumer `q2_ow` passed **60/60 KEY ticks** on the earlier cave-audio/routing build, ratchet new 0/earlier 0/improved 11. Money-game repair changes only the money-game initialization branch; its focused live probes pass on the new build. This carries prior connected behavior without a broad cave re-sweep.
 
-## Remaining work
+## Acceptance boundary and remaining owners
 
-Check item-specific regular-shop inventory effects through the shared item owner, natural Q2 secret-opening routes, and cave-flag SRAM reopen if generic world-flag persistence evidence is insufficient. Text-only cave exit uses the same Mode B→A/4→5 transition accepted in T-135, and one-time cave hiding is covered by `$7B` and `$71` re-entry plus the shared NES `InitCave` branch. Do not rerun the historical 20-cave static sweep unless a shared renderer change invalidates it; its legacy launchers kill all EmuHawk processes on timeout and are unsafe for the user's session.
+T-164 cave runtime is accepted at the tested scope: all 20 cave IDs have the inherited static presentation capture; every distinct cave interaction has live focused NES/Genesis evidence or a named shared-path consumer; Q1 location data covers 78 cave selectors, Q2 changed selectors are checked after installation, and one acquired cave flag survived disk SRAM reopen. Text-only cave exits use the cave-ID-independent Mode B→A/4→5 transition accepted in T-135. The money-game tables and RNG selection were ported from NES source; one generated win and loss were exercised, without a 256-seed distribution sweep.
+
+Natural opening of hidden Q2 cave doors (burning, bombs, object pushes and other overworld secrets) belongs to **T-054**, which remains TODO. Shop item IDs/prices and cave routing to `item_take_item` are verified here; item-specific inventory mechanics belong to **T-052**. Those dependencies keep whole-game P4/P9 acceptance open. The cave audio trace proves XGM song ownership and silence timing, while human audible balance remains part of general P7.5 audio completion. Do not rerun the historical 20-cave static sweep unless a shared renderer change invalidates it; its legacy launchers kill all EmuHawk processes on timeout and are unsafe for the user's session.

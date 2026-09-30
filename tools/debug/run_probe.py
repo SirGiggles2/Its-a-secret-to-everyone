@@ -137,10 +137,16 @@ def main() -> int:
     ap.add_argument("out", type=Path)
     ap.add_argument("--timeout", type=int, default=120)
     ap.add_argument("--rom", type=Path, default=ROOT / "builds" / "Debug.md")
+    ap.add_argument("--seed-gen-save", type=Path,
+                    help="copy an existing private Genesis SaveRAM into the new isolated profile")
     ap.add_argument("--collect", nargs="*", default=[])
     ap.add_argument("--subst", nargs="*", default=[],
                     help="KEY=VALUE: replace @KEY@ in the Lua before launch")
     a = ap.parse_args()
+
+    seed_save = a.seed_gen_save.resolve(strict=True) if a.seed_gen_save else None
+    if seed_save and not seed_save.is_file():
+        raise SystemExit(f"seed SaveRAM is not a file: {seed_save}")
 
     out = a.out.resolve()
     out.mkdir(parents=True, exist_ok=True)
@@ -159,6 +165,10 @@ def main() -> int:
     if stage.exists():
         shutil.rmtree(stage)
     stage.mkdir(parents=True)
+    if seed_save:
+        save_dir = stage / "GEN" / "SaveRAM"
+        save_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(seed_save, save_dir / "game.SaveRAM")
     probe = stage / a.lua.name
     probe.write_text(text, encoding="utf-8")
     shutil.copy2(probe, out / a.lua.name)
@@ -226,6 +236,7 @@ def main() -> int:
         "rom_sha256": sha(a.rom),
         "script": str(a.lua),
         "script_sha256": sha(out / a.lua.name),
+        "seed_gen_save_sha256": sha(seed_save) if seed_save else None,
         "symbols": {k: f"0x{v:06X}" for k, v in syms.items()},
         "exit_code": code,
         "collected": collected,

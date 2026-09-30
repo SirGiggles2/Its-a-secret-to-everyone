@@ -1,0 +1,17 @@
+on-disk SRAM logical rupees=1E flag692=10 triforce=FF
+title frame: mode=CD room=00
+after title Start: mode=CD room=00 active=01 save-ram-copy-rupees=1E
+handoff f=1 mode=05 room=00 active=01 slot=00 rupees=00 flag=00 triforce=00
+handoff f=2 mode=05 room=00 active=01 slot=00 rupees=00 flag=00 triforce=00
+handoff f=3 mode=05 room=00 active=01 slot=00 rupees=00 flag=00 triforce=00
+handoff f=4 mode=05 room=00 active=01 slot=00 rupees=00 flag=00 triforce=00
+handoff f=5 mode=05 room=00 active=01 slot=00 rupees=00 flag=00 triforce=00
+handoff f=6 mode=05 room=00 active=01 slot=00 rupees=00 flag=00 triforce=00
+handoff f=7 mode=05 room=00 active=01 slot=00 rupees=00 flag=00 triforce=00
+handoff f=8 mode=05 room=00 active=01 slot=00 rupees=00 flag=00 triforce=00
+handoff f=12 mode=05 room=00 active=01 slot=00 rupees=00 flag=00 triforce=00
+handoff f=16 mode=05 room=00 active=01 slot=00 rupees=00 flag=00 triforce=00
+handoff f=20 mode=05 room=00 active=01 slot=00 rupees=00 flag=00 triforce=00
+handoff f=24 mode=05 room=00 active=01 slot=00 rupees=00 flag=00 triforce=00
+after File Select Start: reached=true frame=25 restored_after=1 mode=05 room=77 slot=00 rupees=1E flag692=10 triforce=FF
+VERDICT: PASS

@@ -1,0 +1,15 @@
+ow_room=13 selector=84
+armed scene=00 raw=24 ram=24 x=78 y=7D
+after_trigger mode=10 cave=01 sentinel=00 x=70 y=7D
+state lvl_phase=00 mode_state=00 style=00 tile=00 room=13
+mode=0B cave=7B room=13 state=02 flags=25 wares=3F,98,7F hearts=FF rupees=FF text_done=true
+take state=08 ware=98 rupees=01 credit=1D flag=10
+settled rupees=1E credit=00
+ware_index=1 item=98 award=30 PASS
+leave_pre scene=02 x=70 y=DD action=00 mode_state=00 phase=00
+leave mode=0A room=13 x=70 y=DF action=00 joy=00 phase=05 start_y=DF
+outside mode=05 room=13 flag=10
+pause mode=05 sub=00 flag=10
+choice mode=08 sub=00 flag=10
+selected mode=08 sub=01 flag=10
+saved mode=00 sub=01 live_flag=10 save_flag=10 PASS
