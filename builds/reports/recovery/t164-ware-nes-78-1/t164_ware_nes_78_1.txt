@@ -1,0 +1,5 @@
+mode=0B cave=78 room=0C state=02 flags=0F wares=1C,19,C6 hearts=22 rupees=00 text_done=true
+reject state=02 ware=19 rupees=00 debit=00 flag=00
+buy state=04 ware=FF rupees=63 debit=63 flag=10
+settled rupees=00 debit=00
+ware_index=1 item=19 price=100 PASS

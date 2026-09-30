@@ -1,0 +1,11 @@
+{
+  "rom": "roms\\Legend of Zelda, The (USA).nes",
+  "rom_sha256": "8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac",
+  "script": "tools\\probes\\t164_shop_wares_nes.lua",
+  "script_sha256": "8ed1ec5825a82a036e70d3b781f029ab14c002bdc8efb3b9c1c7e82abec87a2f",
+  "symbols": {},
+  "exit_code": 0,
+  "collected": [
+    "t164_ware_nes_79_1.txt"
+  ]
+}
