@@ -229,14 +229,14 @@ end
 -- places Link on NES ($70/$84/$98/$394) calls gen_link_pos(x, y, nes_dir)
 -- to place him on Genesis. face: 0 down, 1 up, 2 left, 3 right
 -- (RoomRom/src/roomrom_main_state.h). No-op on NES. Read back.
-local GEN_PLAYERS = tonumber("0xFF0F80")
+local GEN_PLAYERS = tonumber("0xFF0F84")
 -- Link's movement state proper lives in RoomRom/src/main.c statics:
 -- s_link_dir (link_dir_t, 4-byte int: 1 down, 2 up, 3 left, 4 right) and
 -- s_link_grid_offset (s8, NES ObjGridOffset $394 equivalent). A teleport
 -- must reset them as the NES stage resets $98/$394, else the next turn
 -- snaps Link toward a stale grid point.
-local GEN_LINK_DIR = tonumber("0xFF390E")
-local GEN_LINK_GRID = tonumber("0xFF3914")
+local GEN_LINK_DIR = tonumber("0xFF3912")
+local GEN_LINK_GRID = tonumber("0xFF3918")
 local NES_DIR_TO_LINK_DIR = { [0x01] = 4, [0x02] = 3, [0x04] = 1, [0x08] = 2 }
 local NES_DIR_TO_FACE = { [0x01] = 3, [0x02] = 2, [0x04] = 0, [0x08] = 1 }
 local function gen_link_pos(x, y, nes_dir)

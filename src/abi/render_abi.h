@@ -62,6 +62,11 @@ void render_vram_write_words(const unsigned short *src, unsigned short count);
 void render_cram_open_write(unsigned short slot);
 void render_cram_write_color(unsigned short slot, unsigned short value);
 void render_cram_upload(const unsigned short *src, unsigned short count);
+/* T-168: 1 = CRAM writes go out in the next VBlank (SGDK DMA queue, one
+ * transfer per frame; gameplay), 0 = at once (front ends that wait for
+ * VBlank themselves). Switching to 0 sends the current colors at once. */
+void render_cram_defer(unsigned char on);
+void render_cram_defer(unsigned char on);
 
 /* Phase 12.2 SGDK-1 cleanup: load count colors starting at CRAM
  * start_slot (palette-color index 0..63). Used for sub-palette swaps

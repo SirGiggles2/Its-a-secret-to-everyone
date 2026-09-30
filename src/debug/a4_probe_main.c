@@ -244,9 +244,49 @@ extern void music_play(unsigned char song_bitmap);
  * the heartbeat. Probes that need it write the arm magic first. */
 extern unsigned char enemy_loop_probe_is_armed(void);
 
+/* T-168: SGDK's heap runs from the end of .bss to MEMORY_HIGH ($FFF600),
+ * straight through the NES RAM mirror at $FF8000 (A4 base). A temporary
+ * heap buffer that reached past $FF8000 overwrote NES cells: the gameplay
+ * init_video font reload unpacked into [$FF7480, $FF8080) once .bss grew
+ * ~130 bytes, writing GameMode $12 and CurSaveSlot $16 (write watch:
+ * unpack PC $770, A1 = $FF8013). Wall the mirror off: allocate the free
+ * space below $FF8000 as a filler, then one block from $FF8000 to the heap
+ * top (kept), then free the filler. Later allocations stay below $FF8000
+ * or fail (NULL) instead of corrupting NES RAM. MEM_allocAt cannot do
+ * this (it only honors the address when the current free block is too
+ * small). */
+static void heap_wall_nes_mirror(void)
+{
+    /* Block = 2-byte header + data. The wall's header must sit below the
+     * mirror ($FF7FFE; NES $0000 is game scratch), so the filler covers
+     * [free start, $FF7FFE) and the wall's data starts at $FF8000. SGDK
+     * heap pointers read $E0FFxxxx: compare the low 24 bits. */
+    /* The probe stays allocated until the end: a freed block is not
+     * reused by the next MEM_alloc, which would shift the filler (and put
+     * the wall's header on NES $0002, measured). The probe block is
+     * [start, start + 4). */
+    unsigned char *probe = (unsigned char *)MEM_alloc(2);
+    unsigned long start;
+    void *filler = 0;
+    void *wall;
+    if (probe == 0) return;
+    start = ((unsigned long)probe - 2ul) & 0xFFFFFFul;
+    if (start + 4ul + 2ul < 0xFF7FFEul)
+        filler = MEM_alloc((u16)(0xFF7FFEul - (start + 4ul) - 2ul));
+    wall = MEM_alloc((u16)(MEM_getLargestFreeBlock() - 2u));
+    if (filler) MEM_free(filler);
+    MEM_free(probe);
+    /* Probe-visible result (masked stack-page cell NES $01F8): 1 = the
+     * wall sits at $FF8000. */
+    *(volatile unsigned char *)0xFF81F8ul =
+        (unsigned char)((((unsigned long)wall & 0xFFFFFFul) == 0xFF8000ul) ? 1u : 0u);
+}
+
 int debug_main_after_a4(bool hardReset)
 {
     (void) hardReset;
+
+    heap_wall_nes_mirror();
 
     /* T-125: pad 2 only ever needs the NES buttons (NES controller 2 has
      * A/B/Start/Select/D-pad); the 6-button read runs every VBlank. */
@@ -347,6 +387,7 @@ int debug_main_after_a4(bool hardReset)
             {
                 s_state = COMBINED_STATE_FS;
                 s_prev_joy = 0u;
+                render_cram_defer(0u);   /* the File Select writes CRAM itself */
                 frontend_video_layout();
                 render_display_enable(1);
                 save_game_boot();

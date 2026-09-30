@@ -125,14 +125,33 @@ if sys == "GEN" and PRESET.gen_entry == "xyz" then
     if not ok then fail("X+Y+Z chord not accepted (6-button pad configured?)") return end
     meta:write("gen_entry=xyz (debug chord, all items unlocked)\n")
 else
-    idle(120); press({ Start = true }, 6); idle(240); press({ Start = true }, 6)
+    idle(120)
+    local function tr(tag)
+        local rg = emu.getregisters()
+        local r = function(x) return memory.read_u8(RAM_BASE + x, RAM_DOM) end
+        meta:write(string.format("TR %s f=%d gm=%02X sub=%02X slot=%02X act=%02X%02X%02X room=%02X pc=%X\n",
+            tag, emu.framecount(), r(0x12), r(0x13), r(0x16), r(0x633), r(0x634), r(0x635), r(0xEB), rg["M68K PC"] or 0))
+    end
+    for _ = 1, 6 do joypad.set({ Start = true }, 1); emu.frameadvance(); if sys == "GEN" then tr("s1") end end
+    for _ = 1, 120 do joypad.set({}, 1); emu.frameadvance(); if sys == "GEN" then tr("i1") end end
+    if sys == "GEN" and event.onmemorywrite then
+        event.onmemorywrite(function(addr, val)
+            local rg = emu.getregisters()
+            local sp = rg["M68K A7"] or 0
+            local st = {}
+            for k = 0, 63, 2 do st[#st + 1] = string.format("%04X", memory.read_u16_be((sp + k) & 0xFFFFFF, "M68K BUS")) end
+            meta:write(string.format("WR f=%d addr=%X val=%s pc=%X a4=%X a0=%X a1=%X sp=%X stack=%s\n", emu.framecount(),
+                addr or 0, tostring(val), rg["M68K PC"] or 0, rg["M68K A4"] or 0,
+                rg["M68K A0"] or 0, rg["M68K A1"] or 0, sp, table.concat(st, " ")))
+        end, 0xFF8012, "M68K BUS")
+    end
+    for _ = 1, 6 do joypad.set({ Start = true }, 1); emu.frameadvance(); if sys == "GEN" then tr("s2") end end
+    for _ = 1, 60 do joypad.set({}, 1); emu.frameadvance(); if sys == "GEN" then tr("i2") end end
 end
 local sync = -1
 for i = 1, 1500 do
     if gm() == 0x05 and room() ~= 0 then sync = i; break end
-    if i <= 40 or i % 30 == 1 then     -- boot timeline (read on a no-sync failure)
-        local rg = emu.getregisters()
-        meta:write(string.format("boot pc=%X a4=%X ", rg["M68K PC"] or 0, rg["M68K A4"] or 0))
+    if i % 30 == 1 then     -- boot timeline (read on a no-sync failure)
         meta:write(string.format("boot i=%d gm=%02X sub=%02X room=%02X\n", i, gm(),
             memory.read_u8(RAM_BASE + 0x13, RAM_DOM), room()))
     end

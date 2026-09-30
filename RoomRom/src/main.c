@@ -1056,8 +1056,13 @@ static void init_video(void)
      * layout. Let SGDK refresh its internal 64x64 stride cache, then
      * immediately override the table addresses before anything renders.
      * BG_A and BG_B intentionally share $C000; BG_B mirrors BG_A during
-     * scrolls instead of leaking a different room through color 0. */
-    VDP_setPlaneSize(64, 64, TRUE);
+     * scrolls instead of leaking a different room through color 0.
+     * T-168: setupVram FALSE. TRUE also re-laid SGDK's tables and reloaded
+     * its default font (unused in gameplay), unpacking it into a heap
+     * buffer that ran into the NES RAM mirror at $FF8000 (see
+     * heap_wall_nes_mirror, a4_probe_main.c). The stride cache is set
+     * either way; the addresses are set just below. */
+    VDP_setPlaneSize(64, 64, FALSE);
     VDP_setBGAAddress(0xC000u);
     VDP_setBGBAddress(0xC000u);
     VDP_setWindowAddress(0xE000u);
@@ -3052,7 +3057,8 @@ void roomrom_debug_enter(void)
     nes_ram[0x0526u] = 0xFFu;
 
     s_joy_prev = 0u;
-        init_video();
+    render_cram_defer(1u);              /* T-168: palettes in VBlank */
+    init_video();
     /* PR-4a: init scene-bank state machine BEFORE first scene_load so the
      * first scene_load enqueues into a clean state. */
     level_chr_swap_init();

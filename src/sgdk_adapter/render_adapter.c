@@ -186,6 +186,7 @@ static unsigned short s_fade_snapshot[64];
  * Replaces a 64-word VDP read-back per edge (~35 scanlines in a busy UW
  * room, which pushed bomb-flash frames over budget). */
 static unsigned short s_cram_shadow[64];
+
 static const unsigned short *s_cram_gray = (const unsigned short *)0;
 
 static unsigned short cram_out(unsigned short w)
@@ -194,19 +195,92 @@ static unsigned short cram_out(unsigned short w)
     return s_cram_gray[((w >> 1) & 0x7u) | ((w >> 2) & 0x38u) | ((w >> 3) & 0x1C0u)];
 }
 
-void render_cram_set_grayscale(const unsigned short *word_to_gray)
+/* T-168: in gameplay CRAM goes out in VBlank, as the NES only writes its
+ * palette in the NMI. A CRAM write while the VDP draws changes the colors
+ * from that line down for one frame (and shows a CRAM dot streak): room
+ * transitions wrote palettes at lines 17-178 (probe $01FA). Deferred mode:
+ * writes update the shadow and s_cram_dma, and one CRAM DMA per frame is
+ * queued for SGDK's VBlank process (the buffer is read then, so later
+ * writes in the same frame are included). The front ends (title, File
+ * Select) wait for VBlank themselves and never run that process: they
+ * keep immediate writes (render_cram_defer(0)). */
+static unsigned short s_cram_dma[64];
+static unsigned char s_cram_defer = 0u;
+static unsigned long s_cram_queued_vt = 0xFFFFFFFFul;
+
+static void cram_queue(void)
+{
+    if (s_cram_queued_vt == vtimer) return;
+    DMA_queueDma(DMA_CRAM, s_cram_dma, 0u, 64u, 2u);
+    s_cram_queued_vt = vtimer;
+}
+
+/* Store count colors from start_slot: shadow always; the VDP now
+ * (immediate mode) or at the next VBlank (deferred). */
+static void cram_store(unsigned short start_slot, const unsigned short *src,
+                       unsigned short count)
+{
+    unsigned short slot = start_slot;
+    if (s_cram_defer) {
+        while (count--) {
+            s_cram_shadow[slot & 0x3Fu] = *src;
+            s_cram_dma[slot++ & 0x3Fu] = cram_out(*src++);
+        }
+        cram_queue();
+        return;
+    }
+    render_set_autoinc_word();
+    VDP_CTRL_LONG = 0xC0000000UL
+                  | (((unsigned long)(start_slot * 2u) & 0x3FFFu) << 16);
+    while (count--) {
+        s_cram_shadow[slot++ & 0x3Fu] = *src;
+        VDP_DATA_WORD = cram_out(*src++);
+    }
+}
+
+/* Re-send the whole shadow through the grayscale table (deferred or now). */
+static void cram_resend_all(void)
 {
     unsigned char i;
-    s_cram_gray = word_to_gray;
+    if (s_cram_defer) {
+        for (i = 0u; i < 64u; i++) s_cram_dma[i] = cram_out(s_cram_shadow[i]);
+        cram_queue();
+        return;
+    }
     render_set_autoinc_word();
     VDP_CTRL_LONG = 0xC0000000UL;
     for (i = 0u; i < 64u; i++) VDP_DATA_WORD = cram_out(s_cram_shadow[i]);
 }
 
+void render_cram_defer(unsigned char on)
+{
+    if (s_cram_defer && !on) {
+        s_cram_defer = 0u;
+        cram_resend_all();          /* the front end draws at once */
+        return;
+    }
+    if (!s_cram_defer && on) {
+        unsigned char i;
+        for (i = 0u; i < 64u; i++) s_cram_dma[i] = cram_out(s_cram_shadow[i]);
+        s_cram_queued_vt = 0xFFFFFFFFul;
+    }
+    s_cram_defer = on;
+}
+
+void render_cram_set_grayscale(const unsigned short *word_to_gray)
+{
+    s_cram_gray = word_to_gray;
+    cram_resend_all();
+}
+
 void render_cram_fade_capture(void)
 {
-    VDP_CTRL_LONG = 0x00000020UL;
     unsigned char i;
+    if (s_cram_defer) {             /* the VDP may still hold last frame's */
+        for (i = 0; i < 64u; i++) s_fade_snapshot[i] = s_cram_shadow[i];
+        return;
+    }
+    VDP_CTRL_LONG = 0x00000020UL;
     for (i = 0; i < 64u; i++) {
         s_fade_snapshot[i] = VDP_DATA_WORD;
     }
@@ -217,9 +291,8 @@ void render_cram_fade_apply(unsigned char step, unsigned char total)
     if (total == 0u) return;
     if (step > total) step = total;
     unsigned short remaining = (unsigned short)(total - step);
-
-    VDP_CTRL_LONG = 0xC0000000UL;
     unsigned char i;
+    unsigned short faded[64];
     for (i = 0; i < 64u; i++) {
         unsigned short c = s_fade_snapshot[i];
         /* Each channel: 4-bit value in low 4 of nibble, even-step encoded
@@ -231,13 +304,18 @@ void render_cram_fade_apply(unsigned char step, unsigned char total)
         b = (unsigned short)((b * remaining) / total) & 0x000Eu;
         g = (unsigned short)((g * remaining) / total) & 0x000Eu;
         r = (unsigned short)((r * remaining) / total) & 0x000Eu;
-        s_cram_shadow[i] = (unsigned short)((b << 8) | (g << 4) | r);
-        VDP_DATA_WORD = cram_out(s_cram_shadow[i]);
+        faded[i] = (unsigned short)((b << 8) | (g << 4) | r);
     }
+    cram_store(0u, faded, 64u);
 }
 
 void render_cram_read(unsigned short *dst, unsigned short count)
 {
+    unsigned short i = 0u;
+    if (s_cram_defer) {             /* intended colors (maybe not sent yet) */
+        while (count--) *dst++ = s_cram_shadow[i++ & 0x3Fu];
+        return;
+    }
     render_set_autoinc_word();
     VDP_CTRL_LONG = 0x00000020UL;
     while (count--) *dst++ = VDP_DATA_WORD;
@@ -322,13 +400,7 @@ void render_set_plane_b_word(unsigned short col, unsigned short row,
 
 void render_load_palette(unsigned short idx, const unsigned short *src)
 {
-    unsigned short count = CRAM_COLORS_PER_PAL;
-    unsigned short slot = (unsigned short)((idx * 16u) & 0x3Fu);
-    render_cram_open_write((unsigned short)(idx * 16u));
-    while (count--) {
-        s_cram_shadow[slot++ & 0x3Fu] = *src;
-        VDP_DATA_WORD = cram_out(*src++);
-    }
+    cram_store((unsigned short)((idx * 16u) & 0x3Fu), src, CRAM_COLORS_PER_PAL);
 }
 
 void render_chr_upload(unsigned short vram_addr,
@@ -382,22 +454,14 @@ void render_cram_open_write(unsigned short slot)
 /* Open CRAM at slot and write one color word. */
 void render_cram_write_color(unsigned short slot, unsigned short value)
 {
-    render_cram_open_write(slot);
-    s_cram_shadow[slot & 0x3Fu] = value;
-    VDP_DATA_WORD = cram_out(value);
+    cram_store((unsigned short)(slot & 0x3Fu), &value, 1u);
 }
 
 /* Open CRAM at offset 0 and stream count color words. */
 void render_cram_upload(const unsigned short *src, unsigned short count)
 {
     unsigned long bytes = (unsigned long)count * 2UL;
-    unsigned short slot = 0u;
-    render_set_autoinc_word();
-    VDP_CTRL_LONG = 0xC0000000UL;
-    while (count--) {
-        s_cram_shadow[slot++ & 0x3Fu] = *src;
-        VDP_DATA_WORD = cram_out(*src++);
-    }
+    cram_store(0u, src, count);
     dma_stats_record(bytes);
 }
 
@@ -409,12 +473,7 @@ void render_cram_subrange_upload(unsigned short start_slot,
                                  unsigned short count)
 {
     unsigned long bytes = (unsigned long)count * 2UL;
-    unsigned short slot = start_slot;
-    render_cram_open_write(start_slot);
-    while (count--) {
-        s_cram_shadow[slot++ & 0x3Fu] = *src;
-        VDP_DATA_WORD = cram_out(*src++);
-    }
+    cram_store((unsigned short)(start_slot & 0x3Fu), src, count);
     dma_stats_record(bytes);
 }
 
