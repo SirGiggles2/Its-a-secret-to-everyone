@@ -211,6 +211,11 @@ static void debug_poll_title(void)
         s_state = COMBINED_STATE_ROOMROM;
         probe_publish();
         roomrom_debug_enter();
+        /* Debug entry bypasses File Select's Q1/Q2 card. NES secret gates
+         * read QuestNumbers[CurSaveSlot], not s_current_quest. Mirror the
+         * selected debug quest there after roomrom_debug_enter resets RAM. */
+        if (RAM(0x0016u) < 3u)
+            RAM(0x062Du + RAM(0x0016u)) = xyz_edge ? 1u : 0u;
 
         /* P6.1 (2026-05-19): Debug.md gameplay-entry unlocks every item
          * so the inventory subscreen renders a fully-populated view

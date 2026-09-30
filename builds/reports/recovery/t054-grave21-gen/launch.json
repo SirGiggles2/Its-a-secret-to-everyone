@@ -1,0 +1,19 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\builds\\Debug.md",
+  "rom_sha256": "b1228b96fea159462062467de641787cab0fb1fca673a5b991de6268901529f8",
+  "script": "tools\\probes\\t054_grave_gen.lua",
+  "script_sha256": "9a9abfea978296fffa7817ab13d63b4575a4244e32f06be41db8ba254ebea353",
+  "seed_gen_save_sha256": null,
+  "symbols": {
+    "players": "0xFF0F80",
+    "s_in_gameplay": "0xFF32CC",
+    "s_link_dir": "0xFF388A",
+    "s_link_grid_offset": "0xFF3890"
+  },
+  "exit_code": 0,
+  "collected": [
+    "t054_grave21_gen.txt",
+    "t054_grave21_gen.bin",
+    "t054_grave21_gen.png"
+  ]
+}

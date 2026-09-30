@@ -1,0 +1,15 @@
+{
+  "rom": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\roms\\Legend of Zelda, The (USA).nes",
+  "rom_sha256": "8f72dc2e98572eb4ba7c3a902bca5f69c448fc4391837e5f8f0d4556280440ac",
+  "script": "C:\\Users\\Jake Diggity\\Documents\\GitHub\\FINAL TRY\\tools\\lockstep\\capture.lua",
+  "script_sha256": "cc3ac20c9003bf1661c6c93b5f6ddb54e49fd4e8b61e6136cd39bc23f9449c8b",
+  "seed_gen_save_sha256": null,
+  "symbols": {
+    "players": "0xFF0F80",
+    "s_b_item": "0xFF004C",
+    "s_link_dir": "0xFF388A",
+    "s_link_grid_offset": "0xFF3890"
+  },
+  "exit_code": 0,
+  "collected": []
+}
