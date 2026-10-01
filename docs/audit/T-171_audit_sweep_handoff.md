@@ -129,6 +129,11 @@ match the NES that did not; suite 51/51 throughout.
   fix the cost (`run_lockstep --pc-profile F0:F1` + `pc_profile.py
   <dir>/gen.pcprof`).
 
+- LAG is part of the sweep (runs worse = fix): `tools/lockstep/lag_scan.py`
+  compares video frames per game tick NES vs Genesis over `--frame-dump`
+  runs. Found: OW room $38 at 100% CPU (now 0 overruns; margin thin), level
+  load +3 frames, pause open +3, continue +5. Tracked as T-172.
+
 ## Open queue (from docs/audit/baseline_mismatch.md, 27 cells)
 
 Work top-down. Each line = cell, presets@first tick, what is known.

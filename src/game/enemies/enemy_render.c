@@ -849,6 +849,26 @@ static unsigned short s_xlat_tile[256];
 static unsigned short s_xlat_attr[256];
 static unsigned char s_xlat_key = 0xFFu;
 
+/* Tiles whose copy already holds the colors: drawn with sprite PAL1
+ * whatever NES sub-palette the attrs name. */
+static inline unsigned char xlat_force_pal1(unsigned short tid)
+{
+    return (unsigned char)(
+        (tid >= ROOMROM_BOSS_SUBPAL3_TILE_BASE &&
+         tid < ROOMROM_BOSS_SUBPAL3_TILE_BASE + ROOMROM_BOSS_SUBPAL3_TILE_COUNT) ||
+        (tid >= ROOMROM_FIREBALL_SUBPAL3_TILE_BASE &&
+         tid < ROOMROM_FIREBALL_SUBPAL3_TILE_BASE + ROOMROM_FIREBALL_SUBPAL3_TILE_COUNT) ||
+        (tid >= ROOMROM_SPARK_SUBPAL3_TILE_BASE &&
+         tid < ROOMROM_SPARK_SUBPAL3_TILE_BASE + ROOMROM_SPARK_SUBPAL3_TILE_COUNT) ||
+        (tid >= ROOMROM_PT1_PAIR_TILE_BASE &&
+         tid < ROOMROM_PT1_PAIR_TILE_BASE + ROOMROM_PT1_PAIR_TILE_COUNT));
+}
+
+/* Fast-path entries carry xlat_force_pal1 in bit 15 (tile ids are 11 bits),
+ * so a sprite costs one table read instead of four range checks
+ * (T-171: busy OW room $38 ran at the frame budget). */
+#define XLAT_PAL1 0x8000u
+
 static void xlat_refresh(void)
 {
     unsigned char key = (unsigned char)((s_boss_bank_active ? 1u : 0u) |
@@ -862,36 +882,39 @@ static void xlat_refresh(void)
     s_xlat_key = key;
     for (t = 0u; t < 256u; ++t) {
         if (t == 0x44u || t == 0x45u ||
-            ((t & 1u) && t != 0xF3u && !(t >= NES_FIRE_TILE_FIRST && t <= NES_FIRE_TILE_LAST)))
+            ((t & 1u) && t != 0xF3u && !(t >= NES_FIRE_TILE_FIRST && t <= NES_FIRE_TILE_LAST))) {
             s_xlat_tile[t] = XLAT_SLOW;          /* attrs-dependent / lazy CHR */
-        else
-            s_xlat_tile[t] = translate_tile((unsigned char)t, 0u);
+        } else {
+            unsigned short tid = translate_tile((unsigned char)t, 0u);
+            s_xlat_tile[t] = (unsigned short)((tid & 0x07FFu) |
+                                              (xlat_force_pal1(tid) ? XLAT_PAL1 : 0u));
+        }
     }
 }
 
 /* == translate_attrs(attrs, translate_tile(tile, attrs)). */
 static inline unsigned short xlat_sat(unsigned char tile, unsigned char attrs)
 {
-    unsigned short tid = s_xlat_tile[tile];
+    unsigned short e = s_xlat_tile[tile];
+    unsigned short tid;
+    unsigned char force;
     unsigned short sat;
-    if ((attrs & (META_ATTR_MARKER | ITEM_ATTR_MARKER)) || tid == XLAT_SLOW)
+    if ((attrs & (META_ATTR_MARKER | ITEM_ATTR_MARKER)) || e == XLAT_SLOW) {
         tid = translate_tile(tile, attrs);
-    else if (tile >= 0xC0u && tile != 0xF3u && s_boss_bank_active &&
-             (attrs & 0x03u) == 3u)
+        force = xlat_force_pal1(tid);
+    } else if (tile >= 0xC0u && tile != 0xF3u && s_boss_bank_active &&
+               (attrs & 0x03u) == 3u) {
         /* T-125: the one attrs-dependent boss-bank case of translate_tile
          * (sub-pal 3 copy); the table holds the sub-pal 0-2 bank tile. */
         tid = (unsigned short)(ROOMROM_BOSS_SUBPAL3_TILE_BASE +
                                (unsigned short)(tile - 0xC0u));
+        force = 1u;
+    } else {
+        tid = e;
+        force = (unsigned char)((e & XLAT_PAL1) != 0u);
+    }
     sat = (unsigned short)(s_xlat_attr[attrs] | (tid & 0x07FFu));
-    if ((tid >= ROOMROM_BOSS_SUBPAL3_TILE_BASE &&
-         tid < ROOMROM_BOSS_SUBPAL3_TILE_BASE + ROOMROM_BOSS_SUBPAL3_TILE_COUNT) ||
-        (tid >= ROOMROM_FIREBALL_SUBPAL3_TILE_BASE &&
-         tid < ROOMROM_FIREBALL_SUBPAL3_TILE_BASE + ROOMROM_FIREBALL_SUBPAL3_TILE_COUNT) ||
-        (tid >= ROOMROM_SPARK_SUBPAL3_TILE_BASE &&
-         tid < ROOMROM_SPARK_SUBPAL3_TILE_BASE + ROOMROM_SPARK_SUBPAL3_TILE_COUNT) ||
-        (tid >= ROOMROM_PT1_PAIR_TILE_BASE &&
-         tid < ROOMROM_PT1_PAIR_TILE_BASE + ROOMROM_PT1_PAIR_TILE_COUNT))
-        sat = (unsigned short)((sat & 0x9FFFu) | (RENDER_PAL1 << 13));
+    if (force) sat = (unsigned short)((sat & 0x9FFFu) | (RENDER_PAL1 << 13));
     return sat;
 }
 
