@@ -8,6 +8,7 @@
 #include "../../../RoomRom/src/roomrom_vram_map.h" /* ROOMROM_BG_TILE_BASE */
 #include "../../../RoomRom/src/roomrom_main_state.h" /* roomrom_main_current_scene */
 #include "render/ow_render.h"    /* roomrom_ow_room_render_set_tile */
+#include "../dungeon/uw_render.h"  /* roomrom_uw_room_render_palette_at */
 
 /* Plane-bridge: NES PPU nametable ($2000-$2FFF) writes mapped to
  * Genesis Plane A cells. Uses bg_sparse_tile_lut[nes_tile_id][sub_pal]
@@ -336,7 +337,14 @@ static void emit_nametable_record(unsigned char hi,
                                             nes_tile)) {
             continue;
         }
-        unsigned short raw_slot = bg_sparse_tile_lut[nes_tile][0];
+        /* A name-table write keeps the cell's attribute (PPU): in the UW
+         * play area that is the room's palette (T-171 t129 t5134: a 2x2
+         * of $26 under inner palette 3 was drawn with palette 0). */
+        const unsigned char pal =
+            (roomrom_main_current_scene() == ROOMROM_MAIN_SCENE_UW &&
+             cell_row >= 8u && cell_row < 30u && cell_col < 32u)
+            ? roomrom_uw_room_render_palette_at(cell_col, cell_row) : 0u;
+        unsigned short raw_slot = bg_sparse_tile_lut[nes_tile][pal & 3u];
         /* Mirror tile_word() (ow_render.c): VRAM tile = ROOMROM_BG_TILE_BASE
          * + sparse slot; unmapped (0xFFFF) -> blank tile 0. The original
          * code wrote the raw slot WITHOUT the +BG_BASE bias, so every text
