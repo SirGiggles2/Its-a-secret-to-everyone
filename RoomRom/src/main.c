@@ -2361,6 +2361,12 @@ static void scroll_finalize_room(void)
     s_scene == SCENE_UW ? roomrom_uw_room_render_get_level() : 0u,
     s_scene == SCENE_UW ? roomrom_uw_room_render_get_quest() : 0u);
     request_boss_chr_if_boss_room();
+    /* InitMode_EnterRoom -> UpdatePlayerPositionMarker: the map dot moves
+     * to the new room here (t054_uw_block42_nes: NES f994; the Genesis
+     * play path moved it 3 frames later). */
+    roomrom_hud_refresh_marker(nes_ram[0x00EBu],
+                               (unsigned char)(s_scene == SCENE_UW),
+                               nes_ram[0x0015u]);
 }
 
 /* T-132: OW -> dungeon level entry, NES order.
@@ -3499,7 +3505,7 @@ static unsigned char play_update_objects(void)
     /* T-132: no map dot during the curtain (mode 3); mode 4 draws it. */
     if (s_lvl_phase == LVL_NONE || s_lvl_phase == LVL_STEP_OUT ||
         s_lvl_phase == LVL_PLAY_INIT)
-        roomrom_hud_refresh_marker(s_room_id,
+        roomrom_hud_refresh_marker(nes_ram[0x00EBu],   /* RoomId */
                                    (unsigned char)(s_scene == SCENE_UW),
                                    nes_ram[0x0015u]);
     /* Phase 7 root-cause fix #6 2026-05-16 â€” sync C-side
@@ -4123,6 +4129,7 @@ void roomrom_debug_tick(void)
                  * 5 -> 4 at FC $C4, t131_uw_doors t788). */
                 roomrom_combat_end_move_and_animate();
                 room_init_mode5_play_palette_row7();
+
                 if (s_lvl_enter_only) roomrom_hud_set_counts_hidden(0u);
                 s_lvl_enter_only = 0u;
                 /* T-131: the room was made current at mode 4 entry
