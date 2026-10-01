@@ -190,9 +190,11 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 
 | T-174 | Missing Original Triforce room render data after boss departure | P0.14 / P6.2–6.4 | DONE | Codex | `tools/builder/inject_boss_rooms.py`, generated UW/BG artifacts, VRAM gate, Gohma/Q2 entry evidence | Explicit reward roles add 11 missing Q1/Q2 rooms; Original 342/342 generated-room consistency. Live Gohma fight/reward/departure 1087/1087 and Q2 L8 reward entry 480/480 PASS, destination screens exact. Atlas 677 with reservation guard; freshness 9/9, Windows build PASS. `docs/audit/T-174_reward_room_coverage.md`. Remaining rooms/connected quests/persistence unverified; capture-independent builder still T-080. |
 
-| T-175 | Blue ring pause icon uses red-grade palette | P7.1a | TODO | — | `src/game/inventory/inventory_render.c`, blue/red pause captures | T-174 named consumer: blue ring NES sub-pal 1, Genesis PAL3; actual CRAM comparison finds 37/39 opaque pixels wrong. Fix grade palette selection; blue/red focused RAM and sprite-color checks. T-121 red-grade acceptance remains valid. |
+| T-175 | Blue ring pause icon uses red-grade palette | P7.1a | ACTIVE | Codex | `src/game/inventory/inventory_render.c`, blue/red pause captures | T-174 named consumer: blue ring NES sub-pal 1, Genesis PAL3; actual CRAM comparison finds 37/39 opaque pixels wrong. Fix grade palette selection; blue/red focused RAM and sprite-color checks. T-121 red-grade acceptance remains valid. |
 
 ## Handoff log (newest first)
+
+- 2026-10-01 Codex: T-175 claimed. Existing live blue-ring pause state passes but 37/39 opaque pixels use red-grade colors; source `Z_07.asm:DrawItemInInventory/DrawItemBySlot` varies ring palette by item grade. Reuse existing side-effect-free `draw_item_icon` and shared subpalette routing; verify both grades only.
 
 - 2026-10-01 Codex: T-174 DONE: 11 missing reward rooms generated; Gohma 1087/1087 and Q2 L8 480/480 plus destination screens PASS. Digdogger/newgame/pause RAM consumers PASS; blue pause ring color defect newly tracked T-175. Freshness 9/9 and VRAM gate PASS; Debug SHA 8CA38EB91026E97900F7B8D9CE3DC846818615F48437FB857BDEF871346030C1. Evidence `docs/audit/T-174_reward_room_coverage.md`; shared Claude WIP preserved. Next: T-175, then remaining boss variants/connected progression.
 
