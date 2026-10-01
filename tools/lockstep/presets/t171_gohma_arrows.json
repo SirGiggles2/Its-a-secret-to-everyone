@@ -1,0 +1,120 @@
+{
+ "name": "t171_gohma_arrows",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {
+  "0x657": 1,
+  "InvArrow": 1,
+  "Bow": 1,
+  "InvRupees": 60,
+  "InvRing": 2,
+  "HeartValues": 255,
+  "HeartPartial": 255
+ },
+ "script": [
+  [
+   620,
+   ""
+  ],
+  [
+   24,
+   "U"
+  ],
+  [
+   2,
+   "A"
+  ],
+  [
+   40,
+   ""
+  ],
+  [
+   2,
+   "B"
+  ],
+  [
+   30,
+   ""
+  ],
+  [
+   2,
+   "B"
+  ],
+  [
+   30,
+   ""
+  ],
+  [
+   2,
+   "B"
+  ],
+  [
+   30,
+   ""
+  ],
+  [
+   2,
+   "B"
+  ],
+  [
+   30,
+   ""
+  ],
+  [
+   2,
+   "B"
+  ],
+  [
+   30,
+   ""
+  ],
+  [
+   2,
+   "B"
+  ],
+  [
+   30,
+   ""
+  ],
+  [
+   10,
+   ""
+  ],
+  [
+   5,
+   "R"
+  ],
+  [
+   29,
+   "U"
+  ],
+  [
+   5,
+   "L"
+  ],
+  [
+   69,
+   "U"
+  ],
+  [
+   91,
+   ""
+  ]
+ ],
+ "stages": [
+  [
+   50,
+   "wr(0x10, 6)\nwr(0x11, 0)\nwr(0x12, 2)\nwr(0x13, 0)"
+  ],
+  [
+   300,
+   "wr(0x6BAD, 0x1C)\nwr(0x11, 0)\nwr(0x12, 3)\nwr(0x13, 0)\nlog(string.format(\"boss reload lvl=%02X start=%02X room=%02X\", rd(0x10), rd(0x6BAD), rd(0xEB)))"
+  ],
+  [
+   620,
+   "wr(0x656, 2)\ngen_b_item(2)"
+  ]
+ ],
+ "clock": "play",
+ "_note": "T-171 staged Q1 L6 Gohma arrow mechanics. Level/room reload and bow inventory seeded, bow selected at tick 620. Walk out of doorway, sword beam then repeated upward controller arrows; no state correction after selection. Not connected progression."
+}

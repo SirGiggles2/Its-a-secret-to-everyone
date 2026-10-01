@@ -1,7 +1,14 @@
 # T-171 handoff: source audit sweep (new direction, user 2026-09-30)
 
-Current owner: Claude (took back 2026-10-01 after reviewing Codex commits 5bcf08a4..ec053496 + uncommitted transition.c $49E fix, suite 67/67). Live task state and newest evidence: `docs/TRACKER.md`
-row T-171. Original Claude handoff below is historical context.
+Current ownership and queue: `docs/TRACKER.md` row T-171 (Claude + Codex). This document is handoff context, not a second live board. The original Claude handoff and older evidence below remain historical.
+
+## Latest reviewed work (2026-10-01)
+
+Claude commits `3b2416f2..4e287baa` add staged L1–L4 boss fights and repair Link shove-facing, Manhandla survival/count/timer, and Gleeok death/head animation/invincibility. Claude reports 73/73 before the following focused Windows changes; do not apply that full-suite claim to a later ROM.
+
+- `74c101cc`: explicit heart helper call-before-scratch-read ordering. Dodongo pickup 1150/1150 plus fairy refill 1364/1364, unchanged baselines, four Dodongo screens exact. See `T-171_heart_helper_order.md`.
+- `60c59fd8`: Digdogger renderer now follows resident CHR bank after split; final draw survives cleared parent type. Staged L5 flute/child fight/heart pickup/north departure 1454/1454; split/child/reward/departure screens exact, early sprite-overlap differences accepted at their documented scope. Named Aquamentus 1300/1300 and Gleeok 1474/1474 consumers plus final screens PASS. See `T-171_digdogger_flute.md`.
+- The Windows ROM includes existing Claude flute/whirlwind WIP. Those unrelated uncommitted files remain preserved. Latest exact build identity and active task are in the tracker; no connected quest, three-child Digdogger, or SRAM acceptance follows from these staged fights.
 
 ## Codex progress after handoff (2026-09-30)
 
