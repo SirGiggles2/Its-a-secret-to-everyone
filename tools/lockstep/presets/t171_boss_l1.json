@@ -1,0 +1,24 @@
+{
+  "name": "t171_boss_l1",
+  "file_name": "LINK",
+  "quest": 0,
+  "items": {},
+  "script": [
+    [
+      750,
+      ""
+    ]
+  ],
+  "stages": [
+    [
+      50,
+      "wr(0x10, 1)\nwr(0x11, 0)\nwr(0x12, 2)\nwr(0x13, 0)"
+    ],
+    [
+      300,
+      "wr(0x6BAD, 0x35)\nwr(0x11, 0)\nwr(0x12, 3)\nwr(0x13, 0)\nlog(string.format(\"boss reload lvl=%02X start=%02X room=%02X\", rd(0x10), rd(0x6BAD), rd(0xEB)))"
+    ]
+  ],
+  "clock": "play",
+  "_note": "T-171 Q1 L1 boss-room 0x35 from uw_level1_quest1_rooms.json; staged entry and NES mode-3 room reload; idle only, no injected victory."
+}

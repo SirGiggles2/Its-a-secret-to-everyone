@@ -1660,6 +1660,61 @@ static void enemy_loop_check_zora(void)
     }
 }
 
+/* NES UpdateStatues: Z_04.asm:1578-1752, called by UpdateMode5Play's
+ * underworld tail in Z_07.asm:1978. Drain stance: promote the existing
+ * src/oracle/enemies/enemy_boss_runtime.c body into the linked native loop.
+ * T-171 L5 boss room $24: without this, all four statue shooters vanish. */
+static void enemy_loop_update_statues(void)
+{
+    static const unsigned char layouts[2] = { 0x24u, 0x23u };
+    static const unsigned char counts[3] = { 3u, 1u, 1u };
+    static const unsigned char start_times[4] = { 0x50u, 0x80u, 0xF0u, 0x60u };
+    static const unsigned char base_index[3] = { 0u, 4u, 6u };
+    static const unsigned char xs[8] = { 0x24u, 0xC8u, 0x24u, 0xC8u, 0x64u, 0x88u, 0x48u, 0xA8u };
+    static const unsigned char ys[8] = { 0xC0u, 0xBCu, 0x64u, 0x5Cu, 0x94u, 0x8Cu, 0x82u, 0x86u };
+    unsigned char pattern = 2u;
+    unsigned char source_slot;
+    signed char fireball_idx;
+    extern void c_shoot_fireball(unsigned int type, unsigned int slot);
+
+    if (ENEMY_STATUE_PERSON_FIREBALLS == 0u) {
+        unsigned char layout = room_get_unique_room_id();
+        if (layout == layouts[0]) pattern = 0u;
+        else if (layout == layouts[1]) pattern = 1u;
+        else return;
+    }
+
+    source_slot = (unsigned char)enemy_find_empty_monster_slot();
+    if (source_slot < 6u) return;
+
+    for (fireball_idx = (signed char)counts[pattern];
+         fireball_idx >= 0; --fireball_idx) {
+        unsigned char idx = (unsigned char)fireball_idx;
+        unsigned char timer = (unsigned char)(ENEMY_STATUE_FIREBALL_TIMER(idx) - 1u);
+        unsigned char pos_idx;
+        unsigned char fire_x, fire_y, mask;
+        ENEMY_STATUE_FIREBALL_TIMER(idx) = timer;
+        if ((unsigned char)(timer + 1u) != 0u) continue;
+        if (ENEMY_RNG_A(idx) >= 0xF0u) continue;
+
+        ENEMY_STATUE_FIREBALL_TIMER(idx) = start_times[ENEMY_RNG_A(idx) & 3u];
+        pos_idx = (unsigned char)(idx + base_index[pattern]);
+        fire_x = xs[pos_idx];
+        fire_y = ys[pos_idx];
+        ENEMY_X(source_slot) = fire_x;
+        ENEMY_Y(source_slot) = fire_y;
+
+        mask = 3u;
+        if ((unsigned char)(ENEMY_PLAYER_OBJ_Y - fire_y) < 0x18u ||
+            (unsigned char)(ENEMY_PLAYER_OBJ_Y - fire_y) >= 0xE8u)
+            mask = (unsigned char)(mask >> 1);
+        if ((unsigned char)(ENEMY_PLAYER_OBJ_X - fire_x) < 0x18u ||
+            (unsigned char)(ENEMY_PLAYER_OBJ_X - fire_x) >= 0xE8u)
+            mask = (unsigned char)(mask >> 1);
+        if (mask != 0u) c_shoot_fireball(0x55u, source_slot);
+    }
+}
+
 /* NES UpdateMode5Play after the object loop (Z_07.asm:1955): heart
  * warning, then in the OW the sea sound and CheckZora. The UW tail
  * (statues, secrets, shutters, doors) is run by the caller. */
@@ -1814,6 +1869,8 @@ void enemy_loop_tick(void)
     if (armed) {
         enemy_loop_probe_publish_live();
     }
+
+    if (RAM(0x0010u) != 0u) enemy_loop_update_statues();
 
     /* NES source: Z_05.asm:CheckUnderworldSecrets,
      * CheckSecretTriggerAllDead, CheckSecretTriggerLastBoss.

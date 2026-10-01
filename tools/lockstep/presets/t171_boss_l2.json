@@ -1,0 +1,13 @@
+{
+  "name": "t171_boss_l2",
+  "file_name": "LINK",
+  "quest": 0,
+  "items": {},
+  "script": [[750, ""]],
+  "stages": [
+    [50, "wr(0x10, 2)\nwr(0x11, 0)\nwr(0x12, 2)\nwr(0x13, 0)"],
+    [300, "wr(0x6BAD, 0x0E)\nwr(0x11, 0)\nwr(0x12, 3)\nwr(0x13, 0)\nlog(string.format('boss reload lvl=%02X start=%02X room=%02X', rd(0x10), rd(0x6BAD), rd(0xEB)))"]
+  ],
+  "clock": "play",
+  "_note": "T-171 Q1 L2 Dodongo boss-room 0x0E from uw_level2_quest1_rooms.json; GameMode 2 level warp, then proven NES mode-3 StartRoomId reload. Entry/idle behavior only, no injected victory."
+}
