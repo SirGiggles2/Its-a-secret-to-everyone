@@ -4846,7 +4846,11 @@ void roomrom_debug_tick(void)
                 /* T-131: ObjInputDir ($3F8, ButtonsDown & $0F, masked by
                  * Link_FilterInput) after Link_ModifyDirInDoorway (UW). */
                 unsigned char in_bits = 0u;
-                if (input != 0u) {
+                /* Link_HandleInput @CheckMovement: while shoved (ObjShoveDir
+                 * $C0 != 0) Link does not turn (T-171 t171_aquamentus_sword
+                 * t702: knocked back mid-swing with Up held, NES kept
+                 * facing right). */
+                if (input != 0u && nes_ram[0x00C0u] == 0u) {
                     nes_ram[0x0098u] = link_nes_bit_of(s_link_dir);
                     link_modify_dir_in_doorway();
                     in_bits = (unsigned char)(nes_ram[0x03F8u] & 0x0Fu);
