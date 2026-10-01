@@ -124,6 +124,33 @@ if sys == "GEN" and PRESET.write_watch then
     end
     meta:write(string.format("write_watch armed on %d addresses\n", #PRESET.write_watch))
 end
+-- NES side (T-171): PRESET.write_watch_nes = {6502 addresses} on the
+-- "System Bus" domain; 6502 writes are single bytes. Logs value, 6502 PC,
+-- emulator frame and FrameCounter ($15), first 400 lines.
+if sys == "NES" and PRESET.write_watch_nes then
+    if not names["System Bus"] then fail("write_watch_nes: no System Bus domain") return end
+    local wn_n, wn_ids, wn_open = 0, {}, true
+    for _, wa in ipairs(PRESET.write_watch_nes) do
+        wn_ids[#wn_ids + 1] = event.onmemorywrite(function(addr, val)
+            if not wn_open then return end
+            wn_n = wn_n + 1
+            if wn_n > 400 then
+                wn_open = false
+                for _, id in ipairs(wn_ids) do event.unregisterbyid(id) end
+                return
+            end
+            local pc = emu.getregister("PC") or 0
+            meta:write(string.format("wn addr=%04X val=%s pc=%04X frame=%d fc=%02X\n",
+                addr or wa, tostring(val), pc, emu.framecount(),
+                memory.read_u8(0x15, "System Bus")))
+        end, wa, string.format("wn_%04X", wa), "System Bus")
+    end
+    WW_CLOSE = function()
+        wn_open = false
+        for _, id in ipairs(wn_ids) do event.unregisterbyid(id) end
+    end
+    meta:write(string.format("write_watch_nes armed on %d addresses\n", #PRESET.write_watch_nes))
+end
 
 -- 2. preset into cart RAM (before frame 1)
 local wrote = 0

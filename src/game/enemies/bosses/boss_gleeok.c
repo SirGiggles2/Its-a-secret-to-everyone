@@ -699,21 +699,26 @@ void boss_gleeok_update_head(unsigned int slot)
         }
     }
 
-    /* Anim advance + draw. NES uses Anim_AdvanceAnimCounterAndSetObjPos
-     * + DrawObjectMirrored. We approximate via the existing
-     * enrt_flyer_speed_up tail (drain handles this for keese) — for
-     * the head sprite, draw-mirrored at frame 0 keeps the head-bob
-     * silhouette stable. */
+    /* LDA #$01; JSR Anim_AdvanceAnimCounterAndSetObjPosForSpriteDescriptor;
+     * LDA ObjAnimFrame, X; JSR DrawObjectMirrored. T-171: the drain drew
+     * frame 0 without advancing the counter (ObjAnimFrame+7 split,
+     * t171_gleeok_sword t842). */
     {
+        extern void z07_anim_advance_and_fetch(unsigned int val, unsigned int slot);
         extern void draw_object_mirrored(unsigned char frame,
                                          unsigned int slot);
-        draw_object_mirrored(0u, slot);
+        z07_anim_advance_and_fetch(1u, slot);
+        draw_object_mirrored((unsigned char)OBJ(0x03E4u, slot), slot);
     }
 
     c_check_monster_collisions(slot);
 
-    /* Reset metastate, shove info, invincibility — head can't die. */
+    /* ResetObjMetastate, SetShoveInfoWith0 (A = 0), STA
+     * ObjInvincibilityTimer, X: the head can't die nor stay invincible.
+     * T-171: the drain cleared $04B2 + slot, not the timer ($04F0), so
+     * a hit made the head invincible for 16 frames (t171_gleeok_sword
+     * t887: NES HP D0 -> B0 on the next hit, Genesis stayed D0). */
     core_reset_obj_metastate(slot);
     core_set_shove_info_with0(0u, slot);
-    OBJ(0x04B2u, slot) = 0u;       /* invincibility timer cleared */
+    OBJ(0x04F0u, slot) = 0u;
 }

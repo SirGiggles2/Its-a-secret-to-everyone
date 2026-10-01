@@ -188,7 +188,13 @@ unsigned int core_get_opposite_dir(unsigned int dir)
         idx--;
     }
     if (idx < 0) {
-        idx = 0;
+        /* Direction 0: Y ends at $FF and LDA OppositeDirs, Y reads
+         * OppositeDirs + $FF = $710E, a byte of the common code copied to
+         * WRAM: $A9 (constant ROM code, read from the NES WRAM dump; also
+         * in the linked PRG). T-171: BeginShove reverses a monster's ObjDir
+         * this way when it harms Link; a Gleeok head with ObjDir 0 got
+         * $A9 on the NES, $04 here (t171_gleeok_sword t473). */
+        return (0xFFu << 8) | 0xA9u;
     }
     return ((unsigned int)(unsigned char)idx << 8) |
            (unsigned int)opposite_dirs[(unsigned char)idx];

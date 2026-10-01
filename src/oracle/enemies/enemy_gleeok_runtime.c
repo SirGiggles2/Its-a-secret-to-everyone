@@ -352,14 +352,18 @@ next_segment:
 
 boss_died:
     /* Whole gleeok died. Hide the first 0x10 priority sprites, play death
-     * cry, set metastate of slot 0 (well, monster slot 1's metastate base
-     * cell) to 0x11 to spawn a death spark, and clear types of slots 2..9. */
+     * cry, ObjMetastate+1 ($406) = 0x11 for the death spark, and clear
+     * types of slots 2..10. */
     c_write_blank_priority_sprites();
     c_play_boss_death_cry();
     ROOM_OBJ_STUN_TIMER(0) = 17;
     {
+        /* STA ObjType+1, Y for Y = 1..9: slots 2..10. Slot 1 (the body)
+         * keeps its type so its death spark ($11) runs; the drain cleared
+         * slots 1..9, removing the body at once (T-171 t171_gleeok_sword
+         * t1353). Slot 11 (a fireball) is left, as the NES notes. */
         unsigned int s;
-        for (s = 1; s < 0x0A; s++)
+        for (s = 2; s <= 0x0A; s++)
             OBJ(NES_OBJ_TYPE, s) = 0;
     }
 }

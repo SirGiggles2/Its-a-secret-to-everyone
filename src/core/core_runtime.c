@@ -211,7 +211,9 @@ unsigned int corert_get_opposite_dir(unsigned int dir) {
         idx--;
     }
     if (idx < 0) {
-        idx = 0;
+        /* NES reads OppositeDirs + $FF = $710E (WRAM common code) = $A9;
+         * see core_dispatch.c core_get_opposite_dir. */
+        return (0xFFu << 8) | 0xA9u;
     }
     return ((unsigned int)(unsigned char)idx << 8) | opposite_dirs[(unsigned char)idx];
 }

@@ -191,6 +191,8 @@ def to_lua(p: dict) -> str:
         out += f'PRESET.pc_profile = {{{int(a)}, {int(b)}}}\n'
     if p.get("write_watch"):
         out += "PRESET.write_watch = {" + ",".join(f"0x{int(a):06X}" for a in p["write_watch"]) + "}\n"
+    if p.get("write_watch_nes"):
+        out += "PRESET.write_watch_nes = {" + ",".join(f"0x{int(a):04X}" for a in p["write_watch_nes"]) + "}\n"
     if p.get("snap"):
         out += "PRESET.snap = {" + ",".join(str(int(f)) for f in p["snap"]) + "}\n"
     if p.get("vframes"):

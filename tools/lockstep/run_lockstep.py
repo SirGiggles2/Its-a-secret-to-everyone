@@ -146,6 +146,9 @@ def main() -> int:
     ap.add_argument("--write-watch", metavar="ADDR,...",
                     help="Genesis: log every write (value, 68K PC, frame) to these 68K bus "
                          "addresses (hex, e.g. FF7FFE) in gen.txt (memory-corruption hunts)")
+    ap.add_argument("--write-watch-nes", metavar="ADDR,...",
+                    help="NES: log every write (value, 6502 PC, frame, FrameCounter) to these "
+                         "System Bus addresses (hex, e.g. 009D) in nes.txt")
     ap.add_argument("--full", action="store_true",
                     help="no fail-fast: the Genesis runs the whole script (milestone evidence, --bless)")
     ap.add_argument("--no-cache", action="store_true", help="rerun the NES capture")
@@ -161,6 +164,8 @@ def main() -> int:
         p["frames"] = True
     if a.snap:
         p["snap"] = [int(x) for x in a.snap.split(",")]
+    if a.write_watch_nes:
+        p["write_watch_nes"] = [int(x, 16) for x in a.write_watch_nes.split(",")]
     if a.write_watch:
         p["write_watch"] = [int(x, 16) for x in a.write_watch.split(",")]
     if a.vframes:
