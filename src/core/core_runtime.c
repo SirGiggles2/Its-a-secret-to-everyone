@@ -258,6 +258,7 @@ void corert_copy_price_list_template(void) {
 }
 
 unsigned char corert_compare_hearts_to_containers(void) {
+    RAM(0x0000) = (unsigned char)(LINK_HEARTS & 0x0F);
     return (LINK_HEARTS >> 4);
 }
 

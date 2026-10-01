@@ -341,8 +341,8 @@ void room_world_fill_hearts(void)
     ROOM_SFX_MAIN = 16u;
     if ((unsigned char)LINK_PARTIAL_HEART >= 0xF8u) {
         LINK_PARTIAL_HEART = 0u;
-        /* WORLD_TMP0 was set by caller (room_mode flow) to current
-         * partial-heart filled-count; compare to containers. */
+        /* CompareHeartsToContainers installs the container count in $00
+         * before comparing it with the full-heart count. */
         if (core_compare_hearts_to_containers() == (unsigned char)RAM(0x0000u)) {
             LINK_PARTIAL_HEART = 0xFFu;
             RAM(0x052Eu) = 0u;             /* ROOM_SWORD_BLOCKED_FLAG */

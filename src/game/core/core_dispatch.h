@@ -117,7 +117,8 @@ void core_play_effect(unsigned int val);
 /* Bump RAM($0601) with bitmask. NES PlaySample. drain at core_runtime.c:233+. */
 void core_play_sample(unsigned int val);
 
-/* Heart-container hearts >> 4. NES CompareHeartsToContainers.
+/* Store container count in RAM($00), return whole hearts >> 4.
+ * NES CompareHeartsToContainers.
  * drain at core_runtime.c:260-262. */
 unsigned char core_compare_hearts_to_containers(void);
 

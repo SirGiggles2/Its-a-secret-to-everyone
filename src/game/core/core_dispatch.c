@@ -222,7 +222,9 @@ void core_play_sample(unsigned int val)
 
 unsigned char core_compare_hearts_to_containers(void)
 {
-    /* drain at core_runtime.c:260-262. NES CompareHeartsToContainers. */
+    /* NES CompareHeartsToContainers stores the container count in $00,
+     * then returns the whole-heart count for the caller's CMP $00. */
+    RAM(0x0000u) = (uint8_t)(LINK_HEARTS & 0x0Fu);
     return (uint8_t)(LINK_HEARTS >> 4);
 }
 
