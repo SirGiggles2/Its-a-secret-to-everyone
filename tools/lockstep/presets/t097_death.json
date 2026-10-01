@@ -1,0 +1,12 @@
+{
+ "name": "t097_death",
+ "_note": "T-097: staged death in the OW start room. The stage writes exactly NES Link_BeHarmed @HandleDied (Z_01.asm:5756): HeartValues & $F0, EndGameMode (IsUpdatingMode/GameSubmode 0), HeartPartial 0, ObjState 0, GameMode $11, ObjDir 4. Then idle through UpdateMode11Death to the mode 8 continue question.",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {},
+ "script": [[60, ""], [700, ""]],
+ "stages": [
+  [60, "wr(0x66F, rd(0x66F) & 0xF0)\nwr(0x11, 0)\nwr(0x13, 0)\nwr(0x670, 0)\nwr(0xAC, 0)\nwr(0x12, 0x11)\nwr(0x98, 4)\nlog(string.format('death stage hearts=%02X gm=%02X', rd(0x66F), rd(0x12)))"]
+ ],
+ "clock": "tick"
+}

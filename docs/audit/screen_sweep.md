@@ -1,0 +1,404 @@
+| Preset | Tick | Result |
+|---|---|---|
+| hud_marker | 23 | MATCH |
+| hud_marker | 67 | MATCH |
+| hud_marker | 113 | MATCH |
+| hud_marker | 157 | MATCH |
+| hud_marker | 201 | MATCH |
+| hud_marker | 245 | MATCH |
+| newgame | 24 | MATCH |
+| newgame | 68 | MATCH |
+| newgame | 112 | MATCH |
+| newgame | 156 | MATCH |
+| newgame | 200 | MATCH |
+| newgame | 244 | MATCH |
+| ow_walk | 51 | MATCH |
+| ow_walk | 152 | MATCH |
+| ow_walk | 251 | DIFF 2 px in 1 cells |
+| ow_walk | 349 | DIFF 12 px in 2 cells |
+| ow_walk | 448 | MATCH |
+| ow_walk | 547 | MATCH |
+| q2_ow | 6 | DIFF 95 px in 5 cells |
+| q2_ow | 16 | DIFF 95 px in 5 cells |
+| q2_ow | 26 | DIFF 95 px in 5 cells |
+| q2_ow | 35 | DIFF 95 px in 5 cells |
+| q2_ow | 45 | DIFF 95 px in 5 cells |
+| q2_ow | 55 | DIFF 95 px in 5 cells |
+| save_roundtrip | 12 | MATCH |
+| save_roundtrip | 34 | MATCH |
+| save_roundtrip | 55 | MATCH |
+| save_roundtrip | 76 | MATCH |
+| save_roundtrip | 98 | MATCH |
+| save_roundtrip | 119 | MATCH |
+| t011_exit_idle | 40 | MATCH |
+| t011_exit_idle | 768 | MATCH |
+| t011_exit_idle | 845 | MATCH |
+| t011_exit_idle | 923 | MATCH |
+| t011_exit_idle | 1000 | MATCH |
+| t011_exit_idle | 1078 | MATCH |
+| t011_sword_cave | 40 | MATCH |
+| t011_sword_cave | 768 | MATCH |
+| t011_sword_cave | 845 | MATCH |
+| t011_sword_cave | 923 | MATCH |
+| t011_sword_cave | 1000 | MATCH |
+| t011_sword_cave | 1078 | MATCH |
+| t011_sword_swing_exit | 33 | MATCH |
+| t011_sword_swing_exit | 747 | MATCH |
+| t011_sword_swing_exit | 810 | MATCH |
+| t011_sword_swing_exit | 874 | MATCH |
+| t011_sword_swing_exit | 937 | MATCH |
+| t011_sword_swing_exit | 1001 | MATCH |
+| t012_route | 120 | MATCH |
+| t012_route | 1103 | MATCH |
+| t012_route | 1343 | MATCH |
+| t012_route | 1584 | MATCH |
+| t012_route | 1826 | DIFF 28 px in 2 cells |
+| t012_route | 2068 | MATCH |
+| t013_continue | 15 | MATCH |
+| t013_continue | 43 | MATCH |
+| t013_continue | 312 | MATCH |
+| t013_continue | 340 | MATCH |
+| t013_continue | 368 | MATCH |
+| t013_continue | 396 | MATCH |
+| t013_retry | 6 | MATCH |
+| t013_retry | 16 | MATCH |
+| t013_retry | 26 | MATCH |
+| t013_retry | 36 | MATCH |
+| t013_retry | 46 | MATCH |
+| t013_retry | 56 | MATCH |
+| t013_route | 1440 | MATCH |
+| t013_route | 2831 | MATCH |
+| t013_route | 4219 | MATCH |
+| t013_route | 5600 | MATCH |
+| t013_route | 6987 | DIFF 670 px in 35 cells |
+| t013_route | 8373 | MATCH |
+| t013_save | 6 | MATCH |
+| t013_save | 16 | MATCH |
+| t013_save | 26 | MATCH |
+| t013_save | 36 | MATCH |
+| t013_save | 46 | MATCH |
+| t013_save | 56 | MATCH |
+| t050_layout_plain | 21 | MATCH |
+| t050_layout_plain | 60 | MATCH |
+| t050_layout_plain | 99 | MATCH |
+| t050_layout_plain | 140 | MATCH |
+| t050_layout_plain | 179 | MATCH |
+| t050_layout_plain | 218 | MATCH |
+| t050_layout_secret | 21 | MATCH |
+| t050_layout_secret | 60 | MATCH |
+| t050_layout_secret | 99 | MATCH |
+| t050_layout_secret | 140 | MATCH |
+| t050_layout_secret | 179 | MATCH |
+| t050_layout_secret | 218 | MATCH |
+| t050_pond_fairy | 114 | MATCH |
+| t050_pond_fairy | 345 | DIFF 28 px in 2 cells |
+| t050_pond_fairy | 574 | MATCH |
+| t050_pond_fairy | 801 | MATCH |
+| t050_pond_fairy | 1026 | MATCH |
+| t050_pond_fairy | 1251 | MATCH |
+| t050_rock | 35 | MATCH |
+| t050_rock | 103 | MATCH |
+| t050_rock | 172 | MATCH |
+| t050_rock | 239 | MATCH |
+| t050_rock | 307 | MATCH |
+| t050_rock | 374 | MATCH |
+| t050_rock_push | 61 | MATCH |
+| t050_rock_push | 182 | MATCH |
+| t050_rock_push | 302 | MATCH |
+| t050_rock_push | 421 | MATCH |
+| t050_rock_push | 542 | MATCH |
+| t050_rock_push | 662 | DIFF 8 px in 3 cells |
+| t050_tree | 35 | MATCH |
+| t050_tree | 101 | MATCH |
+| t050_tree | 169 | MATCH |
+| t050_tree | 235 | MATCH |
+| t050_tree | 301 | MATCH |
+| t050_tree | 367 | DIFF 5 px in 2 cells |
+| t050_wall | 35 | MATCH |
+| t050_wall | 101 | MATCH |
+| t050_wall | 169 | DIFF 2 px in 1 cells |
+| t050_wall | 235 | MATCH |
+| t050_wall | 301 | MATCH |
+| t050_wall | 367 | MATCH |
+| t054_uw_block42_nes | 79 | MATCH |
+| t054_uw_block42_nes | 237 | MATCH |
+| t054_uw_block42_nes | 394 | MATCH |
+| t054_uw_block42_nes | 552 | DIFF 18 px in 2 cells |
+| t054_uw_block42_nes | 709 | MATCH |
+| t054_uw_block42_nes | 867 | DIFF 138 px in 12 cells |
+| t105_horizontal | 15 | MATCH |
+| t105_horizontal | 43 | MATCH |
+| t105_horizontal | 70 | MATCH |
+| t105_horizontal | 97 | MATCH |
+| t105_horizontal | 127 | MATCH |
+| t105_horizontal | 154 | MATCH |
+| t105_return | 17 | MATCH |
+| t105_return | 48 | MATCH |
+| t105_return | 79 | MATCH |
+| t105_return | 113 | MATCH |
+| t105_return | 144 | MATCH |
+| t105_return | 175 | MATCH |
+| t105_scroll | 15 | MATCH |
+| t105_scroll | 41 | MATCH |
+| t105_scroll | 67 | MATCH |
+| t105_scroll | 96 | MATCH |
+| t105_scroll | 122 | MATCH |
+| t105_scroll | 148 | MATCH |
+| t110_bomb | 29 | MATCH |
+| t110_bomb | 85 | DIFF 54424 px in 865 cells |
+| t110_bomb | 141 | MATCH |
+| t110_bomb | 196 | MATCH |
+| t110_bomb | 252 | MATCH |
+| t110_bomb | 308 | MATCH |
+| t110_bomb_enemy | 35 | MATCH |
+| t110_bomb_enemy | 101 | MATCH |
+| t110_bomb_enemy | 169 | DIFF 2 px in 1 cells |
+| t110_bomb_enemy | 235 | MATCH |
+| t110_bomb_enemy | 301 | DIFF 27 px in 2 cells |
+| t110_bomb_enemy | 367 | MATCH |
+| t110_fire | 22 | MATCH |
+| t110_fire | 63 | MATCH |
+| t110_fire | 103 | MATCH |
+| t110_fire | 144 | MATCH |
+| t110_fire | 185 | MATCH |
+| t110_fire | 225 | MATCH |
+| t111_dark_candle | 236 | MATCH |
+| t111_dark_candle | 700 | DIFF 1 px in 1 cells |
+| t111_dark_candle | 1164 | MATCH |
+| t111_dark_candle | 1627 | MATCH |
+| t111_dark_candle | 2087 | MATCH |
+| t111_dark_candle | 2547 | MATCH |
+| t114_uw_wall | 129 | MATCH |
+| t114_uw_wall | 384 | MATCH |
+| t114_uw_wall | 638 | DIFF 144 px in 4 cells |
+| t114_uw_wall | 893 | MATCH |
+| t114_uw_wall | 1146 | MATCH |
+| t114_uw_wall | 1398 | MATCH |
+| t116_book_fire | 19 | MATCH |
+| t116_book_fire | 54 | MATCH |
+| t116_book_fire | 89 | MATCH |
+| t116_book_fire | 124 | MATCH |
+| t116_book_fire | 159 | MATCH |
+| t116_book_fire | 194 | MATCH |
+| t116_rod_left | 14 | MATCH |
+| t116_rod_left | 39 | MATCH |
+| t116_rod_left | 64 | MATCH |
+| t116_rod_left | 89 | MATCH |
+| t116_rod_left | 114 | MATCH |
+| t116_rod_left | 139 | MATCH |
+| t116_rod_right | 14 | MATCH |
+| t116_rod_right | 39 | MATCH |
+| t116_rod_right | 64 | MATCH |
+| t116_rod_right | 89 | MATCH |
+| t116_rod_right | 114 | MATCH |
+| t116_rod_right | 139 | MATCH |
+| t116_rod_up | 14 | MATCH |
+| t116_rod_up | 38 | MATCH |
+| t116_rod_up | 62 | MATCH |
+| t116_rod_up | 87 | MATCH |
+| t116_rod_up | 111 | MATCH |
+| t116_rod_up | 135 | MATCH |
+| t116_shot_down | 13 | MATCH |
+| t116_shot_down | 37 | MATCH |
+| t116_shot_down | 60 | MATCH |
+| t116_shot_down | 83 | MATCH |
+| t116_shot_down | 107 | MATCH |
+| t116_shot_down | 130 | MATCH |
+| t116_shot_hit | 35 | MATCH |
+| t116_shot_hit | 101 | MATCH |
+| t116_shot_hit | 169 | DIFF 2 px in 1 cells |
+| t116_shot_hit | 235 | MATCH |
+| t116_shot_hit | 301 | DIFF 12 px in 2 cells |
+| t116_shot_hit | 367 | MATCH |
+| t116_shot_left | 13 | MATCH |
+| t116_shot_left | 37 | MATCH |
+| t116_shot_left | 60 | MATCH |
+| t116_shot_left | 83 | MATCH |
+| t116_shot_left | 107 | MATCH |
+| t116_shot_left | 130 | MATCH |
+| t116_shot_right | 13 | MATCH |
+| t116_shot_right | 37 | MATCH |
+| t116_shot_right | 60 | MATCH |
+| t116_shot_right | 83 | MATCH |
+| t116_shot_right | 107 | MATCH |
+| t116_shot_right | 130 | MATCH |
+| t116_shot_up | 13 | MATCH |
+| t116_shot_up | 36 | MATCH |
+| t116_shot_up | 58 | MATCH |
+| t116_shot_up | 81 | MATCH |
+| t116_shot_up | 104 | MATCH |
+| t116_shot_up | 126 | MATCH |
+| t120_cave_person | 6 | MATCH |
+| t120_cave_person | 16 | MATCH |
+| t120_cave_person | 26 | MATCH |
+| t120_cave_person | 36 | MATCH |
+| t120_cave_person | 46 | MATCH |
+| t120_cave_person | 56 | MATCH |
+| t120_rock_block | 38 | MATCH |
+| t120_rock_block | 112 | MATCH |
+| t120_rock_block | 187 | MATCH |
+| t120_rock_block | 262 | MATCH |
+| t120_rock_block | 336 | MATCH |
+| t120_rock_block | 409 | MATCH |
+| t121_ring1 | 5 | DIFF 95 px in 5 cells |
+| t121_ring1 | 11 | DIFF 95 px in 5 cells |
+| t121_ring1 | 18 | DIFF 95 px in 5 cells |
+| t121_ring1 | 24 | DIFF 95 px in 5 cells |
+| t121_ring1 | 31 | DIFF 95 px in 5 cells |
+| t121_ring1 | 37 | DIFF 95 px in 5 cells |
+| t121_ring2 | 5 | DIFF 95 px in 5 cells |
+| t121_ring2 | 11 | DIFF 95 px in 5 cells |
+| t121_ring2 | 18 | DIFF 95 px in 5 cells |
+| t121_ring2 | 24 | DIFF 95 px in 5 cells |
+| t121_ring2 | 31 | DIFF 95 px in 5 cells |
+| t121_ring2 | 37 | DIFF 95 px in 5 cells |
+| t123_slow_tiles | 87 | MATCH |
+| t123_slow_tiles | 258 | MATCH |
+| t123_slow_tiles | 426 | DIFF 196 px in 6 cells |
+| t123_slow_tiles | 595 | DIFF 28 px in 2 cells |
+| t123_slow_tiles | 766 | DIFF 224 px in 6 cells |
+| t123_slow_tiles | 934 | DIFF 28 px in 2 cells |
+| t128_uw_blocks | 128 | MATCH |
+| t128_uw_blocks | 381 | MATCH |
+| t128_uw_blocks | 634 | DIFF 144 px in 4 cells |
+| t128_uw_blocks | 888 | MATCH |
+| t128_uw_blocks | 1141 | MATCH |
+| t128_uw_blocks | 1392 | DIFF 36 px in 5 cells |
+| t129_enemy_sweep | 580 | MATCH |
+| t129_enemy_sweep | 1722 | MATCH |
+| t129_enemy_sweep | 2859 | MATCH |
+| t129_enemy_sweep | 3996 | DIFF 117 px in 7 cells |
+| t129_enemy_sweep | 5134 | DIFF 282 px in 6 cells |
+| t129_enemy_sweep | 6271 | DIFF 363 px in 13 cells |
+| t131_uw_doors | 99 | MATCH |
+| t131_uw_doors | 297 | DIFF 28 px in 4 cells |
+| t131_uw_doors | 495 | DIFF 196 px in 6 cells |
+| t131_uw_doors | 693 | MATCH |
+| t131_uw_doors | 889 | MATCH |
+| t131_uw_doors | 1085 | MATCH |
+| t131_uw_ndoor | 93 | MATCH |
+| t131_uw_ndoor | 279 | MATCH |
+| t131_uw_ndoor | 465 | DIFF 28 px in 2 cells |
+| t131_uw_ndoor | 649 | DIFF 144 px in 4 cells |
+| t131_uw_ndoor | 835 | MATCH |
+| t131_uw_ndoor | 1017 | MATCH |
+| t132_uw_exit | 87 | MATCH |
+| t132_uw_exit | 262 | MATCH |
+| t132_uw_exit | 436 | MATCH |
+| t132_uw_exit | 609 | DIFF 213 px in 13 cells |
+| t132_uw_exit | 782 | MATCH |
+| t132_uw_exit | 956 | MATCH |
+| t134_cave_exit | 28 | MATCH |
+| t134_cave_exit | 466 | MATCH |
+| t134_cave_exit | 519 | MATCH |
+| t134_cave_exit | 573 | MATCH |
+| t134_cave_exit | 626 | MATCH |
+| t134_cave_exit | 680 | MATCH |
+| t171_boss_l1 | 66 | MATCH |
+| t171_boss_l1 | 190 | MATCH |
+| t171_boss_l1 | 316 | MATCH |
+| t171_boss_l1 | 440 | MATCH |
+| t171_boss_l1 | 564 | MATCH |
+| t171_boss_l1 | 688 | MATCH |
+| t171_boss_l2 | 66 | MATCH |
+| t171_boss_l2 | 190 | MATCH |
+| t171_boss_l2 | 316 | MATCH |
+| t171_boss_l2 | 440 | MATCH |
+| t171_boss_l2 | 564 | MATCH |
+| t171_boss_l2 | 688 | MATCH |
+| t171_boss_l3 | 39 | MATCH |
+| t171_boss_l3 | 115 | MATCH |
+| t171_boss_l3 | 189 | MATCH |
+| t171_boss_l3 | 263 | MATCH |
+| t171_boss_l3 | 339 | DIFF 615 px in 20 cells |
+| t171_boss_l3 | 413 | DIFF 575 px in 22 cells |
+| t171_boss_l4 | 39 | MATCH |
+| t171_boss_l4 | 115 | MATCH |
+| t171_boss_l4 | 189 | MATCH |
+| t171_boss_l4 | 263 | MATCH |
+| t171_boss_l4 | 339 | DIFF 494 px in 28 cells |
+| t171_boss_l4 | 413 | DIFF 607 px in 30 cells |
+| t171_boss_l5 | 66 | MATCH |
+| t171_boss_l5 | 190 | MATCH |
+| t171_boss_l5 | 316 | DIFF 16 px in 2 cells |
+| t171_boss_l5 | 440 | DIFF 20 px in 5 cells |
+| t171_boss_l5 | 564 | DIFF 19 px in 5 cells |
+| t171_boss_l5 | 688 | DIFF 20 px in 6 cells |
+| t171_boss_l6 | 66 | MATCH |
+| t171_boss_l6 | 190 | MATCH |
+| t171_boss_l6 | 316 | MATCH |
+| t171_boss_l6 | 440 | MATCH |
+| t171_boss_l6 | 564 | MATCH |
+| t171_boss_l6 | 688 | MATCH |
+| t171_boss_l7 | 66 | MATCH |
+| t171_boss_l7 | 190 | MATCH |
+| t171_boss_l7 | 316 | DIFF 2100 px in 60 cells |
+| t171_boss_l7 | 440 | DIFF 2440 px in 70 cells |
+| t171_boss_l7 | 564 | DIFF 2490 px in 73 cells |
+| t171_boss_l7 | 688 | DIFF 2427 px in 68 cells |
+| t171_boss_l8 | 39 | MATCH |
+| t171_boss_l8 | 115 | MATCH |
+| t171_boss_l8 | 189 | MATCH |
+| t171_boss_l8 | 263 | MATCH |
+| t171_boss_l8 | 339 | DIFF 1005 px in 29 cells |
+| t171_boss_l8 | 413 | DIFF 1086 px in 28 cells |
+| t171_boss_l9 | 66 | MATCH |
+| t171_boss_l9 | 190 | MATCH |
+| t171_boss_l9 | 316 | DIFF 29538 px in 488 cells |
+| t171_boss_l9 | 440 | DIFF 60 px in 4 cells |
+| t171_boss_l9 | 564 | DIFF 60 px in 4 cells |
+| t171_boss_l9 | 688 | MATCH |
+| t171_warp_l2 | 41 | MATCH |
+| t171_warp_l2 | 123 | MATCH |
+| t171_warp_l2 | 202 | MATCH |
+| t171_warp_l2 | 281 | MATCH |
+| t171_warp_l2 | 361 | MATCH |
+| t171_warp_l2 | 440 | MATCH |
+| t171_warp_l3 | 41 | MATCH |
+| t171_warp_l3 | 123 | MATCH |
+| t171_warp_l3 | 202 | MATCH |
+| t171_warp_l3 | 281 | MATCH |
+| t171_warp_l3 | 361 | MATCH |
+| t171_warp_l3 | 440 | MATCH |
+| t171_warp_l4 | 41 | MATCH |
+| t171_warp_l4 | 123 | MATCH |
+| t171_warp_l4 | 202 | MATCH |
+| t171_warp_l4 | 281 | MATCH |
+| t171_warp_l4 | 361 | MATCH |
+| t171_warp_l4 | 440 | MATCH |
+| t171_warp_l5 | 41 | MATCH |
+| t171_warp_l5 | 123 | MATCH |
+| t171_warp_l5 | 202 | MATCH |
+| t171_warp_l5 | 281 | MATCH |
+| t171_warp_l5 | 361 | MATCH |
+| t171_warp_l5 | 440 | MATCH |
+| t171_warp_l6 | 41 | MATCH |
+| t171_warp_l6 | 123 | MATCH |
+| t171_warp_l6 | 202 | MATCH |
+| t171_warp_l6 | 281 | MATCH |
+| t171_warp_l6 | 361 | MATCH |
+| t171_warp_l6 | 440 | MATCH |
+| t171_warp_l7 | 41 | MATCH |
+| t171_warp_l7 | 123 | MATCH |
+| t171_warp_l7 | 202 | MATCH |
+| t171_warp_l7 | 281 | MATCH |
+| t171_warp_l7 | 361 | MATCH |
+| t171_warp_l7 | 440 | MATCH |
+| t171_warp_l8 | 41 | MATCH |
+| t171_warp_l8 | 123 | MATCH |
+| t171_warp_l8 | 202 | MATCH |
+| t171_warp_l8 | 281 | MATCH |
+| t171_warp_l8 | 361 | MATCH |
+| t171_warp_l8 | 440 | MATCH |
+| t171_warp_l9 | 41 | MATCH |
+| t171_warp_l9 | 123 | MATCH |
+| t171_warp_l9 | 202 | MATCH |
+| t171_warp_l9 | 281 | MATCH |
+| t171_warp_l9 | 361 | MATCH |
+| t171_warp_l9 | 440 | MATCH |
+| tektite_jump | 28 | MATCH |
+| tektite_jump | 80 | MATCH |
+| tektite_jump | 134 | MATCH |
+| tektite_jump | 187 | DIFF 3 px in 1 cells |
+| tektite_jump | 239 | MATCH |
+| tektite_jump | 291 | MATCH |
