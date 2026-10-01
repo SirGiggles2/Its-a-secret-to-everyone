@@ -18,12 +18,12 @@
 | ow_walk | 349 | DIFF 12 px in 2 cells |
 | ow_walk | 448 | MATCH |
 | ow_walk | 547 | MATCH |
-| q2_ow | 6 | DIFF 95 px in 5 cells |
-| q2_ow | 16 | DIFF 95 px in 5 cells |
-| q2_ow | 26 | DIFF 95 px in 5 cells |
-| q2_ow | 35 | DIFF 95 px in 5 cells |
-| q2_ow | 45 | DIFF 95 px in 5 cells |
-| q2_ow | 55 | DIFF 95 px in 5 cells |
+| q2_ow | 6 | MATCH |
+| q2_ow | 16 | MATCH |
+| q2_ow | 26 | MATCH |
+| q2_ow | 35 | MATCH |
+| q2_ow | 45 | MATCH |
+| q2_ow | 55 | MATCH |
 | save_roundtrip | 12 | MATCH |
 | save_roundtrip | 34 | MATCH |
 | save_roundtrip | 55 | MATCH |
@@ -126,6 +126,12 @@
 | t054_uw_block42_nes | 552 | DIFF 18 px in 2 cells |
 | t054_uw_block42_nes | 709 | MATCH |
 | t054_uw_block42_nes | 867 | DIFF 138 px in 12 cells |
+| t097_death | 6 | MATCH |
+| t097_death | 16 | MATCH |
+| t097_death | 26 | MATCH |
+| t097_death | 35 | MATCH |
+| t097_death | 45 | MATCH |
+| t097_death | 55 | MATCH |
 | t105_horizontal | 15 | MATCH |
 | t105_horizontal | 43 | MATCH |
 | t105_horizontal | 70 | MATCH |
@@ -145,7 +151,7 @@
 | t105_scroll | 122 | MATCH |
 | t105_scroll | 148 | MATCH |
 | t110_bomb | 29 | MATCH |
-| t110_bomb | 85 | DIFF 54424 px in 865 cells |
+| t110_bomb | 85 | MATCH |
 | t110_bomb | 141 | MATCH |
 | t110_bomb | 196 | MATCH |
 | t110_bomb | 252 | MATCH |
@@ -240,18 +246,18 @@
 | t120_rock_block | 262 | MATCH |
 | t120_rock_block | 336 | MATCH |
 | t120_rock_block | 409 | MATCH |
-| t121_ring1 | 5 | DIFF 95 px in 5 cells |
-| t121_ring1 | 11 | DIFF 95 px in 5 cells |
-| t121_ring1 | 18 | DIFF 95 px in 5 cells |
-| t121_ring1 | 24 | DIFF 95 px in 5 cells |
-| t121_ring1 | 31 | DIFF 95 px in 5 cells |
-| t121_ring1 | 37 | DIFF 95 px in 5 cells |
-| t121_ring2 | 5 | DIFF 95 px in 5 cells |
-| t121_ring2 | 11 | DIFF 95 px in 5 cells |
-| t121_ring2 | 18 | DIFF 95 px in 5 cells |
-| t121_ring2 | 24 | DIFF 95 px in 5 cells |
-| t121_ring2 | 31 | DIFF 95 px in 5 cells |
-| t121_ring2 | 37 | DIFF 95 px in 5 cells |
+| t121_ring1 | 5 | MATCH |
+| t121_ring1 | 11 | MATCH |
+| t121_ring1 | 18 | MATCH |
+| t121_ring1 | 24 | MATCH |
+| t121_ring1 | 31 | MATCH |
+| t121_ring1 | 37 | MATCH |
+| t121_ring2 | 5 | MATCH |
+| t121_ring2 | 11 | MATCH |
+| t121_ring2 | 18 | MATCH |
+| t121_ring2 | 24 | MATCH |
+| t121_ring2 | 31 | MATCH |
+| t121_ring2 | 37 | MATCH |
 | t123_slow_tiles | 87 | MATCH |
 | t123_slow_tiles | 258 | MATCH |
 | t123_slow_tiles | 426 | DIFF 196 px in 6 cells |
@@ -310,14 +316,14 @@
 | t171_boss_l3 | 115 | MATCH |
 | t171_boss_l3 | 189 | MATCH |
 | t171_boss_l3 | 263 | MATCH |
-| t171_boss_l3 | 339 | DIFF 615 px in 20 cells |
-| t171_boss_l3 | 413 | DIFF 575 px in 22 cells |
+| t171_boss_l3 | 339 | DIFF 124 px in 9 cells |
+| t171_boss_l3 | 413 | MATCH |
 | t171_boss_l4 | 39 | MATCH |
 | t171_boss_l4 | 115 | MATCH |
 | t171_boss_l4 | 189 | MATCH |
 | t171_boss_l4 | 263 | MATCH |
-| t171_boss_l4 | 339 | DIFF 494 px in 28 cells |
-| t171_boss_l4 | 413 | DIFF 607 px in 30 cells |
+| t171_boss_l4 | 339 | DIFF 62 px in 6 cells |
+| t171_boss_l4 | 413 | DIFF 55 px in 6 cells |
 | t171_boss_l5 | 66 | MATCH |
 | t171_boss_l5 | 190 | MATCH |
 | t171_boss_l5 | 316 | DIFF 16 px in 2 cells |
@@ -332,21 +338,21 @@
 | t171_boss_l6 | 688 | MATCH |
 | t171_boss_l7 | 66 | MATCH |
 | t171_boss_l7 | 190 | MATCH |
-| t171_boss_l7 | 316 | DIFF 2100 px in 60 cells |
-| t171_boss_l7 | 440 | DIFF 2440 px in 70 cells |
-| t171_boss_l7 | 564 | DIFF 2490 px in 73 cells |
-| t171_boss_l7 | 688 | DIFF 2427 px in 68 cells |
+| t171_boss_l7 | 316 | MATCH |
+| t171_boss_l7 | 440 | MATCH |
+| t171_boss_l7 | 564 | MATCH |
+| t171_boss_l7 | 688 | MATCH |
 | t171_boss_l8 | 39 | MATCH |
 | t171_boss_l8 | 115 | MATCH |
 | t171_boss_l8 | 189 | MATCH |
 | t171_boss_l8 | 263 | MATCH |
-| t171_boss_l8 | 339 | DIFF 1005 px in 29 cells |
-| t171_boss_l8 | 413 | DIFF 1086 px in 28 cells |
+| t171_boss_l8 | 339 | DIFF 43 px in 5 cells |
+| t171_boss_l8 | 413 | DIFF 78 px in 7 cells |
 | t171_boss_l9 | 66 | MATCH |
 | t171_boss_l9 | 190 | MATCH |
-| t171_boss_l9 | 316 | DIFF 29538 px in 488 cells |
-| t171_boss_l9 | 440 | DIFF 60 px in 4 cells |
-| t171_boss_l9 | 564 | DIFF 60 px in 4 cells |
+| t171_boss_l9 | 316 | MATCH |
+| t171_boss_l9 | 440 | MATCH |
+| t171_boss_l9 | 564 | MATCH |
 | t171_boss_l9 | 688 | MATCH |
 | t171_warp_l2 | 41 | MATCH |
 | t171_warp_l2 | 123 | MATCH |

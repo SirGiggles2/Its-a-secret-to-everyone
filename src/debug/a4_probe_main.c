@@ -257,42 +257,42 @@ extern void music_play(unsigned char song_bitmap);
  * the heartbeat. Probes that need it write the arm magic first. */
 extern unsigned char enemy_loop_probe_is_armed(void);
 
-/* T-168: SGDK's heap runs from the end of .bss to MEMORY_HIGH ($FFF600),
- * straight through the NES RAM mirror at $FF8000 (A4 base). A temporary
- * heap buffer that reached past $FF8000 overwrote NES cells: the gameplay
- * init_video font reload unpacked into [$FF7480, $FF8080) once .bss grew
- * ~130 bytes, writing GameMode $12 and CurSaveSlot $16 (write watch:
- * unpack PC $770, A1 = $FF8013). Wall the mirror off: allocate the free
- * space below $FF8000 as a filler, then one block from $FF8000 to the heap
- * top (kept), then free the filler. Later allocations stay below $FF8000
- * or fail (NULL) instead of corrupting NES RAM. MEM_allocAt cannot do
- * this (it only honors the address when the current free block is too
- * small). */
+/* T-168 / T-171: SGDK's heap runs from the end of .bss to MEMORY_HIGH
+ * ($FFF600), straight through the NES RAM mirror at $FF8000 (A4 base).
+ * At boot, SGDK internal_reset -> VDP_init -> VDP_resetScreen ->
+ * VDP_loadFont unpacks the font into a heap buffer and writes 2 bytes past
+ * its end (write watch, run_lockstep --write-watch FF7FFE: PC $770
+ * .loop_do_copy, buffer $FF73FC, frame 16), over the next block header.
+ * Where that lands moves with the size of .bss: the old filler/wall
+ * allocation then missed $FF8000 and the free space ran into NES RAM
+ * (T-171: 257 more bytes of .bss turned ObjX+2 to $FF in t129 at t122).
+ * At main the heap holds only SGDK's persistent blocks (DMA queue and
+ * buffer), then the freed font buffer and free space. Rebuild the tail:
+ * the first free block becomes one block ending at $FF7FFE, where the
+ * end-of-heap marker (size 0) goes, and MEM_pack resets the free pointer.
+ * Allocations stay below $FF8000 or fail (NULL). */
+extern u32 _bend;
+#define HEAP_END_NES_MIRROR 0xFF7FFEul
 static void heap_wall_nes_mirror(void)
 {
-    /* Block = 2-byte header + data. The wall's header must sit below the
-     * mirror ($FF7FFE; NES $0000 is game scratch), so the filler covers
-     * [free start, $FF7FFE) and the wall's data starts at $FF8000. SGDK
-     * heap pointers read $E0FFxxxx: compare the low 24 bits. */
-    /* The probe stays allocated until the end: a freed block is not
-     * reused by the next MEM_alloc, which would shift the filler (and put
-     * the wall's header on NES $0002, measured). The probe block is
-     * [start, start + 4). */
-    unsigned char *probe = (unsigned char *)MEM_alloc(2);
-    unsigned long start;
-    void *filler = 0;
-    void *wall;
-    if (probe == 0) return;
-    start = ((unsigned long)probe - 2ul) & 0xFFFFFFul;
-    if (start + 4ul + 2ul < 0xFF7FFEul)
-        filler = MEM_alloc((u16)(0xFF7FFEul - (start + 4ul) - 2ul));
-    wall = MEM_alloc((u16)(MEM_getLargestFreeBlock() - 2u));
-    if (filler) MEM_free(filler);
-    MEM_free(probe);
+    u16 *b = (u16 *)((((u32)&_bend) + 1ul) & ~1ul);   /* MEM_init's heap */
+    unsigned char ok = 0u;
+    while (*b != 0u && (*b & 1u) != 0u)                 /* persistent blocks */
+        b += *b >> 1;
+    /* The font buffer itself sits wherever .bss ends: past ~$FF7400 it
+     * spills into NES RAM before main (the pad test: [$FF74FC, $FF80FE)
+     * left font bytes in ObjX). _start_entry cleared all RAM before it;
+     * clear the 2 KB NES RAM again, as it was at power-on. */
+    memset((void *)0xFF8000ul, 0, 0x800u);
+    if (*b != 0u && ((u32)b & 0xFFFFFFul) < HEAP_END_NES_MIRROR) {
+        *b = (u16)(HEAP_END_NES_MIRROR - ((u32)b & 0xFFFFFFul));
+        *(volatile u16 *)HEAP_END_NES_MIRROR = 0u;
+        MEM_pack();
+        ok = 1u;
+    }
     /* Probe-visible result (masked stack-page cell NES $01F8): 1 = the
-     * wall sits at $FF8000. */
-    *(volatile unsigned char *)0xFF81F8ul =
-        (unsigned char)((((unsigned long)wall & 0xFFFFFFul) == 0xFF8000ul) ? 1u : 0u);
+     * heap ends at $FF7FFE. */
+    *(volatile unsigned char *)0xFF81F8ul = ok;
 }
 
 int debug_main_after_a4(bool hardReset)

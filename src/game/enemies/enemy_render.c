@@ -25,6 +25,7 @@
 #include "enemy_loop.h"   /* ENEMY_LOOP_SLOT_FIRST/LAST */
 #include "enemy_state.h"  /* ENEMY_X, ENEMY_Y, ENEMY_ALIVE_FLAG, ENEMY_THROWER_SLOT */
 #include "../../../RoomRom/src/roomrom_vram_map.h"  /* canonical ROOMROM_SPR_TILE_BASE */
+#include "../../../RoomRom/src/atlas/level_chr_swap.h"  /* sub-pal 3 cache flush key */
 
 /* NES RAM cells — see reference/aldonunez/Variables.inc. */
 #define NES_SPRITES_BASE        0x0200u   /* OAM mirror, 64 sprites x 4 bytes */
@@ -691,14 +692,117 @@ static unsigned short pt1_pair(unsigned char nes_tile, unsigned char sub_pal)
                 }
             }
         }
-        render_vram_open_write((unsigned short)((ROOMROM_PT1_PAIR_TILE_BASE + 2u * i + k) * 32u));
-        render_vram_write_words(words, 16u);
+        render_chr_upload((unsigned short)((ROOMROM_PT1_PAIR_TILE_BASE + 2u * i + k) * 32u),
+                          (const unsigned char *)words, 32u);
     }
     s_pt1_tile[i] = top;
     s_pt1_pal[i] = sub_pal;
     s_pt1_lvl[i] = lvl;
     s_pt1_used[i] = 1u;
     return (unsigned short)(ROOMROM_PT1_PAIR_TILE_BASE + 2u * i);
+}
+
+/* T-170/T-171: NES sprite sub-palette 3. PAL1 colors 12..15 hold it
+ * (roomrom_bg_palette_load_palram_full, InitMode5Play's row-7 cue); the
+ * routing table sends sub-palette 3 to PAL2 (sub-palette 1 colors), which
+ * drew the Zora, Armos, Ghini, ... in the wrong colors (t123_slow_tiles
+ * Zora: NES $0F/$1C/$16 row, Genesis $02/$22/$30). A copy of the 8x16
+ * pair with its opaque pixels +12, drawn with PAL1, shows sub-palette 3
+ * exactly. 32 cached pairs, keyed by the source tile; flushed when the
+ * scene/boss CHR state machines start or finish a swap (the source tiles
+ * change), and not filled while one is running. */
+#define SP3_PAIRS (ROOMROM_SUBPAL3_PAIR_TILE_COUNT / 2u)
+static unsigned short s_sp3_src[SP3_PAIRS];     /* source tile + 1; 0 = free */
+static unsigned short s_sp3_key = 0xFFFFu;
+/* 4bpp byte -> both pixels +12 when 1..3 (sub-palette 3 in PAL1 12..15). */
+static const unsigned char k_sp3_lut[256] = {
+    0x00u, 0x0Du, 0x0Eu, 0x0Fu, 0x04u, 0x05u, 0x06u, 0x07u,
+    0x08u, 0x09u, 0x0Au, 0x0Bu, 0x0Cu, 0x0Du, 0x0Eu, 0x0Fu,
+    0xD0u, 0xDDu, 0xDEu, 0xDFu, 0xD4u, 0xD5u, 0xD6u, 0xD7u,
+    0xD8u, 0xD9u, 0xDAu, 0xDBu, 0xDCu, 0xDDu, 0xDEu, 0xDFu,
+    0xE0u, 0xEDu, 0xEEu, 0xEFu, 0xE4u, 0xE5u, 0xE6u, 0xE7u,
+    0xE8u, 0xE9u, 0xEAu, 0xEBu, 0xECu, 0xEDu, 0xEEu, 0xEFu,
+    0xF0u, 0xFDu, 0xFEu, 0xFFu, 0xF4u, 0xF5u, 0xF6u, 0xF7u,
+    0xF8u, 0xF9u, 0xFAu, 0xFBu, 0xFCu, 0xFDu, 0xFEu, 0xFFu,
+    0x40u, 0x4Du, 0x4Eu, 0x4Fu, 0x44u, 0x45u, 0x46u, 0x47u,
+    0x48u, 0x49u, 0x4Au, 0x4Bu, 0x4Cu, 0x4Du, 0x4Eu, 0x4Fu,
+    0x50u, 0x5Du, 0x5Eu, 0x5Fu, 0x54u, 0x55u, 0x56u, 0x57u,
+    0x58u, 0x59u, 0x5Au, 0x5Bu, 0x5Cu, 0x5Du, 0x5Eu, 0x5Fu,
+    0x60u, 0x6Du, 0x6Eu, 0x6Fu, 0x64u, 0x65u, 0x66u, 0x67u,
+    0x68u, 0x69u, 0x6Au, 0x6Bu, 0x6Cu, 0x6Du, 0x6Eu, 0x6Fu,
+    0x70u, 0x7Du, 0x7Eu, 0x7Fu, 0x74u, 0x75u, 0x76u, 0x77u,
+    0x78u, 0x79u, 0x7Au, 0x7Bu, 0x7Cu, 0x7Du, 0x7Eu, 0x7Fu,
+    0x80u, 0x8Du, 0x8Eu, 0x8Fu, 0x84u, 0x85u, 0x86u, 0x87u,
+    0x88u, 0x89u, 0x8Au, 0x8Bu, 0x8Cu, 0x8Du, 0x8Eu, 0x8Fu,
+    0x90u, 0x9Du, 0x9Eu, 0x9Fu, 0x94u, 0x95u, 0x96u, 0x97u,
+    0x98u, 0x99u, 0x9Au, 0x9Bu, 0x9Cu, 0x9Du, 0x9Eu, 0x9Fu,
+    0xA0u, 0xADu, 0xAEu, 0xAFu, 0xA4u, 0xA5u, 0xA6u, 0xA7u,
+    0xA8u, 0xA9u, 0xAAu, 0xABu, 0xACu, 0xADu, 0xAEu, 0xAFu,
+    0xB0u, 0xBDu, 0xBEu, 0xBFu, 0xB4u, 0xB5u, 0xB6u, 0xB7u,
+    0xB8u, 0xB9u, 0xBAu, 0xBBu, 0xBCu, 0xBDu, 0xBEu, 0xBFu,
+    0xC0u, 0xCDu, 0xCEu, 0xCFu, 0xC4u, 0xC5u, 0xC6u, 0xC7u,
+    0xC8u, 0xC9u, 0xCAu, 0xCBu, 0xCCu, 0xCDu, 0xCEu, 0xCFu,
+    0xD0u, 0xDDu, 0xDEu, 0xDFu, 0xD4u, 0xD5u, 0xD6u, 0xD7u,
+    0xD8u, 0xD9u, 0xDAu, 0xDBu, 0xDCu, 0xDDu, 0xDEu, 0xDFu,
+    0xE0u, 0xEDu, 0xEEu, 0xEFu, 0xE4u, 0xE5u, 0xE6u, 0xE7u,
+    0xE8u, 0xE9u, 0xEAu, 0xEBu, 0xECu, 0xEDu, 0xEEu, 0xEFu,
+    0xF0u, 0xFDu, 0xFEu, 0xFFu, 0xF4u, 0xF5u, 0xF6u, 0xF7u,
+    0xF8u, 0xF9u, 0xFAu, 0xFBu, 0xFCu, 0xFDu, 0xFEu, 0xFFu,
+};
+
+static unsigned short s_sp3_stamp = 0xFFFFu;   /* FrameCounter of the last check */
+static void sp3_validate(void)
+{
+    const unsigned short key = (unsigned short)(
+        (level_chr_swap_request_count() << 8) ^ level_chr_boss_request_count() ^
+        ((unsigned short)level_chr_swap_state() << 4) ^
+        ((unsigned short)level_chr_boss_state() << 12));
+    unsigned char i;
+    if (key == s_sp3_key) return;
+    s_sp3_key = key;
+    for (i = 0u; i < SP3_PAIRS; ++i) s_sp3_src[i] = 0u;
+}
+
+/* Fill cache entry i with the biased copy of src; 0xFFFF = not now. */
+static unsigned short __attribute__((noinline)) sp3_fill(unsigned short src, unsigned char i)
+{
+    const unsigned char boss = level_chr_boss_state();
+    if (!level_chr_swap_is_ready() ||
+        (boss != LEVEL_CHR_SWAP_IDLE && boss != LEVEL_CHR_SWAP_READY))
+        return 0xFFFFu;                          /* source tiles in flux */
+    {
+        /* Both tiles of the pair are adjacent: one read, one write. */
+        unsigned short words[32];
+        unsigned char w;
+        render_vram_read_run((unsigned short)(src * 32u), words, 32u);
+        for (w = 0u; w < 32u; ++w) {
+            const unsigned short x = words[w];
+            words[w] = (unsigned short)(((unsigned short)k_sp3_lut[x >> 8] << 8) |
+                                        k_sp3_lut[x & 0xFFu]);
+        }
+        /* render_chr_upload: interrupts off (an open data port can be
+         * moved by the VBlank handler in a long frame). */
+        render_chr_upload((unsigned short)((ROOMROM_SUBPAL3_PAIR_TILE_BASE + 2u * i) * 32u),
+                          (const unsigned char *)words, 64u);
+    }
+    s_sp3_src[i] = (unsigned short)(src + 1u);
+    return (unsigned short)(ROOMROM_SUBPAL3_PAIR_TILE_BASE + 2u * i);
+}
+
+/* Direct-mapped by the pair index (src / 2): one compare per sprite
+ * (T-172: a linear search cost room $38 ~60 instructions a frame). */
+static inline unsigned short sp3_pair(unsigned short src)
+{
+    const unsigned char i = (unsigned char)((src >> 1) & (SP3_PAIRS - 1u));
+    /* Validated once per tick, on the first sub-palette 3 sprite: rooms
+     * without one pay nothing. */
+    if (s_sp3_stamp != (unsigned short)RAM(0x0015u)) {
+        s_sp3_stamp = (unsigned short)RAM(0x0015u);
+        sp3_validate();
+    }
+    if (s_sp3_src[i] == (unsigned short)(src + 1u))
+        return (unsigned short)(ROOMROM_SUBPAL3_PAIR_TILE_BASE + 2u * i);
+    return sp3_fill(src, i);
 }
 
 static inline unsigned short translate_tile(unsigned char nes_tile,
@@ -912,6 +1016,10 @@ static inline unsigned short xlat_sat(unsigned char tile, unsigned char attrs)
     } else {
         tid = e;
         force = (unsigned char)((e & XLAT_PAL1) != 0u);
+    }
+    if (!force && (attrs & 0x03u) == 3u) {
+        const unsigned short c = sp3_pair((unsigned short)(tid & 0x07FFu));
+        if (c != 0xFFFFu) { tid = c; force = 1u; }
     }
     sat = (unsigned short)(s_xlat_attr[attrs] | (tid & 0x07FFu));
     if (force) sat = (unsigned short)((sat & 0x9FFFu) | (RENDER_PAL1 << 13));

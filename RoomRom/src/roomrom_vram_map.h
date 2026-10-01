@@ -211,4 +211,12 @@
 #define ROOMROM_BOSS_SUBPAL3_TILE_BASE  (ROOMROM_ITEM_TILE_BASE + ROOMROM_ITEM_TILE_COUNT_PER_PAL * ROOMROM_ITEM_SUBPAL_COUNT)
 #define ROOMROM_BOSS_SUBPAL3_TILE_COUNT 64u
 
+/* T-170/T-171: NES sprite sub-palette 3 for every other sprite (Zora,
+ * Armos, Ghini, gels, ...): enemy_render copies the 8x16 tile pair with
+ * opaque pixels +12 into this cache on demand (32 pairs), drawn with PAL1
+ * colors 12..15. Tiles 1125..1188, unused in every gameplay VRAM dump
+ * (798 lockstep snapshots, 2026-10-01). */
+#define ROOMROM_SUBPAL3_PAIR_TILE_BASE  (ROOMROM_BOSS_SUBPAL3_TILE_BASE + ROOMROM_BOSS_SUBPAL3_TILE_COUNT)
+#define ROOMROM_SUBPAL3_PAIR_TILE_COUNT 32u
+
 #endif

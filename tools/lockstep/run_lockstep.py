@@ -81,7 +81,8 @@ def nes_cached(p: dict, out: Path, prefix_name: str, maxf: int, timeout: int,
     """NES capture into out/<prefix_name>.*, through the cache. Returns 'hit'/'miss'/'fail'."""
     text = presets.to_lua(p)
     # The NES capture never reads PRESET.gate: allow edits keep the key.
-    key = nes_key(presets.to_lua({**p, "allow": []}), maxf)
+    # write_watch is Genesis-only debug: not part of the NES key either.
+    key = nes_key(presets.to_lua({**p, "allow": [], "write_watch": []}), maxf)
     cdir = CACHE / key
     files = [f for f in cdir.glob("nes.*")] if (use_cache and (cdir / "nes.ram").exists()) else []
     if files:
@@ -142,6 +143,9 @@ def main() -> int:
     ap.add_argument("--vframes", metavar="T0,T1[,MAX]",
                     help="dump the video domains + screenshot of every video frame whose "
                          "tick is in [T0,T1] (at most MAX, default 200) as <plat>.vNNNNN.*")
+    ap.add_argument("--write-watch", metavar="ADDR,...",
+                    help="Genesis: log every write (value, 68K PC, frame) to these 68K bus "
+                         "addresses (hex, e.g. FF7FFE) in gen.txt (memory-corruption hunts)")
     ap.add_argument("--full", action="store_true",
                     help="no fail-fast: the Genesis runs the whole script (milestone evidence, --bless)")
     ap.add_argument("--no-cache", action="store_true", help="rerun the NES capture")
@@ -157,6 +161,8 @@ def main() -> int:
         p["frames"] = True
     if a.snap:
         p["snap"] = [int(x) for x in a.snap.split(",")]
+    if a.write_watch:
+        p["write_watch"] = [int(x, 16) for x in a.write_watch.split(",")]
     if a.vframes:
         v = [int(x) for x in a.vframes.split(",")]
         p["vframes"] = v + [200] if len(v) == 2 else v

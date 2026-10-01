@@ -83,6 +83,48 @@ local meta = io.open(OUT .. ".txt", "w")
 meta:write(string.format("system=%s ram=%s+%X save=%s domains=%s preset=%s pre_script_frames=%d\n",
     sys, RAM_DOM, RAM_BASE, SAVE_DOM, table.concat(domlist, ","), PRESET.name, pre_frames))
 
+-- Optional write watch (GEN, T-171): PRESET.write_watch = {68K bus
+-- addresses}. Each write to one of them logs "ww" lines (address, value,
+-- 68K PC, emulator frame) to <OUT>.txt, first 400 only. Registered right
+-- after the attach frame, so the boot, title, file select and play are
+-- all watched (heap / memory corruption hunts).
+if sys == "GEN" and PRESET.write_watch then
+    if not names["M68K BUS"] then fail("write_watch: no M68K BUS domain") return end
+    local ww_n, ww_ids, ww_open = 0, {}, true
+    -- Each address is watched with the two bytes below it too: a word or
+    -- long write that starts below still covers it (callbacks match the
+    -- access start address).
+    for _, wa in ipairs(PRESET.write_watch) do
+        for _, a in ipairs({ wa - 2, wa - 1, wa }) do
+            ww_ids[#ww_ids + 1] = event.onmemorywrite(function(addr, val)
+                if not ww_open then return end
+                ww_n = ww_n + 1
+                if ww_n > 400 then
+                    ww_open = false
+                    for _, id in ipairs(ww_ids) do event.unregisterbyid(id) end
+                    return
+                end
+                local pc = emu.getregister("M68K PC") or 0
+                -- Caller trail: the first 32 longs on the 68K stack (return
+                -- addresses of the writer's callers, among saved registers).
+                local sp = (emu.getregister("M68K A7") or 0) & 0xFFFFFF
+                local stk = {}
+                for k = 0, 31 do
+                    stk[#stk + 1] = string.format("%08X",
+                        memory.read_u32_be((sp + 4 * k) & 0xFFFFFF, "M68K BUS"))
+                end
+                meta:write(string.format("ww watch=%06X addr=%06X val=%s pc=%06X frame=%d sp=%06X stack=%s\n",
+                    wa, addr or a, tostring(val), pc, emu.framecount(), sp, table.concat(stk, ",")))
+            end, a, string.format("ww_%06X", a), "M68K BUS")
+        end
+    end
+    WW_CLOSE = function()
+        ww_open = false
+        for _, id in ipairs(ww_ids) do event.unregisterbyid(id) end
+    end
+    meta:write(string.format("write_watch armed on %d addresses\n", #PRESET.write_watch))
+end
+
 -- 2. preset into cart RAM (before frame 1)
 local wrote = 0
 if sys == "NES" then
@@ -581,7 +623,7 @@ ram:close()
 pc_stop()
 if PCP then
     if pc_samples == 0 then
-        meta:close(); fail("pc_profile: no execute callbacks from M68K BUS") return
+        if WW_CLOSE then WW_CLOSE() end; meta:close(); fail("pc_profile: no execute callbacks from M68K BUS") return
     end
     local fh = io.open(OUT .. ".pcprof", "w")
     fh:write(string.format("# frames %d..%d samples %d\n", PCP[1], PCP[2], pc_samples))
@@ -598,7 +640,7 @@ if PRESET.postscript then
     for _, step in ipairs(PRESET.postscript) do
         local count, buttons = tonumber(step[1]), step[2]
         if not count or count < 0 or count > 10000 then
-            meta:close(); fail("postscript: invalid frame count") return
+            if WW_CLOSE then WW_CLOSE() end; meta:close(); fail("postscript: invalid frame count") return
         end
         for _ = 1, count do
             set_pads(buttons)
@@ -613,13 +655,13 @@ if PRESET.postscript then
     for _, pair in ipairs(PRESET.post_expect_save or {}) do
         local k, want = tonumber(pair[1]), tonumber(pair[2])
         if not k or not want or k < 0 or k >= 0x530 or want < 0 or want > 255 then
-            meta:close(); fail("postscript: invalid save expectation") return
+            if WW_CLOSE then WW_CLOSE() end; meta:close(); fail("postscript: invalid save expectation") return
         end
         local a = (sys == "GEN") and (2 * k + 1) or (0x6000 + k - SAVE_BASE)
         local got = memory.read_u8(a, SAVE_DOM)
         meta:write(string.format("post save logical=%03X got=%02X want=%02X\n", k, got, want))
         if got ~= want then
-            meta:close()
+            if WW_CLOSE then WW_CLOSE() end; meta:close()
             fail(string.format("postscript: save logical %03X got %02X want %02X", k, got, want))
             return
         end
@@ -651,5 +693,5 @@ else
     end
 end
 meta:write(string.format("frames=%d\n", total))
-meta:close()
+if WW_CLOSE then WW_CLOSE() end; meta:close()
 client.exit()
