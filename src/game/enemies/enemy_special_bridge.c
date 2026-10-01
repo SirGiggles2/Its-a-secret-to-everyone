@@ -27,6 +27,7 @@
                                          * draw_object_not_mirrored_over_link,
                                          * k_sprite_offsets */
 #include "world/sprite_dispatch.h"      /* sprite_show_link_sprites_behind_horizontal_doors */
+#include "world/render/sprite_render.h"  /* roomrom_sprites_set_link_pose */
 #include "enemies/enemy_dispatch.h"     /* enemy_hide_sprites_over_link */
 #include "../options/options_consumer.h" /* options_consumer_get_like_like_behavior */
 #include "../options/options_state.h"    /* OPTIONS_LIKELIKE_VANILLA */
@@ -144,21 +145,26 @@ extern unsigned int enrt_wallmaster_calc_start_position(unsigned int instr_offse
                                                         unsigned int slot);
 extern void enrt_wallmaster_put_sprites_behind_bg_if_needed(void);
 extern void enemy_render_wallmaster_patch(unsigned char slot, unsigned char closed_hand);
+extern void roomrom_main_set_link_story_pose(unsigned char x, unsigned char y,
+                                            unsigned char face);
+extern unsigned char roomrom_main_current_link_face(void);
+extern void roomrom_combat_animate_link_base(void);
 
-/* Link_EndMoveAndAnimate_Bank4 -- huge ladder/water/warp/draw chain in
- * NES Z_07.asm:4360. STAGE-1 stub; same model as
- * trap_init_mode_b_enter_cave_bank5 (trap_dispatch.h:75-86). The
- * Wallmaster captured-Link draw path repositions Link to the monster's
- * coords + would normally retick Link's anim/draw before drawing the
- * hand on top. Native port deferred per Phase 5 TODO; the visual
- * fallback is the prior frame of Link's sprite, which still draws via
- * the regular Link update + the hand sprite still covers him via
- * DrawObjectNotMirroredOverLink. */
-static void wm_link_end_move_and_animate_bank4_stub(void)
+/* The captured-Link call enters Link_EndMoveAndAnimate_Bank4 with Link's
+ * ObjX/Y already copied from the hand. Keep the native player owner in
+ * sync, then run its drained AnimateLinkBase and redraw Link at the hand.
+ * The Wallmaster path has Link halted and ObjGridOffset=0; the normal
+ * player movement/warp branches do not run here. */
+static void wm_link_end_move_and_animate_bank4(void)
 {
-    /* TODO Phase 5: native Link_EndMoveAndAnimate port (huge ladder /
-     * water / warp / draw chain). Deferred — Wallmaster captured-Link
-     * draw path uses prior Link frame instead. */
+    unsigned char x = (unsigned char)ENEMY_X(0u);
+    unsigned char y = (unsigned char)ENEMY_Y(0u);
+    unsigned char face = roomrom_main_current_link_face();
+    roomrom_main_set_link_story_pose(x, y, face);
+    roomrom_combat_animate_link_base();
+    roomrom_sprites_set_link_pose((short)x, (short)y,
+                                  (link_face_t)face,
+                                  (unsigned char)(WM_OBJ_ANIM_FRAME(0u) & 1u));
 }
 
 /* CARRY_SET sentinel matches enrt_*_runtime.c. */
@@ -507,11 +513,8 @@ draw_and_check:
  * because the four blocks are stored CONTIGUOUSLY. The native port
  * mirrors that with one 64-byte table.
  *
- * Link_EndMoveAndAnimate_Bank4 is a STAGE-1 stub (see
- * wm_link_end_move_and_animate_bank4_stub above). The captured-Link
- * draw path repositions Link onto the monster but does NOT retick
- * Link's animation; visually Link freezes at the prior frame while
- * the hand sprite covers him via DrawObjectNotMirroredOverLink.
+ * Link_EndMoveAndAnimate_Bank4 uses the native Link owner and drained
+ * animation in the captured-Link branch (see helper above).
  *------------------------------------------------------------------*/
 void enrt_update_wallmaster(unsigned int slot)
 {
@@ -692,10 +695,10 @@ patch_sprites:
     return;
 
 draw_with_captured_link:
-    /* Reposition Link onto monster, retick (stub), draw hand on top. */
+    /* Reposition Link onto monster, retick/draw, then draw hand on top. */
     ENEMY_X(0u) = (uint8_t)ENEMY_X(slot);
     ENEMY_Y(0u) = (uint8_t)ENEMY_Y(slot);
-    wm_link_end_move_and_animate_bank4_stub();
+    wm_link_end_move_and_animate_bank4();
     sprite_show_link_sprites_behind_horizontal_doors();
     enrt_wallmaster_prepare_to_draw(slot);
     WM_OBJ_ANIM_FRAME(slot) = 0x01u;        /* force closed hand */

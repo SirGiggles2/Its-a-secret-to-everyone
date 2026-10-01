@@ -1092,7 +1092,8 @@ unsigned short enemy_render_item_sat(unsigned char nes_tile, unsigned char nes_a
 #define NATIVE_PASS_ALL             0u
 #define NATIVE_PASS_FIREBALLS       1u
 #define NATIVE_PASS_OTHER           2u
-static unsigned int emit_native_entries(unsigned int sat_slot, unsigned char pass)
+static unsigned int emit_native_entries(unsigned int sat_slot, unsigned char pass,
+                                        unsigned char *captured_hand_sat)
 {
     unsigned int slot;
     xlat_refresh();
@@ -1119,6 +1120,10 @@ static unsigned int emit_native_entries(unsigned int sat_slot, unsigned char pas
             if ((pass == NATIVE_PASS_FIREBALLS && !fireball) ||
                 (pass == NATIVE_PASS_OTHER && fireball)) continue;
             if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
+            if (captured_hand_sat && *captured_hand_sat == 0u && ei == 0u &&
+                n >= 2u && ENEMY_TYPE(slot) == 0x27u &&
+                RAM(0x042Cu + slot) != 0u)
+                *captured_hand_sat = (unsigned char)sat_slot;
 
             unsigned char render_attrs = (unsigned char)(e->attrs & ~ANIM_WRITE_SPRITE_MARKER);
             if (inv_active &&
@@ -1210,7 +1215,7 @@ void enemy_render_sweep_oam_to_sat(void)
      * $1C behind the BG (only the NES 8-per-line limit made them matter):
      * skipped. */
     xlat_refresh();   /* T-125: table lookups, as the native path */
-    sat_slot = emit_native_entries(sat_slot, NATIVE_PASS_FIREBALLS);
+    sat_slot = emit_native_entries(sat_slot, NATIVE_PASS_FIREBALLS, 0);
     for (i = 0u; i < NES_OAM_SLOT_COUNT; ++i) {
         unsigned short base = (unsigned short)(NES_SPRITES_BASE + i * 4u);
         unsigned char y     = RAM(base + 0u);
@@ -1256,7 +1261,7 @@ void enemy_render_sweep_oam_to_sat(void)
         if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
     }
 
-    sat_slot = emit_native_entries(sat_slot, NATIVE_PASS_OTHER);
+    sat_slot = emit_native_entries(sat_slot, NATIVE_PASS_OTHER, 0);
 
     /* 2026-05-15 perf fix: drop the up-to-54-slot pad loop. Write a
      * single terminator at the next slot with link=0, hiding it off-
@@ -1335,6 +1340,13 @@ extern unsigned char roomrom_is_scrolling(void);
 
 void enemy_render_native_sweep(void)
 {
+    unsigned char captured_hand_sat = 0u;
+    /* A captured hand temporarily takes the mask-to-Link SAT link below.
+     * Restore the normal chain even if the next frame is a scroll or the
+     * Wallmaster has finished its trip. Otherwise Link stays skipped after
+     * the mode-3 return to the dungeon entrance. */
+    g_render_sat_cache[ROOMROM_SPRITE_SLOT_MASK_S].link =
+        ROOMROM_SPRITE_SLOT_LINK;
     s_boss_bank_active = 0u;
     /* Zelda uses NES boss tile $F6 while sharing the chamber with guard
      * fires, which stay on the native per-object submission path. */
@@ -1366,7 +1378,8 @@ void enemy_render_native_sweep(void)
     }
 
 
-    sat_slot = emit_native_entries(sat_slot, NATIVE_PASS_ALL);
+    sat_slot = emit_native_entries(sat_slot, NATIVE_PASS_ALL,
+                                   &captured_hand_sat);
 
     /* Terminator: hide remaining SAT slots via chain break (link=0). */
     if (sat_slot <= ENEMY_RENDER_SLOT_LAST) {
@@ -1377,6 +1390,21 @@ void enemy_render_native_sweep(void)
         g_enemy_render_last_sat_slot = (unsigned char)(sat_slot + 1u);
     } else {
         g_enemy_render_last_sat_slot = (unsigned char)sat_slot;
+    }
+
+    /* NES DrawObjectNotMirroredOverLink writes the captured hand into OAM
+     * slots 16/17, ahead of Link's 18/19. The Genesis SAT normally puts
+     * all enemies after Link. Relink this one pair immediately before
+     * Link; the hand then covers him while transparent pixels still show
+     * his carried pose. Other enemy order stays intact. */
+    if (captured_hand_sat >= ROOMROM_SPRITE_SLOT_ENEMY_FIRST &&
+        (unsigned int)captured_hand_sat + 1u < sat_slot) {
+        g_render_sat_cache[captured_hand_sat - 1u].link =
+            (unsigned char)(captured_hand_sat + 2u);
+        g_render_sat_cache[ROOMROM_SPRITE_SLOT_MASK_S].link =
+            captured_hand_sat;
+        g_render_sat_cache[captured_hand_sat + 1u].link =
+            ROOMROM_SPRITE_SLOT_LINK;
     }
 
     /* Clear per-slot entry counts for next frame; entries arrays stay
