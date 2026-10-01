@@ -14,8 +14,8 @@
 | newgame | 244 | MATCH |
 | ow_walk | 51 | MATCH |
 | ow_walk | 152 | MATCH |
-| ow_walk | 251 | DIFF 2 px in 1 cells |
-| ow_walk | 349 | DIFF 12 px in 2 cells |
+| ow_walk | 251 | DIFF 2 px in 1 cells (2 px sprite overlap) |
+| ow_walk | 349 | DIFF 12 px in 2 cells (12 px sprite overlap) |
 | ow_walk | 448 | MATCH |
 | ow_walk | 547 | MATCH |
 | q2_ow | 6 | MATCH |
@@ -52,7 +52,7 @@
 | t012_route | 1103 | MATCH |
 | t012_route | 1343 | MATCH |
 | t012_route | 1584 | MATCH |
-| t012_route | 1826 | DIFF 28 px in 2 cells |
+| t012_route | 1826 | MATCH |
 | t012_route | 2068 | MATCH |
 | t013_continue | 15 | MATCH |
 | t013_continue | 43 | MATCH |
@@ -70,7 +70,7 @@
 | t013_route | 2831 | MATCH |
 | t013_route | 4219 | MATCH |
 | t013_route | 5600 | MATCH |
-| t013_route | 6987 | DIFF 670 px in 35 cells |
+| t013_route | 6987 | MATCH |
 | t013_route | 8373 | MATCH |
 | t013_save | 6 | MATCH |
 | t013_save | 16 | MATCH |
@@ -91,7 +91,7 @@
 | t050_layout_secret | 179 | MATCH |
 | t050_layout_secret | 218 | MATCH |
 | t050_pond_fairy | 114 | MATCH |
-| t050_pond_fairy | 345 | DIFF 28 px in 2 cells |
+| t050_pond_fairy | 345 | MATCH |
 | t050_pond_fairy | 574 | MATCH |
 | t050_pond_fairy | 801 | MATCH |
 | t050_pond_fairy | 1026 | MATCH |
@@ -107,16 +107,16 @@
 | t050_rock_push | 302 | MATCH |
 | t050_rock_push | 421 | MATCH |
 | t050_rock_push | 542 | MATCH |
-| t050_rock_push | 662 | DIFF 8 px in 3 cells |
+| t050_rock_push | 662 | DIFF 8 px in 3 cells (8 px sprite overlap) |
 | t050_tree | 35 | MATCH |
 | t050_tree | 101 | MATCH |
 | t050_tree | 169 | MATCH |
 | t050_tree | 235 | MATCH |
 | t050_tree | 301 | MATCH |
-| t050_tree | 367 | DIFF 5 px in 2 cells |
+| t050_tree | 367 | DIFF 5 px in 2 cells (5 px sprite overlap) |
 | t050_wall | 35 | MATCH |
 | t050_wall | 101 | MATCH |
-| t050_wall | 169 | DIFF 2 px in 1 cells |
+| t050_wall | 169 | DIFF 2 px in 1 cells (2 px sprite overlap) |
 | t050_wall | 235 | MATCH |
 | t050_wall | 301 | MATCH |
 | t050_wall | 367 | MATCH |
@@ -125,7 +125,7 @@
 | t054_uw_block42_nes | 394 | MATCH |
 | t054_uw_block42_nes | 552 | DIFF 18 px in 2 cells |
 | t054_uw_block42_nes | 709 | MATCH |
-| t054_uw_block42_nes | 867 | DIFF 138 px in 12 cells |
+| t054_uw_block42_nes | 867 | MATCH |
 | t097_death | 6 | MATCH |
 | t097_death | 16 | MATCH |
 | t097_death | 26 | MATCH |
@@ -158,9 +158,9 @@
 | t110_bomb | 308 | MATCH |
 | t110_bomb_enemy | 35 | MATCH |
 | t110_bomb_enemy | 101 | MATCH |
-| t110_bomb_enemy | 169 | DIFF 2 px in 1 cells |
+| t110_bomb_enemy | 169 | DIFF 2 px in 1 cells (2 px sprite overlap) |
 | t110_bomb_enemy | 235 | MATCH |
-| t110_bomb_enemy | 301 | DIFF 27 px in 2 cells |
+| t110_bomb_enemy | 301 | DIFF 27 px in 2 cells (27 px sprite overlap) |
 | t110_bomb_enemy | 367 | MATCH |
 | t110_fire | 22 | MATCH |
 | t110_fire | 63 | MATCH |
@@ -169,14 +169,14 @@
 | t110_fire | 185 | MATCH |
 | t110_fire | 225 | MATCH |
 | t111_dark_candle | 236 | MATCH |
-| t111_dark_candle | 700 | DIFF 1 px in 1 cells |
+| t111_dark_candle | 700 | DIFF 1 px in 1 cells (1 px sprite overlap) |
 | t111_dark_candle | 1164 | MATCH |
 | t111_dark_candle | 1627 | MATCH |
 | t111_dark_candle | 2087 | MATCH |
 | t111_dark_candle | 2547 | MATCH |
 | t114_uw_wall | 129 | MATCH |
 | t114_uw_wall | 384 | MATCH |
-| t114_uw_wall | 638 | DIFF 144 px in 4 cells |
+| t114_uw_wall | 638 | MATCH |
 | t114_uw_wall | 893 | MATCH |
 | t114_uw_wall | 1146 | MATCH |
 | t114_uw_wall | 1398 | MATCH |
@@ -212,9 +212,9 @@
 | t116_shot_down | 130 | MATCH |
 | t116_shot_hit | 35 | MATCH |
 | t116_shot_hit | 101 | MATCH |
-| t116_shot_hit | 169 | DIFF 2 px in 1 cells |
+| t116_shot_hit | 169 | DIFF 2 px in 1 cells (2 px sprite overlap) |
 | t116_shot_hit | 235 | MATCH |
-| t116_shot_hit | 301 | DIFF 12 px in 2 cells |
+| t116_shot_hit | 301 | DIFF 12 px in 2 cells (12 px sprite overlap) |
 | t116_shot_hit | 367 | MATCH |
 | t116_shot_left | 13 | MATCH |
 | t116_shot_left | 37 | MATCH |
@@ -260,38 +260,38 @@
 | t121_ring2 | 37 | MATCH |
 | t123_slow_tiles | 87 | MATCH |
 | t123_slow_tiles | 258 | MATCH |
-| t123_slow_tiles | 426 | DIFF 196 px in 6 cells |
-| t123_slow_tiles | 595 | DIFF 28 px in 2 cells |
-| t123_slow_tiles | 766 | DIFF 224 px in 6 cells |
-| t123_slow_tiles | 934 | DIFF 28 px in 2 cells |
+| t123_slow_tiles | 426 | DIFF 32 px in 2 cells (32 px sprite overlap) |
+| t123_slow_tiles | 595 | MATCH |
+| t123_slow_tiles | 766 | MATCH |
+| t123_slow_tiles | 934 | MATCH |
 | t128_uw_blocks | 128 | MATCH |
 | t128_uw_blocks | 381 | MATCH |
-| t128_uw_blocks | 634 | DIFF 144 px in 4 cells |
+| t128_uw_blocks | 634 | MATCH |
 | t128_uw_blocks | 888 | MATCH |
 | t128_uw_blocks | 1141 | MATCH |
-| t128_uw_blocks | 1392 | DIFF 36 px in 5 cells |
+| t128_uw_blocks | 1392 | DIFF 36 px in 5 cells (36 px sprite overlap) |
 | t129_enemy_sweep | 580 | MATCH |
 | t129_enemy_sweep | 1722 | MATCH |
 | t129_enemy_sweep | 2859 | MATCH |
-| t129_enemy_sweep | 3996 | DIFF 117 px in 7 cells |
-| t129_enemy_sweep | 5134 | DIFF 282 px in 6 cells |
-| t129_enemy_sweep | 6271 | DIFF 363 px in 13 cells |
+| t129_enemy_sweep | 3996 | DIFF 42 px in 4 cells (5 px sprite overlap) |
+| t129_enemy_sweep | 5134 | DIFF 42 px in 4 cells |
+| t129_enemy_sweep | 6271 | DIFF 159 px in 13 cells |
 | t131_uw_doors | 99 | MATCH |
-| t131_uw_doors | 297 | DIFF 28 px in 4 cells |
-| t131_uw_doors | 495 | DIFF 196 px in 6 cells |
+| t131_uw_doors | 297 | DIFF 28 px in 4 cells (28 px sprite overlap) |
+| t131_uw_doors | 495 | DIFF 32 px in 2 cells (32 px sprite overlap) |
 | t131_uw_doors | 693 | MATCH |
 | t131_uw_doors | 889 | MATCH |
 | t131_uw_doors | 1085 | MATCH |
 | t131_uw_ndoor | 93 | MATCH |
 | t131_uw_ndoor | 279 | MATCH |
-| t131_uw_ndoor | 465 | DIFF 28 px in 2 cells |
-| t131_uw_ndoor | 649 | DIFF 144 px in 4 cells |
+| t131_uw_ndoor | 465 | MATCH |
+| t131_uw_ndoor | 649 | MATCH |
 | t131_uw_ndoor | 835 | MATCH |
 | t131_uw_ndoor | 1017 | MATCH |
 | t132_uw_exit | 87 | MATCH |
 | t132_uw_exit | 262 | MATCH |
 | t132_uw_exit | 436 | MATCH |
-| t132_uw_exit | 609 | DIFF 213 px in 13 cells |
+| t132_uw_exit | 609 | DIFF 113 px in 10 cells (113 px sprite overlap) |
 | t132_uw_exit | 782 | MATCH |
 | t132_uw_exit | 956 | MATCH |
 | t134_cave_exit | 28 | MATCH |
@@ -316,20 +316,20 @@
 | t171_boss_l3 | 115 | MATCH |
 | t171_boss_l3 | 189 | MATCH |
 | t171_boss_l3 | 263 | MATCH |
-| t171_boss_l3 | 339 | DIFF 124 px in 9 cells |
+| t171_boss_l3 | 339 | DIFF 124 px in 9 cells (124 px sprite overlap) |
 | t171_boss_l3 | 413 | MATCH |
 | t171_boss_l4 | 39 | MATCH |
 | t171_boss_l4 | 115 | MATCH |
 | t171_boss_l4 | 189 | MATCH |
 | t171_boss_l4 | 263 | MATCH |
-| t171_boss_l4 | 339 | DIFF 62 px in 6 cells |
-| t171_boss_l4 | 413 | DIFF 55 px in 6 cells |
+| t171_boss_l4 | 339 | DIFF 62 px in 6 cells (62 px sprite overlap) |
+| t171_boss_l4 | 413 | DIFF 55 px in 6 cells (55 px sprite overlap) |
 | t171_boss_l5 | 66 | MATCH |
 | t171_boss_l5 | 190 | MATCH |
-| t171_boss_l5 | 316 | DIFF 16 px in 2 cells |
-| t171_boss_l5 | 440 | DIFF 20 px in 5 cells |
-| t171_boss_l5 | 564 | DIFF 19 px in 5 cells |
-| t171_boss_l5 | 688 | DIFF 20 px in 6 cells |
+| t171_boss_l5 | 316 | DIFF 16 px in 2 cells (16 px sprite overlap) |
+| t171_boss_l5 | 440 | DIFF 20 px in 5 cells (20 px sprite overlap) |
+| t171_boss_l5 | 564 | DIFF 19 px in 5 cells (19 px sprite overlap) |
+| t171_boss_l5 | 688 | DIFF 20 px in 6 cells (20 px sprite overlap) |
 | t171_boss_l6 | 66 | MATCH |
 | t171_boss_l6 | 190 | MATCH |
 | t171_boss_l6 | 316 | MATCH |
@@ -346,8 +346,8 @@
 | t171_boss_l8 | 115 | MATCH |
 | t171_boss_l8 | 189 | MATCH |
 | t171_boss_l8 | 263 | MATCH |
-| t171_boss_l8 | 339 | DIFF 43 px in 5 cells |
-| t171_boss_l8 | 413 | DIFF 78 px in 7 cells |
+| t171_boss_l8 | 339 | DIFF 43 px in 5 cells (43 px sprite overlap) |
+| t171_boss_l8 | 413 | DIFF 78 px in 7 cells (78 px sprite overlap) |
 | t171_boss_l9 | 66 | MATCH |
 | t171_boss_l9 | 190 | MATCH |
 | t171_boss_l9 | 316 | MATCH |
@@ -405,6 +405,6 @@
 | tektite_jump | 28 | MATCH |
 | tektite_jump | 80 | MATCH |
 | tektite_jump | 134 | MATCH |
-| tektite_jump | 187 | DIFF 3 px in 1 cells |
+| tektite_jump | 187 | DIFF 3 px in 1 cells (3 px sprite overlap) |
 | tektite_jump | 239 | MATCH |
 | tektite_jump | 291 | MATCH |

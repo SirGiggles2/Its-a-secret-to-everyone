@@ -165,6 +165,27 @@ match the NES that did not; suite 51/51 throughout.
   LinkColors[InvRing] into the slot's menu row) sets after every LevelInfo
   install and after the File Select / debug-unlock profile load
   (`a4_probe_main.c`). t121_ring1/ring2/q2_ow 95 px -> MATCH.
+- Boss rooms: InitMode5Play row-7 cues (SpecialBossPaletteObjTypes) +
+  drain buffers $06/$08/$0A/$20/$22/$24/$36/$7A/$7C; UW attributes from
+  LevelBlockAttrsA/B like FillPlayAreaAttrs (blob wrong in 4/331 rooms);
+  Gleeok body table 18 bytes; boss OAM sweep reads slots 0-15 (heads);
+  boss PAL2 override removed; Manhandla / little Digdogger pass the frame;
+  InitMode3 leaves a dark room lit. All boss screens MATCH or overlap-only.
+- T-170 done: sub-palette 3 pair cache (VRAM 1125..1188) for all sprites.
+- MEMORY BUG: SGDK boot VDP_loadFont overruns its heap buffer below
+  $FF8000; with more .bss it spills into NES RAM. Any .bss growth could
+  change gameplay. a4_probe_main.c now clears NES RAM and cuts the heap at
+  $FF7FFE. Tool: `run_lockstep --write-watch FF7FFE` (writer PC + stack).
+- screen_diff: NES PPUMASK grayscale (bomb flash) modelled; OVERLAP line
+  counts diff pixels under >= 2 NES sprites (OAM rotation, accepted).
+- HUD: status-bar map waits for selector $44 like the NES; map dot moves
+  at InitMode_EnterRoom from RoomId; a taken room item stays drawn that
+  frame. UW name-table writes keep the room attribute palette.
+- Sweep now: 29/408 screens differ, all overlap-order or t129 staging
+  artifacts (staged-away Like-Like left over-Link OAM; Gohma staged into
+  L1 without a boss bank). NEXT: compare scroll/transition frames
+  (`--vframes`), interactive L2-L9 + boss fights, Wallmaster grab stub,
+  T-172 headroom (room $38 worst tick line $DE).
 
 ## Original open queue at handoff (historical; now empty)
 
