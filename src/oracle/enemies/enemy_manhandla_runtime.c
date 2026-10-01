@@ -148,17 +148,25 @@ void enrt_manhandla_check_collisions(unsigned int slot) {
         return;
 
     c_reset_shove_info(slot);
-    if (slot == 5)
+    if (slot == 5) {
+        /* The base only dies with the last hand: ResetShoveInfo leaves
+         * A = 0 and the NES stores it in ObjMetastate+5. Returning with
+         * the death metastate killed the base on a sword hit (T-171
+         * t171_manhandla_sword t541). */
+        ENEMY_METASTATE(slot) = 0;
         return;
+    }
 
+    /* Hands are ObjType+1..+4 (LDA ObjType+1, Y for Y = 3..0); the
+     * count includes this dying hand, then DEC: > 0 = another hand lives. */
     hand_count = 0;
     for (hand_slot = 3; hand_slot >= 0; --hand_slot) {
-        if (ENEMY_TYPE((unsigned char)hand_slot) == 0x3C)
+        if (ENEMY_TYPE((unsigned char)(hand_slot + 1)) == 0x3C)
             hand_count++;
     }
     hand_count--;
 
-    if (hand_count != 0) {
+    if ((signed char)hand_count > 0) {
         ENEMY_TYPE(slot) = 93;
         ENEMY_MANHANDLA_SEGMENT_DIED_FLAG++;
         return;
@@ -167,7 +175,7 @@ void enrt_manhandla_check_collisions(unsigned int slot) {
     c_play_boss_death_cry();
     ENEMY_TYPE(5) = 93;
     ENEMY_METASTATE(5) = 16;
-    ENEMY_STATE_TIMER(5) = 16;
+    ENEMY_MOVE_TIMER(5) = 16;      /* STA ObjTimer+5 ($2D), not ObjState */
     ENEMY_MANHANDLA_SEGMENT_DIED_FLAG++;
 }
 
