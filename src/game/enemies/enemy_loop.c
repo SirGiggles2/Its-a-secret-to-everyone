@@ -1395,7 +1395,7 @@ static void enemy_loop_room_init_impl(unsigned char room_id, unsigned char scene
 void enemy_loop_room_init(unsigned char room_id, unsigned char scene_id,
                           unsigned char level, unsigned char quest)
 {
-    enemy_loop_room_init_impl(room_id, scene_id, level, quest, 0u);
+    enemy_loop_room_init_impl(room_id, scene_id, level, quest, 1u);
 }
 
 /* NES source: Z_05.asm InitMode_EnterRoom, reached from mode 4 after a
@@ -1776,6 +1776,11 @@ void enemy_loop_tick(void)
          * update_meta_object() in enemy_walker_bridge.c. */
         if (ENEMY_METASTATE(slot) != 0u) {
             update_meta_object(slot);
+            /* @LoopObject reads ObjMetastate after UpdateObject: the
+             * frame a spawn cloud ends (metastate back to 0) the monster
+             * already walks-animates, draws and collides (T-171:
+             * t013_route t7046 Goriya ObjAnimCounter 6 vs 1). */
+            if (ENEMY_TYPE(slot) != 0u) loop_object_wrapper(slot);
             continue;
         }
         t = (unsigned char)ENEMY_TYPE(slot);

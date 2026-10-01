@@ -1269,6 +1269,11 @@ static void roomrom_state_reset_for_scene_switch(void)
 
 /* Task 5.4: atomic warp outcome applier. Coordinator's LOAD step calls
  * this once. Order matches the spec's Handoff section. */
+/* T-171: set by the level loads that end in the mode 4 walk-in (stairs
+ * entry, InitMode3 Sub8). NES runs InitMode_EnterRoom (objects, room
+ * history) in mode 4 only; the walk-in calls enemy_loop_room_reenter. */
+static u8 s_warp_defer_enter_room;
+
 void roomrom_main_apply_warp_outcome(const rr_warp_outcome_t *out)
 {
     if (out == 0) {
@@ -1336,10 +1341,13 @@ void roomrom_main_apply_warp_outcome(const rr_warp_outcome_t *out)
     /* T-140: a level exit places Link at his OW step-out spot before the
      * room's objects (InitMode_EnterRoom method 1). */
     if (s_lvl_exiting && s_scene == SCENE_OW) step_out_start_pos();
-    enemy_loop_room_init(s_room_id, (unsigned char)s_scene,
-                s_scene == SCENE_UW ? roomrom_uw_room_render_get_level() : 0u,
-                s_scene == SCENE_UW ? roomrom_uw_room_render_get_quest() : 0u);
-    request_boss_chr_if_boss_room();
+    if (!s_warp_defer_enter_room) {
+        enemy_loop_room_init(s_room_id, (unsigned char)s_scene,
+                    s_scene == SCENE_UW ? roomrom_uw_room_render_get_level() : 0u,
+                    s_scene == SCENE_UW ? roomrom_uw_room_render_get_quest() : 0u);
+        request_boss_chr_if_boss_room();
+    }
+    s_warp_defer_enter_room = 0u;
     /* Cave exit is still Mode $0A here. NES resumes OW music only when
      * StepOutside finishes; audio_dispatch_tick owns that edge. */
     if (s_lvl_phase != LVL_CAVE_EXIT)
@@ -2620,6 +2628,7 @@ static void mode3_init_tick(void)
     out.dest_redux_flag = current_redux_flag();
     render_display_enable(0u);
     VDP_setWindowOnTop(ROOMROM_HUD_ROWS);
+    s_warp_defer_enter_room = 1u;               /* objects at mode 4 */
     roomrom_main_apply_warp_outcome(&out);
     s_underground_exit_type = 0u;
     players[0].x = 0x78;
@@ -2965,6 +2974,7 @@ stepped_out:
         nes_ram[0x0012u] = 0x02u;
         init_mode2_sub0();
         render_display_enable(0u);
+        s_warp_defer_enter_room = 1u;           /* objects at mode 4 */
         roomrom_main_apply_warp_outcome(&s_lvl_out);
         /* InitMode3_Sub8. */
         players[0].x = 0x78;
@@ -3850,6 +3860,7 @@ void roomrom_debug_tick(void)
                         enemy_loop_room_reenter(s_room_id, (unsigned char)s_scene,
                             s_scene == SCENE_UW ? roomrom_uw_room_render_get_level() : 0u,
                             s_scene == SCENE_UW ? roomrom_uw_room_render_get_quest() : 0u);
+                        request_boss_chr_if_boss_room();
                     }
                     if (s_scene == SCENE_UW) {
                         ow_scroll_enter_room_uw(&players[0].x);

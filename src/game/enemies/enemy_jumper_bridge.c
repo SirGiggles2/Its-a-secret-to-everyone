@@ -541,7 +541,8 @@ void enrt_update_red_leever(unsigned int slot)
     RED_LEEVER_LONG_TIMER   = 2u;
     red_leever_cycle_state_draw_and_check_collisions(slot);
     core_reverse_obj_dir(slot);
-    return;
+    /* NES falls through to @CheckOtherStates: state 1 animates again
+     * this tick (T-171: t054_uw_block42_nes t480, AnimCounter 7 not 8). */
 
 check_other_states:
     {
