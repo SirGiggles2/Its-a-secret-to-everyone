@@ -34,8 +34,8 @@ Git from the VM: `git -c core.checkStat=minimal -c core.trustctime=false -c core
 
 - **Branch:** `main` (local; not pushed). `main` = recovery work (Sep 11–24) + merged `feat/cave-entry-transition-parity` (Aug).
   Old main preserved at `codex/recovery-baseline-20260911-074018` (= f513b997).
-- **Latest Windows build:** `builds/Debug.md` SHA-256 `557C922AE40314550C94AFD113211054BD8D7AF1DCFE646ACDAE1B885F555465` (`Debug.bat` PASS, 2026-10-01; includes Claude flute/whirlwind WIP). T-175 blue/red pause ring: 192/192 RAM and 4/4 sprite checks each, 39/39 opaque ring pixels exact. Earlier T-174 Gohma/Q2 reward-room/Digdogger/newgame checks retain their documented ROM scope. Connected quests remain open.
-- **Generated data:** freshness 9/9 OK. UW blob 660 rooms; Original room generator 342/342 byte-exact, 98 Redux door-state variants remain. Sparse BG atlas 677 tiles; sprite/item bases updated and actual generated-count budget guard added (T-174). Full builder release is T-080.
+- **Latest Windows build:** `builds/Debug.md` SHA-256 `C2A93F4EB4B4F95B1152C872FE52569F01A62A032C9E4C7C710FC743953FE168` (`Debug.bat` PASS, 2026-10-01; includes Claude WIP). T-176 Patra room $52 screen/spawn phase repaired; Patra fight FAIL from timer t365, no baseline accepted. Prior T-174/T-175 successes retain documented ROM scope. Connected quests remain open.
+- **Generated data:** freshness 9/9 OK. UW blob 667 rooms; Original room generator 349/349 byte-exact, 98 Redux door-state variants remain. Sparse BG atlas 677 tiles; sprite/item bases updated and actual generated-count budget guard added (T-174). Full builder release is T-080.
 - **Music:** general music deferred to last; user explicitly requested cave-entry/exit music correction in T-164.
 
 ## Board
@@ -192,9 +192,11 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 
 | T-175 | Blue ring pause icon uses red-grade palette | P7.1a | DONE | Codex | `src/game/inventory/inventory_render.c`, blue/red pause captures | Ring now uses existing side-effect-free item attribute helper and shared subpalette routing. Both grades 192/192 RAM, 4/4 sprites, 39/39 opaque ring colors exact; Windows build PASS. `docs/audit/T-175_pause_ring_palette.md`. Broader menu/other graded items unverified. |
 
-| T-176 | Missing Original Patra encounter-room render/collision inputs | P0.14 / P6.2 | ACTIVE | Codex | `inject_boss_rooms.py`, generated UW/BG data, Patra route | L9 $52 generator matches live NES 704/704 but blob/fallback absent; seven Patra rooms uncovered across quests. Include ROM-derived Patra encounter roles, regenerate budgets/data, verify live room and fight onset. Independent maneuver-timer defect remains T-171. |
+| T-176 | Missing Original Patra encounter-room render/collision inputs | P0.14 / P6.2 | DONE | Codex | `inject_boss_rooms.py`, generated UW/BG data, Patra route | L9 $52 generator matches live NES 704/704 but blob/fallback absent; seven Patra rooms uncovered across quests. Seven entries added from ROM-derived encounter types; Original 349/349 consistency, blob 667, BG remains 677. Live $52 screen t350 exact and spawn coordinates/SpawnCycle 301–366 exact. `docs/audit/T-176_patra_room_coverage.md`. Fight still FAIL from t365; T-171 owns timer repair. No baseline blessed. |
 
 ## Handoff log (newest first)
+
+- 2026-10-01 Codex: T-176 DONE at missing-room scope: seven Patra entries, Original 349/349, blob 667; BG still 677. Live $52 screen t350 and spawn positions/SpawnCycle 301–366 exact. Fight remains FAIL t365 timer; no baseline blessed. Debug SHA C2A93F4EB4B4F95B1152C872FE52569F01A62A032C9E4C7C710FC743953FE168. Continue T-171 bridge diagnosis; `docs/audit/T-176_patra_room_coverage.md`.
 
 - 2026-10-01 Codex: T-176 claimed from staged Patra failure. Seven ROM-derived Patra encounter rooms lack blob/fallback; live $52 NT matches generator 704/704. Missing layout also shifts spawn rejection. Patra timer reload first diverges at 365 ($FF NES / $00 GEN), a separate T-171 bridge issue. Preserve failing 1533-tick controller route; no baseline blessing.
 
