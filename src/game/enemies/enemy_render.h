@@ -34,8 +34,12 @@
 #define ENEMY_RENDER_H
 
 void anim_write_sprite_drained(unsigned int tile, unsigned int slot);
+/* Manual boss OAM producers need the OAM sweep; Patra uses native pairs. */
+unsigned char enemy_render_needs_oam_sweep(void);
 void enemy_render_sweep_oam_to_sat(void);
 void enemy_render_reset_oam(void);
+/* Prepare fixed spawn/death FX with other persistent sprite CHR. */
+void enemy_render_prepare_fx_chr(void);
 
 /* 2026-05-15 native renderer. Reads per-slot latched sprite state
  * (populated by anim_write_sprite_drained), emits <= 11 Genesis SAT
@@ -58,7 +62,7 @@ extern unsigned char g_enemy_render_last_sat_slot;
  * the writer with the just-emitted tile/attrs/x/y. Single-latch
  * semantics: first call per ENEMY_THROWER_SLOT per frame wins; later
  * calls are dropped (Phase E will replace with multi-latch). */
-void enemy_render_publish_pair_left(unsigned char tile,
+__attribute__((always_inline)) void enemy_render_publish_pair_left(unsigned char tile,
                                     unsigned char attrs,
                                     unsigned char x,
                                     unsigned char y);

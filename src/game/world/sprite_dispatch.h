@@ -19,6 +19,8 @@ extern "C" {
  * Wraps from $27 -> $00 (40 sprite slots used per frame). NES
  * CycleCurSpriteIndex (Z_01.asm). */
 void sprite_cycle_cur_sprite_index(void);
+/* Two cycles when no producer consumes the intermediate cursor. */
+void sprite_cycle_cur_sprite_index_twice(void);
 
 /* As above but takes the previous index as a parameter (= "in A"
  * NES register-passing convention) and returns the new value. */

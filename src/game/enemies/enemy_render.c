@@ -152,7 +152,7 @@ void c_anim_write_sprite(unsigned int tile, unsigned int slot)
 static void weapon_add(unsigned char slot, unsigned char tile,
                        unsigned char attrs, unsigned char x, unsigned char y);
 
-void enemy_render_publish_pair_left(unsigned char tile,
+__attribute__((always_inline)) void enemy_render_publish_pair_left(unsigned char tile,
                                     unsigned char attrs,
                                     unsigned char x,
                                     unsigned char y)
@@ -386,6 +386,16 @@ static void cloud_chr_ensure_uploaded(void)
                       k_cloud_chr_subpal1,
                       (unsigned short)sizeof(k_cloud_chr_subpal1));
     s_cloud_chr_uploaded = 1u;
+}
+
+/* NES source: TransferCommonPatternBlocks + DrawCloud/DrawSpark.
+ * Drained C: the existing one-time FX upload owners above.
+ * Coverage: first cloud/death-spark draw; fixed reserved VRAM survives scenes.
+ * Stance: EXTEND residency preparation before gameplay, retaining lazy guards. */
+void enemy_render_prepare_fx_chr(void)
+{
+    cloud_chr_ensure_uploaded();
+    spark_chr_ensure_uploaded();
 }
 
 /* T-110 / T-116: weapon-slot ($0E, $10, $11) sprite cache. Owned by the
@@ -1004,6 +1014,7 @@ static inline unsigned char xlat_force_pal1(unsigned short tid)
  * so a sprite costs one table read instead of four range checks
  * (T-171: busy OW room $38 ran at the frame budget). */
 #define XLAT_PAL1 0x8000u
+#define XLAT_BOSS 0x4000u
 
 static void xlat_refresh(void)
 {
@@ -1023,7 +1034,8 @@ static void xlat_refresh(void)
         } else {
             unsigned short tid = translate_tile((unsigned char)t, 0u);
             s_xlat_tile[t] = (unsigned short)((tid & 0x07FFu) |
-                                              (xlat_force_pal1(tid) ? XLAT_PAL1 : 0u));
+                (xlat_force_pal1(tid) ? XLAT_PAL1 : 0u) |
+                ((s_boss_bank_active && t >= 0xC0u && t != 0xF3u) ? XLAT_BOSS : 0u));
         }
     }
 }
@@ -1038,13 +1050,16 @@ static inline unsigned short xlat_sat(unsigned char tile, unsigned char attrs)
     if ((attrs & (META_ATTR_MARKER | ITEM_ATTR_MARKER)) || e == XLAT_SLOW) {
         tid = translate_tile(tile, attrs);
         force = xlat_force_pal1(tid);
-    } else if (tile >= 0xC0u && tile != 0xF3u && s_boss_bank_active &&
-               (attrs & 0x03u) == 3u) {
-        /* T-125: the one attrs-dependent boss-bank case of translate_tile
-         * (sub-pal 3 copy); the table holds the sub-pal 0-2 bank tile. */
-        tid = (unsigned short)(ROOMROM_BOSS_SUBPAL3_TILE_BASE +
-                               (unsigned short)(tile - 0xC0u));
-        force = 1u;
+    } else if (e & XLAT_BOSS) {
+        /* The resident boss bank has fixed copies for all sub-palettes.
+         * Cache ownership in the tile word: no repeated range tests on
+         * ordinary sprites, no dynamic-copy checks on Patra's children.
+         * Markers and odd/PT1 tiles keep the generic path above. */
+        if ((attrs & 3u) == 3u)
+            return (unsigned short)((s_xlat_attr[attrs] & 0x9800u) |
+                                    (RENDER_PAL1 << 13) |
+                                    (ROOMROM_BOSS_SUBPAL3_TILE_BASE + tile - 0xC0u));
+        return (unsigned short)(s_xlat_attr[attrs] | (e & 0x07FFu));
     } else {
         tid = e;
         force = (unsigned char)((e & XLAT_PAL1) != 0u);
@@ -1091,10 +1106,11 @@ unsigned short enemy_render_item_sat(unsigned char nes_tile, unsigned char nes_a
 #define NATIVE_PASS_ALL             0u
 #define NATIVE_PASS_FIREBALLS       1u
 #define NATIVE_PASS_OTHER           2u
-static unsigned int emit_native_entries(unsigned int sat_slot, unsigned char pass,
+/* All cursor/index values are bounded by the 64-entry SAT and 11 slots. */
+static unsigned short emit_native_entries(unsigned short sat_slot, unsigned char pass,
                                         unsigned char *captured_hand_sat)
 {
-    unsigned int slot;
+    unsigned short slot;
     xlat_refresh();
     for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
         unsigned char n = s_enemy_count[slot];
@@ -1110,9 +1126,6 @@ static unsigned int emit_native_entries(unsigned int sat_slot, unsigned char pas
          * writer flashes with ObjInvincibilityTimer bits, already in the
          * entry's attrs (T-171: a hit Stalfos showed palette 0, NES 3 =
          * timer & 3, t013_route t4702); the spark reads the timer here. */
-        unsigned char inv_active = (ENEMY_RENDER_INV_TIMER(slot) != 0u);
-        unsigned char fc_pal = (unsigned char)(RAM(NES_FRAME_COUNTER) & 0x03u);
-
         for (ei = 0u; ei < n; ++ei) {
             enemy_render_entry_t *e = &s_enemy_entries[slot][ei];
             unsigned char y = e->y;
@@ -1127,14 +1140,16 @@ static unsigned int emit_native_entries(unsigned int sat_slot, unsigned char pas
                 *captured_hand_sat = (unsigned char)sat_slot;
 
             unsigned char render_attrs = (unsigned char)(e->attrs & ~ANIM_WRITE_SPRITE_MARKER);
-            if (inv_active &&
-                (e->attrs & (ANIM_WRITE_SPRITE_MARKER | META_ATTR_MARKER))) {
-                unsigned char flash_pal = fc_pal;
-                if ((e->attrs & META_ATTR_MARKER) &&
-                    e->tile >= ENEMY_RENDER_META_SPARK_OFFSET &&
-                    e->tile < ENEMY_RENDER_META_SPARK_OFFSET + ROOMROM_SPARK_TILE_COUNT)
-                    flash_pal = (unsigned char)(ENEMY_RENDER_INV_TIMER(slot) & 0x03u);
-                render_attrs = (unsigned char)((render_attrs & 0xFCu) | flash_pal);
+            if (e->attrs & (ANIM_WRITE_SPRITE_MARKER | META_ATTR_MARKER)) {
+                unsigned char inv_timer = ENEMY_RENDER_INV_TIMER(slot);
+                if (inv_timer != 0u) {
+                    unsigned char flash_pal = (unsigned char)(RAM(NES_FRAME_COUNTER) & 3u);
+                    if ((e->attrs & META_ATTR_MARKER) &&
+                        e->tile >= ENEMY_RENDER_META_SPARK_OFFSET &&
+                        e->tile < ENEMY_RENDER_META_SPARK_OFFSET + ROOMROM_SPARK_TILE_COUNT)
+                        flash_pal = (unsigned char)(inv_timer & 3u);
+                    render_attrs = (unsigned char)((render_attrs & 0xFCu) | flash_pal);
+                }
             }
             unsigned short sat_attrs = xlat_sat(e->tile, render_attrs);
             /* Phase E: each cache entry = one NES OAM (8x16). Render
@@ -1182,6 +1197,18 @@ static unsigned int emit_native_entries(unsigned int sat_slot, unsigned char pas
     return sat_slot;
 }
 
+/* NES source: Z_04 UpdatePatra/UpdatePatraChild use DrawObjectNotMirrored.
+ * Drained C: boss_patra + native pair publishers; both existing sweeps.
+ * Coverage: Patra parent/children/death; other bosses retain manual OAM.
+ * Stance: EXTEND renderer ownership independently of resident CHR.
+ * RoomObjTemplateType survives child splits and the parent's death. */
+unsigned char enemy_render_needs_oam_sweep(void)
+{
+    unsigned char room_type = RAM(0x035F);
+    return (unsigned char)(level_chr_boss_is_ready() &&
+                          room_type != 0x47u && room_type != 0x48u);
+}
+
 void enemy_render_sweep_oam_to_sat(void)
 {
     /* $07FE belongs to native UW progress; rendering must not mutate it. */
@@ -1193,7 +1220,7 @@ void enemy_render_sweep_oam_to_sat(void)
     s_boss_bank_active = level_chr_boss_is_ready();
 
     unsigned int i;
-    unsigned int sat_slot = ROOMROM_SPRITE_SLOT_ENEMY_FIRST;
+    unsigned short sat_slot = ROOMROM_SPRITE_SLOT_ENEMY_FIRST;
 
     /* Anim_WriteSprite's SpriteOffsets reach slots 24..63, but Gleeok
      * draws its heads and the base neck segments in slots 0..15 (Sprites +
@@ -1337,7 +1364,7 @@ void enemy_render_native_sweep(void)
     g_render_sat_cache[ROOMROM_SPRITE_SLOT_MASK_S].link =
         ROOMROM_SPRITE_SLOT_LINK;
     s_boss_bank_active = level_chr_boss_is_ready();
-    unsigned int sat_slot = ROOMROM_SPRITE_SLOT_ENEMY_FIRST;
+    unsigned short sat_slot = ROOMROM_SPRITE_SLOT_ENEMY_FIRST;
 
     /* $07FE belongs to native UW progress; rendering must not mutate it. */
 

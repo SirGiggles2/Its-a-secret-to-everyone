@@ -261,23 +261,33 @@ static void anim_write_sprite_pair_not_flashing(void)
         (obj_idx_initial == 0u ||
          (obj_idx_initial <= 11u && OBJ_TYPE(obj_idx_initial) == 0x3Eu));
 
+    /* NES source: Anim_WriteSpritePairNotFlashing, narrow/wide descriptor.
+     * Drained C: the generic loop below and existing pair publisher.
+     * Coverage: native single/pair enemies (Patra children are narrow).
+     * Stance: EXTEND; publish final scratch/cursor state without a loop. */
     if (!write_oam && obj_idx_initial <= 11u &&
-        (unsigned char)DRAW_HAS_TWO_SIDES == 1u) {
+        (unsigned char)DRAW_HAS_TWO_SIDES <= 1u) {
         const unsigned char x = (unsigned char)DRAW_X;
         const unsigned char y = (unsigned char)DRAW_Y;
         const unsigned char sep = (unsigned char)DRAW_X_SEPARATION;
         const unsigned char right_x = (unsigned char)(x + sep);
         const unsigned char marker = g_draw_in_item_context ? 0x08u : 0u;
-        enemy_render_publish_native_pair(
-            (unsigned char)DRAW_LEFT_TILE,
-            (unsigned char)((unsigned char)DRAW_LEFT_ATTR | marker),
-            (unsigned char)DRAW_RIGHT_TILE,
-            (unsigned char)((unsigned char)DRAW_RIGHT_ATTR | marker),
-            x, right_x, y);
-        DRAW_X = right_x;
-        sprite_cycle_cur_sprite_index();
-        DRAW_X = (uint8_t)(right_x + sep);
-        sprite_cycle_cur_sprite_index();
+        if ((unsigned char)DRAW_HAS_TWO_SIDES == 0u) {
+            enemy_render_publish_pair_left(
+                (unsigned char)DRAW_LEFT_TILE,
+                (unsigned char)((unsigned char)DRAW_LEFT_ATTR | marker), x, y);
+            DRAW_X = right_x;
+            sprite_cycle_cur_sprite_index();
+        } else {
+            enemy_render_publish_native_pair(
+                (unsigned char)DRAW_LEFT_TILE,
+                (unsigned char)((unsigned char)DRAW_LEFT_ATTR | marker),
+                (unsigned char)DRAW_RIGHT_TILE,
+                (unsigned char)((unsigned char)DRAW_RIGHT_ATTR | marker),
+                x, right_x, y);
+            DRAW_X = (uint8_t)(right_x + sep);
+            sprite_cycle_cur_sprite_index_twice();
+        }
         DRAW_HAS_TWO_SIDES = 0xFFu;
         return;
     }

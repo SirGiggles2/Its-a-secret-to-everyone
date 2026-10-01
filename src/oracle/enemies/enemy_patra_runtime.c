@@ -7,16 +7,13 @@
  *                                  Z_04.asm:12055 DecreaseObjectAngle,
  *                                  Z_01.asm:5337  Anim_SetSpriteDescriptorRedPaletteRow).
  *
- * Drained C:  NONE (this file is the drain).
- * Coverage:   FULL — InitPatra + UpdatePatraChild + the four math
- *             helpers Patra needs that have no native body in the
- *             current Debug.md link set. UpdatePatra body lives in the
- *             bridge (boss_patra.c) because it calls the Gleeok-style
- *             keese-flight wrapper for state 2/3.
- * Stance:     ADOPT — math + state machine match NES asm exactly. The
- *             helpers are local to this TU because they're only called
- *             by Patra; promoting them later if needed is a one-line
- *             move (header decl + extern).
+ * Drained C:  original InitPatra/UpdatePatraChild/math bodies here.
+ * Coverage:   PARTIAL — Q1 red-Patra route and shared pond-fairy math;
+ *             blue-Patra fight remains unverified. UpdatePatra parent
+ *             orchestration lives in boss_patra.c.
+ * Stance:     EXTEND — native word math preserves the drained byte
+ *             products and carry/borrow. Pond-fairy wrappers below
+ *             share the same rotation helpers.
  */
 
 #include "enemy_runtime_private.h"
@@ -64,50 +61,16 @@ static const unsigned char kPatraChild2Bits[2] = { 0x05, 0x06 };
  * MSB of the multiplier register. The `INC $03` at the unknown block
  * handles the carry-out from the lo-byte add.
  */
-static void patra_shift_multiply(unsigned char a_in,
-                                 unsigned char y_bits,
-                                 unsigned char mult_in,
-                                 unsigned int *prod_lo,
-                                 unsigned int *prod_hi)
+static unsigned short patra_shift_multiply(unsigned char a_in,
+                                           unsigned char y_bits,
+                                           unsigned char mult_in)
 {
-    unsigned char mult = mult_in;
-    unsigned char acc_lo = 0u;
-    unsigned char acc_hi = 0u;
-    unsigned char y;
-
-    for (y = y_bits; y != 0u; --y) {
-        unsigned int carry_lo;
-        unsigned int carry_hi;
-        unsigned int new_lo;
-        unsigned int new_hi;
-
-        /* ASL [02] / ROL [03] */
-        carry_lo = (unsigned int)acc_lo & 0x80u;
-        new_lo = (unsigned int)((unsigned char)(acc_lo << 1));
-        carry_hi = (unsigned int)acc_hi & 0x80u;
-        new_hi = (unsigned int)((unsigned char)((acc_hi << 1) | (carry_lo ? 1u : 0u)));
-        acc_lo = (unsigned char)new_lo;
-        acc_hi = (unsigned char)new_hi;
-
-        /* ASL [00] — does the multiplier MSB say "add A"? */
-        {
-            unsigned int msb = (unsigned int)mult & 0x80u;
-            mult = (unsigned char)(mult << 1);
-            if (msb) {
-                unsigned int sum = (unsigned int)acc_lo + (unsigned int)a_in;
-                acc_lo = (unsigned char)sum;
-                if (sum & 0x100u) {
-                    acc_hi++;
-                }
-                /* Note: ADC with C=0 from CLC, then BCC @next on no carry
-                 * -- equivalent to "if carry, INC [03]". (void)carry_hi; */
-            }
-            (void)carry_hi;
-        }
-    }
-
-    *prod_lo = acc_lo;
-    *prod_hi = acc_hi;
+    /* NES source: Z_04.asm:ShiftMultiply, 0..8 high multiplier bits.
+     * Drained C: this helper's ASL/ROL/ADC loop (preserved algebra).
+     * Coverage: exhaustive byte products; Patra + pond-fairy consumers.
+     * Stance: EXTEND with the equivalent 68000 word multiply. */
+    return (unsigned short)((unsigned short)a_in *
+                            ((unsigned short)mult_in >> (8u - y_bits)));
 }
 
 /* DecreaseObjectAngle (NES Z_04.asm:12055). Subtracts (high<<8|low)
@@ -116,68 +79,45 @@ static void patra_decrease_object_angle(unsigned char low,
                                         unsigned char high,
                                         unsigned int slot)
 {
-    int sub1   = (int)ENEMY_OBJ_ANGLE_FRAC(slot) - (int)low;
-    int borrow = (sub1 < 0) ? 1 : 0;
-    int sub2;
-
-    ENEMY_OBJ_ANGLE_FRAC(slot) = (unsigned char)sub1;
-    sub2 = (int)ENEMY_OBJ_ANGLE_WHOLE(slot) - (int)high - borrow;
-    ENEMY_OBJ_ANGLE_WHOLE(slot) = (unsigned char)(sub2 & 0x1F);
+    unsigned short angle = (unsigned short)
+        (((unsigned short)ENEMY_OBJ_ANGLE_WHOLE(slot) << 8) |
+         ENEMY_OBJ_ANGLE_FRAC(slot));
+    angle -= (unsigned short)(((unsigned short)high << 8) | low);
+    ENEMY_OBJ_ANGLE_FRAC(slot) = (unsigned char)angle;
+    ENEMY_OBJ_ANGLE_WHOLE(slot) = (unsigned char)((angle >> 8) & 0x1Fu);
 }
 
 /* RotateObjectLocation (NES Z_04.asm:11911). Updates ObjX/ObjXFrac
  * directly; returns the new ObjY (caller stores). */
-static unsigned char patra_rotate_object_location(unsigned char cosine_bits,
+/* T-172: keep child rotation in the caller; avoid register save/reload. */
+__attribute__((always_inline)) static inline unsigned char patra_rotate_object_location(unsigned char cosine_bits,
                                                   unsigned char sine_bits,
                                                   unsigned int slot)
 {
     unsigned char angle = ENEMY_OBJ_ANGLE_WHOLE(slot);
-    unsigned int prod_lo;
-    unsigned int prod_hi;
-    unsigned char angle_plus_8;
-    unsigned char angle_minus_8;
-    unsigned char new_y;
+    unsigned char speed = ENEMY_OBJ_QSPEED_FRAC(slot);
+    unsigned short product;
+    unsigned short position;
 
-    /* ---- X axis ---- */
-    {
-        unsigned char sin_idx = (unsigned char)(angle & 0x0Fu);
-        unsigned char sin_val = kPatraSines[sin_idx];
-        patra_shift_multiply(ENEMY_OBJ_QSPEED_FRAC(slot),
-                             sine_bits, sin_val, &prod_lo, &prod_hi);
-    }
-    if (((unsigned char)(angle & 0x18u)) >= 0x10u) {
-        int sub1 = (int)ENEMY_OBJ_X_FRAC(slot) - (int)prod_lo;
-        int borrow = (sub1 < 0) ? 1 : 0;
-        ENEMY_OBJ_X_FRAC(slot) = (unsigned char)sub1;
-        ENEMY_X(slot) = (unsigned char)((int)ENEMY_X(slot) - (int)prod_hi - borrow);
-    } else {
-        unsigned int sum1 = (unsigned int)ENEMY_OBJ_X_FRAC(slot) + prod_lo;
-        unsigned int carry = (sum1 >> 8) & 1u;
-        ENEMY_OBJ_X_FRAC(slot) = (unsigned char)sum1;
-        ENEMY_X(slot) = (unsigned char)((unsigned int)ENEMY_X(slot) + prod_hi + carry);
-    }
+    /* NES ASL/ROL product + ADC/SBC fractions are 16-bit wrap arithmetic.
+     * Pack each axis once; a native word add preserves carry/borrow. */
+    product = patra_shift_multiply(speed, sine_bits,
+                                   kPatraSines[angle & 0x0Fu]);
+    position = (unsigned short)(((unsigned short)ENEMY_X(slot) << 8) |
+                                ENEMY_OBJ_X_FRAC(slot));
+    if ((angle & 0x18u) >= 0x10u) position -= product;
+    else position += product;
+    ENEMY_OBJ_X_FRAC(slot) = (unsigned char)position;
+    ENEMY_X(slot) = (unsigned char)(position >> 8);
 
-    /* ---- Y axis (cosine = sin(angle + 8)) ---- */
-    angle_plus_8 = (unsigned char)(angle + 8u);
-    {
-        unsigned char cos_idx = (unsigned char)(angle_plus_8 & 0x0Fu);
-        unsigned char cos_val = kPatraSines[cos_idx];
-        patra_shift_multiply(ENEMY_OBJ_QSPEED_FRAC(slot),
-                             cosine_bits, cos_val, &prod_lo, &prod_hi);
-    }
-    angle_minus_8 = (unsigned char)(angle - 8u);
-    if (((unsigned char)(angle_minus_8 & 0x18u)) >= 0x10u) {
-        int sub1 = (int)ENEMY_OBJ_Y_FRAC(slot) - (int)prod_lo;
-        int borrow = (sub1 < 0) ? 1 : 0;
-        ENEMY_OBJ_Y_FRAC(slot) = (unsigned char)sub1;
-        new_y = (unsigned char)((int)ENEMY_Y(slot) - (int)prod_hi - borrow);
-    } else {
-        unsigned int sum1 = (unsigned int)ENEMY_OBJ_Y_FRAC(slot) + prod_lo;
-        unsigned int carry = (sum1 >> 8) & 1u;
-        ENEMY_OBJ_Y_FRAC(slot) = (unsigned char)sum1;
-        new_y = (unsigned char)((unsigned int)ENEMY_Y(slot) + prod_hi + carry);
-    }
-    return new_y;
+    product = patra_shift_multiply(speed, cosine_bits,
+                                   kPatraSines[(angle + 8u) & 0x0Fu]);
+    position = (unsigned short)(((unsigned short)ENEMY_Y(slot) << 8) |
+                                ENEMY_OBJ_Y_FRAC(slot));
+    if (((unsigned char)(angle - 8u) & 0x18u) >= 0x10u) position -= product;
+    else position += product;
+    ENEMY_OBJ_Y_FRAC(slot) = (unsigned char)position;
+    return (unsigned char)(position >> 8);
 }
 
 /* PatraChild_Draw (NES Z_04.asm:10312).

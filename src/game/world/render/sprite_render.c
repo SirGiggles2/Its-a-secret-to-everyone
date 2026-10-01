@@ -2,6 +2,7 @@
  * through render_set_sprite_full; RENDER_SPRITE_SIZE/RENDER_TILE_ATTR_FULL/PALn
  * use portable RENDER_* macros from render_abi.h. */
 #include "sprite_render.h"
+#include "../../enemies/enemy_render.h"
 #include "render_abi.h"
 #include "sprite_slots.h"
 #include "../../../../RoomRom/src/roomrom_vram_map.h"
@@ -352,6 +353,9 @@ void roomrom_sprites_upload_persistent_chr(void)
     render_chr_upload((unsigned short)(ROOMROM_HUD_COMPASS_MARKER_TILE * 32u),
                       &k_inventory_sprite_chr[14][0], 64u);
 
+    /* Prepare fixed FX with persistent CHR, before controller play.
+     * First use during a Patra beam burst/death previously missed VBlank. */
+    enemy_render_prepare_fx_chr();
 }
 
 void roomrom_sprites_upload_items_chr(void)

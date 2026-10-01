@@ -3793,12 +3793,12 @@ static void play_finish(void)
      * into a side-channel cache; native sweep emits 1 SAT entry
      * per alive enemy from the cache. NES OAM scatter still
      * happens for downstream compat but is no longer consumed. */
-    /* The loaded boss bank owns this room's sprite path through splits
-     * and death. Digdogger clears its parent type before drawing the
-     * final small form; selecting by living types drops that frame. */
+    /* Select the room's sprite producer separately from CHR residency.
+     * Patra publishes native pairs; sweeping its OAM too duplicates them.
+     * Other bosses retain manual OAM through splits and death. */
     {
         unsigned char boss_room = (unsigned char)(s_scene == SCENE_UW &&
-                                                  level_chr_boss_is_ready());
+                                                  enemy_render_needs_oam_sweep());
         if (boss_room) enemy_render_sweep_oam_to_sat();
         else if (s_lvl_phase == LVL_NONE) enemy_render_native_sweep();
         /* T-132: NES modes $10/2/3 update no objects; their sprites stay. */

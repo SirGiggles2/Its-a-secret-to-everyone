@@ -180,11 +180,11 @@ void world_get_object_middle(unsigned int slot)
      *
      * ObjAttr = $04BF per Variables.inc; bit $40 = "half width" flag
      * for collision detection. */
-    WORLD_TMP2 = 8u;
-    WORLD_TMP3 = 8u;
-    if (OBJ_STATUS_FLAGS(slot) & 0x40u) {
-        WORLD_TMP2 = (uint8_t)(WORLD_TMP2 >> 1);
-    }
-    WORLD_TMP2 = (uint8_t)(OBJ_X(slot) + WORLD_TMP2);
-    WORLD_TMP3 = (uint8_t)(OBJ_Y(slot) + WORLD_TMP3);
+    /* NES source: GetObjectMiddle above; drained C: this same body.
+     * Coverage: shared collision center, full/half-width and byte wrap.
+     * Stance: EXTEND; publish the two final scratch bytes once. No call
+     * or interrupt consumer reads their temporary offset values. */
+    const unsigned char offset_x = (OBJ_STATUS_FLAGS(slot) & 0x40u) ? 4u : 8u;
+    WORLD_TMP2 = (uint8_t)(OBJ_X(slot) + offset_x);
+    WORLD_TMP3 = (uint8_t)(OBJ_Y(slot) + 8u);
 }

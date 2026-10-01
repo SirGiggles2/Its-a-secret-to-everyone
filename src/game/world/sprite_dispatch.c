@@ -36,6 +36,19 @@ void sprite_cycle_cur_sprite_index(void)
     }
 }
 
+/* NES source: Z_01 Anim_WriteSpritePairNotFlashing/CycleCurSpriteIndex.
+ * Drained C: sprite_cycle_cur_sprite_index above.
+ * Coverage: native two-sided pair publisher, all byte cursor inputs.
+ * Stance: EXTEND two consecutive cycles into one committed cursor. */
+void sprite_cycle_cur_sprite_index_twice(void)
+{
+    unsigned char idx = (unsigned char)(RAM(ROLLING_SPRITE_INDEX_ADDR) + 2u);
+    if (idx == ROLLING_SPRITE_INDEX_WRAP ||
+        idx == ROLLING_SPRITE_INDEX_WRAP + 1u)
+        idx = (unsigned char)(idx - ROLLING_SPRITE_INDEX_WRAP);
+    RAM(ROLLING_SPRITE_INDEX_ADDR) = idx;
+}
+
 unsigned char sprite_cycle_sprite_index_in_a(unsigned char idx)
 {
     /* drain: same as cycle_cur_sprite_index but seed from `idx` param

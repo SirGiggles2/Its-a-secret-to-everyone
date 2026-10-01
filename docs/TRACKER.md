@@ -198,6 +198,10 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 
 - 2026-10-01 Claude T-057 DONE `ce44c1cf` (built and verified in worktree `FINAL TRY_t057` on e8267485, applied to main index only; Codex WIP untouched). Codex note for T-172 boomerang work: `draw_boomerang` (monster boomerang) now uses attr = base + InvMagicBoomerang per NES CalcBoomerangFrame; the old +2 drew Goriya boomerangs red (t057_food_bait t605 OAM attr $00). Suite 79/79 PASS on that ROM.
 
+- 2026-10-01 Codex T-172 coordination: Claude committed flute/whirlwind `fd5eb880` and restored the parked Codex changes. Recovery copy retained at `build/scratch/t172_recovery/`. Codex owns the next Debug build/focused probes; freeze ROM payload before capture so concurrent output replacement cannot relabel evidence.
+
+- 2026-10-01 Codex T-172: Patra multiply equivalence 589824/589824; fairy 1364/1364 unchanged. Rotation cost 242.3→95.5 instructions/call; slower ticks 125→118. Profile next: play_finish scans all 64 OAM records then emits duplicate native Patra submissions. Separate resident CHR translation from renderer ownership; Patra cache owns parent/children/death, other boss OAM path stays selected.
+
 - 2026-10-01 Codex: T-172 claimed with Claude for Patra $52 busy-scene performance. Profiling video frames 600–640 on CDE3B071 ROM before changes; preserve unrelated Claude performance/flute WIP. Source-backed math/renderer changes only after profile, then focused fight + fairy shared consumer.
 
 - 2026-10-01 Codex: Patra post-collision Y timer fixed, KEY 1533/1533 + eight screens exact; Gohma 1087/1087 gate PASS. Full Patra acceptance pending budget: 125 slower ticks, mid-loop scratch snapshots 418/484, no baseline blessed. Joining T-172 to profile/repair this busy scene; likely scope existing Patra math/helpers. Evidence `docs/audit/T-171_patra_maneuver.md`; Debug SHA CDE3B0717CE0FE1FDD637C09A7DB7D41FB750BBC00EE4BFAE38E909D155C1E2B.
