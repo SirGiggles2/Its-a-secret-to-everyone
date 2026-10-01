@@ -162,9 +162,13 @@ static void wm_link_end_move_and_animate_bank4(void)
     unsigned char face = roomrom_main_current_link_face();
     roomrom_main_set_link_story_pose(x, y, face);
     roomrom_combat_animate_link_base();
-    roomrom_sprites_set_link_pose((short)x, (short)y,
-                                  (link_face_t)face,
-                                  (unsigned char)(WM_OBJ_ANIM_FRAME(0u) & 1u));
+    if (RAM(0x04F0u) != 0u)
+        roomrom_sprites_set_link_hurt_pose((short)x, (short)y,
+            (link_face_t)face, (unsigned char)(WM_OBJ_ANIM_FRAME(0u) & 1u),
+            (unsigned char)RAM(0x04F0u));
+    else
+        roomrom_sprites_set_link_pose((short)x, (short)y,
+            (link_face_t)face, (unsigned char)(WM_OBJ_ANIM_FRAME(0u) & 1u));
 }
 
 /* CARRY_SET sentinel matches enrt_*_runtime.c. */

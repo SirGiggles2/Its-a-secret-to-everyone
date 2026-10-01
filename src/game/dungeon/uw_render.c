@@ -463,10 +463,13 @@ static unsigned short tile_word(unsigned char raw_tile, unsigned char pal)
  * only over BG colour 0 there (lockstep t131_uw_doors f2145-2151: Link
  * hidden by the W wall bricks, visible in the black door opening). Such a
  * half covers play columns 0..2 or 29..31; those BG tiles are high
- * priority, the Link half low priority (sprite_render.c link_half_prio). */
+ * priority, the Link half low priority (sprite_render.c link_half_prio).
+ * Wallmaster's behind-BG hand also reaches column 3 (x=$18) as it exits
+ * the W wall; make the fourth border column high priority so opaque wall
+ * pixels cover it as they do on NES (t171_wallmaster_grab t7855/t7950). */
 static unsigned short edge_priority(unsigned char src_col)
 {
-    return (src_col < 3u || src_col > 28u) ? 0x8000u : 0u;
+    return (src_col < 4u || src_col > 27u) ? 0x8000u : 0u;
 }
 
 /* T-114: plane placement of the live (last rendered) room. Rooms are
