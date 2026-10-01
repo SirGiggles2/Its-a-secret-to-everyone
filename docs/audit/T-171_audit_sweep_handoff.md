@@ -195,6 +195,14 @@ match the NES that did not; suite 51/51 throughout.
   (`--vframes`), interactive L2-L9 + boss fights, Wallmaster grab stub,
   T-172 headroom (room $38 worst tick line $DE).
 
+- 2026-10-01 T-057 (ce44c1cf): food bait (WieldFood + food branch of
+  UpdateBoomerangOrFood, monsters chase it), potion on B (Paused 2 heart
+  fill), Grumble Link animation + single Link draw, Goriya boomerang
+  palette. Presets t057_food_bait / food_leave / grumble / potion; see
+  `docs/audit/drain_findings/t057-food-potion-grumble.md`. Parallel work
+  with Codex live in main: build in a separate worktree, then apply the
+  patch to main's index only (`git apply --cached` + `git apply`).
+
 ## Original open queue at handoff (historical; now empty)
 
 Work top-down. Each line = cell, presets@first tick, what is known.
