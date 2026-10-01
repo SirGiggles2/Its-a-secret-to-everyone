@@ -21,6 +21,9 @@ unsigned short roomrom_bg_palette_nes_to_cram(unsigned char nes_color)
 static unsigned short s_sprite_palram_cram[16];
 static unsigned char  s_sprite_palram_loaded = 0u;
 
+/* LevelInfo palettes ($6B7E transfer record, $6B81 = $3F00): $3F11. */
+#define LEVEL_PALETTE_LINK_COLOR (0x6000u + 0x0B92u)
+
 static void load_slot16(unsigned char gen_slot, const unsigned char *nes16)
 {
     unsigned short pal16[16];
@@ -54,14 +57,22 @@ void roomrom_bg_palette_load_palram_full(const unsigned char *palram32)
      * NO ephemeral CRAM rewrite happens here; PAL2/PAL3 stay valid for
      * concurrent bomb / candle rendering. */
     unsigned char i;
+    unsigned char spr[16];
+    /* T-171: NES $3F11 (Link's tunic) is the level palette byte $6B92,
+     * which PatchAndCueLevelPalettesTransfer sets to LinkColors[InvRing]
+     * on every level load and ring pickup. The captured palettes passed
+     * here all hold the green $29, so a ring left Link green (t121_ring1:
+     * NES $32, Genesis $29). The level palette byte is the source. */
+    for (i = 0; i < 16; i++) spr[i] = palram32[16 + i];
+    if (nes_ram[LEVEL_PALETTE_LINK_COLOR] != 0u)
+        spr[1] = nes_ram[LEVEL_PALETTE_LINK_COLOR];
     load_slot16(0, palram32 + 0);
-    load_slot16(1, palram32 + 16);
+    load_slot16(1, spr);
     /* Cache the 16 sprite-palram CRAM words. Retained for the beam
      * pal-cycle path (which reads sub-pal CRAM words to validate PAL2/3
      * are populated) and for any future per-sub-pal load. */
     for (i = 0; i < 16; i++) {
-        s_sprite_palram_cram[i] =
-            roomrom_bg_palette_nes_to_cram(palram32[16 + i]);
+        s_sprite_palram_cram[i] = roomrom_bg_palette_nes_to_cram(spr[i]);
     }
     s_sprite_palram_loaded = 1u;
 
@@ -97,6 +108,14 @@ void roomrom_bg_palette_load_palram_full(const unsigned char *palram32)
         pal3[3] = roomrom_bg_palette_nes_to_cram(palram32[16 + 11]);  /* $3F1B */
         render_load_palette(3u, pal3);
     }
+}
+
+void roomrom_bg_palette_refresh_link_color(void)
+{
+    const unsigned char c = nes_ram[LEVEL_PALETTE_LINK_COLOR];
+    if (c == 0u) return;
+    s_sprite_palram_cram[1] = roomrom_bg_palette_nes_to_cram(c);
+    render_cram_write_color(17u, s_sprite_palram_cram[1]);   /* $3F11 */
 }
 
 const unsigned short *roomrom_bg_palette_get_sprite_subpal_cram(

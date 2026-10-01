@@ -34,6 +34,18 @@ extern unsigned char g_fs_handoff_slot;
 
 /* Persistent NES-format saves (T-100). src/state is on the include path. */
 #include "save_game.h"
+#include "../game/world/bg_palette.h"   /* refresh_link_color */
+extern void room_patch_level_palette_link_color(void);   /* room_dispatch.c */
+
+/* The room (and its palette) loads in roomrom_debug_enter, before the
+ * save or the debug unlock sets InvRing. NES InitMode3_Sub1 patches
+ * Link's color into the level palette after the File Select; do the same
+ * once the profile is in RAM (t121_ring1). */
+static void link_color_after_profile(void)
+{
+    room_patch_level_palette_link_color();
+    roomrom_bg_palette_refresh_link_color();
+}
 
 /* Debug/probe sentinel block (platform_abi.h DBG_SENTINEL, T-109). */
 volatile unsigned char g_debug_sentinel[32];
@@ -224,6 +236,7 @@ static void debug_poll_title(void)
          * + HeartValues default values that would otherwise overwrite us.
          * Release builds (when they exist) should NOT call this. */
         debug_unlock_all_items();
+        link_color_after_profile();
         /* Phase 10.3 audio per-event wiring (gameplay-mode entry).
          * Boot lands in SCENE_UW per RoomRom/src/main.c:96
          * (s_scene = SCENE_UW). Per docs/audit/audio_routing.md, UW
@@ -372,6 +385,7 @@ int debug_main_after_a4(bool hardReset)
                  * the chosen slot. */
                 RAM(0x0016u) = g_fs_handoff_slot;   /* CurSaveSlot */
                 (void) save_game_load_slot(g_fs_handoff_slot);
+                link_color_after_profile();
 
                 audio_music_play(0x01);  /* SONG_OW — FS exits to overworld */
             }

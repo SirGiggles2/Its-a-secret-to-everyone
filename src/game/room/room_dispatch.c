@@ -426,13 +426,29 @@ void room_update_mode3_unfurl(void)
     }
 }
 
+/* PatchAndCueLevelPalettesTransfer's patch half: Link's color for the
+ * save slot (MenuPalettesTransferBuf+20 row 4/5/6) into the level
+ * palettes ($6B92 = $3F11). T-171: the NES File Select fills each
+ * profile's row with LinkColors[ring] (Z_02.asm:2436) and taking a ring
+ * patches it (Z_01.asm:4673); the Genesis front end does not, so a game
+ * loaded with a ring kept the green tunic (t121_ring1: NES $32, Genesis
+ * $29). The row is LinkColors[InvRing] of the current profile. Also run
+ * after every LevelInfo install (level_info_install.c): the Genesis load
+ * paths that skip InitMode3 would otherwise keep the ROM's $29. */
+void room_patch_level_palette_link_color(void)
+{
+    static const unsigned char k_link_colors[3] = { 0x29u, 0x32u, 0x16u }; /* LinkColors_CommonCode */
+    const unsigned char slot = (unsigned char)SAVE_SLOT_INDEX;
+    const unsigned char row_off = SaveSlotToPaletteRowOffset[slot & 3u];
+    const unsigned char ring = nes_ram[0x0662u];
+    if (ring < 3u) MenuPalettesTransferBuf[20u + row_off] = k_link_colors[ring];
+    nes_ram[NES_SRAM_BASE + 0x0B92u] = MenuPalettesTransferBuf[20u + row_off];
+}
+
 void room_patch_and_cue_level_palettes_transfer(void)
 {
     /* drain at room_mode_runtime.c:272-279. */
-    const unsigned char slot = (unsigned char)SAVE_SLOT_INDEX;
-    const unsigned char row_off = SaveSlotToPaletteRowOffset[slot & 3u];
-    const unsigned char color = MenuPalettesTransferBuf[20u + row_off];
-    nes_ram[NES_SRAM_BASE + 0x0B92u] = color;
+    room_patch_level_palette_link_color();
     ROOM_TRANSFER_BUF_SELECT = 24u;
     SUBMODE_VALUE = (uint8_t)((unsigned char)SUBMODE_VALUE + 1u);
 }

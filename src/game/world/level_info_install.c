@@ -87,6 +87,9 @@ static void copy_to_nes_ram(unsigned short dst_nes_addr,
 /* NES Z_06.asm UpdateMode2Load_Full @PatchQ2Rooms: 8 LevelBlockAttrsB
  * replacements from the ROM tables (LDY #7 .. BPL), then 7 immediate
  * writes. Called after the OW LevelBlock copy whenever Q2 is active. */
+/* room_dispatch.c: LevelInfo $6B92 = Link's color (InitMode3_Sub1). */
+extern void room_patch_level_palette_link_color(void);
+
 void level_info_apply_q2_ow_patch(void)
 {
     const unsigned char *offs = &rooms_dungeons[ROOMROM_OW_Q2_ATTRB_REPL_OFFSETS_OFF];
@@ -116,7 +119,7 @@ void level_info_install_ow(void)
      * with Q1 room attributes (secret/cave/door data of 8+7 cells). */
     if (roomrom_main_current_quest() == 2u) {
         level_info_apply_q2_ow_patch();
-    }
+    }    room_patch_level_palette_link_color();
 }
 
 void level_info_apply_q2_patch(unsigned char level)
@@ -170,6 +173,7 @@ void level_info_install_uw(unsigned char level, unsigned char quest)
     if (quest == 2u) {
         level_info_apply_q2_patch(level);
     }
+    room_patch_level_palette_link_color();
 
     /* LevelInfo_WorldFlagsAddr ($6BAF/$6BB0) comes from the ROM record
      * unmodified. ROM-verified 2026-09-24 (pointer-read, 252-byte records):
@@ -198,6 +202,7 @@ void level_info_mode2_step(unsigned char step, unsigned char level,
             src = &rooms_dungeons[BLOB_UW_LEVELINFO_BASE +
                                   ((unsigned int)(level - 1u)) * BLOB_UW_LEVELINFO_STRIDE];
         copy_to_nes_ram(NES_LEVEL_INFO_BASE, src, NES_LEVEL_INFO_BYTES);
+        room_patch_level_palette_link_color();
     } else if (q2) {
         if (level == 0u) level_info_apply_q2_ow_patch();
         else level_info_apply_q2_patch(level);

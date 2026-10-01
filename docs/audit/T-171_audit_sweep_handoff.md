@@ -155,6 +155,17 @@ match the NES that did not; suite 51/51 throughout.
   (2) coverage: interactive L2-L9 routes and boss fights (Codex's idle boss
   presets), (3) T-097 death mode stubs, Wallmaster grab, (4) T-172 lag.
 
+- 2026-10-01 VISUAL SWEEP (`tools/lockstep/screen_sweep.py --md
+  docs/audit/screen_sweep.md`: settled play ticks, per-pixel CRAM diff).
+  T-097 death mode done (ccd3fd3b). Ring tunic fixed: the room palette
+  loaded in `roomrom_debug_enter` before the save set InvRing, and the
+  captured palettes all carry green `$29`. Now: `$3F11` comes from the
+  level palette byte `$6B92` (`roomrom_bg_palette_load_palram_full`),
+  which `room_patch_level_palette_link_color` (InitMode3_Sub1 patch half,
+  LinkColors[InvRing] into the slot's menu row) sets after every LevelInfo
+  install and after the File Select / debug-unlock profile load
+  (`a4_probe_main.c`). t121_ring1/ring2/q2_ow 95 px -> MATCH.
+
 ## Original open queue at handoff (historical; now empty)
 
 Work top-down. Each line = cell, presets@first tick, what is known.

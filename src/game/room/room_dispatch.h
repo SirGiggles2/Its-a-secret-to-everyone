@@ -124,6 +124,8 @@ void room_update_mode2_load(void);
  * PatchAndCueLevelPalettesTransfer.
  * drain at room_mode_runtime.c:272-279. */
 void room_patch_and_cue_level_palettes_transfer(void);
+/* Patch half only (no transfer cue, no submode advance). */
+void room_patch_level_palette_link_color(void);
 
 /* If CUR_LEVEL!=0 or ROOM_ID_ALT==$FF, read room_id from SRAM($0BAD);
  * else use ROOM_ID_ALT (and clear it). Then patch_and_cue. NES
