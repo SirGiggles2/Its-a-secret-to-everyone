@@ -293,7 +293,8 @@ void corert_play_boomerang_sfx(unsigned int sfx_id) {
 void corert_take_hearts_no_sound(void) {
     RAM(0x0001) = RAM(0x000A);
     for (;;) {
-        if (corert_compare_hearts_to_containers() == RAM(0x0000)) {
+        unsigned char whole_hearts = corert_compare_hearts_to_containers();
+        if (whole_hearts == RAM(0x0000)) {
             unsigned char partial = LINK_PARTIAL_HEART;
             partial++;
             if (partial == 0) {

@@ -418,7 +418,9 @@ void core_take_hearts_no_sound(void)
      * Loop credit hearts, capped by container count. */
     RAM(0x0001u) = (uint8_t)RAM(0x000Au);
     for (;;) {
-        if (core_compare_hearts_to_containers() == (unsigned char)RAM(0x0000u)) {
+        /* NES JSR finishes its $00 write before CMP reads that scratch byte. */
+        unsigned char whole_hearts = core_compare_hearts_to_containers();
+        if (whole_hearts == (unsigned char)RAM(0x0000u)) {
             unsigned char partial = LINK_PARTIAL_HEART;
             partial = (unsigned char)(partial + 1u);
             if (partial == 0u) {

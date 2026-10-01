@@ -343,7 +343,8 @@ void room_world_fill_hearts(void)
         LINK_PARTIAL_HEART = 0u;
         /* CompareHeartsToContainers installs the container count in $00
          * before comparing it with the full-heart count. */
-        if (core_compare_hearts_to_containers() == (unsigned char)RAM(0x0000u)) {
+        unsigned char whole_hearts = core_compare_hearts_to_containers();
+        if (whole_hearts == (unsigned char)RAM(0x0000u)) {
             LINK_PARTIAL_HEART = 0xFFu;
             RAM(0x052Eu) = 0u;             /* ROOM_SWORD_BLOCKED_FLAG */
             ROOM_HEART_FILL_STATE = 0u;
