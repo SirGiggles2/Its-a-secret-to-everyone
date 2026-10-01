@@ -1,6 +1,6 @@
 # T-171 — heart helper sequencing (2026-10-01)
 
-- **NES source:** `reference/aldonunez/Z_01.asm:TakeHeartsNoSound, CompareHeartsToContainers`; `Z_05.asm:WorldFillHearts`.
+- **NES source:** `reference/aldonunez/Z_01.asm:TakeHeartsNoSound, CompareHeartsToContainers`; `Z_05.asm:World_FillHearts`.
 - **Drained C:** `src/core/core_runtime.c:corert_take_hearts_no_sound`; active `src/game/core/core_dispatch.c:core_take_hearts_no_sound` and `src/game/room/room_dispatch.c:room_world_fill_hearts`.
 - **Coverage:** FULL for these compare/cap branches; not every healing source.
 - **Stance:** EXTEND existing drained/native implementations.
