@@ -15,6 +15,10 @@ NES-color -> CRAM table, roomrom_bg_palette_nes_to_cram). Supported only
 for screens at scroll 0: CurHScroll $FD, CurVScroll $FC and the PPUCTRL
 name-table bits must be 0 (a settled room: the sprite-0 split then changes
 nothing), else the tool stops (it does not model scrolling screens).
+PPUMASK grayscale (bit 0, the bomb flash): IsrNmi writes CurPpuMask $FE to
+PPUMASK before that tick's logic runs, and the snapshot shows the frame
+after NMI T, so the mask in effect is $FE of RAM row T-1; every color is
+then index & $30.
 
 Genesis (256x224): the gameplay VDP layout from RoomRom/src/main.c
 init_video (plane A and B at $C000, 64x64 cells, H scroll table $F000 per
@@ -200,6 +204,11 @@ def main() -> int:
                     (d / f"nes.{t}.pal").read_bytes(), (d / f"nes.{t}.oam").read_bytes(), ram)
     gen = gen_frame((d / f"gen.{t}.vram").read_bytes(), (d / f"gen.{t}.cram").read_bytes(),
                     (d / f"gen.{t}.vsram").read_bytes(), a.window_rows)
+    prev = (d / "nes.ram").read_bytes()[(a.tick - 1) * 0x800:a.tick * 0x800] if a.tick else ram
+    gray = 0x30 if prev[0xFE] & 1 else 0x3F
+    if gray != 0x3F:
+        nes = [[c & gray for c in row] for row in nes]
+        print("NES PPUMASK grayscale on ($FE of row T-1)")
     bad = {}
     for y in range(224):
         for x in range(256):
