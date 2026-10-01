@@ -84,7 +84,9 @@ unsigned int c_shoot_limited(unsigned int slot)
     {
         unsigned int y = 0x0Bu;
         for (;;) {
-            if (ENEMY_TYPE(y) == 0u) { empty = y; break; }
+            /* FindEmptyMonsterSlot: STY EmptyMonsterSlot ($59, T-171:
+             * t129 t4829 red wizzrobe wave). */
+            if (ENEMY_TYPE(y) == 0u) { empty = y; ENEMY_NEXT_SHOT_SLOT = (unsigned char)y; break; }
             if (y == 0x01u) break;
             y--;
         }

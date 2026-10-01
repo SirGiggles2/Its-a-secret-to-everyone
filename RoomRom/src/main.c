@@ -841,7 +841,10 @@ static unsigned char link_nes_grid_at_limit(void)
 /* T-123: NES InitLinkSpeed. Link's q-speed is $60 except on the OW
  * stair / slow tiles $74 / $75 (ObjCollidedTile $49E) where it is $30;
  * switching to $30 resets the position fraction. */
-static u8 s_link_qspeed = LINK_QSPEED;
+/* Link's ObjQSpeedFrac lives in the NES cell: a private copy written back
+ * every tick undid InitMode_EnterRoom's $60 after leaving a slow tile
+ * (T-171: t111_dark_candle t1108). */
+#define s_link_qspeed nes_ram[0x03BCu]
 
 static void link_nes_init_speed(void)
 {
@@ -4939,7 +4942,6 @@ void roomrom_debug_tick(void)
             nes_ram[0x84u] = (u8)players[0].y;
             nes_ram[0x394u] = (u8)s_link_grid_offset;
             nes_ram[0x3A8u] = s_link_pos_frac;
-            nes_ram[0x3BCu] = s_link_qspeed; /* T-113/T-123: ObjQSpeedFrac */
             /* T-125: Link is drawn once, after AnimateLinkBase below. */
             if (!roomrom_combat_link_locked()) s_link_draw_pending = 1u;
         }
