@@ -190,6 +190,12 @@
 /* T-161: death-spark $62..$65 also flashes through NES sub-pal 3. */
 #define ROOMROM_SPARK_SUBPAL3_TILE_BASE 1428u
 #define ROOMROM_SPARK_SUBPAL3_TILE_COUNT 4u
+/* T-169: NES 8x16 sprites with an odd tile id take pattern table 1 (the
+ * background tiles), e.g. the UW push block (DrawBlock: $B1/$B3, attr 3).
+ * enemy_render.c copies the BG pair (top, top+1) for the sprite's sub-pal
+ * here on demand: 4 cached pairs, drawn with PAL1. 1432..1439 (free). */
+#define ROOMROM_PT1_PAIR_TILE_BASE 1432u
+#define ROOMROM_PT1_PAIR_TILE_COUNT 8u
 /* The pause inventory owns 1280..1295. Its ROM-derived marker pair
  * (indices 14/15) is also uploaded at gameplay boot for the Original HUD. */
 #define ROOMROM_SUBSCREEN_SPRITE_TILE_BASE 1280u

@@ -1,5 +1,9 @@
 system=NES ram=System Bus+0 save=Battery RAM domains=Battery RAM,CIRAM (nametables),OAM,PALRAM,PPU Bus,PRG ROM,System Bus,VRAM,WRAM preset=t054_uw_block42_nes pre_script_frames=1
 preset_bytes_written=443
+boot i=1 gm=02 sub=00 room=00
+boot i=31 gm=03 sub=00 room=77
+boot i=61 gm=03 sub=00 room=77
+boot i=91 gm=03 sub=00 room=77
 sync_after_menu_frames=105 live_after=1 seeded=0
 t=0 f=0 in= gm=05 sub=00 fc=2C room=77
 t=1 f=1 in= gm=05 sub=00 fc=2D room=77

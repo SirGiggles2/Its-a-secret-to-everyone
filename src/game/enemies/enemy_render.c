@@ -638,6 +638,69 @@ static void ensure_fireball_chr(void)
     s_fireball_chr_uploaded = 1u;
 }
 
+/* T-169: an odd tile id in NES 8x16 mode takes pattern table 1, the
+ * background tiles: the UW push block is DrawBlock's BG pair $B0/$B1 +
+ * $B2/$B3 with attr 3 (t054_uw_block42_nes NES OAM 38/57 at t880). The
+ * generic path drew sprite-table art there (Genesis tiles $2D7/$2D9, an
+ * enemy). The BG atlas holds each BG tile in four copies biased by 4 * k
+ * for BG sub-pal k (bg_sparse_tile_lut); under PAL1, which holds the four
+ * NES sprite palettes, the copy for k shows NES sprite palette k exactly.
+ * A Genesis 8x16 sprite needs its two tiles adjacent, so the pair is
+ * copied into ROOMROM_PT1_PAIR_TILE_BASE on demand (4 cached pairs, keyed
+ * by tile, sub-pal and level). */
+extern const unsigned short bg_sparse_tile_lut[256][4];
+#define PT1_PAIR_SLOTS (ROOMROM_PT1_PAIR_TILE_COUNT / 2u)
+static unsigned char s_pt1_tile[PT1_PAIR_SLOTS];
+static unsigned char s_pt1_pal[PT1_PAIR_SLOTS];
+static unsigned char s_pt1_lvl[PT1_PAIR_SLOTS];
+static unsigned char s_pt1_used[PT1_PAIR_SLOTS];
+static unsigned char s_pt1_next;
+
+static unsigned short pt1_pair(unsigned char nes_tile, unsigned char sub_pal)
+{
+    const unsigned char top = (unsigned char)(nes_tile & 0xFEu);
+    const unsigned char lvl = nes_ram[0x0010u];
+    unsigned char i, k;
+    for (i = 0u; i < PT1_PAIR_SLOTS; ++i) {
+        if (s_pt1_used[i] && s_pt1_tile[i] == top && s_pt1_pal[i] == sub_pal &&
+            s_pt1_lvl[i] == lvl)
+            return (unsigned short)(ROOMROM_PT1_PAIR_TILE_BASE + 2u * i);
+    }
+    i = (unsigned char)(s_pt1_next++ % PT1_PAIR_SLOTS);
+    for (k = 0u; k < 2u; ++k) {
+        unsigned short words[16];
+        const unsigned short slot = bg_sparse_tile_lut[(unsigned char)(top + k)][sub_pal & 3u];
+        unsigned char w;
+        if (slot == 0xFFFFu) {
+            for (w = 0u; w < 16u; ++w) words[w] = 0u;
+        } else {
+            /* The BG copy stores pixel 0 as color 4k (opaque background);
+             * a sprite's pixel 0 is transparent: 4k -> 0. */
+            const unsigned short zero = (unsigned short)((sub_pal & 3u) << 2);
+            render_vram_read_run((unsigned short)((ROOMROM_BG_TILE_BASE + slot) * 32u), words, 16u);
+            if (zero) {
+                for (w = 0u; w < 16u; ++w) {
+                    unsigned short x = words[w], out = 0u;
+                    unsigned char n;
+                    for (n = 0u; n < 4u; ++n) {
+                        unsigned short nib = (unsigned short)((x >> (n * 4u)) & 0xFu);
+                        if (nib == zero) nib = 0u;
+                        out = (unsigned short)(out | (nib << (n * 4u)));
+                    }
+                    words[w] = out;
+                }
+            }
+        }
+        render_vram_open_write((unsigned short)((ROOMROM_PT1_PAIR_TILE_BASE + 2u * i + k) * 32u));
+        render_vram_write_words(words, 16u);
+    }
+    s_pt1_tile[i] = top;
+    s_pt1_pal[i] = sub_pal;
+    s_pt1_lvl[i] = lvl;
+    s_pt1_used[i] = 1u;
+    return (unsigned short)(ROOMROM_PT1_PAIR_TILE_BASE + 2u * i);
+}
+
 static inline unsigned short translate_tile(unsigned char nes_tile,
                                             unsigned char nes_attrs)
 {
@@ -698,6 +761,9 @@ static inline unsigned short translate_tile(unsigned char nes_tile,
      * Drained C: translate_tile + level_chr_swap enemy bank upload.
      * Coverage: PARTIAL scene enemy tiles; Stance: EXTEND.
      * OW starts at $08E0; per-level UWSP starts at $09E0. */
+    if (nes_tile & 1u) {                         /* T-169: pattern table 1 */
+        return pt1_pair(nes_tile, (unsigned char)(nes_attrs & 0x03u));
+    }
     const unsigned char bank_first = nes_ram[0x0010u] ? 0x9Eu : NES_OWSP_BANK_FIRST;
     if (nes_tile < bank_first) {
         /* Common sprite pattern block at SPR_BASE 1:1. */
@@ -756,6 +822,10 @@ static inline unsigned short translate_attrs(unsigned char nes_attrs,
         tile_id < ROOMROM_SPARK_SUBPAL3_TILE_BASE + ROOMROM_SPARK_SUBPAL3_TILE_COUNT) {
         pal_bank = RENDER_PAL1;
     }
+    if (tile_id >= ROOMROM_PT1_PAIR_TILE_BASE &&
+        tile_id < ROOMROM_PT1_PAIR_TILE_BASE + ROOMROM_PT1_PAIR_TILE_COUNT) {
+        pal_bank = RENDER_PAL1;                  /* T-169 */
+    }
 
     unsigned short sat = (unsigned short)(tile_id & 0x07FFu);
     sat |= (unsigned short)(pal_bank << 13);
@@ -791,8 +861,9 @@ static void xlat_refresh(void)
     }
     s_xlat_key = key;
     for (t = 0u; t < 256u; ++t) {
-        if (t == 0x44u || t == 0x45u)
-            s_xlat_tile[t] = XLAT_SLOW;
+        if (t == 0x44u || t == 0x45u ||
+            ((t & 1u) && t != 0xF3u && !(t >= NES_FIRE_TILE_FIRST && t <= NES_FIRE_TILE_LAST)))
+            s_xlat_tile[t] = XLAT_SLOW;          /* attrs-dependent / lazy CHR */
         else
             s_xlat_tile[t] = translate_tile((unsigned char)t, 0u);
     }
@@ -817,7 +888,9 @@ static inline unsigned short xlat_sat(unsigned char tile, unsigned char attrs)
         (tid >= ROOMROM_FIREBALL_SUBPAL3_TILE_BASE &&
          tid < ROOMROM_FIREBALL_SUBPAL3_TILE_BASE + ROOMROM_FIREBALL_SUBPAL3_TILE_COUNT) ||
         (tid >= ROOMROM_SPARK_SUBPAL3_TILE_BASE &&
-         tid < ROOMROM_SPARK_SUBPAL3_TILE_BASE + ROOMROM_SPARK_SUBPAL3_TILE_COUNT))
+         tid < ROOMROM_SPARK_SUBPAL3_TILE_BASE + ROOMROM_SPARK_SUBPAL3_TILE_COUNT) ||
+        (tid >= ROOMROM_PT1_PAIR_TILE_BASE &&
+         tid < ROOMROM_PT1_PAIR_TILE_BASE + ROOMROM_PT1_PAIR_TILE_COUNT))
         sat = (unsigned short)((sat & 0x9FFFu) | (RENDER_PAL1 << 13));
     return sat;
 }

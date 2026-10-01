@@ -68,7 +68,6 @@ typedef enum {
 static pb_s_t          s_pb_state;
 static unsigned char   s_pb_timer;
 static unsigned char   s_pb_offset;
-static unsigned char   s_pb_motion_phase;
 static unsigned char   s_pb_dir_bit;        /* 0x08/0x04/0x02/0x01 */
 static unsigned char   s_pb_block_col_mt;
 static unsigned char   s_pb_block_row_mt;
@@ -85,6 +84,15 @@ static unsigned char   s_pb_cached_level = 0u;
 static unsigned char   s_pb_cached_quest = 0u;
 static unsigned char   s_pb_cached_has_meta = 0u;
 static roomrom_pushblock_meta_t s_pb_cached_meta;
+
+/* NES UpdateBlock runs in the object loop at slot 11: it moves the block,
+ * then draws it (Z_04.asm:720-726). s_pb_obj_ran marks that the slot-11
+ * handler ran the update this frame; s_pb_draw marks a frame where NES
+ * reaches DrawBlock (the push frame and every moving frame). */
+static unsigned char   s_pb_obj_ran;
+static unsigned char   s_pb_draw;
+
+static void pb_update(unsigned char advance);
 
 /* RoomAllDead gate (Z_04.asm:630-631, Z_05.asm:2406+2413).
  *
@@ -110,7 +118,6 @@ void roomrom_pushblock_init(void)
     s_pb_state = PB_S_IDLE;
     s_pb_timer = 0u;
     s_pb_offset = 0u;
-    s_pb_motion_phase = 0u;
     s_pb_dir_bit = 0u;
     s_pb_block_col_mt = 0u;
     s_pb_block_row_mt = 0u;
@@ -147,12 +154,17 @@ void roomrom_pushblock_publish_persist(void)
     for (i = 0u; i < 256u; i++) dst[i] = s_pb_state_per_room[i];
 }
 
-/* NES UpdateBlock calls DrawBlock only while ObjState=1. The sprite is
- * submitted during the native object loop, before the renderer consumes
- * OAM. The private state machine advances slot 11 later in the frame. */
+/* NES UpdateBlock (Z_04.asm:618-746), object loop slot 11: update the
+ * block, then DrawBlock on the push frame and every moving frame. The
+ * move lands before the draw, as NES UpdateBlock1Moving does; drawing
+ * first showed the block one pixel behind (T-169). */
 void roomrom_pushblock_draw_object(unsigned int slot)
 {
-    if (slot != PB_SLOT || (unsigned char)PB_OBJ_STATE != 1u) return;
+    if (slot != PB_SLOT) return;
+    s_pb_obj_ran = 1u;
+    s_pb_draw = 0u;
+    pb_update(1u);
+    if (!s_pb_draw) return;
     RAM(0x0000u) = (unsigned char)PB_OBJ_X;
     RAM(0x0001u) = (unsigned char)((unsigned char)PB_OBJ_Y - 1u);
     RAM(0x000Fu) = 0u;
@@ -262,7 +274,6 @@ static void reset_to_idle(void)
     s_pb_state = PB_S_IDLE;
     s_pb_timer = 0u;
     s_pb_offset = 0u;
-    s_pb_motion_phase = 0u;
     s_pb_dir_bit = 0u;
 }
 
@@ -292,7 +303,18 @@ void roomrom_pushblock_room_load(unsigned char level,
     s_pb_state_per_room[room_id] = 0u;
 }
 
+/* Main-loop call: housekeeping (scene / room change) only. The state
+ * machine advances from the slot-11 object handler, like NES. */
 void roomrom_pushblock_tick(void)
+{
+    if (s_pb_obj_ran) {
+        s_pb_obj_ran = 0u;
+        return;
+    }
+    pb_update(0u);
+}
+
+static void pb_update(unsigned char advance)
 {
     unsigned char scene = roomrom_main_current_scene();
     unsigned char mode  = roomrom_main_current_mode();
@@ -319,6 +341,8 @@ void roomrom_pushblock_tick(void)
                         roomrom_uw_room_render_get_quest(),
                         room_id);
     }
+
+    if (!advance) return;
 
     /* Once pushed during this entry, stop the private state machine.
      * room_load resets this latch on the next entry, as the NES does. */
@@ -387,19 +411,40 @@ void roomrom_pushblock_tick(void)
                            PB_TILE_FLOOR_BL, PB_TILE_FLOOR_BR, 1u);
             s_pb_state = PB_S_MOVING;
             s_pb_offset = 0u;
-            s_pb_motion_phase = 0u;
             PB_OBJ_STATE = 1u;
             PB_OBJ_DIR = s_pb_dir_bit;
             PB_OBJ_GRID = 0u;
+            s_pb_draw = 1u;  /* falls into DrawBlock, no move this frame */
         }
         break;
     }
 
     case PB_S_MOVING: {
-        /* NES MoveObject carries a half-pixel speed fraction for the
-         * block: its position/grid advances once every two play ticks. */
-        s_pb_motion_phase++;
-        if ((s_pb_motion_phase & 1u) != 0u) break;
+        /* NES UpdateBlock1Moving -> MoveObject for slot 11: QSpeedFrac
+         * ($3BC+11 = $20, half a pixel) steps ObjPosFrac ($3A8+11) by
+         * q * 4 each tick; a borrow (up/left) or carry (down/right) moves
+         * one pixel. Up/left therefore moves on the first moving tick,
+         * down/right on the second. T-169: a private alternating counter
+         * moved one tick late (t054_uw_block42_nes NES rows 866-873: frac
+         * 00 -> 80 with Y $90 -> $8F on the first tick). */
+        s_pb_draw = 1u;
+        {
+            unsigned char q = RAM(0x03BCu + 11u);
+            unsigned char step, frac, moved;
+            if (q == 0u) q = 0x20u;
+            step = (unsigned char)(q << 2);
+            frac = RAM(0x03A8u + 11u);
+            if (s_pb_dir_bit == PB_DIR_BIT_N || s_pb_dir_bit == PB_DIR_BIT_W) {
+                moved = (unsigned char)(frac < step);
+                frac = (unsigned char)(frac - step);
+            } else {
+                const unsigned short sum = (unsigned short)(frac + step);
+                moved = (unsigned char)(sum > 0xFFu);
+                frac = (unsigned char)sum;
+            }
+            RAM(0x03A8u + 11u) = frac;
+            if (!moved) break;
+        }
         s_pb_offset++;
         if (s_pb_dir_bit == PB_DIR_BIT_N) {
             PB_OBJ_Y = (unsigned char)((unsigned char)PB_OBJ_Y - 1u);
