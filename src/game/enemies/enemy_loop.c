@@ -1097,6 +1097,7 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
     /* T-050 OW tile objects (NES UpdateObject_JumpTable $62-$67). The
      * dock $61 is T-056 (raft); UW block $68 is T-054. */
     [0x2F] = enrt_update_pond_fairy,          /* PondFairy */
+    [0x5E] = room_update_flute_secret,        /* FluteSecret (T-171) */
     [0x62] = room_update_rock_or_gravestone,  /* Rock */
     [0x63] = room_update_rock_wall,           /* RockWall */
     [0x64] = room_update_tree,                /* Tree */

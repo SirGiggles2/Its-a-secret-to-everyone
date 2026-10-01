@@ -308,4 +308,9 @@ void room_update_tree(unsigned int slot);
 }
 #endif
 
+/* T-171 flute pond secret (Z_07.asm UpdateFluteSecret / AnimatePond). */
+void room_update_flute_secret(unsigned int slot);
+void room_animate_pond(void);
+void room_cue_pond_palette_row(unsigned char y);
+
 #endif /* ROOM_DISPATCH_H */

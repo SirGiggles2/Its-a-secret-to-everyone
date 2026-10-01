@@ -1,0 +1,43 @@
+{
+ "name": "t171_flute_pond_leave",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {
+  "0x657": 1,
+  "0x65C": 1
+ },
+ "stages": [
+  [
+   30,
+   "wr(0x526, 0x42)\nwr(0x11, 0)\nwr(0x12, 3)\nwr(0x13, 0)"
+  ],
+  [
+   80,
+   "wr(0x656, 5)\ngen_b_item(6)\nlog(string.format('pond room=%02X link=%02X,%02X', rd(0xEB), rd(0x70), rd(0x84)))"
+  ]
+ ],
+ "script": [
+  [
+   90,
+   ""
+  ],
+  [
+   2,
+   "B"
+  ],
+  [
+   250,
+   ""
+  ],
+  [
+   150,
+   "D"
+  ],
+  [
+   300,
+   ""
+  ]
+ ],
+ "clock": "play",
+ "_note": "T-171 Q1 room $42: flute reveals the pond stairs, then Link walks out south (room $52): InitMode7_Sub0 AnimatePond runs the color cycle back before the scroll."
+}

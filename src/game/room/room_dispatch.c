@@ -1576,6 +1576,54 @@ void room_update_rock_or_gravestone(unsigned int slot)
     }
 }
 
+/* NES source: Z_07.asm UpdateFluteSecret / CueTransferPondPaletteRow /
+ * RevealPondStairs / AnimatePond (the flute's pond secret, Q1 room $42).
+ * Drained C: core_init_flute_secret (InitFluteSecret) only.
+ * Coverage: FULL. Stance: GREENFIELD per asm (T-171).
+ * Every 8 frames the water palette row (BG row 3) steps through
+ * PondCycleColors; at step $A most water tiles become walkable
+ * (ObjectFirstUnwalkableTile $99); after step $B the stairs appear at
+ * ($60, $90) and the secret is flagged. Leaving the room (InitMode7
+ * Sub0) runs the cycle backwards. */
+static const unsigned char k_water_palette_row[8] = {
+    0x3Fu, 0x0Cu, 0x04u, 0x0Fu, 0x17u, 0x37u, 0x12u, 0xFFu
+};
+static const unsigned char k_pond_cycle_colors[12] = {
+    0x12u, 0x11u, 0x22u, 0x21u, 0x31u, 0x32u, 0x33u, 0x35u,
+    0x34u, 0x36u, 0x37u, 0x37u
+};
+
+void room_cue_pond_palette_row(unsigned char y)
+{
+    unsigned char i;
+    for (i = 0u; i < 8u; ++i) RAM((unsigned short)(0x0302u + i)) = k_water_palette_row[i];
+    RAM(0x0308u) = k_pond_cycle_colors[y];       /* DynTileBuf+6 */
+    if (y == 0x0Au) RAM(0x034Au) = 0x99u;         /* ObjectFirstUnwalkableTile */
+}
+
+void room_update_flute_secret(unsigned int slot)
+{
+    const unsigned char y = (unsigned char)RAM(0x051Au);   /* SecretColorCycle */
+    if (y >= 0x0Cu) return;
+    if (((unsigned char)RAM(0x0015u) & 0x07u) != 0x04u) return;
+    RAM(0x051Au) = (uint8_t)(y + 1u);
+    if (y == 0x0Bu) {                                       /* RevealPondStairs */
+        TO_OBJ_X(slot) = 0x60u;
+        TO_OBJ_Y(slot) = 0x90u;
+        tile_obj_reveal_and_flag(0x70u, slot);
+        return;
+    }
+    room_cue_pond_palette_row(y);
+}
+
+/* AnimatePond: InitMode7_Sub0 while SecretColorCycle != 0. */
+void room_animate_pond(void)
+{
+    if (((unsigned char)RAM(0x0015u) & 0x04u) == 0u) return;
+    RAM(0x051Au) = (uint8_t)((unsigned char)RAM(0x051Au) - 1u);
+    room_cue_pond_palette_row((unsigned char)RAM(0x051Au));
+}
+
 /* UpdateRockWall ($63, $67): a detonating bomb reveals a cave. */
 void room_update_rock_wall(unsigned int slot)
 {

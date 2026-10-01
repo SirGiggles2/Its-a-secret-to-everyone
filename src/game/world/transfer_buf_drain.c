@@ -396,7 +396,11 @@ static void drain_dynamic_buffer(void)
 {
     unsigned char end = (unsigned char)TRANSFER_BUF_POS;
     if (end == 0u) {
-        return;
+        /* TransferCurTileBuf (selector 0) walks DynTileBuf records up to
+         * the $FF terminator whatever DynTileBufLen says; some writers
+         * (CueTransferPondPaletteRow) copy a record without a length. */
+        if ((unsigned char)TRANSFER_BUF_BYTE(0) >= 0x80u) return;
+        end = TRANSFER_BUF_MAX_OFFSET;
     }
     if (end > TRANSFER_BUF_MAX_OFFSET) {
         end = TRANSFER_BUF_MAX_OFFSET;

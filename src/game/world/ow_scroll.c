@@ -215,6 +215,9 @@ unsigned char ow_scroll_tick(short *x, short *y)
              * WhirlwindPrevRoomId ($EA), the room left of the level's
              * entrance (T-171 t171_flute_whirlwind). */
             if (nes_ram[0x522u] != 0u) nes_ram[0xEBu] = nes_ram[0xEAu];
+            /* The pond refills before the scroll (AnimatePond until
+             * SecretColorCycle is 0; T-171). */
+            if (nes_ram[0x51Au] != 0u) { room_animate_pond(); break; }
             SUB = 1u;
             break;
         case 1u:
