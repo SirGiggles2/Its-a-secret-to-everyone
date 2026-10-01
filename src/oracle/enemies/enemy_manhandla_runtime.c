@@ -210,10 +210,13 @@ void enrt_manhandla_draw(unsigned int slot) {
     if (frame_attrs & 0x40)
         ENEMY_FRAME_FLAGS++;
 
+    /* T-171: A = frame image (low nibble) is DrawObject*'s frame
+     * parameter (Z_04.asm Manhandla_Draw); passing 0 drew every segment
+     * as the base (t171_boss_l3: NES tiles $E0-$EC, Genesis $E8/$EA). */
     frame_idx = (unsigned char)(frame_attrs & 0x0F);
     if (frame_idx == 2 || frame_idx == 3) {
-        c_draw_object_not_mirrored(slot);
+        c_draw_object_not_mirrored_with_frame(frame_idx, slot);
         return;
     }
-    c_draw_object_mirrored(slot);
+    c_draw_object_mirrored_with_frame(frame_idx, slot);
 }

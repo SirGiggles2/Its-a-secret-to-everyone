@@ -591,7 +591,7 @@ static void enrt_digdogger_draw(unsigned int slot) {
     if (ENEMY_DIGDOGGER_IS_CHILD(slot) != 0) {
         /* Little path: AnimSetSpriteDescriptorLevelPaletteRow + DrawObjectMirrored(frame=ObjAnimFrame). */
         enrt_anim_set_sprite_desc_level_palette_row();
-        c_draw_object_mirrored(slot);
+        c_draw_object_mirrored_with_frame(ENEMY_DRAW_FRAME(slot), slot);   /* LDA ObjAnimFrame, X */
         return;
     }
     /* Big path: 4 parts at +0/+10 / +00/+10 with horizontal-flip mask = i&1. */

@@ -86,14 +86,16 @@ static const unsigned char k_neck_y_hi[4]    = { 0x04u, 0x04u, 0x04u, 0x03u };
 static const unsigned char k_neck_misc_lo[4] = { 0x20u, 0x2Du, 0x81u, 0xA9u };
 static const unsigned char k_neck_misc_hi[4] = { 0x04u, 0x04u, 0x03u, 0x03u };
 
-/* Body sprite tables (Z_04.asm:9351-9361). */
-static const unsigned char k_body_tiles0[6] = {
-    0xC0u, 0xC4u, 0xC8u, 0xC2u, 0xC6u, 0xCAu
+/* Body sprite tables (Z_04.asm GleeokBodyTiles0/1/2, contiguous in ROM).
+ * The draw indexes GleeokBodyTiles0 with X = base offset {6,0,6,$C} + 0..5,
+ * so frames 0/2 read Tiles1 and frame 3 Tiles2. T-171: only Tiles0 was
+ * kept (index % 6), drawing frame 3 with Tiles0 (t171_boss_l4 NES $D2..,
+ * Genesis $C0..). */
+static const unsigned char k_body_tiles0[18] = {
+    0xC0u, 0xC4u, 0xC8u, 0xC2u, 0xC6u, 0xCAu,   /* GleeokBodyTiles0 */
+    0xCCu, 0xC4u, 0xCEu, 0xC2u, 0xC6u, 0xD0u,   /* GleeokBodyTiles1 */
+    0xD2u, 0xD6u, 0xD8u, 0xD4u, 0xC6u, 0xD0u    /* GleeokBodyTiles2 */
 };
-/* Tiles1 / Tiles2 are referenced by the NES asm but the body draw only
- * reads from the base offset table k_body_base_tile_offsets which all
- * point into Tiles0 region per the asm. Kept for completeness if a
- * future revision wires the alt rows. */
 
 /* Animation-frame base tile offsets (Z_04.asm:9360). */
 static const unsigned char k_body_base_tile_offsets[4] = {
@@ -530,22 +532,15 @@ void c_gleeok_draw_body(void)
                 unsigned char gy = (unsigned char)((row << 4) + 0x57u);
                 OAM_BYTE((unsigned int)off) = gy;
 
-                /* Tile = k_body_tiles0[tile_idx & 5]. The NES asm
-                 * indexes by X register which counts up unbounded
-                 * starting from base offset {6,0,6,12}; reads only
-                 * 6 entries per the table. Wrap modulo 6. */
-                unsigned char body_tile = k_body_tiles0[tile_idx % 6u];
+                /* LDA GleeokBodyTiles0, X (X = base offset + 0..5). */
+                unsigned char body_tile = k_body_tiles0[tile_idx];
                 OAM_BYTE((unsigned int)(off + 1u)) = body_tile;
 
-                /* Attribute: invincibility-cycled palette or row 3. */
-                unsigned char attrs;
-                if ((unsigned char)ENEMY_HIT_REACTION(5) != 0u) {
-                    /* Cycled palette via [00..03] truncated. */
-                    attrs = (unsigned char)
-                        (ENEMY_CUR_SPRITE_ATTR_ROW & 0x03u);
-                } else {
-                    attrs = 0x03u;
-                }
+                /* ObjInvincibilityTimer+5 & 3 while it runs (cycled
+                 * palette rows), else level palette row 7 (3). */
+                unsigned char attrs = (unsigned char)ENEMY_HIT_REACTION(5);
+                if (attrs == 0u) attrs = 0x03u;
+                attrs = (unsigned char)(attrs & 0x03u);
                 OAM_BYTE((unsigned int)(off + 2u)) = attrs;
 
                 /* X = $74 + col * 8. */

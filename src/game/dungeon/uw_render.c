@@ -270,64 +270,12 @@ void roomrom_uw_room_render_load_palette(unsigned char room_id)
         load_palette_from_levelinfo();
     }
 
-    /* Boss-room sprite palette (2026-05-31). NES bosses use SPR sub-pal 3
-     * (e.g. L1 Aquamentus = $0F 0C 1C 2C green) which Gen has no dedicated PAL
-     * for: subpal_routing maps NES sub-pal 3 -> PAL2 (the cloud-blue slot), so
-     * the boss renders blue/purple. A UW boss room's dominant sprite is the
-     * boss, so override PAL2[0..3] with THIS level's SPR sub-pal 3 to give the
-     * boss its NES colors. Detected from the room's static LBA_C/D template
-     * (boss types $31-34/$38-3E/$41-48), so it works at load time before the
-     * boss object spawns. */
-    {
-        unsigned char lvl = s_uw_level;
-        unsigned char q   = s_uw_quest;
-        if (lvl >= 1u && lvl <= 9u && q >= 1u && q <= 2u) {
-            unsigned int bb = ((lvl <= 6u) ? 0u : 768u) + ((q == 2u) ? 1536u : 0u);
-            unsigned char c    = rooms_dungeons[bb + 0x100u + (unsigned short)room_id];
-            unsigned char dd   = rooms_dungeons[bb + 0x180u + (unsigned short)room_id];
-            unsigned char tmpl = (unsigned char)(c & 0x3Fu);
-            if (dd & 0x80u) tmpl = (unsigned char)(tmpl + 0x40u);
-            if ((tmpl >= 0x31u && tmpl <= 0x34u) ||
-                (tmpl >= 0x38u && tmpl <= 0x3Eu) ||
-                (tmpl >= 0x41u && tmpl <= 0x48u)) {
-                /* The boss's NES sprite SUB-PALETTE varies by boss (OAM attr
-                 * bits 0-1, byte-measured from live NES OAM in the boss dumps):
-                 * Dodongo $31 / Manhandla $3C / Aquamentus $3D use sub-pal 1;
-                 * every other boss uses sub-pal 3. The old code hardcoded
-                 * sub-pal 3 (= teal $0C/1C/2C) for ALL bosses, so the sub-pal-1
-                 * bosses rendered in the dungeon-floor teal (BG sub-pal 2 is the
-                 * same $0C/1C/2C) -> camouflaged/invisible (byte-proven: PAL2 ==
-                 * PAL0 floor teal, Aquamentus 0% visible pixels). Select the
-                 * boss's actual sub-pal so its tiles (always Genesis PAL2) get
-                 * NES-correct, floor-distinct colors. Sub-pal is per-LEVEL on
-                 * NES Z1, so any captured same-level room carries it. */
-                unsigned char sp1boss =
-                    (tmpl == 0x31u || tmpl == 0x3Cu || tmpl == 0x3Du) ? 1u : 0u;
-                unsigned char sp_off = sp1boss ? 20u : 28u;  /* PALRAM SPR sub-pal 1 vs 3 */
-                /* NES defaults if no same-level room captured: sub-pal 1 =
-                 * Aquamentus blue/white ($00 02 22 30); sub-pal 3 = teal. */
-                unsigned char sp[4];
-                if (sp1boss) { sp[0] = 0x00u; sp[1] = 0x02u; sp[2] = 0x22u; sp[3] = 0x30u; }
-                else         { sp[0] = 0x0Fu; sp[1] = 0x0Cu; sp[2] = 0x1Cu; sp[3] = 0x2Cu; }
-                unsigned char want_map = (s_uw_map_id == ROOMROM_MAP_REDUX) ? 1u : 0u;
-                unsigned short i;
-                for (i = 0u; i < g_uw_room_count; ++i) {
-                    const unsigned char *e = g_uw_room_index[i];
-                    if (e[0] == want_map && e[1] == q && e[2] == lvl) {
-                        unsigned char k;
-                        for (k = 0u; k < 4u; ++k) sp[k] = g_uw_room_palette[i][sp_off + k];
-                        break;
-                    }
-                }
-                unsigned short w[4];
-                unsigned char k2;
-                for (k2 = 0u; k2 < 4u; ++k2) {
-                    w[k2] = roomrom_bg_palette_nes_to_cram(sp[k2]);
-                }
-                render_cram_subrange_upload(32u, w, 4u);  /* PAL2[0..3] */
-            }
-        }
-    }
+    /* T-171: the 2026-05-31 boss-room override of PAL2 (NES sprite
+     * sub-palette 1) with the level's sub-palette 3 is gone. Sub-palette 3
+     * boss tiles draw from the boss bank's biased copy in PAL1 13..15
+     * (enemy_render ROOMROM_BOSS_SUBPAL3_TILE_BASE), which InitMode5Play's
+     * row-7 cue now sets; the override turned the sub-palette 1 sprites in
+     * the room (Gleeok's fireball, t171_boss_l4) teal. */
 }
 
 void roomrom_uw_room_render_upload_chr(void)

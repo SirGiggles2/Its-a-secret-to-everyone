@@ -1209,7 +1209,13 @@ static void load_room(u8 room_id)
          * (cycle $43) until a candle brightens it; CandleState resets on
          * every room entry (InitMode4_GoToSub0). */
         nes_ram[0x051Fu] = 0u;
-        if (s_cur_room_is_dark) uw_dark_apply_cycle_row(0x43u);
+        /* T-171: InitMode3 (level entry, continue, StartRoomId reload)
+         * transfers the LevelInfo palettes (Sub2, selector $18) and nothing
+         * darkens them: the NES shows a dark start room lit (t171_boss_l9
+         * room $42, NES rows 2-3 $00 $10 $30 at t316). Darkening is the
+         * scroll fade's (InitMode7 Sub5/6). */
+        if (s_cur_room_is_dark && nes_ram[0x0012u] != 0x03u)
+            uw_dark_apply_cycle_row(0x43u);
     }
     /* NES Z_01.asm:3967 UsedCandle clears on room transition â€” blue candle
      * regains its 1-shot per new room. Red candle ignores the flag. */

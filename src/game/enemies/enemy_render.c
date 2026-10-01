@@ -1057,12 +1057,17 @@ void enemy_render_sweep_oam_to_sat(void)
     unsigned int i;
     unsigned int sat_slot = ROOMROM_SPRITE_SLOT_ENEMY_FIRST;
 
-    /* 2026-05-15 perf: NES Z1's SpriteOffsets table (k_sprite_offsets)
-     * scatters Anim_WriteSprite writes across byte offsets $60..$FC =
-     * OAM slot 24..63. Slots 0..23 are NEVER populated. Skip them. */
+    /* Anim_WriteSprite's SpriteOffsets reach slots 24..63, but Gleeok
+     * draws its heads and the base neck segments in slots 0..15 (Sprites +
+     * neck * 8, +32: Z_04.asm Gleeok_DrawHeadAndCheckCollisions; T-171
+     * t171_boss_l4: both heads were missing). Slots 16..23 are Link's and
+     * the status-bar marker's, which the Genesis draws itself (zero here).
+     * WriteBlankPrioritySprites fills slots 0..15 with transparent tile
+     * $1C behind the BG (only the NES 8-per-line limit made them matter):
+     * skipped. */
     xlat_refresh();   /* T-125: table lookups, as the native path */
     sat_slot = emit_native_entries(sat_slot, NATIVE_PASS_FIREBALLS);
-    for (i = 24u; i < NES_OAM_SLOT_COUNT; ++i) {
+    for (i = 0u; i < NES_OAM_SLOT_COUNT; ++i) {
         unsigned short base = (unsigned short)(NES_SPRITES_BASE + i * 4u);
         unsigned char y     = RAM(base + 0u);
 
@@ -1078,6 +1083,9 @@ void enemy_render_sweep_oam_to_sat(void)
          * SAT slot. (NES Z1 leaves untouched OAM bytes at 0.) */
         if (y == 0u && tile == 0u && attrs == 0u && x == 0u) {
             continue;
+        }
+        if (tile == 0x1Cu && attrs == 0x20u && x == 0u) {
+            continue;                    /* blank priority sprite */
         }
 
         unsigned short sat_attrs  = xlat_sat(tile, attrs);
