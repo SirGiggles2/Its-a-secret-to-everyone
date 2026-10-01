@@ -71,14 +71,17 @@ extern const unsigned char rooms_dungeons[];
 #define BLOB_UW_LEVELINFO_BASE  3072u
 #define BLOB_UW_LEVELINFO_STRIDE 256u
 
+/* SGDK's optimized memcpy (sgdk/inc/memory.h), bound without the SGDK
+ * headers this module does not include. */
+extern void sgdk_memcpy(void *to, const void *from, unsigned short len) __asm__("memcpy");
+
 static void copy_to_nes_ram(unsigned short dst_nes_addr,
                             const unsigned char *src,
                             unsigned int bytes)
 {
-    unsigned int i;
-    for (i = 0u; i < bytes; ++i) {
-        nes_ram[dst_nes_addr + i] = src[i];
-    }
+    /* T-172: block copy (the byte loop was 6k instructions of every level
+     * load, mode 3 Sub8 7 frames vs NES 4). */
+    sgdk_memcpy(&nes_ram[dst_nes_addr], src, (unsigned short)bytes);
 }
 
 /* NES Z_06.asm UpdateMode2Load_Full @PatchQ2Rooms: 8 LevelBlockAttrsB

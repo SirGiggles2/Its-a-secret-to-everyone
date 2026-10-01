@@ -2665,6 +2665,12 @@ static void mode3_init_tick(void)
     default: break;
     }
     if (sub < 8u) {
+        /* T-172: precompute the OW room's columns (Genesis buffers only)
+         * on the Sub2-7 ticks the NES spends on attributes / status bar,
+         * so Sub8's LayOutRoom fits NES time (t013_continue t223: 8
+         * frames vs NES 3). */
+        if (sub >= 2u && nes_ram[0x0010u] == 0u)
+            roomrom_ow_room_render_prepare(nes_ram[0x00EBu], 3u);
         nes_ram[0x0013u] = (u8)(sub + 1u);
         return;
     }
