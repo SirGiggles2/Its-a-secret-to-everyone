@@ -3765,22 +3765,12 @@ static void play_finish(void)
      * into a side-channel cache; native sweep emits 1 SAT entry
      * per alive enemy from the cache. NES OAM scatter still
      * happens for downstream compat but is no longer consumed. */
-    /* Phase 8: bosses draw MULTI-sprite (Aquamentus 6, Manhandla 5,
-     * etc.) via draw_write_boss_sprite into the NES OAM shadow, which
-     * the 1-SAT-per-slot native sweep does NOT consume. In a boss
-     * room (boss ObjType $31-34/$38-3E/$41-48 in a slot; UW only)
-     * there are no regular enemies, so flush the OAM shadow instead
-     * to emit the boss's full sprite set. */
+    /* The loaded boss bank owns this room's sprite path through splits
+     * and death. Digdogger clears its parent type before drawing the
+     * final small form; selecting by living types drops that frame. */
     {
-        unsigned char bs, boss_room = 0u;
-        if (s_scene == SCENE_UW) {
-            for (bs = 1u; bs <= 11u; ++bs) {
-                unsigned char bt = nes_ram[0x034Fu + bs];
-                if ((bt >= 0x31u && bt <= 0x34u) ||
-                    (bt >= 0x38u && bt <= 0x3Eu) ||
-                    (bt >= 0x41u && bt <= 0x48u)) { boss_room = 1u; break; }
-            }
-        }
+        unsigned char boss_room = (unsigned char)(s_scene == SCENE_UW &&
+                                                  level_chr_boss_is_ready());
         if (boss_room) enemy_render_sweep_oam_to_sat();
         else if (s_lvl_phase == LVL_NONE) enemy_render_native_sweep();
         /* T-132: NES modes $10/2/3 update no objects; their sprites stay. */

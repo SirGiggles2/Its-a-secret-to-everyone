@@ -649,9 +649,8 @@ void enemy_render_reset_oam(void)
 #define NES_FIRE_TILE_LAST           0x5Fu
 #define ITEM_ATLAS_FLAME_IDX         38u
 
-/* Phase 8: set per-frame by enemy_render_sweep_oam_to_sat when a boss
- * ObjType occupies a slot (boss types $31-48 only spawn in UW boss rooms,
- * which load the boss CHR bank into the SCENE_OBJ VRAM slot). Boss draw
+/* Set per-frame from the CHR loader's resident bank, including after a
+ * boss splits into ordinary child types or clears its type on death. Boss draw
  * routines emit raw NES tiles $C0+ (PPU $0C00 bank); translate_tile remaps
  * those to ROOMROM_BOSS_TILE_BASE when this is set. */
 static unsigned char s_boss_bank_active = 0u;
@@ -1100,7 +1099,9 @@ static unsigned int emit_native_entries(unsigned int sat_slot, unsigned char pas
     for (slot = ENEMY_LOOP_SLOT_FIRST; slot <= ENEMY_LOOP_SLOT_LAST; ++slot) {
         unsigned char n = s_enemy_count[slot];
         unsigned char ei;
-        if (ENEMY_TYPE(slot) == 0u) continue;
+        /* Entries are this frame's draw submissions (reset with OAM).
+         * A producer may clear its type and still draw its final form:
+         * NES Digdogger @MakeChildren does exactly that. */
         if (n == 0u) continue;
         if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
 
@@ -1185,23 +1186,11 @@ void enemy_render_sweep_oam_to_sat(void)
 {
     /* $07FE belongs to native UW progress; rendering must not mutate it. */
 
-    /* Phase 8: detect boss-room (boss CHR bank loaded) by scanning slots
-     * 1..11 for a boss ObjType. Boss types $31-34/$38-3E/$41-48 (Z_07
-     * InitObject_JumpTable) only spawn in UW boss rooms, so this also
-     * gates the $C0-base remap in translate_tile to UW boss rooms. */
-    {
-        unsigned int s;
-        s_boss_bank_active = 0u;
-        for (s = 1u; s <= 11u; ++s) {
-            unsigned char t = nes_ram[0x034Fu + s];
-            if ((t >= 0x31u && t <= 0x34u) ||
-                (t >= 0x38u && t <= 0x3Eu) ||
-                (t >= 0x41u && t <= 0x48u)) {
-                s_boss_bank_active = 1u;
-                break;
-            }
-        }
-    }
+    /* CHR residency survives the boss's type changes and death. In
+     * particular Digdogger's children use type $18 and still draw tiles
+     * $D8/$DA from the loaded boss bank (NES Z_04:Digdogger_Draw).
+     * The bank loader clears this state when an enemy bank replaces it. */
+    s_boss_bank_active = level_chr_boss_is_ready();
 
     unsigned int i;
     unsigned int sat_slot = ROOMROM_SPRITE_SLOT_ENEMY_FIRST;
@@ -1347,18 +1336,7 @@ void enemy_render_native_sweep(void)
      * the mode-3 return to the dungeon entrance. */
     g_render_sat_cache[ROOMROM_SPRITE_SLOT_MASK_S].link =
         ROOMROM_SPRITE_SLOT_LINK;
-    s_boss_bank_active = 0u;
-    /* Zelda uses NES boss tile $F6 while sharing the chamber with guard
-     * fires, which stay on the native per-object submission path. */
-    {
-        unsigned int s;
-        for (s = 1u; s <= 11u; ++s) {
-            if ((unsigned char)ENEMY_TYPE(s) == 0x37u) {
-                s_boss_bank_active = 1u;
-                break;
-            }
-        }
-    }
+    s_boss_bank_active = level_chr_boss_is_ready();
     unsigned int sat_slot = ROOMROM_SPRITE_SLOT_ENEMY_FIRST;
 
     /* $07FE belongs to native UW progress; rendering must not mutate it. */
