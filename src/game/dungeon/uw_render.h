@@ -32,6 +32,14 @@ void roomrom_uw_room_render_fill_plane_a_dark(void);
 void roomrom_uw_room_render_fill_one_col(unsigned char room_id,
                                          unsigned char src_col,
                                          unsigned char dst_col);
+/* T-172: precompute up to max_cols metatile columns of room_id's tile
+ * words into buf (22 x 32 words, plane-column order) for a later fill;
+ * drop before buf is reused. */
+void roomrom_uw_room_render_prepare(unsigned char room_id, unsigned short *buf,
+                                    unsigned char max_cols);
+void roomrom_uw_room_render_prepare_drop(void);
+/* 1 when room_id has a blob layout (a fill writes every play-area cell). */
+unsigned char roomrom_uw_room_render_has_layout(unsigned char room_id);
 void roomrom_uw_room_render_fill_one_col_at(unsigned char room_id,
                                             unsigned char src_col,
                                             unsigned char dst_col,

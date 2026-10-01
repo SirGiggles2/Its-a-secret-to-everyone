@@ -474,6 +474,11 @@ static void drain_static_selector(void)
 
 void transfer_buf_drain(void)
 {
+    /* The NES transfers these records in the next frame's NMI: the cells
+     * are written at the start of the next tick (render_plane_defer_flush
+     * after the VBlank process), the RAM side effects stay here. */
+    render_plane_defer(1u);
     drain_dynamic_buffer();
     drain_static_selector();
+    render_plane_defer(0u);
 }

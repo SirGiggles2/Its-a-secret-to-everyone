@@ -358,6 +358,11 @@ void roomrom_sprites_upload_persistent_chr(void)
     enemy_render_prepare_fx_chr();
 }
 
+unsigned char roomrom_sprites_item_chr_variant(void)
+{
+    return s_item_chr_variant;
+}
+
 void roomrom_sprites_upload_items_chr(void)
 {
     /* FU3 (atlas pipeline): N sub-pal copies of the item atlas from the

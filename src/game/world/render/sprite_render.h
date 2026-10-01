@@ -34,6 +34,8 @@ void roomrom_sprites_upload_chr(void);    /* one-shot at boot (persistent + item
  * _items; scene_load calls _items only. */
 void roomrom_sprites_upload_persistent_chr(void);
 void roomrom_sprites_upload_items_chr(void);
+/* Item atlas variant resident in VRAM (0 original, 1 Redux). */
+unsigned char roomrom_sprites_item_chr_variant(void);
 void roomrom_sprites_load_palette(void);  /* call after every load_room() */
 void roomrom_sprites_invalidate_cache(void);
 void roomrom_sprites_spawn_link(short x, short y);

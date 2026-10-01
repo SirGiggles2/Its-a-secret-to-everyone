@@ -25,6 +25,10 @@ void render_set_plane_a_word(unsigned short col, unsigned short row,
  * Same word format as plane A. Plane B occupies VRAM $E000-$EFFF in
  * RoomRom 64x32 layout (post PR-2). Used by V scroll transitions to
  * stage the incoming room while plane A still shows the old room. */
+/* T-172: queue single-cell plane writes (render_set_plane_a/b_word) while
+ * on; render_plane_defer_flush writes them (NES NMI timing). */
+void render_plane_defer(unsigned char on);
+void render_plane_defer_flush(void);
 void render_set_plane_b_word(unsigned short col, unsigned short row,
                              unsigned short word);
 
@@ -39,6 +43,11 @@ void render_load_palette(unsigned short idx, const unsigned short *src);
 void render_chr_upload(unsigned short vram_addr,
                        const unsigned char *src,
                        unsigned short byte_count);
+/* Queue a VRAM word run for the next VBlank DMA; src (even, RAM) must
+ * stay unchanged until then. Returns 0 when the queue is full. */
+unsigned char render_vram_queue_words(unsigned short vram_addr,
+                                      const unsigned short *src,
+                                      unsigned short word_count);
 
 /* ---- Raw VRAM streaming (F3: title cutover) ----
  *
@@ -192,6 +201,17 @@ void render_vram_read_run(unsigned short vram_addr, unsigned short *dst,
 void render_plane_a_write_col(unsigned short col, unsigned short row,
                               const unsigned short *cells, unsigned short count,
                               unsigned short plane_rows);
+/* Clear `rows` whole plane rows (all 64 cells) from `row` to word 0 with
+ * one VDP DMA fill (waits for it). Same cells as render_plane_fill_row per
+ * row with col 0 and `width` cells (CPU rows unless width fills the row). */
+void render_plane_clear_full_rows(unsigned char plane_b, unsigned short row,
+                                  unsigned short rows, unsigned short width);
+/* As above, cells read src_stride words apart. */
+void render_plane_a_write_col_strided(unsigned short col, unsigned short row,
+                                      const unsigned short *cells,
+                                      unsigned short count,
+                                      unsigned short plane_rows,
+                                      unsigned short src_stride);
 void render_plane_a_write_row(unsigned short row, const unsigned short *cells,
                               unsigned short count);
 

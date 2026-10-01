@@ -21,6 +21,7 @@
 #include "platform_abi.h"
 #include "render_abi.h"
 #include "world/render/sprite_slots.h"
+#include "world/render/sprite_render.h"  /* roomrom_sprites_item_chr_variant */
 #include "world/render/subpal_routing.h"  /* Phase AA centralized sub-pal -> OAM pal API */
 #include "enemy_loop.h"   /* ENEMY_LOOP_SLOT_FIRST/LAST */
 #include "enemy_state.h"  /* ENEMY_X, ENEMY_Y, ENEMY_ALIVE_FLAG, ENEMY_THROWER_SLOT */
@@ -793,22 +794,80 @@ static const unsigned char k_sp3_lut[256] = {
 };
 
 static unsigned short s_sp3_stamp = 0xFFFFu;   /* FrameCounter of the last check */
+static unsigned char s_sp3_item_variant = 0xFFu;
+
+/* The ITEM atlas (sword, beam, drop heart, ...) is resident for the whole
+ * game and never touched by the scene/boss CHR swaps. */
+#define SP3_IS_ITEM_SRC(src) ((src) >= ROOMROM_ITEM_TILE_BASE &&     (src) + 1u < ROOMROM_ITEM_TILE_BASE + ROOMROM_ITEM_TILE_COUNT_PER_PAL)
+
 static void sp3_validate(void)
 {
     const unsigned short key = (unsigned short)(
         (level_chr_swap_request_count() << 8) ^ level_chr_boss_request_count() ^
         ((unsigned short)level_chr_swap_state() << 4) ^
         ((unsigned short)level_chr_boss_state() << 12));
+    const unsigned char variant = roomrom_sprites_item_chr_variant();
     unsigned char i;
-    if (key == s_sp3_key) return;
+    if (key == s_sp3_key && variant == s_sp3_item_variant) return;
     s_sp3_key = key;
-    for (i = 0u; i < SP3_PAIRS; ++i) s_sp3_src[i] = 0u;
+    /* T-172: a swap keeps the ITEM-atlas copies; refilling the sword shot
+     * and drop heart copies after every room load cost a lag frame in
+     * busy rooms (t171_patra_sword t370). */
+    for (i = 0u; i < SP3_PAIRS; ++i) {
+        const unsigned short s = s_sp3_src[i];
+        if (s == 0u) continue;
+        if (variant != s_sp3_item_variant || !SP3_IS_ITEM_SRC((unsigned short)(s - 1u)))
+            s_sp3_src[i] = 0u;
+    }
+    s_sp3_item_variant = variant;
+}
+
+/* T-172: ITEM-atlas copies are built from the ROM atlas and queued for the
+ * next VBlank with the SAT (no VDP read and no DMA in active display; the
+ * old path cost ~700 instructions plus VDP stalls mid-frame). Four buffers
+ * per tick: the queue drains at the next tick's VBlank. */
+#define SP3_QUEUE_BUFS 4u
+static unsigned long s_sp3_dma_buf[SP3_QUEUE_BUFS][16];
+static unsigned char s_sp3_dma_used;
+static unsigned char s_sp3_dma_stamp = 0xFFu;
+
+static unsigned char sp3_fill_item(unsigned short src, unsigned char i)
+{
+    const unsigned char *p;
+    const unsigned long *s;
+    unsigned long *d;
+    unsigned char w;
+    if (s_sp3_dma_stamp != (unsigned char)RAM(0x0015u)) {
+        s_sp3_dma_stamp = (unsigned char)RAM(0x0015u);
+        s_sp3_dma_used = 0u;
+    }
+    if (s_sp3_dma_used >= SP3_QUEUE_BUFS) return 0u;
+    p = &roomrom_atlas_items_x4[roomrom_sprites_item_chr_variant()]
+                               [(unsigned short)(src - ROOMROM_ITEM_TILE_BASE) * 32u];
+    if ((unsigned long)p & 1u) return 0u;
+    s = (const unsigned long *)(const void *)p;
+    d = s_sp3_dma_buf[s_sp3_dma_used];
+    for (w = 0u; w < 16u; ++w) {
+        /* Eight 4bpp pixels: +12 where the pixel is 1..3 (= k_sp3_lut). */
+        const unsigned long x = s[w];
+        const unsigned long m = (x | (x >> 1)) & ~((x >> 2) | (x >> 3)) & 0x11111111UL;
+        d[w] = x + (m << 3) + (m << 2);
+    }
+    if (!render_vram_queue_words((unsigned short)((ROOMROM_SUBPAL3_PAIR_TILE_BASE + 2u * i) * 32u),
+                                 (const unsigned short *)(const void *)d, 32u))
+        return 0u;
+    s_sp3_dma_used = (unsigned char)(s_sp3_dma_used + 1u);
+    return 1u;
 }
 
 /* Fill cache entry i with the biased copy of src; 0xFFFF = not now. */
 static unsigned short __attribute__((noinline)) sp3_fill(unsigned short src, unsigned char i)
 {
     const unsigned char boss = level_chr_boss_state();
+    if (SP3_IS_ITEM_SRC(src) && sp3_fill_item(src, i)) {
+        s_sp3_src[i] = (unsigned short)(src + 1u);
+        return (unsigned short)(ROOMROM_SUBPAL3_PAIR_TILE_BASE + 2u * i);
+    }
     if (!level_chr_swap_is_ready() ||
         (boss != LEVEL_CHR_SWAP_IDLE && boss != LEVEL_CHR_SWAP_READY))
         return 0xFFFFu;                          /* source tiles in flux */

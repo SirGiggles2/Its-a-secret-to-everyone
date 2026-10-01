@@ -484,18 +484,10 @@ static void clear_room_scroll_gutters_on_plane(u8 plane)
         (u16)(ROOMROM_ROOM_FIRST_ROW + ROOMROM_ROOM_ROWS);
     const u16 bottom_rows = (u16)(ROOMROM_PLANE_ROWS - bottom_row);
 
-    if (plane)
-    {
-        clear_tile_rect_on_plane(1u, 0u, 0u, full_width,
-                                 (u16)ROOMROM_ROOM_FIRST_ROW);
-        clear_tile_rect_on_plane(1u, 0u, bottom_row, full_width, bottom_rows);
-    }
-    else
-    {
-        clear_tile_rect_on_plane(0u, 0u, 0u, full_width,
-                                 (u16)ROOMROM_ROOM_FIRST_ROW);
-        clear_tile_rect_on_plane(0u, 0u, bottom_row, full_width, bottom_rows);
-    }
+    /* T-172: whole rows (full_width = the plane's 64 cells): VDP fill. */
+    render_plane_clear_full_rows(plane ? 1u : 0u, 0u, (u16)ROOMROM_ROOM_FIRST_ROW,
+                                 full_width);
+    render_plane_clear_full_rows(plane ? 1u : 0u, bottom_row, bottom_rows, full_width);
 }
 
 static void clear_hud_underlay_for_row_base(u8 row_base)
@@ -1160,8 +1152,11 @@ static void load_room(u8 room_id)
     roomld_setup_obj_room_bounds();
     /* PR-2c: BG_A/B share one table, so these clears are intentionally
      * idempotent when issued through either plane handle. */
-    clear_tile_rect_on_plane(0u, 0u, ROOMROM_ROOM_FIRST_ROW,
-                             ROOMROM_ROOM_COLS, ROOMROM_ROOM_ROWS);
+    /* T-172: a UW room with a blob layout overwrites every cell of this
+     * rectangle below (render_room_into_slot); the clear is for the rest. */
+    if (s_scene != SCENE_UW || !roomrom_uw_room_render_has_layout(room_id))
+        clear_tile_rect_on_plane(0u, 0u, ROOMROM_ROOM_FIRST_ROW,
+                                 ROOMROM_ROOM_COLS, ROOMROM_ROOM_ROWS);
     clear_room_scroll_gutters_on_plane(0u);
     s_doorway_dir = UW_WALK_DOOR_NONE;
     s_active_slot_x = 0u;
@@ -2414,6 +2409,7 @@ static void curtain_hide(void)
 {
     u8 row;
     u16 pc, pr;
+    roomrom_uw_room_render_prepare_drop();       /* s_curtain is reused */
     /* T-125: one run per plane row (two when the 32 screen columns wrap
      * the 64-cell plane row); was a VDP read + write address per cell. */
     for (row = 0u; row < 22u; ++row) {
@@ -2778,6 +2774,10 @@ static void mode3_init_tick(void)
          * frames vs NES 3). */
         if (sub >= 2u && nes_ram[0x0010u] == 0u)
             roomrom_ow_room_render_prepare(nes_ram[0x00EBu], 3u);
+        /* UW: the room's tile words into the idle curtain buffer
+         * (t171_patra_sword t300: Sub8 6 frames vs NES 4). */
+        else if (sub >= 2u)
+            roomrom_uw_room_render_prepare(nes_ram[0x00EBu], &s_curtain[0][0], 3u);
         nes_ram[0x0013u] = (u8)(sub + 1u);
         return;
     }
@@ -3891,6 +3891,7 @@ void roomrom_debug_tick(void)
         nes_ram[0x01FFu] = (u8)(*(volatile u16 *)0xC00008u >> 8);
         nes_ram[0x01FEu] = (u8)(vtimer - s_tick_vtimer);
         SYS_doVBlankProcess();
+        render_plane_defer_flush();   /* T-172: last tick's transfer cells (NMI) */
         s_tick_vtimer = vtimer;
         /* Phase Q v2: roll per-frame DMA byte tally into peak tracker
          * and reset accumulator for next frame. Probes read peak via

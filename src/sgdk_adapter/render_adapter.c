@@ -376,26 +376,62 @@ static void vram_dma_upload(const unsigned char *bytes, unsigned short dst,
 
 /* ---- Phase D public API ---- */
 
-void render_set_plane_a_word(unsigned short col, unsigned short row,
-                             unsigned short word)
+/* T-172: NES name-table transfers reach VRAM in the NMI that starts the
+ * next frame; the transfer-buffer drain runs at the end of a Genesis tick,
+ * so its cells showed one frame early (t166_l1_oldman t836 text, t057_grumble
+ * t791 blank lines). While deferring, single-cell plane writes queue here
+ * and render_plane_defer_flush (next tick, in VBlank) writes them. A full
+ * queue flushes early rather than dropping a cell. */
+#define PLANE_DEFER_MAX 192u
+static unsigned short s_pd_addr[PLANE_DEFER_MAX];
+static unsigned short s_pd_word[PLANE_DEFER_MAX];
+static unsigned char s_pd_count;
+static unsigned char s_pd_on;
+
+static void plane_word_now(unsigned short addr, unsigned short word)
 {
-    unsigned short addr = (unsigned short)(PLANE_A_BASE +
-        row * s_plane_row_stride_bytes + col * 2u);
     VDP_CTRL_LONG = 0x40000000UL
                   | ((unsigned long)(addr & 0x3FFFu) << 16)
                   | ((addr >> 14) & 0x0003u);
     VDP_DATA_WORD = word;
 }
 
+void render_plane_defer_flush(void)
+{
+    unsigned char i;
+    for (i = 0u; i < s_pd_count; ++i) plane_word_now(s_pd_addr[i], s_pd_word[i]);
+    s_pd_count = 0u;
+}
+
+void render_plane_defer(unsigned char on)
+{
+    s_pd_on = on;
+}
+
+static void plane_word(unsigned short addr, unsigned short word)
+{
+    if (s_pd_on) {
+        if (s_pd_count >= PLANE_DEFER_MAX) render_plane_defer_flush();
+        s_pd_addr[s_pd_count] = addr;
+        s_pd_word[s_pd_count] = word;
+        s_pd_count = (unsigned char)(s_pd_count + 1u);
+        return;
+    }
+    plane_word_now(addr, word);
+}
+
+void render_set_plane_a_word(unsigned short col, unsigned short row,
+                             unsigned short word)
+{
+    plane_word((unsigned short)(PLANE_A_BASE + row * s_plane_row_stride_bytes + col * 2u),
+               word);
+}
+
 void render_set_plane_b_word(unsigned short col, unsigned short row,
                              unsigned short word)
 {
-    unsigned short addr = (unsigned short)(PLANE_B_BASE +
-        row * s_plane_row_stride_bytes + col * 2u);
-    VDP_CTRL_LONG = 0x40000000UL
-                  | ((unsigned long)(addr & 0x3FFFu) << 16)
-                  | ((addr >> 14) & 0x0003u);
-    VDP_DATA_WORD = word;
+    plane_word((unsigned short)(PLANE_B_BASE + row * s_plane_row_stride_bytes + col * 2u),
+               word);
 }
 
 void render_load_palette(unsigned short idx, const unsigned short *src)
@@ -616,11 +652,65 @@ void render_plane_a_write_col(unsigned short col, unsigned short row,
         VDP_CTRL_LONG = 0x40000000UL
                       | ((unsigned long)(addr & 0x3FFFu) << 16)
                       | ((addr >> 14) & 0x0003u);
+        /* T-172: unrolled (room loads stream ~700 cells this way). */
+        while (run >= 4u) {
+            VDP_DATA_WORD = cells[0]; VDP_DATA_WORD = cells[1];
+            VDP_DATA_WORD = cells[2]; VDP_DATA_WORD = cells[3];
+            cells += 4;
+            run = (unsigned short)(run - 4u);
+        }
         while (run--) VDP_DATA_WORD = *cells++;
         render_set_autoinc_word();
         SYS_enableInts();
         row = 0u;
     }
+}
+
+void render_plane_a_write_col_strided(unsigned short col, unsigned short row,
+                                      const unsigned short *cells,
+                                      unsigned short count,
+                                      unsigned short plane_rows,
+                                      unsigned short src_stride)
+{
+    const unsigned short stride = s_plane_row_stride_bytes;
+    while (count) {
+        unsigned short run = (unsigned short)(plane_rows - row);
+        unsigned short addr;
+        if (run > count) run = count;
+        addr = (unsigned short)(PLANE_A_BASE + row * stride + col * 2u);
+        count = (unsigned short)(count - run);
+        SYS_disableInts();
+        VDP_CTRL_WORD = (unsigned short)(0x8F00u | (stride & 0xFFu));
+        VDP_CTRL_LONG = 0x40000000UL
+                      | ((unsigned long)(addr & 0x3FFFu) << 16)
+                      | ((addr >> 14) & 0x0003u);
+        while (run--) {
+            VDP_DATA_WORD = *cells;
+            cells += src_stride;
+        }
+        render_set_autoinc_word();
+        SYS_enableInts();
+        row = 0u;
+    }
+}
+
+void render_plane_clear_full_rows(unsigned char plane_b, unsigned short row,
+                                  unsigned short rows, unsigned short width)
+{
+    const unsigned short addr = (unsigned short)(
+        (plane_b ? PLANE_B_BASE : PLANE_A_BASE) + row * s_plane_row_stride_bytes);
+    const unsigned long len = (unsigned long)rows * s_plane_row_stride_bytes;
+    if (width * 2u != s_plane_row_stride_bytes || len == 0u || len > 0xFFFFu) {
+        while (rows--) render_plane_fill_row(plane_b, 0u, row++, width, 0u);
+        return;
+    }
+    /* T-172: one VDP fill instead of a CPU loop per row (room loads clear
+     * ~40 gutter rows). Fill byte 0 = cells 0. */
+    SYS_disableInts();
+    DMA_doVRamFill(addr, (unsigned short)len, 0u, 1);
+    DMA_waitCompletion();
+    render_set_autoinc_word();
+    SYS_enableInts();
 }
 
 void render_plane_fill_row(unsigned char plane_b, unsigned short col,
@@ -657,6 +747,14 @@ unsigned char render_plane_a_queue_row(unsigned short row, unsigned short col,
     return DMA_queueDmaFast(DMA_VRAM, (void *)cells, addr, count, 2) ? 1u : 0u;
 }
 
+unsigned char render_vram_queue_words(unsigned short vram_addr,
+                                      const unsigned short *src,
+                                      unsigned short word_count)
+{
+    dma_stats_record((unsigned long)word_count * 2u);
+    return DMA_queueDmaFast(DMA_VRAM, (void *)src, vram_addr, word_count, 2) ? 1u : 0u;
+}
+
 void render_vram_read_run(unsigned short vram_addr, unsigned short *dst,
                           unsigned short count)
 {
@@ -665,7 +763,23 @@ void render_vram_read_run(unsigned short vram_addr, unsigned short *dst,
     VDP_CTRL_LONG = 0x00000000UL
                   | ((unsigned long)(vram_addr & 0x3FFFu) << 16)
                   | ((unsigned long)(vram_addr >> 14) & 0x0003u);
-    while (count--) *dst++ = VDP_DATA_WORD;
+    /* T-172: two words per long read of the data port (68000 long
+     * accesses need only word alignment). */
+    {
+        volatile unsigned long *const port = (volatile unsigned long *)0xC00000;
+        unsigned long *d = (unsigned long *)(void *)dst;
+        while (count >= 8u) {
+            d[0] = *port; d[1] = *port; d[2] = *port; d[3] = *port;
+            d += 4;
+            count = (unsigned short)(count - 8u);
+        }
+        while (count >= 2u) {
+            *d++ = *port;
+            count = (unsigned short)(count - 2u);
+        }
+        dst = (unsigned short *)(void *)d;
+    }
+    if (count) *dst = VDP_DATA_WORD;
     SYS_enableInts();
 }
 
