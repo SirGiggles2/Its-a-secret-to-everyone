@@ -188,6 +188,7 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 
 ## Handoff log (newest first)
 
+- 2026-09-30 Codex: T-171 handoff document synchronized with current tracker state after L3–L9 entries, boss idle sweep, and L5 statue fix. `docs/audit/T-171_audit_sweep_handoff.md` now points to full evidence and open boss failures; Claude can resume from either file.
 - 2026-09-30 Codex: T-171 boss idle sweep and L5 statue fix. Current `Debug.bat` PASS, ROM SHA-256 `30F0134994A966F0D7BFF7229AD3BB4D9B760DB623E380159B3E7B528725D656`; inherited 58/58 and 5 new boss gates PASS. L4/L8 missing $56 shots (KEY), L6 `$042D`, L9 `$0420/$049F` remain open. Next: source-trace Gleeok shot onset t309/t331, then L6/L9 RAM, then combat/reward routes. See `docs/audit/T-171_boss_probe_sweep.md`.
 - 2026-09-30 Codex: T-171 Q1 L3–L9 entry presets and ratchets committed as an entry-only coverage slice. All seven new gates PASS (KEY 480/480 each); no new runtime diff cell beyond accepted L2 setup/flicker classes. ROM SHA-256 `AF6A028838AD6D50FC9AE06951D79B55247BFB281C7C4472CC8E85B960E41DBA`; Windows `Debug.bat` PASS. Next: boss-room probes, then mismatch triage. See `docs/audit/T-171_level_entry_coverage.md`.
 - 2026-09-30 Codex: T-171 ACTIVE claimed from `b8e12fed` handoff, with newer `835032a1` incorporated. Read queue and source rules; next capture remaining RAM onsets, then expand L2–L9/boss coverage. No game code changed at claim.

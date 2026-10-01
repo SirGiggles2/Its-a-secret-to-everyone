@@ -1,6 +1,25 @@
 # T-171 handoff: source audit sweep (new direction, user 2026-09-30)
 
-Owner so far: Claude. Next: Codex/Astra. Last commit: `4dc69650` (main).
+Current owner: Codex. Live task state and newest evidence: `docs/TRACKER.md`
+row T-171. Original Claude handoff below is historical context.
+
+## Codex progress after handoff (2026-09-30)
+
+- Q1 L3–L9 entry presets added; 7/7 gated PASS, 480/480 KEY frames each.
+  See `docs/audit/T-171_level_entry_coverage.md`.
+- Q1 boss idle probes added for L1–L9. L1/L2/L3/L5/L7 gated PASS; L4/L8
+  fail on missing `$56` shots; L6/L9 have unbaselined non-KEY RAM cells.
+  The probes do not yet establish combat, rewards or departure.
+- L5 room `$24` exposed absent statue fireballs. NES `UpdateStatues` was
+  drained but not called by the linked underworld play tail. Promoted it;
+  L5 KEY 750/750, tick-350 NES/Genesis room and shot frames checked.
+  See `docs/audit/T-171_boss_probe_sweep.md`.
+- Windows `Debug.bat` PASS; inherited gate suite 58/58 PASS and five new
+  boss idle gates 5/5 PASS. Current local `builds/Debug.md` SHA-256:
+  `30F0134994A966F0D7BFF7229AD3BB4D9B760DB623E380159B3E7B528725D656`.
+- Mismatch report remains 27 open / 13 accepted across 63 baselines.
+  Next source-backed work: Gleeok L4/L8 shot onset (t331/t309), L6
+  `$042D`, L9 `$0420/$049F`, then interactive fight/reward routes.
 
 ## The new direction (user, verbatim intent)
 
