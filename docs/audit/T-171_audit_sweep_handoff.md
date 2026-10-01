@@ -1,6 +1,6 @@
 # T-171 handoff: source audit sweep (new direction, user 2026-09-30)
 
-Current owner: Codex. Live task state and newest evidence: `docs/TRACKER.md`
+Current owner: Claude (took back 2026-10-01 after reviewing Codex commits 5bcf08a4..ec053496 + uncommitted transition.c $49E fix, suite 67/67). Live task state and newest evidence: `docs/TRACKER.md`
 row T-171. Original Claude handoff below is historical context.
 
 ## Codex progress after handoff (2026-09-30)

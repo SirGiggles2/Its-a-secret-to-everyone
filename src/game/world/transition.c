@@ -265,7 +265,14 @@ static unsigned char detect_warp_ow(unsigned char source_room_id,
     (void)tile_col; (void)tile_row; (void)y_in_play;
     nes_ram[0x0070u] = (unsigned char)link_x;
     nes_ram[0x0084u] = (unsigned char)link_y;
-    raw_tile = collision_get_collidable_tile_still(0u);
+    /* NES Z_07.asm @CheckWarps saves ObjCollidedTile around CheckWarps.
+     * Sampling the standing tile may update that scratch cell, but the
+     * dungeon selector must leave the preceding collision result intact. */
+    {
+        unsigned char collided_before = nes_ram[0x049Eu];
+        raw_tile = collision_get_collidable_tile_still(0u);
+        nes_ram[0x049Eu] = collided_before;
+    }
     if (raw_tile != 0x24u && raw_tile != 0x88u &&
         !(raw_tile >= 0x70u && raw_tile <= 0x73u)) {
         return 0u;
