@@ -3121,6 +3121,8 @@ void roomrom_debug_enter(void)
     options_consumer_apply_inventory_at_start();
     saved_options_len =
         options_runtime_serialize(saved_options, OPTIONS_STATE_SIZE);
+    /* T-172: pause menu cells built during this load, not on Start. */
+    inventory_menu_cells_build();
 
     /* Phase 6 Task 6.1: seed `players[0]` with NES Z1 boot defaults
      * before anything reads it. RoomRom always boots in 1-player mode;

@@ -250,6 +250,39 @@ static short s_vscroll = 0;
 
 /* Set BG_A AND BG_B vertical scroll (VSRAM slots 0/1) to v — both planes
  * share $C000, so they must scroll in lockstep. */
+/* Plane rows on screen at the slide's start (VSRAM 174): 174/8 .. +28. */
+#define MENU_ROWS_FIRST_VISIBLE (SCROLL_VSCROLL_TOP / 8)
+#define MENU_ROWS_SCREEN_END    ((SCROLL_VSCROLL_TOP + 224) / 8 + 1)
+static unsigned short s_menu_rows_pending;   /* rows 0..n-1 not yet written */
+
+static void write_inventory_row(unsigned short row);   /* forward decl */
+
+/* Two rows a slide tick, bottom up, always ahead of the reveal; all of
+ * them once the menu settles. */
+static void menu_rows_catch_up(unsigned char all)
+{
+    unsigned char n = all ? 0xFFu : 2u;
+    while (s_menu_rows_pending > 0u && n--) {
+        --s_menu_rows_pending;
+        write_inventory_row(s_menu_rows_pending);
+    }
+}
+
+static unsigned char s_icons_pending;
+
+static void menu_icons_upload(void)
+{
+    unsigned char t, k;
+    if (!s_icons_pending) return;
+    s_icons_pending = 0u;
+    render_vram_open_write(0xA000u);
+    for (t = 0u; t < 16u; ++t)
+        for (k = 0u; k < 32u; k += 2u)
+            *((volatile unsigned short *)0xC00000) =
+                (unsigned short)(((unsigned short)k_inventory_sprite_chr[t][k] << 8) |
+                                 k_inventory_sprite_chr[t][k + 1u]);
+}
+
 static void set_subscreen_vscroll(short v)
 {
     render_vsram_open_write(0u);
@@ -418,32 +451,60 @@ static unsigned char tile_subpal(unsigned short nes_row, unsigned char tid)
  * subscreen starts at NT row 9 in the 224-line Genesis viewport. */
 #define NES_VSCROLL_NES_ROW_OFFSET  9u
 
+/* T-172: the menu's static cells (captured tilemap + sub-palettes) for the
+ * current variant, built once; opening the menu only re-resolves the
+ * dungeon-map sheet. Building all ~700 cells per open made the pause take
+ * 4 frames (NES 1). Index = NES name-table row 9..29 (gen rows 0..20). */
+#define INV_CACHE_ROWS (30u - NES_VSCROLL_NES_ROW_OFFSET)
+static unsigned short s_menu_cells[2][INV_CACHE_ROWS][32];   /* [0] OW, [1] UW */
+static unsigned char s_menu_cells_built;
+
+/* Both variants, once (gameplay entry calls it during the load). */
+void inventory_menu_cells_build(void)
+{
+    unsigned short v, r, i;
+    if (s_menu_cells_built) return;
+    for (v = 0u; v < 2u; ++v)
+        for (r = 0u; r < INV_CACHE_ROWS; ++r) {
+            const unsigned short nes_row = (unsigned short)(r + NES_VSCROLL_NES_ROW_OFFSET);
+            for (i = 0u; i < 32u; ++i) {
+                unsigned char tid = v ? k_inventory_uw_tilemap[nes_row][i]
+                                      : k_inventory_tilemap[nes_row][i];
+                unsigned char sp  = v ? k_inventory_uw_subpal[nes_row][i]
+                                      : k_inventory_subpal[nes_row][i];
+                s_menu_cells[v][r][i] = RENDER_TILE_ATTR_FULL(0u, 0, 0, 0, tile_for(tid, sp));
+            }
+        }
+    s_menu_cells_built = 1u;
+}
+
 static void write_inventory_row(unsigned short gen_row)
 {
-    unsigned short cells[32];
     unsigned short i;
     const unsigned short addr = (unsigned short)(PLANE_A_BASE + gen_row * 128u + s_col_base * 2u);
     /* Gen row 0 = NES NT row 9 after the visible-frame crop. */
     unsigned short nes_row = (unsigned short)(gen_row + NES_VSCROLL_NES_ROW_OFFSET);
+    const unsigned short *cells;
     if (nes_row >= 30u) {
         unsigned short blank_attr = RENDER_TILE_ATTR_FULL(0u, 0, 0, 0, BLANK_TILE);
         render_plane_fill_row(0u, s_col_base, gen_row, 32u, blank_attr);
         return;
     }
-    for (i = 0; i < 32u; ++i) {
-        /* Captured frame; live visited-room glyphs replace the map sheet. */
-        unsigned char tid = s_subscreen_uw ? k_inventory_uw_tilemap[nes_row][i]
-                                           : k_inventory_tilemap[nes_row][i];
-        unsigned char sp  = s_subscreen_uw ? k_inventory_uw_subpal[nes_row][i]
-                                           : k_inventory_subpal[nes_row][i];
-        /* NES sheet transfers target NT2 rows21..28, columns12..27. */
-        if (s_subscreen_uw && nes_row >= 21u && nes_row < 29u &&
-            i >= 12u && i < 28u)
-            tid = s_dungeon_map[nes_row - 21u][i - 12u];
-        unsigned short vram = tile_for(tid, sp);
-        cells[i] = RENDER_TILE_ATTR_FULL(0u, 0, 0, 0, vram);
-    }
+    inventory_menu_cells_build();
+    cells = s_menu_cells[s_subscreen_uw ? 1u : 0u][gen_row];
     render_vram_open_write(addr);
+    if (s_subscreen_uw && nes_row >= 21u && nes_row < 29u) {
+        /* NES sheet transfers target NT2 rows21..28, columns12..27: live
+         * visited-room glyphs replace the captured map sheet. */
+        const unsigned char *map = s_dungeon_map[nes_row - 21u];
+        for (i = 0; i < 12u; ++i) *((volatile unsigned short *)0xC00000) = cells[i];
+        for (i = 12u; i < 28u; ++i)
+            *((volatile unsigned short *)0xC00000) =
+                RENDER_TILE_ATTR_FULL(0u, 0, 0, 0,
+                    tile_for(map[i - 12u], k_inventory_uw_subpal[nes_row][i]));
+        for (i = 28u; i < 32u; ++i) *((volatile unsigned short *)0xC00000) = cells[i];
+        return;
+    }
     for (i = 0; i < 32u; ++i) *((volatile unsigned short *)0xC00000) = cells[i];
 }
 
@@ -763,15 +824,9 @@ void inventory_subscreen_enter(void)
     /* Upload the 8 live-extracted subscreen item-icon tiles to free VRAM
      * $A000 (tile DSPR_BASE). These cover icons absent from / wrong in the
      * items atlas: recorder $24, candle $26, raft $6C, ladder $76. */
-    {
-        unsigned char t, k;
-        render_vram_open_write(0xA000u);
-        for (t = 0u; t < 16u; ++t)
-            for (k = 0u; k < 32u; k += 2u)
-                *((volatile unsigned short *)0xC00000) =
-                    (unsigned short)(((unsigned short)k_inventory_sprite_chr[t][k] << 8) |
-                                     k_inventory_sprite_chr[t][k + 1u]);
-    }
+    /* T-172: uploaded on the first slide tick (menu_icons_upload): the
+     * item sprites that use them appear only once the menu settles. */
+    s_icons_pending = 1u;
 
     /* V2.4k (2026-05-26): NES Z1 inventory subscreen renders HUD strip
      * at BOTTOM (vs gameplay HUD at top). Swap Window plane position +
@@ -815,12 +870,18 @@ void inventory_subscreen_enter(void)
      * progressive tile writes.
      * Park the viewport 174 px above the menu; tick ramps it down. */
     {
+        /* T-172: VRAM writes during active display bound the open (it ran
+         * 3 frames past its tick, t013_save t61; NES opens in one). At
+         * VSRAM 174 the screen shows plane rows 21..49; the slide (3 px a
+         * frame) reveals one menu row upward every ~2.7 frames and never
+         * shows rows 50..63. Write what is on screen now; the slide ticks
+         * write rows 20..0 ahead of the reveal (menu_rows_catch_up). */
         unsigned short r;
-        for (r = 0u; r < 64u; ++r) render_plane_fill_row(0u, s_col_base, r, 32u, blank_attr);
-    }
-    {
-        unsigned short r;
-        for (r = 0u; r < SCROLL_TOTAL_ROWS; ++r) write_inventory_row(r);
+        for (r = SCROLL_TOTAL_ROWS; r < MENU_ROWS_SCREEN_END; ++r)
+            render_plane_fill_row(0u, s_col_base, r, 32u, blank_attr);
+        for (r = MENU_ROWS_FIRST_VISIBLE; r < SCROLL_TOTAL_ROWS; ++r)
+            write_inventory_row(r);
+        s_menu_rows_pending = MENU_ROWS_FIRST_VISIBLE;
     }
     s_vscroll = (short)SCROLL_VSCROLL_TOP;     /* menu off-screen above */
     set_subscreen_vscroll(s_vscroll);
@@ -981,6 +1042,8 @@ void inventory_subscreen_tick(unsigned char joy_state)
         /* NES active VScroll is $41: the eight-line viewport crop is in
          * the tile-row origin above; Genesis VSRAM +1 aligns its pixel phase. */
         s_vscroll -= SCROLL_VSCROLL_STEP;
+        menu_icons_upload();
+        menu_rows_catch_up(s_vscroll <= 0);
         if (s_vscroll <= 0) {
             s_vscroll = 1;
             set_subscreen_vscroll(1);

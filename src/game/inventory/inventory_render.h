@@ -20,6 +20,8 @@
 #define INVENTORY_RENDER_H
 
 void inventory_subscreen_enter(void);
+/* T-172: build the menu's static cells (both variants) ahead of the first pause. */
+void inventory_menu_cells_build(void);
 void inventory_subscreen_exit(void);
 void inventory_subscreen_tick(unsigned char joy_state);
 
