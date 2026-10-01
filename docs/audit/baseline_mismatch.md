@@ -2,10 +2,10 @@
 
 | Cell | Name | Presets | Earliest (preset@tick) |
 |---|---|---|---|
-| $0065 | UndergroundEntranceTile | 11 | t111_dark_candle@32, t123_slow_tiles@32, t054_uw_block42_nes@668, t114_uw_wall@668 |
-| $03D0 | ObjAnimCounter | 9 | t134_cave_exit@443, t011_exit_idle@709, t011_sword_cave@709, t011_sword_swing_exit@709 |
-| $03E4 | ObjAnimFrame | 4 | t012_route@140, t013_route@140, t114_uw_wall@1044, t131_uw_ndoor@1056 |
+| $049E | ObjCollidedTile | 11 | t111_dark_candle@33, t123_slow_tiles@33, t012_route@140, t013_route@140 |
+| $03D0 | ObjAnimCounter | 8 | t134_cave_exit@443, t011_exit_idle@709, t011_sword_cave@709, t011_sword_swing_exit@709 |
 | $0052 | ProcessedNarrowObj | 3 | t121_ring1@106, t121_ring2@106, t013_route@4111 |
+| $03E4 | ObjAnimFrame | 3 | t114_uw_wall@1044, t131_uw_ndoor@1056, t013_route@6878 |
 | $005A | UndergroundExitType | 2 | t132_uw_exit@911, t013_route@8465 |
 | $00EE | CurOpenedDoors | 2 | t132_uw_exit@911, t013_route@5421 |
 | $0027 | DoorTimer | 1 | t013_route@5413 |
@@ -25,7 +25,6 @@
 | $0407 | ObjMetastate+2 | 1 | t013_route@6734 |
 | $0408 | ObjMetastate+3 | 1 | t013_route@6773 |
 | $040A | ObjMetastate+5 | 1 | t013_route@4620 |
-| $042D | Gleook_HeadInfo1 | 1 | t129_enemy_sweep@6400 |
 | $04CE | ShutterTrigger | 1 | t013_route@5413 |
 | $04E5 | StatusBarMapTrigger | 1 | t013_route@6987 |
 | $0521 | PrevOpenedDoors | 1 | t132_uw_exit@911 |

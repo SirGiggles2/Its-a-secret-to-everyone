@@ -16,16 +16,20 @@ row T-171. Original Claude handoff below is historical context.
   See `docs/audit/T-171_boss_probe_sweep.md`.
 - Windows `Debug.bat` PASS; full gated suite 67/67 PASS. Current local
   `builds/Debug.md` SHA-256:
-  `2FF4A959444BB28F9196B476AD6721260D7F6DE2749C7759BDE80EADCE54CE46`.
+  `453E489908A2F1B635EA4FB3250BD4F6C309A487D7B41625FE886129A4809A17`.
   The full 67/67 run preceded the Gleeok sprite-order correction; the
-  current ROM passed the affected Q1 L1–L9 boss idle gates 9/9.
+  intervening ROM passed Q1 L1–L9 boss idle gates 9/9. The current ROM
+  passed all 11 route baselines affected by the dungeon-entrance repair.
 - Gleeok fireball was mostly hidden by its neck despite matching RAM.
   NES OAM put shot slot 28 ahead of neck slots 29..55; Genesis put the
   native shot last. Boss SAT now emits native fireballs first. L4 live
   tick-350 screen shows the red/orange shot; see boss sweep audit.
-- Mismatch report remains 27 open / 13 accepted across 67 baselines.
-  Next: interactive boss attack/vulnerability/reward/departure routes,
-  then remaining open RAM-cell queue and other Quest 1 systems.
+- NES `HandleWarpOW` `$0065` raw entrance tile now mirrored at the owning
+  OW→dungeon transition. Eleven affected baselines were refreshed after
+  passing; `$0065` left the queue. See `docs/audit/T-171_warp_tile_followup.md`.
+- Mismatch report now has 26 open / 13 accepted across 67 baselines.
+  Next: `$049E` collision scratch, interactive boss attack/vulnerability/
+  reward/departure routes, then other Quest 1 systems.
 
 ## The new direction (user, verbatim intent)
 

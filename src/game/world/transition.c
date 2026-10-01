@@ -586,6 +586,12 @@ void roomrom_world_transition_tick(void)
             s_save.dest_scene == ROOMROM_MAIN_SCENE_UW) {
             /* T-132: NES CheckWarps enters mode $10 on this frame; the
              * stairs / load / curtain / walk-in sequence is main.c's. */
+            /* NES HandleWarpOW stores the raw standing tile before
+             * @LoadLevel changes CurLevel. The level-entry coordinator
+             * stores its own copy but must keep this NES RAM cell too:
+             * t111 L5 entry was left with the previous $74 instead of
+             * the actual $24 entrance tile. */
+            nes_ram[0x0065u] = s_save.source_underground_entrance_tile_raw;
             outcome.dest_scene    = s_save.dest_scene;
             outcome.dest_level    = s_save.dest_level;
             outcome.dest_quest    = s_save.dest_quest;
