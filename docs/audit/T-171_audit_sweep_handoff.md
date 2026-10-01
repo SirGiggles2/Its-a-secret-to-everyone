@@ -72,6 +72,20 @@ match the NES that did not; suite 51/51 throughout.
 - Caves: IsUpdatingMode / UndergroundExitType / ObjInputDir per NES.
 - Save: NES pointer scratch end state in `$C0-$CF`.
 
+## Progress log after the handoff (Claude kept going, user 2026-09-30)
+
+- HandleWarpOW record is one helper (`record_warp_tile_ow`, main.c): NES
+  gate, runs on the play tick AND on the InitMode5Play tick after a scroll
+  (t111 t32, t054 t668), restores ObjCollidedTile `$49E` like @CheckWarps
+  (Genesis left the stood-on tile there every tick; that cell hid in the
+  tick-0 bucket).
+- Cave exit tick: no Link_EndMoveAndAnimate after CheckCaveEdge
+  (`s_lvl_phase != LVL_CAVE_EXIT` gate) (t134 t443).
+- cave_fade: Link's stairs/walk-in animation now runs NES AnimateLinkBase
+  on `$3D0/$3E4` (`animate_link_nes`), no fixed seeds; InitMode10 frame
+  and the settle frame do not animate; Sub8 first frame counter 4. t012
+  descent 72/72 frame states equal (was off by one from t140).
+
 ## Open queue (from docs/audit/baseline_mismatch.md, 27 cells)
 
 Work top-down. Each line = cell, presets@first tick, what is known.

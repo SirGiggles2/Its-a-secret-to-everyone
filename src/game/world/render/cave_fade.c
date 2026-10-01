@@ -106,25 +106,6 @@ static unsigned char         s_emerge_grid    = 0u;
  * down-counts; on roll past 1 it resets to 6 and toggles the frame — a
  * 6-frame walk-pose period (Z_07.asm:5045 AnimateObjectWalking). */
 #define CAVE_ANIM_PERIOD  6u
-/* Walk-pose ENTRY seed for the descend. The 6-frame cadence is correct, but the
- * FIRST pose-flip must land where NES's does. NES (cave $6A live capture) flips
- * ObjAnimFrame 0->1 at descent fr3 and 1->0 at fr9; the position anchor between
- * the NES (GameMode=$10) and Gen (cave_fade arm) captures is +2 frames (Tier-A
- * byte-verified). Gen's first flip lands at frame (1 + seed): seed=6 flips at
- * fr7. The metric is the VISIBLE pose (NES OAM hflip / Gen SAT tile), not the
- * ObjAnimFrame cell (NES's sprite pose lags that cell ~1 frame). Measured: NES
- * OAM pose flips at descent fr4; the position anchor between the captures is +2
- * (Tier-A byte-verified); Gen's SAT pose flips at frame (2 + seed). seed=4 =>
- * Gen flips at fr6 = NES fr4 + 2 => visible pose byte-aligns with NES at the
- * same +2 anchor as position. (Real-gameplay entry phase varies +-1 within NES's
- * own range, so this is the capture-matching choice, not an overfit.) */
-#define CAVE_ANIM_ENTRY_SEED 4u
-/* Emerge re-seed: NES InitMode_WalkCave restarts the walk anim at the emerge
- * (ObjAnimFrame=0, ObjAnimCounter re-seeded) so Link holds pose 0 through the
- * short walk-up and flips to pose 1 right as he settles at the $D5 floor.
- * Without re-seeding, the Gen emerge carries the frozen descent-end frame
- * (pose 1) and runs 1 pose ahead of NES for the whole emerge walk. */
-#define CAVE_ANIM_EMERGE_SEED 4u
 static unsigned char         s_anim_counter   = CAVE_ANIM_PERIOD;
 static unsigned char         s_anim_frame     = 0u;
 /* Cave-load hold: NES holds Link at the descent-end Y while GameMode $0B
@@ -159,8 +140,6 @@ void cave_fade_begin_enter(cave_id_t cid, unsigned char entrance_tile)
     s_entrance_tile = entrance_tile;
     s_frame_counter = 0u;
     s_step_idx      = 0u;
-    s_anim_counter  = CAVE_ANIM_ENTRY_SEED;   /* align first pose-flip to NES */
-    s_anim_frame    = 0u;
     s_phase         = CAVE_FADE_LINK_DESCEND;
 }
 
@@ -223,15 +202,27 @@ void cave_fade_mark_arch_hi_prio(unsigned char link_tile_col,
     }
 }
 
+extern void roomrom_combat_animate_link_base(void);   /* combat_runtime.c */
+
+/* T-171: Link's walk animation on the NES cells. UpdateMode10Stairs and
+ * InitMode_WalkCave both end in Link_EndMoveAndAnimate -> AnimateLinkBase
+ * on ObjAnimCounter/ObjAnimFrame ($3D0/$3E4), carried over from play (the
+ * old fixed seeds matched only when Link's counter happened to be 4:
+ * t012_route t140). Hand the result to the owner for the pose. */
+static void animate_link_nes(void)
+{
+    roomrom_combat_animate_link_base();
+    if (s_cb.on_anim_tick != 0)
+        s_cb.on_anim_tick(RAM(0x03D0u), RAM(0x03E4u));
+}
+
 void cave_fade_tick(void)
 {
     /* NES walk-anim runs EVERY frame Link is animating (descend/emerge/ascend),
      * independent of the position step. Emit the current (counter, frame) then
      * advance: counter down-counts, rolling 1->6 and toggling the frame — the
      * 6-frame walk-pose cadence (Z_07.asm:5045). */
-    if (s_phase == CAVE_FADE_LINK_DESCEND ||
-        s_phase == CAVE_FADE_LINK_EMERGE  ||
-        s_phase == CAVE_FADE_LINK_ASCEND) {
+    if (s_phase == CAVE_FADE_LINK_ASCEND) {
         if (s_cb.on_anim_tick != 0) {
             s_cb.on_anim_tick(s_anim_counter, s_anim_frame);
         }
@@ -253,6 +244,7 @@ void cave_fade_tick(void)
             s_load_counter = CAVE_LOAD_HOLD_FRAMES;
             s_phase = CAVE_FADE_LOAD_HOLD;
             if (s_cb.on_load_blank != 0) s_cb.on_load_blank(0u);
+            animate_link_nes();          /* after the mode switch, as NES */
             break;
         }
         /* NES UpdateMode10Stairs_Full (Z_05.asm:2314): INC ObjY when
@@ -261,7 +253,9 @@ void cave_fade_tick(void)
          * the init frame at fc $B8 must not move). After 16 steps,
          * mode $0B. */
         if (s_frame_counter < 2u) s_frame_counter++;
-        if (s_frame_counter >= 2u && (RAM(0x0015u) & 0x03u) == 0u) {
+        /* InitMode10's own frame (first call) neither moves nor animates. */
+        if (s_frame_counter < 2u) break;
+        if ((RAM(0x0015u) & 0x03u) == 0u) {
             if (s_cb.on_descend_step != 0) {
                 s_cb.on_descend_step(s_step_idx);
             }
@@ -274,6 +268,7 @@ void cave_fade_tick(void)
                 if (s_cb.on_load_blank != 0) s_cb.on_load_blank(0u);
             }
         }
+        animate_link_nes();              /* AnimateAndDrawLinkBehindBackground */
         break;
     }
 
@@ -319,12 +314,12 @@ void cave_fade_tick(void)
         s_emerge_grid    = CAVE_EMERGE_GRID0;
         /* Re-seed the walk anim for the emerge (NES InitMode_WalkCave restarts
          * it): hold pose 0 through the walk-up, flip to pose 1 at the settle. */
-        s_anim_frame     = 0u;
-        s_anim_counter   = CAVE_ANIM_EMERGE_SEED;
-        /* T-012: this is InitMode_WalkCave's first frame (ObjY $DD, no
-         * move yet); its Link_EndMoveAndAnimateInRoom animates. */
-        if (s_cb.on_anim_tick != 0) s_cb.on_anim_tick(s_anim_counter, s_anim_frame);
-        s_anim_counter   = (unsigned char)(s_anim_counter - 1u);
+        /* InitModeB_EnterCave: InitMode_EnterRoom leaves Link's
+         * ObjAnimCounter at 4 and ObjInputDir 0, so its
+         * Link_EndMoveAndAnimate does not step (NES t011 f155: $3D0 4). */
+        RAM(0x03D0u) = 4u;
+        if (s_cb.on_anim_tick != 0)
+            s_cb.on_anim_tick(RAM(0x03D0u), RAM(0x03E4u));
         s_phase          = CAVE_FADE_LINK_EMERGE;
         break;
 
@@ -356,6 +351,7 @@ void cave_fade_tick(void)
         if (s_cb.on_emerge_step != 0) {
             s_cb.on_emerge_step(s_emerge_y, s_emerge_grid, s_emerge_posfrac);
         }
+        animate_link_nes();              /* Link_EndMoveAndAnimateInRoom */
         /* T-012: NES shows the floor frame in submode 8, then one more
          * frame (ObjGridOffset 0) before the cave updates. */
         if (s_emerge_y <= CAVE_EMERGE_FLOOR_Y) {

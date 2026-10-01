@@ -878,6 +878,26 @@ static unsigned char link_nes_sub_qspeed(void)
     return 0u;
 }
 
+/* NES CheckWarps -> HandleWarpOW (Z_05.asm:7210-7318): on a mode 5 frame
+ * that passes the gate (UndergroundExitType 0, grid 0, X on a $10 column,
+ * $08 in room $22, Y low nibble $D) the OW stores Link's tile in
+ * UndergroundEntranceTile; @CheckWarps restores ObjCollidedTile after
+ * (T-171: t111_dark_candle t32, t054 t668 NES $65 set on the
+ * InitMode5Play frame after a scroll). */
+static void record_warp_tile_ow(void)
+{
+    const u8 lx = (u8)players[0].x;
+    u8 coll;
+    if (s_scene != SCENE_OW || nes_ram[0x005Au] != 0u ||
+        nes_ram[0x0394u] != 0u || ((u8)players[0].y & 0x0Fu) != 0x0Du)
+        return;
+    if ((s_room_id == 0x22u) ? (lx & 0x07u) != 0u : (lx & 0x0Fu) != 0u)
+        return;
+    coll = nes_ram[0x049Eu];
+    nes_ram[0x0065u] = collision_get_collidable_tile_still(0u);
+    nes_ram[0x049Eu] = coll;
+}
+
 static void link_nes_finish_grid_cell(void)
 {
     if (link_nes_grid_at_limit()) {
@@ -3424,19 +3444,12 @@ static unsigned char play_update_objects(void)
         ? (unsigned char)(y_low >= 0x0Cu && y_low <= 0x0Eu)
         : (unsigned char)(y_low == 0x0Du);
     if (s_scene == SCENE_OW && gate_pass) {
+        /* @CheckWarps keeps ObjCollidedTile across CheckWarps (PHA/PLA). */
+        const u8 coll_saved = nes_ram[0x049Eu];
         unsigned char standing_tile =
             collision_get_collidable_tile_still(0u);
-        /* NES CheckWarps -> HandleWarpOW stores the tile on every play
-         * frame that passes its gate (UndergroundExitType 0, grid 0,
-         * X on a $10 column, $08 in room $22, Y low nibble $D), not only
-         * on a cave entry (T-171: t111_dark_candle t32 NES $65 = $26). */
-        {
-            const u8 lx = (u8)players[0].x;
-            if (nes_ram[0x005Au] == 0u && nes_ram[0x0394u] == 0u &&
-                y_low == 0x0Du &&
-                ((s_room_id == 0x22u) ? (lx & 0x07u) == 0u : (lx & 0x0Fu) == 0u))
-                nes_ram[0x0065u] = standing_tile;
-        }
+        nes_ram[0x049Eu] = coll_saved;
+        record_warp_tile_ow();
         /* Tier 0 verify sentinel: $07FD = last standing tile
          * Link was on. Helps debug entrance detection. */
         DBG_SENTINEL(0x1Du) = standing_tile;
@@ -3996,6 +4009,9 @@ void roomrom_debug_tick(void)
                 nes_ram[0x70u] = (u8)players[0].x;
                 nes_ram[0x84u] = (u8)players[0].y;
                 s_scroll_state = SCROLL_NONE;
+                /* InitMode5Play's Link_EndMoveAndAnimate reaches
+                 * @CheckWarps in mode 5 (T-171). */
+                record_warp_tile_ow();
             } else if ((nes_scroll_enabled() && ow_done) ||
                 (!nes_scroll_enabled() &&
                  (s_scroll_frame >= (u8)(s_scroll_total_frames - 1u) ||
@@ -4884,7 +4900,10 @@ void roomrom_debug_tick(void)
          * that changes the mode (a room scroll started) skips them
          * (IsUpdatingMode, Z_07.asm:1851). */
         u8 warp_ticked = 0u;
-        if (!roomrom_pause_is_active() && !cave_fade_is_active()) {
+        if (!roomrom_pause_is_active() && !cave_fade_is_active() &&
+            s_lvl_phase != LVL_CAVE_EXIT) {
+            /* CheckCaveEdge -> GoToModeAFromCave leaves UpdatePlayer before
+             * Link_EndMoveAndAnimate (T-171: t134 t443 ObjAnimCounter). */
             roomrom_combat_end_move_and_animate();
             /* NES draws Link after AnimateLinkBase (SetUpWalkingSprites):
              * a frame toggled this tick shows now. */
