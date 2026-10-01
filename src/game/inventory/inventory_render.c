@@ -20,6 +20,8 @@
 #include "inventory_uw_tilemap.h"
 #include "inventory_sprite_chr.h"
 #include "../../../RoomRom/src/roomrom_main_state.h"  /* roomrom_main_current_scene */
+#include "../world/draw_dispatch.h"
+#include "../world/render/subpal_routing.h"
 #include "../room/room_dispatch.h" /* native per-level map/compass ownership */
 #include "../dungeon/uw_render.h"  /* roomrom_uw_room_render_get_level */
 #include "../dungeon/uw_map_builder.h"
@@ -169,7 +171,7 @@ static const unsigned char k_inv_slot_to_pal[INV_SLOT_COUNT] = {
     RENDER_PAL2,  /* 8  wand      $4A p1 */
     RENDER_PAL1,  /* 9  raft      $6C p0 */
     RENDER_PAL3,  /* A  book      $42 p2 */
-    RENDER_PAL3,  /* B  ring      $46 p2 */
+    RENDER_PAL3,  /* B  ring      $46; grade palette resolved in draw_inv_slot */
     RENDER_PAL1,  /* C  ladder    $76 p0 */
     RENDER_PAL3,  /* D  magic_key $2C p2 */
     RENDER_PAL3,  /* E  bracelet  $4E p2 */
@@ -393,7 +395,7 @@ static void write_text(unsigned short row, unsigned short col,
  * mode for item icons. */
 static unsigned char s_next_sat_slot;
 
-static void draw_item_icon(unsigned char tile_offset, unsigned short y, unsigned short x)
+static void draw_item_icon_8x16(unsigned char tile_offset, unsigned short y, unsigned short x)
 {
     unsigned short vram_tile = (unsigned short)(ITEM_VRAM_TILE_BASE + tile_offset);
     unsigned short attr = RENDER_TILE_ATTR_FULL(RENDER_PAL1, 0, 0, 0, vram_tile);
@@ -645,6 +647,14 @@ static void draw_inv_slot(unsigned char slot, unsigned short nes_x, unsigned cha
 
     unsigned char  nes_tile = k_inv_slot_to_nes_tile[slot];
     unsigned char  pal      = k_inv_slot_to_pal[slot];
+    /* NES source: Z_07.asm:DrawItemInInventory, DrawItemBySlot.
+     * Drained C: draw_dispatch.c:draw_item_icon (side-effect-free).
+     * Coverage: blue/red ring pause icon. Stance: EXTEND. */
+    if (slot == 0x0Bu) {
+        unsigned char nes_attr;
+        (void)draw_item_icon(slot, g_inventory.ring, &nes_attr);
+        pal = roomrom_spr_subpal_to_pal(nes_attr);
+    }
     unsigned short sat_y    = (unsigned short)(nes_y + SUBSCREEN_SAT_Y_OFFSET);
     unsigned char  wide     = (nes_tile != 0xF3u && nes_tile >= 0x62u);
 
