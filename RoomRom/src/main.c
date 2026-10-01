@@ -634,6 +634,8 @@ static void nes_frames_catch_up(unsigned char nes_frames)
  * frame runs with $4E). */
 #define NES_MODE12_EXIT_FC_STEPS 12u
 static u8 s_lvl_exit_fc = 0u;      /* FrameCounter on the exit edge tick */
+static u8 s_lvl_exit_dir = 0u;     /* door exit: ObjDir, 0 = not a door exit */
+static u8 s_lvl_exit_next = 0u;    /* door exit: CalculateNextRoom result */
 static u8 s_lvl_exit_steps = NES_LEVEL_EXIT_FC_STEPS;
 
 /* Tier 1 cave-fade callbacks. cave_fade.c owns sequencing + cave_init/
@@ -2019,7 +2021,17 @@ static void edge_load_or_clamp(void)
             unsigned char next = (unsigned char)(s_room_id +
                 (want == SCROLL_H_RIGHT ? 1 : want == SCROLL_H_LEFT ? -1 :
                  want == SCROLL_V_DOWN ? 16 : -16));
-            if ((next & 0x80u) && begin_level_exit()) return;
+            if ((next & 0x80u) && begin_level_exit()) {
+                /* InitMode7_Sub1 on the way out: PrevOpenedDoors,
+                 * CurOpenedDoors = entering side, DEC PrevRow,
+                 * CalculateNextRoom ($80+ = invalid) -> EndGameMode12:
+                 * UndergroundExitType 2 (T-171: t132_uw_exit t911). */
+                s_lvl_exit_dir = (u8)(want == SCROLL_H_RIGHT ? 0x01u :
+                                      want == SCROLL_H_LEFT  ? 0x02u :
+                                      want == SCROLL_V_DOWN  ? 0x04u : 0x08u);
+                s_lvl_exit_next = next;              /* applied in mode 7 */
+                return;
+            }
         }
         if (want == SCROLL_H_LEFT)  { --col; players[0].x = 0xF0; }
         if (want == SCROLL_H_RIGHT) { ++col; players[0].x = 0x00; }
@@ -2936,6 +2948,19 @@ static void level_entry_tick(void)
         return;
     }
     if (s_lvl_phase == LVL_EXIT_LOAD) {
+        if (s_lvl_exit_dir) {
+            /* Door exit, NES InitMode7_Sub1 then EndGameMode12 (the edge
+             * tick was mode 6): PrevOpenedDoors, CurOpenedDoors = entering
+             * side, DEC PrevRow, NextRoomId ($80+ = invalid),
+             * UndergroundExitType 2 (T-171: t132_uw_exit t911). */
+            const u8 d = s_lvl_exit_dir;
+            s_lvl_exit_dir = 0u;
+            nes_ram[0x0521u] = nes_ram[0x00EEu];
+            nes_ram[0x00EEu] = (u8)(((d >> 1) & 0x05u) | ((d << 1) & 0x0Au));
+            nes_ram[0x00EDu] = (u8)(nes_ram[0x00EDu] - 1u);
+            nes_ram[0x00ECu] = s_lvl_exit_next;
+            nes_ram[0x005Au] = 0x02u;
+        }
         /* Mode 2 (display off) + mode 3 submodes: back to the OW room. */
         nes_ram[0x0012u] = 0x02u;
         nes_ram[0x0013u] = 0u;

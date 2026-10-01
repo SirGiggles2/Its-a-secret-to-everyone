@@ -134,6 +134,16 @@ match the NES that did not; suite 51/51 throughout.
   runs. Found: OW room $38 at 100% CPU (now 0 overruns; margin thin), level
   load +3 frames, pause open +3, continue +5. Tracked as T-172.
 
+- 2026-10-01: GAMEPLAY BUG fixed: Genesis left CurObjIndex ($340) at the
+  object loop's last slot; NES sets $0B after the loop (and at
+  InitMode_EnterRoom). CheckHasLivingMonsters scans CurObjIndex+1..1, so
+  Genesis declared rooms with live monsters clear (L1 room $52: shutter
+  trigger + door command fired with 3 keese alive, t013_route t5413).
+  CheckUnderworldSecrets now UW-only like NES @CheckUW (RoomAllDead
+  counted up in the OW). Dungeon door exit writes InitMode7_Sub1 /
+  EndGameMode12 cells (t132 t911). These hid in the tick-0 bucket of the
+  report: also scan cells that differ from boot when a value looks wrong.
+
 ## Open queue (from docs/audit/baseline_mismatch.md, 27 cells)
 
 Work top-down. Each line = cell, presets@first tick, what is known.

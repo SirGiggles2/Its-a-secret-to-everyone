@@ -1252,6 +1252,9 @@ static void enemy_loop_room_init_impl(unsigned char room_id, unsigned char scene
      * returns without touching room state. */
     if (!same_room && !s_fix_arm_suppress_room_init)
         core_clear_ram0300_up_to(5u, 0x1Fu);
+    /* InitMode_EnterRoom @PlaceObjects: CurObjIndex = $B, ready for the
+     * first mode 5 frame (T-171: t013_route t883 after a cave exit). */
+    RAM(0x0340u) = 0x0Bu;
     /* NES SetupObjRoomBounds (Z_05.asm:6409), run by InitMode_EnterRoom
      * after placing Link and by RunCrossRoomTasks: RoomBoundLeft/Right/
      * Up/Down ($346-$349) + ObjectFirstUnwalkableTile ($34A). */
@@ -1870,6 +1873,13 @@ void enemy_loop_tick(void)
         enemy_loop_probe_publish_live();
     }
 
+    /* NES UpdateMode5Play: LDA #$0B / STA CurObjIndex after the object
+     * loop. CheckHasLivingMonsters scans slots CurObjIndex+1..1, so with the
+     * loop's last slot (1) left there it saw only slots 2..1 and declared a
+     * room with live keese clear (T-171: t013_route room $52 t5413,
+     * RoomAllDead / shutter trigger early). */
+    ENEMY_THROWER_SLOT = 0x0Bu;
+
     if (RAM(0x0010u) != 0u) enemy_loop_update_statues();
 
     /* NES source: Z_05.asm:CheckUnderworldSecrets,
@@ -1890,7 +1900,9 @@ void enemy_loop_tick(void)
      *   2. If flag set + room has shutters → fire trigger.
      *
      * Idempotent — trigger fn skips already-open internally. */
-    {
+    /* NES UpdateMode5Play @CheckUW: CheckUnderworldSecrets runs only with
+     * CurLevel != 0 (T-171: the OW start room counted RoomAllDead up). */
+    if ((unsigned char)RAM(0x0010u) != 0u) {
         extern void room_check_has_living_monsters(void);
         extern unsigned char uw_door_state_has_shutters(void);
         extern void uw_door_state_trigger_shutters(void);
