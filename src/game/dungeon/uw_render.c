@@ -572,10 +572,49 @@ static unsigned char attr_palette_for(const unsigned char *attr,
     return (unsigned char)((byte >> shift) & 0x03u);
 }
 
-static void blit_blob(int idx)
+/* Z_05.asm FillPlayAreaAttrs: the play-area attribute bytes (NT attribute
+ * table $10..$3F) from the installed level block: LevelBlockAttrsA & 3 =
+ * outer palette for all of it, LevelBlockAttrsB & 3 = inner palette for
+ * offsets 9..$26 except the left/right edge columns, the bottom inner
+ * row ($21+) only in its top half. T-171: the captured g_uw_room_attr
+ * differs from this in 4 of 331 rooms (L7 $2A Aquamentus: inner $FF,
+ * NES $AA, blocks drawn blue); computing it is NES-exact for all. */
+#define UW_LBA_A(room) nes_ram[0x687Eu + (room)]
+#define UW_LBA_B(room) nes_ram[0x68FEu + (room)]
+static unsigned char s_lba_attr[2][64];
+static unsigned char s_lba_attr_room[2] = { 0xFFu, 0xFFu };
+static unsigned char s_lba_attr_lvl[2];         /* CurLevel | quest << 4 */
+static unsigned char s_lba_attr_next;
+
+static const unsigned char *uw_room_attr(unsigned char room_id)
+{
+    static const unsigned char k_sel[4] = { 0x00u, 0x55u, 0xAAu, 0xFFu };
+    unsigned char i, y, outer, inner;
+    unsigned char *pa;
+    const unsigned char lvl = (unsigned char)(nes_ram[0x0010u] | (s_uw_quest << 4));
+    room_id = (unsigned char)(room_id & 0x7Fu);
+    for (i = 0u; i < 2u; ++i)
+        if (s_lba_attr_room[i] == room_id && s_lba_attr_lvl[i] == lvl) return s_lba_attr[i];
+    i = (unsigned char)(s_lba_attr_next++ & 1u);
+    pa = &s_lba_attr[i][0x10u];
+    outer = k_sel[UW_LBA_A(room_id) & 3u];
+    inner = k_sel[UW_LBA_B(room_id) & 3u];
+    for (y = 0u; y < 0x10u; ++y) s_lba_attr[i][y] = 0u;   /* status bar */
+    for (y = 0u; y < 0x30u; ++y) pa[y] = outer;
+    for (y = 0x09u; y < 0x27u; ++y) {
+        if ((y & 7u) == 0u || (y & 7u) == 7u) continue;
+        pa[y] = (y >= 0x21u) ? (unsigned char)((inner & 0x0Fu) | (pa[y] & 0xF0u))
+                             : inner;
+    }
+    s_lba_attr_room[i] = room_id;
+    s_lba_attr_lvl[i] = lvl;
+    return s_lba_attr[i];
+}
+
+static void blit_blob(int idx, unsigned char room_id)
 {
     const unsigned char *nt = g_uw_room_nt[idx];
-    const unsigned char *attr = g_uw_room_attr[idx];
+    const unsigned char *attr = uw_room_attr(room_id);
     s_cur_attr = attr;
     unsigned char row, col;
     unsigned char mt_col, mt_row;
@@ -604,12 +643,13 @@ static void blit_blob(int idx)
 /* S6.5 scroll: render two plane cols (one metatile col) of `room_id` from
  * blob src_col into plane dst_col. src_col / dst_col are metatile cols (0..15).
  * Falls back to no-op if room not found in blob (stays as previous content). */
-static void blit_blob_one_metacol_at(int idx, unsigned char src_col,
+static void blit_blob_one_metacol_at(int idx, unsigned char room_id,
+                                     unsigned char src_col,
                                      unsigned char dst_col,
                                      unsigned char dst_row_base)
 {
     const unsigned char *nt   = g_uw_room_nt[idx];
-    const unsigned char *attr = g_uw_room_attr[idx];
+    const unsigned char *attr = uw_room_attr(room_id);
     s_cur_attr = attr; /* keep current so palette_at is valid for door patches */
     unsigned char row;
     unsigned char mt_row;
@@ -715,7 +755,7 @@ void roomrom_uw_room_render_fill_plane_a(unsigned char room_id)
     int idx = find_blob_entry(s_uw_level, room_id);
     live_slot_identity();
     if (idx >= 0) {
-        blit_blob(idx);
+        blit_blob(idx, room_id);
     } else {
         draw_placeholder(room_id);
     }
@@ -768,7 +808,7 @@ void roomrom_uw_room_render_fill_one_col_at(unsigned char room_id,
         door_priority_cache_begin(dst, dst_row_base);
     }
     if (idx >= 0) {
-        blit_blob_one_metacol_at(idx, src, dst, dst_row_base);
+        blit_blob_one_metacol_at(idx, room_id, src, dst, dst_row_base);
     } else {
         /* Non-blob room: plane tiles left unchanged; populate s_uw_walkable
          * from precomputed NES grid so collision is valid for all rooms.

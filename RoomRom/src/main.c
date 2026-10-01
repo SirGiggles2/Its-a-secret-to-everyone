@@ -3002,6 +3002,7 @@ static void level_entry_tick(void)
         /* T-012: InitMode5Play takes a frame of its own (Link drawn, no
          * UpdatePlayer); t012_route NES t807 Link still, Genesis moved. */
         nes_ram[0x0011u] = 1u;                    /* IsUpdatingMode */
+        room_init_mode5_play_palette_row7();
         level_entry_draw_link();
         VDP_updateSprites(ROOMROM_SPRITE_SLOT_ENEMY_FIRST, DMA_QUEUE);
         s_lvl_phase = LVL_NONE;
@@ -4116,6 +4117,7 @@ void roomrom_debug_tick(void)
                  * walk-in direction (T-171: t171_warp_l2 NES $03D0
                  * 5 -> 4 at FC $C4, t131_uw_doors t788). */
                 roomrom_combat_end_move_and_animate();
+                room_init_mode5_play_palette_row7();
                 if (s_lvl_enter_only) roomrom_hud_set_counts_hidden(0u);
                 s_lvl_enter_only = 0u;
                 /* T-131: the room was made current at mode 4 entry

@@ -79,6 +79,24 @@ static const unsigned char k_game_over[] = {                      /* $46 */
     0x0Eu, 0x1Bu, 0x24u, 0x22u, 0x6Cu, 0x4Au, 0x24u, 0xFFu
 };
 
+/* Sprite palette row 7 ($3F1C, NES sprite sub-palette 3 = PAL1 colors
+ * 12..15) buffers, Z_06.asm:704-733 / 682 byte for byte. Cued by
+ * InitMode5 @ChooseTileObjPalette (tile objects: gravestone, Armos, rock)
+ * and the boss inits. T-171: unhandled selectors were dropped, so the
+ * boss bank's sub-palette 3 copy (PAL1 13..15) kept the level's row 7
+ * (t171_boss_l7 Aquamentus drawn $1A/$2A, NES $29/$30). */
+static const unsigned char k_aquamentus_row7[]  = { 0x3Fu, 0x1Cu, 0x04u, 0x0Fu, 0x0Au, 0x29u, 0x30u, 0xFFu }; /* $08 */
+static const unsigned char k_orange_boss_row7[] = { 0x3Fu, 0x1Cu, 0x04u, 0x0Fu, 0x17u, 0x27u, 0x30u, 0xFFu }; /* $0A */
+static const unsigned char k_ghost_row7[]       = { 0x3Fu, 0x1Cu, 0x04u, 0x0Fu, 0x30u, 0x00u, 0x12u, 0xFFu }; /* $20 */
+static const unsigned char k_green_bg_row7[]    = { 0x3Fu, 0x1Cu, 0x04u, 0x0Fu, 0x1Au, 0x37u, 0x12u, 0xFFu }; /* $22 */
+static const unsigned char k_brown_bg_row7[]    = { 0x3Fu, 0x1Cu, 0x04u, 0x0Fu, 0x17u, 0x37u, 0x12u, 0xFFu }; /* $24 */
+static const unsigned char k_ganon_row7[]       = { 0x3Fu, 0x1Cu, 0x04u, 0x0Fu, 0x16u, 0x2Cu, 0x3Cu, 0xFFu }; /* $36 */
+static const unsigned char k_red_armos_row7[]   = { 0x3Fu, 0x1Cu, 0x04u, 0x0Fu, 0x0Fu, 0x1Cu, 0x16u, 0xFFu }; /* $7A */
+static const unsigned char k_gleeok_row7[]      = { 0x3Fu, 0x1Cu, 0x04u, 0x0Fu, 0x2Au, 0x1Au, 0x0Cu, 0xFFu }; /* $7C */
+/* $06 LevelPaletteRow7TransferBuf: InitMode5 @UseLevelPalette patches
+ * its four colors from LevelInfo_PalettesTransferBuf+31 ($6B9D). */
+static unsigned char s_level_row7[] = { 0x3Fu, 0x1Cu, 0x04u, 0x0Fu, 0x0Fu, 0x0Fu, 0x0Fu, 0xFFu };
+
 /* Selector $18 = LevelInfo_PalettesTransferBuf (Variables.inc: $6B7E),
  * the level's palette record in the installed LevelInfo block:
  * $3F00 x $20 colors + terminator (36 bytes). */
@@ -99,6 +117,21 @@ static const unsigned char *resolve_static_buffer(unsigned char selector,
     case 0x2Cu:
         *out_len = (unsigned char)sizeof k_mode11_dead_link_palette;
         return k_mode11_dead_link_palette;
+    case 0x06u: {
+        unsigned char i;
+        for (i = 0u; i < 4u; ++i)
+            s_level_row7[3u + i] = nes_ram[LEVEL_PALETTES_TRANSFER_BUF + 31u + i];
+        *out_len = (unsigned char)sizeof s_level_row7;
+        return s_level_row7;
+    }
+    case 0x08u: *out_len = (unsigned char)sizeof k_aquamentus_row7;  return k_aquamentus_row7;
+    case 0x0Au: *out_len = (unsigned char)sizeof k_orange_boss_row7; return k_orange_boss_row7;
+    case 0x20u: *out_len = (unsigned char)sizeof k_ghost_row7;       return k_ghost_row7;
+    case 0x22u: *out_len = (unsigned char)sizeof k_green_bg_row7;    return k_green_bg_row7;
+    case 0x24u: *out_len = (unsigned char)sizeof k_brown_bg_row7;    return k_brown_bg_row7;
+    case 0x36u: *out_len = (unsigned char)sizeof k_ganon_row7;       return k_ganon_row7;
+    case 0x7Au: *out_len = (unsigned char)sizeof k_red_armos_row7;   return k_red_armos_row7;
+    case 0x7Cu: *out_len = (unsigned char)sizeof k_gleeok_row7;      return k_gleeok_row7;
     case 0x18u:
         *out_len = 36u;
         return (const unsigned char *)&nes_ram[LEVEL_PALETTES_TRANSFER_BUF];

@@ -453,6 +453,44 @@ void room_patch_and_cue_level_palettes_transfer(void)
     SUBMODE_VALUE = (uint8_t)((unsigned char)SUBMODE_VALUE + 1u);
 }
 
+/* Z_07.asm InitMode5Play (1460-1536): cue the sprite palette row 7
+ * ($3F1C, NES sprite sub-palette 3) transfer for the room. UW: a special
+ * boss (SpecialBossPaletteObjTypes, ObjType+1) takes its own row, else
+ * the level's row 7 (selector $06, patched from LevelInfo by the drain).
+ * OW: by the tile object in slot 11 (gravestone $20; Armos1 $20 or green
+ * $22; rock brown $24 or green $22 by LevelBlockAttrsB bit 0; anything
+ * else red Armos $7A). T-171: never cued, so a boss drew with the
+ * level's row 7 (t171_boss_l7 Aquamentus). */
+void room_init_mode5_play_palette_row7(void)
+{
+    static const unsigned char k_boss_types[9] = {
+        0x3Du, 0x3Eu, 0x38u, 0x39u, 0x32u, 0x31u, 0x43u, 0x44u, 0x45u };
+    static const unsigned char k_boss_selectors[9] = {
+        0x08u, 0x36u, 0x0Au, 0x0Au, 0x0Au, 0x0Au, 0x7Cu, 0x7Cu, 0x7Cu };
+    unsigned char x;
+    if (nes_ram[0x0010u] != 0u) {                     /* CurLevel: UW */
+        const unsigned char t = nes_ram[0x0350u];      /* ObjType+1 */
+        signed char y;
+        x = 0x06u;                                     /* @UseLevelPalette */
+        for (y = 8; y >= 0; --y) {
+            if (t == k_boss_types[(unsigned char)y]) { x = k_boss_selectors[(unsigned char)y]; break; }
+        }
+    } else {
+        const unsigned char t = nes_ram[0x035Au];      /* ObjType+11 */
+        x = 0x20u;
+        if (t != 0x65u) {
+            if (t != 0x66u && t != 0x62u) {
+                x = 0x7Au;                             /* @UseRedArmosPalette */
+            } else {
+                if (t == 0x62u) x = 0x24u;
+                if ((nes_ram[NES_SRAM_BASE + 0x08FEu + nes_ram[0x00EBu]] & 1u) == 0u)
+                    x = 0x22u;                         /* LevelBlockAttrsB even */
+            }
+        }
+    }
+    ROOM_TRANSFER_BUF_SELECT = x;
+}
+
 void room_init_mode3_sub1(void)
 {
     /* drain at room_mode_runtime.c:281-293. */
