@@ -17,7 +17,7 @@
  *             src/oracle/enemies/enemy_flyer_runtime.c
  *             (enrt_flyer_speed_up + enrt_flyer_patra_decide_state +
  *              enrt_move_flyer — already shipped).
- * Coverage:   FULL — UpdatePatra orchestrator (ControlPatraFlight JT
+ * Coverage:   PARTIAL — UpdatePatra orchestrator (ControlPatraFlight JT
  *             over states 0..3 with state 0 = Flyer_SpeedUp,
  *             state 1 = Flyer_PatraDecideState, states 2/3 routed
  *             through the keese-flight bridge that already exposes
@@ -25,7 +25,8 @@
  *             MoveFlyer + AnimateAndDrawCommonObject(2) +
  *             child-loop (slots 9..2) deciding LinkOnly vs Monster
  *             collision + TryChangeManeuver flip with the documented
- *             PatraManeuverTime[Y] OOB quirk made deterministic.
+ *             post-collision Y=0 timer lookup. Red fight route tested;
+ *             blue variant/death-at-reload remain unverified.
  * Stance:     ADOPT — drained primitives consumed verbatim. State 2/3
  *             routing reuses c_control_keese_flight per the same
  *             Flyer_Chase / Flyer_Wander entries the keese head uses,

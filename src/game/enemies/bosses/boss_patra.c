@@ -2,14 +2,15 @@
  *
  * NES source: Z_04.asm:10070 UpdatePatra + Z_04.asm:10124 ControlPatraFlight.
  * Drained C:  src/oracle/enemies/enemy_patra_runtime.c (helpers + child).
- * Coverage:   FULL — UpdatePatra body composed from already-drained
+ * Coverage:   PARTIAL — UpdatePatra body composed from already-drained
  *             flyer primitives (enrt_flyer_speed_up,
  *             enrt_flyer_patra_decide_state, c_move_flyer,
  *             enrt_animate_and_draw_common_object) plus the keese-flight
  *             bridge for states 2/3 (matches Z_04.asm:10130 / 10131).
- *             TryChangeManeuver flip mirrors the NES quirk
- *             (PatraManeuverTime[D3] OOB) but bounded with kPatraManeuverTime
- *             so non-debug paths produce $FF (ManeuverTime[0]).
+ *             Red Patra child/parent fight; blue variant and death
+ *             coinciding with timer reload remain unverified.
+ *             Collision resets Y before the maneuver-table read;
+ *             the child-search index is not the returned Y.
  * Stance:     ADOPT — orchestrator only.
  */
 
@@ -27,18 +28,11 @@ extern void enrt_flyer_patra_decide_state(unsigned int slot);
 extern void enrt_animate_and_draw_common_object(unsigned int val, unsigned int slot);
 extern void enrt_play_boss_death_cry_if_needed(unsigned int slot);
 
-/* PatraManeuverTime (NES Z_04.asm:10064): { $FF, $50 } followed by an
- * "Unknown block" $50 byte. NES asm reads PatraManeuverTime[D3] where D3
- * is whatever the @LoopChildren register held when the loop fell through
- * (D3=0 on the no-children path; D3 in 1..8 on the with-children path).
- * D3 > 1 is OOB into bank-4 ROM. We mirror with a small lookup that
- * returns the canonical $FF for D3=0 (the typical first-frame trigger)
- * and $50 for D3=1, with zero fill above to keep the OOB-quirk
- * deterministic. */
-static const unsigned char kPatraManeuverTime[10] = {
-    0xFFu, 0x50u, 0x00u, 0x00u, 0x00u,
-    0x00u, 0x00u, 0x00u, 0x00u, 0x00u
-};
+/* PatraManeuverTime (NES Z_04.asm:10064) starts with $FF, followed
+ * by an unknown $50 byte. CheckLinkCollision sets Y=0 (Z_01.asm:5554);
+ * living CheckMonsterCollisions also ends with Y=ObjMetastate=0.
+ * The child-search Y must not survive either call. */
+static const unsigned char kPatraManeuverTime[2] = { 0xFFu, 0x50u };
 
 /* ControlPatraFlight (NES Z_04.asm:10124).
  *   FlyingState JT:
@@ -94,6 +88,9 @@ void boss_patra_update(unsigned int slot)
     if (found_d3 != 0u) {
         /* Children alive — Link can be hurt, but Patra cannot. */
         c_check_link_collision(slot);
+        /* NES CheckLinkCollision/DoObjectsCollide and ring damage
+         * return Y=0, even when the child search stopped at Y=8. */
+        found_d3 = 0u;
     } else {
         /* No children — Link can damage Patra. */
         c_check_monster_collisions(slot);
@@ -103,14 +100,14 @@ void boss_patra_update(unsigned int slot)
 
     /* @TryChangeManeuver: if maneuver-timer hit 0 AND child-2's whole-angle
      * crossed 0, flip the maneuver index and reload the timer from
-     * PatraManeuverTime[D3]. */
+     * PatraManeuverTime[post-collision Y], not the child-search Y. */
     {
         const unsigned char timer = ENEMY_OBJ_TIMER_HI(slot);
         const unsigned char angle_w_3 = (unsigned char)nes_ram[0x0394u + 3u];
         if ((unsigned char)(timer | angle_w_3) == 0u) {
             ENEMY_PATRA_MANEUVER_INDEX(slot) ^= 0x01u;
             ENEMY_OBJ_TIMER_HI(slot) =
-                kPatraManeuverTime[found_d3 < 10u ? found_d3 : 0u];
+                kPatraManeuverTime[found_d3];
         }
     }
 }
