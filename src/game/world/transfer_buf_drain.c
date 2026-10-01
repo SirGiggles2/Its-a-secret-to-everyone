@@ -9,6 +9,7 @@
 #include "../../../RoomRom/src/roomrom_main_state.h" /* roomrom_main_current_scene */
 #include "render/ow_render.h"    /* roomrom_ow_room_render_set_tile */
 #include "../dungeon/uw_render.h"  /* roomrom_uw_room_render_palette_at */
+#include "../hud/hud_runtime.h"    /* roomrom_hud_status_bar_map_cue */
 
 /* Plane-bridge: NES PPU nametable ($2000-$2FFF) writes mapped to
  * Genesis Plane A cells. Uses bg_sparse_tile_lut[nes_tile_id][sub_pal]
@@ -453,7 +454,11 @@ static void drain_static_selector(void)
         return;
     }
     unsigned char len = 0u;
-    const unsigned char *buf = resolve_static_buffer(selector, &len);
+    const unsigned char *buf;
+    /* $44 LevelInfo_StatusBarMapTransferBuf: the Genesis HUD owns the
+     * status bar map (hud_runtime.c), which draws it on this cue. */
+    if (selector == 0x44u) roomrom_hud_status_bar_map_cue();
+    buf = resolve_static_buffer(selector, &len);
     if (buf != (const unsigned char *)0) {
         drain_record_buffer(buf, len);
     }

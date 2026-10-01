@@ -3687,12 +3687,13 @@ static unsigned char play_update_objects(void)
         nes_ram[0x0340u] = obj;                  /* CurObjIndex */
         draw_animate_item_object(nes_ram[0x00ABu], obj);
         nes_ram[0x0340u] = saved_cur;
-        if (roomrom_uw_item_try_pickup(
+        /* Taken: MoveAndDrawRoomItem drew it before TryTakeRoomItem, so it
+         * stays on screen this frame (t013_route t6987 map); the reset at
+         * the top of the next tick removes it. */
+        (void)roomrom_uw_item_try_pickup(
                 roomrom_uw_room_render_get_level(),
                 s_room_id, (unsigned char)players[0].x,
-                (unsigned char)players[0].y)) {
-            enemy_render_weapon_reset(0x13u);
-        }
+                (unsigned char)players[0].y);
     }
     /* NES MoveAndDrawRoomItem / TryTakeRoomItem also run on the OW. The
      * room-$24 Armos activates slot 19 with item $14 (bracelet); keeping
@@ -3707,10 +3708,8 @@ static unsigned char play_update_objects(void)
         draw_animate_item_object(0x14u, 0x13u);
         nes_ram[0x0340u] = saved_cur;
         cave_try_take_room_item();
-        if (progress_get_room_flag_uw_item_state() != 0u) {
-            enemy_render_weapon_reset(0x13u);
-            inventory_hud_mark_dirty();
-        }
+        if (progress_get_room_flag_uw_item_state() != 0u)
+            inventory_hud_mark_dirty();          /* drawn this frame, as above */
     }
     /* NES UpdateMode5Play ends in UpdateHeartsAndRupees (Z_07.asm:2033),
      * after the object loop and TryTakeRoomItem: a rupee picked up this

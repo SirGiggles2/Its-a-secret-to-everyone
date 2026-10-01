@@ -17,6 +17,8 @@ void roomrom_hud_draw(unsigned char hud_id, unsigned char room_id,
  * first roomrom_hud_draw(). No-op until HUD has been drawn at least
  * once. */
 void roomrom_hud_refresh_dynamic(void);
+/* Selector $44 (status bar map transfer) drained: show the map. */
+void roomrom_hud_status_bar_map_cue(void);
 
 /* Plan v5c T6.5 — per-frame mini-map position marker + palette flash.
  * NES Z_01.asm:4095-4146 renders flashing marker sprite at computed

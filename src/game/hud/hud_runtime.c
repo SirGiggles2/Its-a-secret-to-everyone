@@ -475,12 +475,26 @@ static void draw_status_counts_original(void)
  * Coverage: PARTIAL Original dungeon map background/ownership; Stance: EXTEND.
  * Room visits belong to the pause sheet. HUD outline requires the map. */
 static unsigned char s_dungeon_map_owned = 0xFFu;
+/* T-171: taking the map in play sets StatusBarMapTrigger; UpdateMode5Play
+ * cues selector $44 a tick later and the NMI after that shows it
+ * (t013_route: map bit t6986, $44 t6987, on screen t6988). The drain
+ * reports the $44 cue here; the map is drawn on the next tick's refresh,
+ * the frame the NES shows it. Load paths (status bar rebuilt, not mode 5)
+ * draw at once. */
+static unsigned char s_map_cue;
+void roomrom_hud_status_bar_map_cue(void) { s_map_cue = 1u; }
 static void draw_original_dungeon_map(void)
 {
     unsigned char owned = room_has_map() ? 1u : 0u;
     unsigned char row, col;
     static const unsigned char label[6] = {0x15u,0x0Eu,0x1Fu,0x0Eu,0x15u,0x62u};
+    if (s_map_cue) {
+        s_map_cue = 0u;
+        if (owned) s_dungeon_map_owned = 0xFEu;      /* redraw now */
+    }
     if (owned == s_dungeon_map_owned) return;
+    if (owned && s_dungeon_map_owned == 0u && RAM(0x0012u) == 0x05u)
+        return;                                       /* wait for $44 */
     s_dungeon_map_owned = owned;
     for (row = 2u; row < 6u; ++row)
         for (col = 2u; col < 10u; ++col)
@@ -780,7 +794,8 @@ void roomrom_hud_refresh_dynamic(void)
      * the new tile makes it to VRAM. */
     hud_heart_container_anim_tick();
     unsigned char anim_active = hud_heart_container_anim_active();
-    if (!anim_active && !native_hud_changed() && !inventory_hud_consume_dirty()) {
+    if (!anim_active && !s_map_cue && !native_hud_changed() &&
+        !inventory_hud_consume_dirty()) {
         return; /* Inventory unchanged + no anim — skip the VDP traffic. */
     }
     if (anim_active) {
