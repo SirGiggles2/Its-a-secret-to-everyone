@@ -180,3 +180,16 @@ void weapon_wield_flute(void)
         }
     }
 }
+
+/* NES source: Z_05.asm WieldPotion (3011).
+ * Drained C: none (the Genesis mapped the potion slot to no B item, T-057).
+ * Coverage: FULL. Stance: GREENFIELD per asm.
+ * One potion drunk: hearts fill (World_FillHearts) while the game is
+ * involuntarily paused (Paused 2); World_FillHearts clears both. */
+void weapon_wield_potion(void)
+{
+    if (RAM(0x065Eu) == 0u) return;             /* Potion */
+    RAM(0x065Eu) = (unsigned char)(RAM(0x065Eu) - 1u);
+    RAM(0x0063u) = 1u;                          /* World_IsFillingHearts */
+    RAM(0x00E0u) = 2u;                          /* Paused */
+}

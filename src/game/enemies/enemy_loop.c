@@ -126,6 +126,7 @@ extern void enrt_update_blue_wizzrobe(unsigned int slot);        /* enemy_fix Wa
 extern void enrt_update_red_wizzrobe(unsigned int slot);         /* enemy_fix Wave 5 */
 extern void uw_person_update_person_full(unsigned int slot);
 extern void uw_person_update_grumble_full(unsigned int slot);
+extern void roomrom_food_apply_chase_target(void);   /* items/boomerang.c */
 extern void uw_person_update_life_or_money_full(unsigned int slot);
 extern void uw_person_init_underworld_person_a(unsigned int slot);
 extern void uw_person_init_underworld_person_b(unsigned int slot);
@@ -1772,6 +1773,9 @@ void enemy_loop_tick(void)
             RAM(0x0061u) = (unsigned char)RAM(0x0070u);  /* Chase X = Link X */
             RAM(0x0062u) = (unsigned char)RAM(0x0084u);  /* Chase Y = Link Y */
         }
+        /* T-057: the food in slot $0F (UpdateBoomerangOrFood) overrides
+         * the target before the ChaseLongTimer flip below. */
+        roomrom_food_apply_chase_target();
         if ((unsigned char)RAM(0x004Au) == 0u) {  /* ChaseLongTimer expired */
             RAM(0x004Au) = (unsigned char)((unsigned char)RAM(0x0019u) & 0x07u);
             chase_other = (unsigned char)(chase_other ^ 0x01u);

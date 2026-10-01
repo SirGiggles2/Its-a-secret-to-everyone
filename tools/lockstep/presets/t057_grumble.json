@@ -1,0 +1,72 @@
+{
+ "name": "t057_grumble",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {
+  "0x657": 1,
+  "InvFood": 1,
+  "0x66F": 255
+ },
+ "stages": [
+  [
+   50,
+   "wr(0x10, 7)\nwr(0x11, 0)\nwr(0x12, 2)\nwr(0x13, 0)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X food %d potion %d hv %02X sel %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x65D), rd(0x65E), rd(0x66F), rd(0x656)))"
+  ],
+  [
+   330,
+   "wr(0x6BAD,0x28)\nwr(0x11,0)\nwr(0x12,3)\nwr(0x13,0)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X food %d potion %d hv %02X sel %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x65D), rd(0x65E), rd(0x66F), rd(0x656)))"
+  ],
+  [
+   500,
+   "wr(0x656, 6)\ngen_b_item(7)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X food %d potion %d hv %02X sel %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x65D), rd(0x65E), rd(0x66F), rd(0x656)))"
+  ],
+  [
+   800,
+   "log(string.format('food %02X t %02X g %02X/%02X link %02X', rd(0xBB), rd(0x37), rd(0x350), rd(0xAD), rd(0xAC)))"
+  ],
+  [
+   1000,
+   "log(string.format('food %02X t %02X g %02X/%02X link %02X', rd(0xBB), rd(0x37), rd(0x350), rd(0xAD), rd(0xAC)))"
+  ]
+ ],
+ "script": [
+  [
+   60,
+   ""
+  ],
+  [
+   300,
+   ""
+  ],
+  [
+   200,
+   ""
+  ],
+  [
+   30,
+   "U"
+  ],
+  [
+   200,
+   ""
+  ],
+  [
+   2,
+   "B"
+  ],
+  [
+   400,
+   ""
+  ],
+  [
+   60,
+   "U"
+  ],
+  [
+   100,
+   ""
+  ]
+ ],
+ "clock": "play",
+ "_note": "T-057 Q1 L7 Grumble room $28 (list $36) via GameMode-2 warp + mode-3 reload; Link puts food: UpdateGrumble1 halts Link, Tune1 $04, item-state flag, blank text, state 3 translucent, timer $40, then food/InvFood/Grumble cleared."
+}

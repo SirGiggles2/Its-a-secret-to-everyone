@@ -40,6 +40,8 @@ void weapon_wield_bomb(unsigned int slot);
 unsigned int weapon_wield_candle(unsigned int slot);
 /* NES WieldFlute (Z_07.asm:2449). */
 void weapon_wield_flute(void);
+/* NES WieldPotion (Z_05.asm:3011). */
+void weapon_wield_potion(void);
 
 #ifdef __cplusplus
 }

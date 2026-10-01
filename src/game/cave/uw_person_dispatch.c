@@ -334,24 +334,24 @@ static inline void uw_person_state_textbox(void)
     cave_update_person_state_textbox();
 }
 
-/* Link_EndMoveAndAnimate_Bank1 — STAGE-2 partial port. Same partial
- * approach as cave's link_end_move_and_draw_stub: freeze anim,
- * fetch sprite-descriptor pos, draw Link statically. Grumble dialog
- * context = Link halted, no move/warp logic needed. Full
- * Link_EndMoveAndAnimate fidelity deferred. */
+/* Link_EndMoveAndAnimate_Bank1 in UpdateGrumble3: Link is halted
+ * (ObjState $40) and standing still, so the ladder check skips and
+ * CheckWarps cannot fire (he would have warped on arrival); what remains
+ * is AnimateLinkBase, which walks Link's legs while halted (T-057:
+ * t057_grumble, ObjAnimCounter/ObjAnimFrame; the old stub pinned the
+ * counter at 6 like Link_EndMoveAndDraw). */
 extern void roomrom_combat_animate_link_base(void);  /* combat_runtime.c */
-static void uw_person_link_end_move_stub(void)
+static void uw_person_link_end_move_and_animate(void)
 {
-    OBJ_ANIM_TIMER(0) = 6u;
-    roomrom_combat_animate_link_base();          /* AnimateLinkBase (T-171) */
-    sprite_anim_fetch_obj_pos(0u);
-    draw_object_mirrored(0u, 0u);
+    /* Link's sprite is drawn natively from these cells (main.c); an OAM
+     * copy here drew him twice (t057_grumble t800 screen diff). */
+    roomrom_combat_animate_link_base();          /* AnimateLinkBase */
 }
 
 void uw_person_update_grumble3(void)
 {
     /* drain at uw_person_runtime.c:219-230. NES UpdateGrumble3. */
-    uw_person_link_end_move_stub();
+    uw_person_link_end_move_and_animate();
     if ((unsigned char)CAVE_DELAY_TIMER != 0u) {
         return;
     }

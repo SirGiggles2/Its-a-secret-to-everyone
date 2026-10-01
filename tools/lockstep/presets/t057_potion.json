@@ -1,0 +1,49 @@
+{
+ "name": "t057_potion",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {
+  "0x657": 1,
+  "Potion": 2,
+  "0x66F": 32,
+  "0x670": 128
+ },
+ "stages": [
+  [
+   30,
+   "wr(0x656, 7)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X food %d potion %d hv %02X sel %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x65D), rd(0x65E), rd(0x66F), rd(0x656)))"
+  ],
+  [
+   70,
+   "log(string.format('room %02X lvl %02X gm %02X link %02X,%02X food %d potion %d hv %02X sel %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x65D), rd(0x65E), rd(0x66F), rd(0x656)))"
+  ],
+  [
+   200,
+   "log(string.format('room %02X lvl %02X gm %02X link %02X,%02X food %d potion %d hv %02X sel %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x65D), rd(0x65E), rd(0x66F), rd(0x656)))"
+  ]
+ ],
+ "script": [
+  [
+   60,
+   ""
+  ],
+  [
+   2,
+   "B"
+  ],
+  [
+   300,
+   ""
+  ],
+  [
+   2,
+   "B"
+  ],
+  [
+   300,
+   ""
+  ]
+ ],
+ "clock": "play",
+ "_note": "T-057 potion on B (WieldPotion): Potion--, World_IsFillingHearts=1, Paused=2 until hearts full. 3 containers, 1 heart + half. Second B uses the second potion at full hearts."
+}

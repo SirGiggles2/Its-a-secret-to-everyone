@@ -1,0 +1,72 @@
+{
+ "name": "t057_food_leave",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {
+  "0x657": 1,
+  "InvFood": 1,
+  "0x66F": 255
+ },
+ "stages": [
+  [
+   50,
+   "wr(0x10, 7)\nwr(0x11, 0)\nwr(0x12, 2)\nwr(0x13, 0)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X food %d potion %d hv %02X sel %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x65D), rd(0x65E), rd(0x66F), rd(0x656)))"
+  ],
+  [
+   330,
+   "wr(0x6BAD,0x69)\nwr(0x11,0)\nwr(0x12,3)\nwr(0x13,0)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X food %d potion %d hv %02X sel %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x65D), rd(0x65E), rd(0x66F), rd(0x656)))"
+  ],
+  [
+   500,
+   "wr(0x656, 6)\ngen_b_item(7)\nlog(string.format('room %02X lvl %02X gm %02X link %02X,%02X food %d potion %d hv %02X sel %d', rd(0xEB), rd(0x10), rd(0x12), rd(0x70), rd(0x84), rd(0x65D), rd(0x65E), rd(0x66F), rd(0x656)))"
+  ]
+ ],
+ "script": [
+  [
+   60,
+   ""
+  ],
+  [
+   300,
+   ""
+  ],
+  [
+   200,
+   ""
+  ],
+  [
+   30,
+   "U"
+  ],
+  [
+   10,
+   ""
+  ],
+  [
+   2,
+   "B"
+  ],
+  [
+   8,
+   ""
+  ],
+  [
+   90,
+   "D"
+  ],
+  [
+   100,
+   ""
+  ],
+  [
+   90,
+   "U"
+  ],
+  [
+   200,
+   ""
+  ]
+ ],
+ "clock": "play",
+ "_note": "T-057: food placed in L7 room $69 (as t057_food_bait), then Link leaves south to $79 and walks back: slot $0F food across room transitions."
+}

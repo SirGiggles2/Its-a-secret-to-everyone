@@ -32,5 +32,7 @@ void roomrom_boomerang_init(void);
 void roomrom_boomerang_throw(link_face_t face, short link_x, short link_y);
 void roomrom_boomerang_update(short link_x, short link_y);
 unsigned char roomrom_boomerang_active(void);
+void roomrom_food_wield(void);                    /* T-057 NES WieldFood */
+void roomrom_food_apply_chase_target(void);
 
 #endif

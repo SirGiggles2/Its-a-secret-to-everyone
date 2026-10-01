@@ -156,7 +156,8 @@ typedef enum {
     B_ITEM_ROD       = 5,
     B_ITEM_FLUTE     = 6,
     B_ITEM_FOOD      = 7,
-    B_ITEM_COUNT     = 8
+    B_ITEM_POTION    = 8,
+    B_ITEM_COUNT     = 9
 } b_item_t;
 static b_item_t s_b_item = B_ITEM_BOOMERANG;
 
@@ -171,13 +172,13 @@ extern unsigned char g_debug_session;
  *   cursor 2 arrow     -> B_ITEM_ARROW
  *   cursor 3 bow       -> B_ITEM_NONE (WieldNothing in NES)
  *   cursor 4 candle    -> B_ITEM_CANDLE
- *   cursor 5 recorder  -> B_ITEM_NONE (W6 deferred)
- *   cursor 6 food      -> B_ITEM_NONE (W7 deferred)
- *   cursor 7 potion    -> B_ITEM_NONE (consumed on select, not B-use)
+ *   cursor 5 recorder  -> B_ITEM_FLUTE
+ *   cursor 6 food      -> B_ITEM_FOOD
+ *   cursor 7 potion    -> B_ITEM_POTION (WieldPotion, T-057)
  *   cursor 8 wand      -> B_ITEM_ROD */
 static const unsigned char k_inv_cursor_to_b_item[9] = {
     B_ITEM_BOOMERANG, B_ITEM_BOMB, B_ITEM_ARROW, B_ITEM_NONE,
-    B_ITEM_CANDLE, B_ITEM_FLUTE, B_ITEM_FOOD, B_ITEM_NONE, B_ITEM_ROD
+    B_ITEM_CANDLE, B_ITEM_FLUTE, B_ITEM_FOOD, B_ITEM_POTION, B_ITEM_ROD
 };
 
 void roomrom_set_b_item_from_inv_cursor(unsigned char cursor_slot)
@@ -3834,7 +3835,7 @@ static void nes_frame_timers_and_random(void)
      * Paused is set (Z_07.asm:469); the Genesis pause flag is both (the
      * pause menu). Timers ran through the menu (t013_save StunCycle $26
      * t62, ChaseLongTimer $4A t71). */
-    if (!roomrom_pause_is_active()) {
+    if (!roomrom_pause_is_active() && nes_ram[0x00E0u] == 0u) {
         unsigned char loop_end;
         unsigned char stun = nes_ram[0x0026u];
         stun = (unsigned char)(stun - 1u);
@@ -4002,6 +4003,19 @@ void roomrom_debug_tick(void)
             else mode13_save_update();
             transfer_buf_drain();
             if (nes_ram[0x0012u] == 0x03u) begin_mode8_continue();
+            return;
+        }
+
+        /* T-057: Paused 2 (WieldPotion). NES @CheckMenuAndPause: no Link,
+         * objects or timers (@UpdateTimers above); MaskCurPpuMaskGrayscale
+         * and UpdateHeartsAndRupees only, sprites left as drawn. The
+         * heart fill clears Paused when the hearts are full. */
+        if (nes_ram[0x00E0u] == 2u) {
+            nes_pad_read_between_modes();
+            inventory_rupee_tick(nes_ram[0x0015u]);
+            inventory_sync_from_native();
+            roomrom_hud_refresh_dynamic();
+            transfer_buf_drain();
             return;
         }
 
@@ -4539,10 +4553,9 @@ void roomrom_debug_tick(void)
             }
             switch (s_b_item) {
             case B_ITEM_BOOMERANG:
-                if (!roomrom_boomerang_active()) {
-                    roomrom_boomerang_throw(players[0].face,
-                                            players[0].x, players[0].y);
-                }
+                /* WieldBoomerang replaces food in slot $0F (T-057). */
+                roomrom_boomerang_throw(players[0].face,
+                                        players[0].x, players[0].y);
                 break;
             case B_ITEM_ARROW:
                 if (!roomrom_arrow_active()) {
@@ -4569,16 +4582,10 @@ void roomrom_debug_tick(void)
                 weapon_wield_flute();            /* NES WieldFlute (T-171) */
                 break;
             case B_ITEM_FOOD:
-                /* Phase 8 W7 LITE: decrement food, SFX feedback. NES
-                 * WieldFood (Z_05.asm:2994) spawns food bait obj type $2A
-                 * at slot $0F (15) â€” out of Genesis enemy_loop range (1-11)
-                 * and no $2A handler. Goriya bait-seek AI also unported.
-                 * V1: decrement count + SFX. Bait sprite + enemy attraction
-                 * = Phase 9 scope. */
-                if (g_inventory.food > 0u) {
-                    g_inventory.food = 0u;
-                    nes_ram[0x065Du] = 0u;
-                }
+                roomrom_food_wield();            /* NES WieldFood (T-057) */
+                break;
+            case B_ITEM_POTION:
+                weapon_wield_potion();           /* NES WieldPotion (T-057) */
                 break;
             default:             break;
             }

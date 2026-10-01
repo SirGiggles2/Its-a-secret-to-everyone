@@ -83,6 +83,61 @@ unsigned char roomrom_boomerang_active(void)
     return BM_STATE != 0u ? 1u : 0u;
 }
 
+/* T-057: food (bait) shares slot $0F with the boomerang; its states are
+ * $80..$82 (high bit set). NES WieldFood (Z_05.asm) and the food branch
+ * of UpdateBoomerangOrFood (Z_07.asm). */
+#define FOOD_TIMER  OBJ(0x0028u, BM)       /* ObjTimer+$0F */
+static unsigned char s_food_chase;
+
+void roomrom_food_wield(void)
+{
+    unsigned char d;
+    if (BM_STATE != 0u) return;
+    FOOD_TIMER = 0xFFu;                           /* first state: $FF frames */
+    BM_STATE = 0x80u;                             /* PlaceWeaponForPlayerStateAndAnimAndWeaponState */
+    link_place_weapon_for_player_state(1u);
+    d = nes_ram[0x0098u];                         /* PlaceWeapon */
+    BM_DIR = d;
+    BM_X = (unsigned char)(nes_ram[0x0070u] + ((d & 0x01u) ? 0x10u : (d & 0x02u) ? 0xF0u : 0u));
+    BM_Y = (unsigned char)(nes_ram[0x0084u] + ((d & 0x04u) ? 0x10u : (d & 0x08u) ? 0xF0u : 0u));
+}
+
+/* Three states of $FF timer frames, then ResetObjState. Moblins, Goriyas,
+ * Octoroks, Darknuts... (template $03..$0A), Vires and Keese chase the food:
+ * ChaseTargetX/Y. Drawn with the red sprite palette, food item slot 6. */
+static void food_update(void)
+{
+    unsigned char t;
+    if (FOOD_TIMER == 0u) {
+        BM_STATE = (unsigned char)(BM_STATE + 1u);
+        if ((BM_STATE & 0x0Fu) == 0x03u) {
+            BM_STATE = 0u;
+            roomrom_sprites_clear_boomerang();
+            return;
+        }
+        FOOD_TIMER = 0xFFu;
+    }
+    t = nes_ram[0x035Fu];                         /* RoomObjTemplateType */
+    if ((t >= 0x03u && t < 0x0Bu) || t == 0x12u || t == 0x1Bu || t == 0x1Cu) {
+        s_food_chase = 1u;
+        RAM(0x0061u) = BM_X;
+        RAM(0x0062u) = BM_Y;
+    }
+    /* Item slot 6 frame 0 is the narrow tile $22: X+4. */
+    roomrom_sprites_set_boomerang_nes((short)(BM_X + 4u), (short)BM_Y,
+        enemy_render_item_sat(draw_item_frame_tile(0x06u, 0u), 0x02u));
+}
+
+/* NES updates the weapons after copying Link's position to ChaseTargetX/Y;
+ * the Genesis copy runs later in the object loop, which re-applies the
+ * food target here. */
+void roomrom_food_apply_chase_target(void)
+{
+    if (!s_food_chase) return;
+    RAM(0x0061u) = BM_X;
+    RAM(0x0062u) = BM_Y;
+}
+
 /* CalcBoomerangFrame -> Anim_WriteItemSprites, item slot $1D. */
 static void draw_boomerang_nes(void)
 {
@@ -138,10 +193,12 @@ void roomrom_boomerang_update(short link_x, short link_y)
     unsigned char st = BM_STATE;
     unsigned char hi = (unsigned char)(st & 0xF0u);
     (void)link_x; (void)link_y;
+    s_food_chase = 0u;
     if (st == 0u) {
         roomrom_sprites_clear_boomerang();
         return;
     }
+    if (st & 0x80u) { food_update(); return; }
     RAM(0x0000u) = 0u;
     if (hi == 0x10u) {
         unsigned char d = BM_DIR;

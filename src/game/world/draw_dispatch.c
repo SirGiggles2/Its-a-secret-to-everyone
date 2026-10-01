@@ -828,11 +828,11 @@ void draw_boomerang(unsigned int slot)
     DRAW_X = (uint8_t)(unsigned char)OBJ_X(slot);
     DRAW_Y = (uint8_t)(unsigned char)OBJ_Y(slot);
     DRAW_MIRRORED = k_boomerang_frame_cycle[phase];
-    /* NES CalcBoomerangFrame adds palette base $02, then
-     * InvMagicBoomerang (Z_07.asm:4271-4291). Without the base offset,
-     * return frames selected palette row 0 and disappeared against the
-     * playfield in Genesis captures. */
-    attr = (unsigned char)(attr + 2u + (unsigned char)RAM(0x0675u));
+    /* NES CalcBoomerangFrame: [04] = base attr + InvMagicBoomerang
+     * (Z_07.asm:4274-4282), sprite palette 0 or 1. A Goriya's boomerang
+     * is OAM attr $00/$40 (T-057 t057_food_bait t605); the old +2 drew
+     * it with the red sub-palette 2. */
+    attr = (unsigned char)(attr + (unsigned char)RAM(0x0675u));
     DRAW_LEFT_ATTR = attr;
     DRAW_RIGHT_ATTR = attr;
     if ((state & 0xF0u) == 0x20u) {
