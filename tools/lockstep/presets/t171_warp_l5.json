@@ -1,0 +1,32 @@
+{
+ "name": "t171_warp_l5",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {},
+ "script": [
+  [
+   60,
+   ""
+  ],
+  [
+   300,
+   ""
+  ],
+  [
+   60,
+   "U"
+  ],
+  [
+   60,
+   ""
+  ]
+ ],
+ "stages": [
+  [
+   50,
+   "wr(0x10, 5)\nwr(0x11, 0)\nwr(0x12, 2)\nwr(0x13, 0)\nlog(string.format('warp lvl %02X gm %02X sub %02X upd %02X fc %02X', rd(0x10), rd(0x12), rd(0x13), rd(0x11), rd(0x15)))"
+  ]
+ ],
+ "clock": "play",
+ "_note": "T-171 Q1 Level 5 entry via GameMode 2 warp; expected StartRoomId 0x76 from levelinfo_start_rooms.c"
+}
