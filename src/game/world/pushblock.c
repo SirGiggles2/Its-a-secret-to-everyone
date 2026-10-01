@@ -66,7 +66,8 @@ typedef enum {
 } pb_s_t;
 
 static pb_s_t          s_pb_state;
-static unsigned char   s_pb_timer;
+/* NES ObjPushTimer ($412 + slot 11, ObjVars.inc) kept in the NES cell. */
+#define s_pb_timer RAM(0x0412u + PB_SLOT)
 static unsigned char   s_pb_offset;
 static unsigned char   s_pb_dir_bit;        /* 0x08/0x04/0x02/0x01 */
 static unsigned char   s_pb_block_col_mt;
@@ -116,7 +117,9 @@ void roomrom_pushblock_init(void)
 {
     unsigned short i;
     s_pb_state = PB_S_IDLE;
-    s_pb_timer = 0u;
+    /* ObjPushTimer slot 11 is shared with the OW rock/armos tile objects:
+     * the block only owns it while slot 11 is the block ($68). */
+    if ((unsigned char)RAM(0x034Fu + PB_SLOT) == 0x68u) s_pb_timer = 0u;
     s_pb_offset = 0u;
     s_pb_dir_bit = 0u;
     s_pb_block_col_mt = 0u;
@@ -140,7 +143,7 @@ unsigned char roomrom_pushblock_state_for_room(unsigned char room_id)
 
 unsigned char roomrom_pushblock_active_state(void)    { return (unsigned char)s_pb_state; }
 unsigned char roomrom_pushblock_active_dir(void)      { return s_pb_dir_bit; }
-unsigned char roomrom_pushblock_active_timer(void)    { return s_pb_timer; }
+unsigned char roomrom_pushblock_active_timer(void)    { return (unsigned char)s_pb_timer; }
 unsigned char roomrom_pushblock_active_offset(void)   { return s_pb_offset; }
 unsigned char roomrom_pushblock_active_block_col(void){ return s_pb_block_col_mt; }
 unsigned char roomrom_pushblock_active_block_row(void){ return s_pb_block_row_mt; }
@@ -272,7 +275,9 @@ static void paint_metatile(unsigned char col_mt, unsigned char row_mt,
 static void reset_to_idle(void)
 {
     s_pb_state = PB_S_IDLE;
-    s_pb_timer = 0u;
+    /* ObjPushTimer slot 11 is shared with the OW rock/armos tile objects:
+     * the block only owns it while slot 11 is the block ($68). */
+    if ((unsigned char)RAM(0x034Fu + PB_SLOT) == 0x68u) s_pb_timer = 0u;
     s_pb_offset = 0u;
     s_pb_dir_bit = 0u;
 }

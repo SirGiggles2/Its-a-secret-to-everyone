@@ -49,14 +49,15 @@
  * of UpdateObject (PHA / LDA #$04 / JSR SwitchBank / PLA / LDY
  * ObjUninitialized,X / STY $0F / BEQ). Bytes copied from the ROM at file
  * offset $1FB84; live NES: tree $64 gets HP $F0. */
-static const unsigned char k_object_hp_pairs[52] = {
+static const unsigned char k_object_hp_pairs[53] = {
     0x06, 0x43, 0x25, 0x31, 0x12, 0x24, 0x81, 0x14,
     0x22, 0x42, 0x00, 0xA9, 0x8F, 0x20, 0x00, 0x3F,
     0xF9, 0xFA, 0x46, 0x62, 0x11, 0x2F, 0xFF, 0xFF,
     0x7F, 0xF6, 0x2F, 0xFF, 0xFF, 0x22, 0x46, 0xF1,
     0xF2, 0xAA, 0xAA, 0xFB, 0xBF, 0xF0,
     0x48, 0xA9, 0x04, 0x20, 0xAC, 0xFF, 0x68, 0xBC,
-    0x92, 0x04, 0x84, 0x0F, 0xF0, 0x1B
+    0x92, 0x04, 0x84, 0x0F, 0xF0, 0x1B,
+    0xBD   /* T-171: types $68/$69 (USA ROM $1FB92; live NES block HP $B0) */
 };
 
 static void native_init_obj_hp(unsigned int slot, unsigned char type)
@@ -499,6 +500,10 @@ const enemy_init_fn enemy_init_fns[ENEMY_LOOP_TYPE_MAX] = {
     [0x5E] = core_init_flute_secret,             /* FluteSecret NES Z_07.asm:5817 */
     /* T-050: InitObject sends types >= $5F to InitTileObjOrItem. */
     [0x2F] = enrt_init_pond_fairy,               /* PondFairy (T-050) */
+    [0x5F] = room_init_tile_obj_or_item,
+    [0x60] = room_init_tile_obj_or_item,         /* DroppedItem (T-171: ObjTimer 0) */
+    [0x61] = room_init_tile_obj_or_item,         /* Dock */
+    [0x69] = room_init_tile_obj_or_item,
     [0x62] = room_init_tile_obj_or_item,         /* Rock */
     [0x63] = room_init_tile_obj_or_item,         /* RockWall */
     [0x64] = room_init_tile_obj_or_item,         /* Tree */
@@ -1119,7 +1124,6 @@ static void clear_slot_scratch(unsigned int slot)
 {
     ENEMY_DIR(slot)            = 0u;
     ENEMY_STATE_TIMER(slot)    = 0u;
-    ENEMY_LIFE(slot)           = 0u;
     ENEMY_METASTATE(slot)      = 1u;          /* NES default: first cloud state */
     ENEMY_PUSH_TIMER(slot)     = 0u;
     ENEMY_AIR_SPEED(slot)      = 0u;
@@ -1140,9 +1144,10 @@ static void clear_slot_scratch(unsigned int slot)
     ENEMY_STUN_TIMER(slot)     = 0u;          /* Z_05.asm:1693 ObjStunTimer */
     ENEMY_OBJ_SHOVE_DIR(slot)  = 0u;          /* ResetShoveInfo */
     OBJ(0x00D3u, slot)         = 0u;          /* ObjShoveDistance */
-    /* InitMode_EnterRoom leaves ObjTimer clear. InitObject seeds the slot
-     * countdown later, only for cloud-spawn types (Z_07.asm:5543-5557). */
-    ENEMY_MOVE_TIMER(slot)     = 0u;
+    /* ObjTimer ($28+slot) is not touched by InitMode_EnterRoom: it keeps
+     * running down from the old room (T-171: t012_route t1385 NES $0C
+     * after $73). ENEMY_LIFE ($BF+slot) was cleared here too: that is
+     * ObjShoveDir of slot-1, which ResetShoveInfo already owns. */
     ENEMY_ALIVE_FLAG(slot)     = 0xFFu;       /* ObjUninitialized: InitMode_EnterRoom DEC from 0 */
 }
 

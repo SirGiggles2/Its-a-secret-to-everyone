@@ -10,12 +10,9 @@
 | $0058 | VScrollAddrHi | 16 | hud_marker@91, ow_walk@91, t105_return@91, t105_scroll@91 |
 | $0059 | EmptyMonsterSlot | 15 | t123_slow_tiles@172, hud_marker@185, ow_walk@185, t050_pond_fairy@241 |
 | $0521 | PrevOpenedDoors | 15 | t105_return@93, t111_dark_candle@130, t123_slow_tiles@130, t050_rock_push@196 |
-| $0029 | ObjTimer+1 | 12 | t111_dark_candle@228, t110_bomb_enemy@348, t054_uw_block42_nes@434, t114_uw_wall@434 |
-| $002B | ObjTimer+3 | 12 | t111_dark_candle@228, t123_slow_tiles@247, t050_wall@267, t054_uw_block42_nes@551 |
 | $03D0 | ObjAnimCounter | 11 | t011_exit_idle@78, t011_sword_cave@78, t011_sword_swing_exit@78, t120_cave_person@78 |
 | $0010 | CurLevel | 10 | t054_uw_block42_nes@787, t114_uw_wall@787, t128_uw_blocks@787, t129_enemy_sweep@787 |
 | $005B | TargetMode | 10 | t054_uw_block42_nes@787, t114_uw_wall@787, t128_uw_blocks@787, t129_enemy_sweep@787 |
-| $002A | ObjTimer+2 | 9 | t111_dark_candle@228, t054_uw_block42_nes@434, t114_uw_wall@434, t128_uw_blocks@434 |
 | $03E4 | ObjAnimFrame | 9 | t012_route@140, t013_route@140, t120_cave_person@303, t134_cave_exit@303 |
 | $005A | UndergroundExitType | 8 | t011_exit_idle@63, t011_sword_cave@63, t011_sword_swing_exit@63, t120_cave_person@63 |
 | $0412 | TriforceGlowTimer | 8 | t011_exit_idle@62, t011_sword_cave@62, t011_sword_swing_exit@62, t120_cave_person@62 |
@@ -29,8 +26,6 @@
 | $005E | SubmenuScrollProgress | 5 | t121_ring1@43, t121_ring2@43, t013_continue@63, t013_retry@63 |
 | $00E1 | MenuState | 5 | t121_ring1@41, t121_ring2@41, t013_continue@61, t013_retry@61 |
 | $00FC | CurVScroll | 5 | t121_ring1@43, t121_ring2@43, t013_continue@63, t013_retry@63 |
-| $002C | ObjTimer+4 | 4 | t111_dark_candle@228, t123_slow_tiles@481, t012_route@1385, t013_route@1385 |
-| $002D | ObjTimer+5 | 3 | t111_dark_candle@228, t050_rock_push@444, t013_route@4110 |
 | $0052 | ProcessedNarrowObj | 3 | t121_ring1@106, t121_ring2@106, t013_route@4111 |
 | $00C1 | ObjShoveDir+1 | 3 | save_roundtrip@131, t013_save@255, t013_route@7467 |
 | $00C2 | ObjShoveDir+2 | 3 | save_roundtrip@131, t013_save@255, t013_route@6734 |
@@ -48,9 +43,7 @@
 | $00CD | ObjShoveDir+13 | 2 | save_roundtrip@131, t013_save@255 |
 | $00CE | ObjShoveDir+14 | 2 | save_roundtrip@131, t013_save@255 |
 | $00CF | ObjShoveDir+15 | 2 | save_roundtrip@131, t013_save@255 |
-| $0490 | ObjHP+11 | 2 | t054_uw_block42_nes@812, t013_route@5964 |
 | $0027 | DoorTimer | 1 | t013_route@5413 |
-| $002E | ObjTimer+6 | 1 | t111_dark_candle@424 |
 | $00D4 | ObjShoveDistance+1 | 1 | t013_route@7467 |
 | $00D5 | ObjShoveDistance+2 | 1 | t013_route@6734 |
 | $00D6 | ObjShoveDistance+3 | 1 | t013_route@6773 |
@@ -61,7 +54,6 @@
 | $0407 | ObjMetastate+2 | 1 | t013_route@6734 |
 | $0408 | ObjMetastate+3 | 1 | t013_route@6773 |
 | $040A | ObjMetastate+5 | 1 | t013_route@4620 |
-| $041D | DemoLineTileVramAddrHi | 1 | t054_uw_block42_nes@851 |
 | $042D | Gleook_HeadInfo1 | 1 | t129_enemy_sweep@6400 |
 | $04CE | ShutterTrigger | 1 | t013_route@5413 |
 | $04E5 | StatusBarMapTrigger | 1 | t013_route@6987 |
