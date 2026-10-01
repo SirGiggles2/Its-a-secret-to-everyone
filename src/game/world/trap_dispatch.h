@@ -27,6 +27,8 @@ void trap_advance_teleporting_level_index(void);
  * SUBMODE_VALUE = 0; MODE_TIMER++. NES CheckInitWhirlwindAndBeginUpdate.
  * drain at trap_runtime.c:69-79. */
 void trap_check_init_whirlwind_and_begin_update(void);
+/* Whirlwind half of CheckInitWhirlwindAndBeginUpdate; 1 = teleporting. */
+unsigned char trap_init_whirlwind_at_destination(void);
 
 /* If MODE_VALUE == 5, walk LevelMasks[] to find an unconquered
  * level mask; if found and no whirlwind/teleport active, spawn

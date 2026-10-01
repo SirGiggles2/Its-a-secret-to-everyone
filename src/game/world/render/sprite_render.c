@@ -449,6 +449,14 @@ static void set_link_halves(short x, short y, unsigned short tile,
                             unsigned char pal_index)
 {
     signed short gy = (signed short)link_draw_y(y);
+    /* Whirlwind teleport: the pickup hides Link's sprites (Sprites+72/76
+     * = $F8) and nothing draws him (UpdatePlayer returns while halted,
+     * Link_EndMoveAndAnimate while WhirlwindTeleportingState != 0) until
+     * the drop-off (Z_01.asm UpdateWhirlwind_Full; T-171). */
+    if (nes_ram[0x0522u] != 0u) {
+        x = -32;
+        gy = -32;
+    }
     set_door_masks();
     VDP_setSpriteFull(ROOMROM_SPRITE_SLOT_LINK, (signed short)x, gy,
                       RENDER_SPRITE_SIZE(1, 2),

@@ -1,4 +1,5 @@
 #include "../../src/game/room/room_dispatch.h"
+#include "../../src/game/items/weapon_dispatch.h"  /* weapon_wield_flute */
 #include <genesis.h>
 #include "roomrom_debug_runtime.h"
 #include "../../src/game/world/render/ow_render.h"  /* Phase 12.2 promoted */
@@ -897,6 +898,7 @@ static void record_warp_tile_ow(void)
     if (s_scene != SCENE_OW || nes_ram[0x005Au] != 0u ||
         nes_ram[0x0394u] != 0u || ((u8)players[0].y & 0x0Fu) != 0x0Du)
         return;
+    if (nes_ram[0x0522u] != 0u) return;   /* teleporting: no EndMoveAndAnimate */
     if ((s_room_id == 0x22u) ? (lx & 0x07u) != 0u : (lx & 0x0Fu) != 0u)
         return;
     coll = nes_ram[0x049Eu];
@@ -1986,6 +1988,19 @@ static void edge_load_or_clamp(void)
     u8 row = (u8)(s_room_id >> 4);
     scroll_state_t want = SCROLL_NONE;
 
+    /* Whirlwind teleport (Z_01.asm UpdateWhirlwind_Full): the whirlwind
+     * reached the right edge carrying Link and GoToNextModeFromPlay set
+     * mode 6. InitMode7_Sub0 makes WhirlwindPrevRoomId ($EA) the room
+     * scrolled from, so the next room is its right neighbour, the
+     * level's entrance room (T-171 t171_flute_whirlwind). */
+    if (s_scene == SCENE_OW && ow_nes_scroll_enabled() &&
+        s_scroll_state == SCROLL_NONE && nes_ram[0x0012u] == 0x06u &&
+        nes_ram[0x0011u] == 0u && nes_ram[0x0522u] != 0u) {
+        col = (u8)(nes_ram[0x00EAu] & 0x0Fu);
+        row = (u8)(nes_ram[0x00EAu] >> 4);
+        s_ow_edge = 1u;
+    }
+
     /* Don't re-trigger while a scroll is already running. */
     if (s_scroll_state != SCROLL_NONE) return;
 
@@ -2266,6 +2281,13 @@ static void edge_load_or_clamp(void)
             ow_scroll_begin((u8)want, s_transition_target);
         } else scroll_init_fixed_point_steps();
     }
+}
+
+/* T-171: UpdateWhirlwind_Full's GoToNextModeFromPlay starts the teleport
+ * scroll in the same tick, as CheckScreenEdge does for a walk. */
+void roomrom_main_begin_whirlwind_scroll(void)
+{
+    edge_load_or_clamp();
 }
 
 /* Make the scroll's target room current: camera anchor, room id, palette,
@@ -3556,7 +3578,12 @@ static unsigned char play_update_objects(void)
     unsigned char gate_pass = (s_move_style == MOVE_STYLE_ALTTP)
         ? (unsigned char)(y_low >= 0x0Cu && y_low <= 0x0Eu)
         : (unsigned char)(y_low == 0x0Du);
-    if (s_scene == SCENE_OW && gate_pass) {
+    /* UpdatePlayer returns while Link is halted (ObjState & $C0 = $40):
+     * no Link_EndMoveAndAnimate, so no CheckWarps (T-171: the whirlwind
+     * carries a halted Link across the screen; t171_flute_whirlwind t290
+     * recorded UndergroundEntranceTile on the way). */
+    if (s_scene == SCENE_OW && gate_pass &&
+        (nes_ram[0x00ACu] & 0xC0u) != 0x40u) {
         /* @CheckWarps keeps ObjCollidedTile across CheckWarps (PHA/PLA). */
         const u8 coll_saved = nes_ram[0x049Eu];
         unsigned char standing_tile =
@@ -4119,6 +4146,9 @@ void roomrom_debug_tick(void)
                  * 5 -> 4 at FC $C4, t131_uw_doors t788). */
                 roomrom_combat_end_move_and_animate();
                 room_init_mode5_play_palette_row7();
+                /* RunCrossRoomTasks -> CheckInitWhirlwindAndBeginUpdate:
+                 * a whirlwind teleport drops Link off here (T-171). */
+                (void)trap_init_whirlwind_at_destination();
 
                 if (s_lvl_enter_only) roomrom_hud_set_counts_hidden(0u);
                 s_lvl_enter_only = 0u;
@@ -4144,6 +4174,15 @@ void roomrom_debug_tick(void)
             } else {
                 s_scroll_frame++;
             }
+            return;
+        }
+
+        /* UpdateMode5Play: while the flute timer runs, nothing updates
+         * (Z_07.asm:1772; T-171 the flute played over a live room). */
+        if (nes_ram[0x0012u] == 0x05u && nes_ram[0x0011u] != 0u &&
+            nes_ram[0x003Cu] != 0u && !roomrom_pause_is_active()) {
+            nes_pad_read_between_modes();
+            transfer_buf_drain();
             return;
         }
 
@@ -4527,15 +4566,7 @@ void roomrom_debug_tick(void)
                 roomrom_combat_wield_rod();      /* T-116: NES WieldRod */
                 break;
             case B_ITEM_FLUTE:
-                /* Phase 8 W6 LITE: SFX-only feedback. NES WieldFlute
-                 * (Z_07.asm:2449) spawns Whirlwind obj type $2D â€” but
-                 * Genesis port has no enemy_loop dispatch case for $2D
-                 * (conflicts with existing enemy obj type) and slot range
-                 * is 1-11 only. Full whirlwind summon = Phase 9 scope.
-                 * V1: play SFX as audible acknowledgement. */
-                if (s_scene == SCENE_OW) {
-                    nes_ram[0x0602u] |= 0x10u;   /* WieldFlute: Tune1Request $10 */
-                }
+                weapon_wield_flute();            /* NES WieldFlute (T-171) */
                 break;
             case B_ITEM_FOOD:
                 /* Phase 8 W7 LITE: decrement food, SFX feedback. NES

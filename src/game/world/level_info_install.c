@@ -89,9 +89,12 @@ static void copy_to_nes_ram(unsigned short dst_nes_addr,
  * writes. Called after the OW LevelBlock copy whenever Q2 is active. */
 /* room_dispatch.c: LevelInfo $6B92 = Link's color (InitMode3_Sub1). */
 extern void room_patch_level_palette_link_color(void);
+/* OW layout summary cache: the level block changed (ow_render.c). */
+extern void roomrom_ow_room_render_layout_drop(void);
 
 void level_info_apply_q2_ow_patch(void)
 {
+    roomrom_ow_room_render_layout_drop();
     const unsigned char *offs = &rooms_dungeons[ROOMROM_OW_Q2_ATTRB_REPL_OFFSETS_OFF];
     const unsigned char *vals = &rooms_dungeons[ROOMROM_OW_Q2_ATTRB_REPL_VALUES_OFF];
     signed char i;
@@ -112,6 +115,7 @@ void level_info_install_ow(void)
     copy_to_nes_ram(NES_LBA_A_BASE,
                     &rooms_overworld[BLOB_OW_LEVELBLOCK_OFF],
                     NES_LBA_BLOCK_BYTES);
+    roomrom_ow_room_render_layout_drop();
     copy_to_nes_ram(NES_LEVEL_INFO_BASE,
                     &rooms_overworld[BLOB_OW_LEVELINFO_OFF],
                     NES_LEVEL_INFO_BYTES);
@@ -196,6 +200,7 @@ void level_info_mode2_step(unsigned char step, unsigned char level,
             src = &rooms_dungeons[(q2 ? 2u * BLOB_UW_BLOCK_BYTES : 0u) +
                                   (level <= 6u ? 0u : BLOB_UW_BLOCK_BYTES)];
         copy_to_nes_ram(NES_LBA_A_BASE, src, NES_LBA_BLOCK_BYTES);
+        roomrom_ow_room_render_layout_drop();
     } else if (step == 1u) {
         const unsigned char *src = &rooms_overworld[BLOB_OW_LEVELINFO_OFF];
         if (level != 0u && level <= 9u)

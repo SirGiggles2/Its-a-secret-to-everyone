@@ -402,6 +402,10 @@ void roomrom_combat_update_rod(void)
  * Runs even on a frame whose movement started a room scroll. */
 void roomrom_combat_end_move_and_animate(void)
 {
+    /* Link_EndMoveAndAnimate returns while WhirlwindTeleportingState
+     * ($522) != 0: no warps, no animation (Z_07.asm; T-171
+     * t171_flute_whirlwind t346, ObjAnimCounter). */
+    if (nes_ram[0x0522u] != 0u) return;
     /* Redux keeps the NES walk cadence; its swing never sets ObjState. */
     link_anim_state_step();
 }

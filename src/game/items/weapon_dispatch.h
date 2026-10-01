@@ -38,6 +38,8 @@ void weapon_wield_bomb(unsigned int slot);
 /* Wield candle: choose A/B draw slot, set candle-lit flag, position
  * weapon, play sfx 4, place weapon. Returns 0. NES WieldCandle. */
 unsigned int weapon_wield_candle(unsigned int slot);
+/* NES WieldFlute (Z_07.asm:2449). */
+void weapon_wield_flute(void);
 
 #ifdef __cplusplus
 }

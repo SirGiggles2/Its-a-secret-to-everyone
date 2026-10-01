@@ -1268,7 +1268,9 @@ static void enemy_loop_room_init_impl(unsigned char room_id, unsigned char scene
     RAM(0x003Du) = 0u;       /* ObjStunTimer */
     RAM(0x00C0u) = 0u;       /* ObjShoveDir */
     RAM(0x00D3u) = 0u;       /* ObjShoveDistance */
-    RAM(0x03D0u) = 3u;       /* ObjAnimCounter after the mode-4 step */
+    /* ObjAnimCounter after the mode-4 step; a whirlwind teleport does not
+     * animate (Link_EndMoveAndAnimate returns), so it stays 4 (T-171). */
+    RAM(0x03D0u) = (RAM(0x0522u) != 0u) ? 4u : 3u;
     RAM(0x03BCu) = 0x60u;    /* ObjQSpeedFrac */
     /* enemy_fix arm hook: bail this room_init pass exactly once. */
     if (s_fix_arm_suppress_room_init) {

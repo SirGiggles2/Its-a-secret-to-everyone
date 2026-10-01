@@ -557,7 +557,11 @@ void roomrom_ow_room_tile_object(unsigned char room_id, unsigned char *type,
                                  unsigned char *x, unsigned char *y)
 {
     const ow_room_layout_t *L;
-    s_layout_cache.valid = 0u;     /* world flags may have changed */
+    /* T-172: the cache key holds the live room flags (secret found /
+     * visited), so it is reused here; only a LevelInfo install (other
+     * quest's attributes) drops it (roomrom_ow_room_render_layout_drop).
+     * Recomputing all 16 columns at every room entry made the entry tick
+     * run two frames (t105_horizontal tick clock t221). */
     L = ow_room_layout(room_id);
     *type = L->obj_type;
     *x = L->obj_x;
@@ -783,6 +787,18 @@ void roomrom_ow_room_render_prepare(unsigned char room_id, unsigned char max_col
         prep_store_col(col, col0, col1);
         ++s_prep_cols;
     }
+}
+
+void roomrom_ow_room_render_layout_drop(void)
+{
+    s_layout_cache.valid = 0u;
+}
+
+/* Compute the room's layout summary ahead of InitMode_EnterRoom (on a
+ * scroll tick with spare time). */
+void roomrom_ow_room_render_prepare_layout(unsigned char room_id)
+{
+    (void)ow_room_layout(room_id);
 }
 
 void roomrom_ow_room_render_prepare_drop(void)
@@ -1027,17 +1043,16 @@ void roomrom_ow_room_render_publish_cache(void)
  * always zero so HandleWarpOW never sees cave/stairs tiles ($24/$88/
  * $70..$73). After this runs, cave_entrance_check fires correctly when
  * Link stands on an entrance tile. */
+extern void sgdk_memcpy(void *to, const void *from, unsigned short len) __asm__("memcpy");
 void roomrom_ow_room_render_publish_play_area_tiles(void)
 {
-    unsigned char col, row;
-    for (col = 0; col < ROOMROM_OW_RAW_TILE_COLS; col++) {
-        unsigned short col_addr =
-            (unsigned short)(NES_PLAY_AREA_BASE +
-                             (unsigned short)col * NES_TILE_COL_STRIDE);
-        for (row = 0; row < ROOMROM_OW_RAW_TILE_ROWS; row++) {
-            nes_ram[col_addr + row] = s_raw_tiles[col][row];
-        }
-    }
+    /* PlayAreaTiles is column-major with a $16-byte column, the layout of
+     * s_raw_tiles[32][22]: one block copy. T-172: the byte loop cost
+     * 4.2k instructions in the room-entry tick (two frames). */
+    _Static_assert(NES_TILE_COL_STRIDE == ROOMROM_OW_RAW_TILE_ROWS,
+                   "PlayAreaTiles column stride");
+    sgdk_memcpy(&nes_ram[NES_PLAY_AREA_BASE], s_raw_tiles,
+                (unsigned short)sizeof s_raw_tiles);
 }
 
 /* Old monolithic body kept for reference until verified equivalent; now dead. */

@@ -26,6 +26,7 @@
 #include "../dungeon/door_state.h"       /* uw_door_state_get_type */
 #include "../dungeon/uw_dark.h"          /* uw_dark_is_dark_room */
 #include "../room/room_dispatch.h"       /* room_save_kill_count_uw/_ow */
+#include "render/ow_render.h"             /* roomrom_ow_room_render_prepare_layout */
 #include "../options/options_consumer.h" /* options_consumer_get_room_scroll */
 #include "../options/options_state.h"    /* OPTIONS_SCROLL_SMOOTH */
 
@@ -209,7 +210,13 @@ unsigned char ow_scroll_tick(short *x, short *y)
         }
     } else if (MODE == 7u && !UPD) {
         switch (SUB) {
-        case 0u: SUB = 1u; break;
+        case 0u:
+            /* InitMode7_Sub0: a whirlwind teleport scrolls from
+             * WhirlwindPrevRoomId ($EA), the room left of the level's
+             * entrance (T-171 t171_flute_whirlwind). */
+            if (nes_ram[0x522u] != 0u) nes_ram[0xEBu] = nes_ram[0xEAu];
+            SUB = 1u;
+            break;
         case 1u:
             /* InitMode7_Sub1: PrevOpenedDoors = CurOpenedDoors, the
              * entering side becomes CurOpenedDoors, DEC PrevRow, then
@@ -229,6 +236,9 @@ unsigned char ow_scroll_tick(short *x, short *y)
             /* NES transfers all 22 rows before scrolling. Use that budget
              * to stage the native room incrementally (16 metatile columns). */
             if (ROW >= 6u) column = (unsigned char)(21u - ROW);
+            /* T-172: InitMode_EnterRoom's tile-object lookup reads the
+             * layout summary; build it on a row-copy tick. */
+            if (!uw && ROW == 2u) roomrom_ow_room_render_prepare_layout(target_room);
             if (ROW-- == 0u) SUB = 3u;
             break;
         case 3u: case 4u: ++SUB; break;

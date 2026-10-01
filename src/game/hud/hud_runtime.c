@@ -529,6 +529,15 @@ void roomrom_hud_refresh_marker(unsigned char room_id,
 {
     if (s_hud_id_cached == 0xFFu)
         return;
+    /* UpdatePlayerPositionMarker returns while WhirlwindTeleportingState
+     * != 0 (Z_01.asm:4087); the sprites hidden by the room change stay
+     * hidden until the drop-off (T-171 t171_flute_whirlwind t346). */
+    if (RAM(0x0522u) != 0u && RAM(0x0012u) != 0x05u) {
+        roomrom_sprites_hide_hud_marker(0u);
+        roomrom_sprites_hide_hud_marker(1u);
+        return;
+    }
+    if (RAM(0x0522u) != 0u) return;
     if (s_hud_id_cached == ROOMROM_MAP_REDUX) {
         roomrom_sprites_hide_hud_marker(0u);
         roomrom_sprites_hide_hud_marker(1u);

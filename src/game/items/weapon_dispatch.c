@@ -128,3 +128,55 @@ unsigned int weapon_wield_candle(unsigned int slot)
     weapon_place_weapon_for_player_state(use_slot);
     return 0u;
 }
+
+/* NES source: Z_07.asm WieldFlute (2449).
+ * Drained C: none (the Genesis had a sound-only stub, T-171).
+ * Coverage: FULL. Stance: GREENFIELD per asm.
+ * Plays the flute tune, sets FluteTimer $98 (UpdateMode5Play waits for
+ * it). UW: flags UsedFlute (Digdogger reads it). OW, mode 5 only: a room
+ * in FluteRoomSecretsOW reveals its secret (flute secret object $5E: the
+ * pond color cycle and stairs) in the quest that owns it, else the
+ * whirlwind is summoned (SummonWhirlwind, Z_01.asm). */
+extern void trap_summon_whirlwind(void);
+static const unsigned char k_flute_room_secrets_ow[11] = {
+    0x42u, 0x06u, 0x29u, 0x2Bu, 0x30u, 0x3Au, 0x3Cu, 0x58u,
+    0x60u, 0x6Eu, 0x72u
+};
+
+void weapon_wield_flute(void)
+{
+    signed char y;
+    unsigned char quest;
+    RAM(0x0602u) = 0x10u;                       /* Tune1Request */
+    RAM(0x003Cu) = 0x98u;                       /* FluteTimer */
+    if (RAM(0x0010u) != 0u) {                   /* CurLevel: UW */
+        if (RAM(0x051Bu) == 0u)                 /* UsedFlute */
+            RAM(0x051Bu) = 1u;
+        return;
+    }
+    if (RAM(0x0012u) != 0x05u) return;          /* GameMode */
+    quest = RAM((unsigned short)(0x062Du + RAM(0x0016u)));   /* QuestNumbers */
+    for (y = 10; y >= 0; --y)
+        if (RAM(0x00EBu) == k_flute_room_secrets_ow[(unsigned char)y]) break;
+    if (y < 0) {                                /* @FluteSecretNotFound */
+        trap_summon_whirlwind();
+        return;
+    }
+    /* Room $42 (index 0) is Q1's only flute secret and has none in Q2;
+     * the others are Q2 secrets and summon the whirlwind in Q1. */
+    if (y == 0) {
+        if (quest != 0u) { trap_summon_whirlwind(); return; }
+    } else if (quest == 0u) {
+        trap_summon_whirlwind();
+        return;
+    }
+    /* @RevealSecret: not while the color cycle runs or is done. */
+    if (RAM(0x051Au) != 0u) return;             /* SecretColorCycle */
+    /* Empty slot from 8 down to 0 (ObjType+1 + y), as the NES. */
+    for (y = 8; y >= 0; --y) {
+        if (RAM((unsigned short)(0x0350u + (unsigned char)y)) == 0u) {
+            RAM((unsigned short)(0x0350u + (unsigned char)y)) = 0x5Eu;
+            return;
+        }
+    }
+}

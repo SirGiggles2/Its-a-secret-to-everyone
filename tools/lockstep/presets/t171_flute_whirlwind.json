@@ -1,0 +1,32 @@
+{
+ "name": "t171_flute_whirlwind",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {
+  "0x657": 1,
+  "0x65C": 1,
+  "0x671": 1
+ },
+ "script": [
+  [
+   60,
+   ""
+  ],
+  [
+   2,
+   "B"
+  ],
+  [
+   700,
+   ""
+  ]
+ ],
+ "clock": "play",
+ "_note": "T-171 flute in OW start room $77 with triforce piece 1: WieldFlute -> SummonWhirlwind (slot 11), FluteTimer freeze, whirlwind carries Link right, scroll from WhirlwindPrevRoomId $36 to L1 entrance room $37, drop-off at X $80. Play clock (mode 6/7/4 internals are Genesis-rendered).",
+ "stages": [
+  [
+   10,
+   "wr(0x656, 5)\ngen_b_item(6)"
+  ]
+ ]
+}

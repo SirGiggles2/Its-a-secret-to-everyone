@@ -99,17 +99,28 @@ void trap_advance_teleporting_level_index(void)
     }
 }
 
+static void whirlwind_sync_link(void);
+
+/* CheckInitWhirlwindAndBeginUpdate (Z_01.asm), the whirlwind half: in the
+ * destination room teleporting state 2 drops Link off. Link halts ($40),
+ * InitWhirlwind puts TeleportYs[TeleportingLevelIndex & 7] in Link's ObjY
+ * and SetUpWhirlwind the whirlwind in slot 9 at his Y, X 0. T-171: the
+ * drain also ran AdvanceTeleportingLevelIndex, which the NES does not.
+ * Returns 1 when a teleport is in progress. */
+unsigned char trap_init_whirlwind_at_destination(void)
+{
+    if ((unsigned char)TELEPORT_ACTIVE_FLAG == 0u) return 0u;
+    TELEPORT_ACTIVE_FLAG = (uint8_t)((unsigned char)TELEPORT_ACTIVE_FLAG + 1u);
+    LINK_ACTION_TIMER = 0x40u;
+    LINK_Y = k_teleport_ys[(unsigned char)TELEPORT_LEVEL_INDEX & 7u];
+    core_set_up_whirlwind(9u);
+    whirlwind_sync_link();
+    return 1u;
+}
+
 void trap_check_init_whirlwind_and_begin_update(void)
 {
-    /* drain at trap_runtime.c:69-79. */
-    if ((unsigned char)TELEPORT_ACTIVE_FLAG != 0u) {
-        TELEPORT_ACTIVE_FLAG =
-            (uint8_t)((unsigned char)TELEPORT_ACTIVE_FLAG + 1u);
-        LINK_ACTION_TIMER = 64u;
-        trap_advance_teleporting_level_index();
-        LINK_Y = k_teleport_ys[(unsigned char)TELEPORT_LEVEL_INDEX & 7u];
-        core_set_up_whirlwind(9u);
-    }
+    (void)trap_init_whirlwind_at_destination();
     SUBMODE_VALUE = 0u;
     MODE_TIMER = (uint8_t)((unsigned char)MODE_TIMER + 1u);
 }
@@ -178,6 +189,21 @@ void trap_draw_whirlwind(unsigned int slot)
     draw_object_not_mirrored_with_frame(0u, slot);
 }
 
+/* The Genesis owns Link's position/facing in RoomRom/src/main.c; the
+ * whirlwind writes the NES cells (ObjX, ObjDir), so hand them over
+ * (T-171 t171_flute_whirlwind t282: Link kept facing up). */
+extern void roomrom_main_set_link_story_pose(unsigned char x, unsigned char y,
+                                             unsigned char face);
+static void whirlwind_sync_link(void)
+{
+    const unsigned char d = (unsigned char)LINK_DIR;
+    /* ROOMROM_MAIN_LINK_FACE_*: 0 down, 1 up, 2 left, 3 right. */
+    const unsigned char face = (d & 0x01u) ? 3u : (d & 0x02u) ? 2u :
+                               (d & 0x08u) ? 1u : 0u;
+    roomrom_main_set_link_story_pose((unsigned char)LINK_X,
+                                     (unsigned char)RAM(0x0084u), face);
+}
+
 void trap_update_whirlwind_full(unsigned int slot)
 {
     /* drain at trap_runtime.c:26-67. */
@@ -191,6 +217,7 @@ void trap_update_whirlwind_full(unsigned int slot)
         const unsigned char tele = (unsigned char)TELEPORT_ACTIVE_FLAG;
         if (tele != 0u) {
             LINK_X = new_x;
+            whirlwind_sync_link();
             if (tele != 1u && new_x == 0x80u) {
                 LINK_ACTION_TIMER = 0u;
                 TELEPORT_ACTIVE_FLAG = 0u;
@@ -217,6 +244,7 @@ void trap_update_whirlwind_full(unsigned int slot)
                     (unsigned char)TELEPORT_LEVEL_INDEX & 7u];
             TELEPORT_ACTIVE_FLAG =
                 (uint8_t)((unsigned char)TELEPORT_ACTIVE_FLAG + 1u);
+            whirlwind_sync_link();
         }
     }
     if ((unsigned char)OBJ_X(slot) < 0xF0u) {
@@ -225,7 +253,9 @@ void trap_update_whirlwind_full(unsigned int slot)
     }
     core_destroy_whirlwind(slot);
     if ((unsigned char)TELEPORT_ACTIVE_FLAG) {
+        extern void roomrom_main_begin_whirlwind_scroll(void);
         room_go_to_next_mode_from_play();
+        roomrom_main_begin_whirlwind_scroll();
     }
     trap_draw_whirlwind(slot);
 }
