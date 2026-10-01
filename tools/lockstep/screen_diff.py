@@ -28,6 +28,12 @@ pass --window-rows 7 for gameplay (window at $E000, 32 cells a row in H32).
 Planes B/A and sprites with priority bits, SAT link chain from slot 0,
 backdrop = CRAM 0.
 
+Sprite overlap: a diff pixel covered by two or more opaque NES sprites
+depends on which one the NES OAM rotation (RollingSpriteIndex, flicker)
+put first that frame; the Genesis keeps a fixed order (no flicker,
+accepted). Those pixels are counted on a separate line ("OVERLAP: <n> px
+of the diff"); they stay in the DIFF total, the verdict is unchanged.
+
 The Genesis frame is the NES frame without its top 8 lines: Genesis line
 y is NES line y + 8. Verdict line "SCREEN: MATCH" or "SCREEN: DIFF <n>".
 --png writes both frames and a diff mask next to the report (triage only).
@@ -47,6 +53,9 @@ def nes_to_cram() -> list[int]:
     body = body[body.index("{") + 1: body.index("}")]
     vals = [int(v, 0) for v in re.findall(r"0x[0-9A-Fa-f]+|\d+", body)]
     return [vals[2 * c] | (vals[2 * c + 1] << 8) for c in range(64)]
+
+
+COVER: list[list[int]] = []   # opaque NES sprite pixels per screen pixel
 
 
 def nes_frame(nt: bytes, chr_: bytes, pal: bytes, oam: bytes, ram: bytes) -> list[list[int]]:
@@ -77,6 +86,7 @@ def nes_frame(nt: bytes, chr_: bytes, pal: bytes, oam: bytes, ram: bytes) -> lis
                     img[ty * 8 + y][tx * 8 + x] = pal[p * 4 + c] if c else pal[0]
                     opaque[ty * 8 + y][tx * 8 + x] = c != 0
     done = [[False] * 256 for _ in range(240)]
+    COVER[:] = [[0] * 256 for _ in range(240)]
     for i in range(64):
         sy, t, a, sx = oam[i * 4: i * 4 + 4]
         if sy >= 0xEF:
@@ -95,11 +105,14 @@ def nes_frame(nt: bytes, chr_: bytes, pal: bytes, oam: bytes, ram: bytes) -> lis
                 base, tt = spr_tab, t
             for x in range(8):
                 xx = sx + x
-                if xx >= 256 or done[yy][xx]:
+                if xx >= 256:
                     continue
                 rx = (7 - x) if a & 0x40 else x
                 c = tile_px(base, tt, rx, ry)
                 if not c:
+                    continue
+                COVER[yy][xx] += 1
+                if done[yy][xx]:
                     continue
                 done[yy][xx] = True
                 if (a & 0x20) and opaque[yy][xx]:
@@ -216,6 +229,7 @@ def main() -> int:
             if n != gen[y][x]:
                 bad.setdefault((x // 8, y // 8), []).append((x, y, n, gen[y][x]))
     total = sum(len(v) for v in bad.values())
+    overlap = sum(1 for v in bad.values() for (x, y, _n, _g) in v if COVER[y + 8][x] >= 2)
     for (cx, cy), px in sorted(bad.items(), key=lambda kv: (kv[0][1], kv[0][0]))[:40]:
         x, y, n, g = px[0]
         print(f"  cell ({cx:2d},{cy:2d}) {len(px):2d} px  first ({x},{y}) NES {n:03X} GEN {g:03X}")
@@ -233,6 +247,8 @@ def main() -> int:
                 im.putpixel((528 + x, y), (255, 0, 0) if n != gen[y][x] else (0, 0, 0))
         im.save(d / f"screen_diff.{t}.png")
     print(f"compared 256x224 px (NES lines 8-231 vs Genesis 0-223)")
+    if overlap:
+        print(f"OVERLAP: {overlap} px of the diff where >= 2 NES sprites overlap")
     print("SCREEN: MATCH" if not total else f"SCREEN: DIFF {total} px in {len(bad)} cells")
     return 0 if not total else 1
 

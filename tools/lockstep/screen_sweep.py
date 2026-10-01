@@ -62,7 +62,11 @@ def run_preset(name: str, per: int) -> list[str]:
                               str(REPORTS / name), str(t), "--window-rows", "7"],
                              capture_output=True, text=True).stdout
         m = re.search(r"SCREEN: (MATCH|DIFF \d+ px in \d+ cells)", out)
-        rows.append(f"| {name} | {t} | {m.group(1) if m else 'ERROR: ' + out.strip()[-80:]} |")
+        o = re.search(r"OVERLAP: (\d+) px", out)
+        res = m.group(1) if m else 'ERROR: ' + out.strip()[-80:]
+        if m and o:
+            res += f" ({o.group(1)} px sprite overlap)"
+        rows.append(f"| {name} | {t} | {res} |")
     return rows
 
 
