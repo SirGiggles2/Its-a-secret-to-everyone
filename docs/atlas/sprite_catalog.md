@@ -4,7 +4,7 @@
 
 **Historical atlas manifest, not the active item-ID dispatch.** The item names/IDs below describe the uncalled fixed-slot renderer and include stale mappings (for example, ring is not `$0C`). See [active_item_draw.md](active_item_draw.md) for the linked runtime path and NES-verified ring `$12/$13` mapping.
 
-**Verifier output (live):** `verify_vram_budget: OK  BG=tiles 1..663  SPR=tiles 664..950  ITEM=tiles 951..1060  BOSS=SCENE_OBJ-shared (NES parity)  BOSS_PAL3=tiles 1061..1124  CLOUD=tiles 1300..1305  FIREBALL=tiles 1306..1307  FIREBALL_PAL3=tiles 1426..1427  SPARK=tiles 1308..1311  SPARK_PAL3=tiles 1428..1431  HUD_MARKER=tiles 1312..1313  SUBSCREEN_SPRITE=tiles 1280..1295  LINK_FLASH3=tiles 1378..1409  LINK_ATTACK_FLASH3=tiles 1410..1425  contiguous_tail_headroom=104 tiles before VDP tables
+**Verifier output (live):** `verify_vram_budget: OK  BG=tiles 1..677  SPR=tiles 678..964  ITEM=tiles 965..1074  BOSS=SCENE_OBJ-shared (NES parity)  BOSS_PAL3=tiles 1075..1138  CLOUD=tiles 1300..1305  FIREBALL=tiles 1306..1307  FIREBALL_PAL3=tiles 1426..1427  SPARK=tiles 1308..1311  SPARK_PAL3=tiles 1428..1431  HUD_MARKER=tiles 1312..1313  SUBSCREEN_SPRITE=tiles 1280..1295  LINK_FLASH3=tiles 1378..1409  LINK_ATTACK_FLASH3=tiles 1410..1425  contiguous_tail_headroom=104 tiles before VDP tables
   hscroll_table_unused=1020 bytes (HSCROLL_PLANE mode uses 4 B of 1 KB allocated; available as SAT-extension scratch only)`
 
 ## CRAM / palette routing
@@ -21,34 +21,34 @@ Genesis has 4 CRAM palettes × 16 colors = 64 slots. Layout post-Phase-B/F:
 
 ### BG
 - **tile_base**: `1`
-- **tiles_resident**: `663`
-- **tile_range**: `[1, 663]`
+- **tiles_resident**: `677`
+- **tile_range**: `[1, 677]`
 - **subpal_count**: `1`
-- **bytes_resident**: `21216`
+- **bytes_resident**: `21664`
 - **source**: `data/chr/overworld_bg.c + data/chr/underworld_bg.c (via RoomRom/tools/expand_bg_chr.py)`
 - **replication**: `4x pixel-bias (Phase J selective dedup planned)`
 
 ### SPR
-- **tile_base**: `664`
+- **tile_base**: `678`
 - **tiles_resident**: `287`
-- **tile_range**: `[664, 950]`
+- **tile_range**: `[678, 964]`
 - **subpal_count**: `1`
 - **bytes_resident**: `9184`
 - **source**: `data/chr/common.c (Link / sword / common sprites)`
 - **replication**: `1x (sub-pal 0); future sub-pal 1+ via OAM pal field`
-- **scene_obj_slot**: `{'tile_base': 708, 'slot_size': 136, 'occupants': 'UWSP (34), OWSP (114), BOSS (64) — one at a time'}`
+- **scene_obj_slot**: `{'tile_base': 722, 'slot_size': 136, 'occupants': 'UWSP (34), OWSP (114), BOSS (64) — one at a time'}`
 
 ### ITEM
-- **tile_base**: `951`
+- **tile_base**: `965`
 - **tiles_resident**: `110`
-- **tile_range**: `[951, 1060]`
+- **tile_range**: `[965, 1074]`
 - **subpal_count**: `1`
 - **bytes_resident**: `1173`
 - **source**: `RoomRom/data/item_chr_manifest.json + RoomRom/tools/gen_atlas.py`
 - **replication**: `1x (Phase B collapsed from 3x on 2026-05-18)`
 
 ### BOSS
-- **tile_base**: `708`
+- **tile_base**: `722`
 - **tile_count**: `64`
 - **subpal_count**: `1`
 - **residence**: `transient (SCENE_OBJ slot, shared with UWSP/OWSP)`

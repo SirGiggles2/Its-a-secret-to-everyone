@@ -27,6 +27,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 VRAM_MAP_H    = ROOT / "src" / "roomrom_vram_map.h"
 ITEM_CHR_H    = ROOT / "src" / "atlas" / "items_chr_x4.h"
+BG_CHR_H      = ROOT / "src" / "bg_sparse_chr.h"
 
 VDP_TABLES = {
     # Actual VRAM table layout per RoomRom/src/main.c init_video (read live
@@ -102,6 +103,15 @@ def parse_constants():
         if not m:
             fail(f"missing {name} in {VRAM_MAP_H}")
         consts[name] = int(m.group(1))
+
+    # Check the actual upload size, not only two mutually consistent stale
+    # map constants. T-174 grew the atlas while the old gate still passed.
+    m = re.search(r"#define\s+BG_SPARSE_TILE_COUNT\s+(\d+)u?",
+                  BG_CHR_H.read_text(encoding="utf-8"))
+    if not m:
+        fail(f"missing BG_SPARSE_TILE_COUNT in {BG_CHR_H}")
+    if consts["ROOMROM_BG_TILE_COUNT_PER_PAL"] != int(m.group(1)):
+        fail("BG reservation differs from generated sparse atlas tile count")
 
     # --- ITEM bank ---
     # ROOMROM_ITEM_TILE_BASE = ROOMROM_SPR_TILE_BASE + ROOMROM_SPR_TILE_COUNT_PER_PAL

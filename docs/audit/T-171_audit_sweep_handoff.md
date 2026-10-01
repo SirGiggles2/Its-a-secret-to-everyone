@@ -8,6 +8,7 @@ Claude commits `3b2416f2..4e287baa` add staged L1–L4 boss fights and repair Li
 
 - `74c101cc`: explicit heart helper call-before-scratch-read ordering. Dodongo pickup 1150/1150 plus fairy refill 1364/1364, unchanged baselines, four Dodongo screens exact. See `T-171_heart_helper_order.md`.
 - `60c59fd8`: Digdogger renderer now follows resident CHR bank after split; final draw survives cleared parent type. Staged L5 flute/child fight/heart pickup/north departure 1454/1454; split/child/reward/departure screens exact, early sprite-overlap differences accepted at their documented scope. Named Aquamentus 1300/1300 and Gleeok 1474/1474 consumers plus final screens PASS. See `T-171_digdogger_flute.md`.
+- T-174: explicit reward roles add 11 missing Original Triforce rooms; Gohma arrow rejection/open-eye kill/reward/departure 1087/1087, Q2 L8 reward entry 480/480 and destination screens PASS. Sparse BG atlas 677; reservation guard and freshness 9/9 PASS. See `T-174_reward_room_coverage.md`. Blue pause ring colors newly contradicted (T-175); red-grade T-121 remains valid.
 - The Windows ROM includes existing Claude flute/whirlwind WIP. Those unrelated uncommitted files remain preserved. Latest exact build identity and active task are in the tracker; no connected quest, three-child Digdogger, or SRAM acceptance follows from these staged fights.
 
 ## Codex progress after handoff (2026-09-30)
