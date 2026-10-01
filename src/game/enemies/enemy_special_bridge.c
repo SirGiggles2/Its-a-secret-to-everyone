@@ -143,6 +143,7 @@ extern unsigned int enrt_wallmaster_calc_start_position(unsigned int instr_offse
                                                         unsigned int init_major_min,
                                                         unsigned int slot);
 extern void enrt_wallmaster_put_sprites_behind_bg_if_needed(void);
+extern void enemy_render_wallmaster_patch(unsigned char slot, unsigned char closed_hand);
 
 /* Link_EndMoveAndAnimate_Bank4 -- huge ladder/water/warp/draw chain in
  * NES Z_07.asm:4360. STAGE-1 stub; same model as
@@ -667,6 +668,9 @@ patch_sprites:
     WM_SCRATCH_PATCH_LEFT_OFFSET  = left_off;
     WM_SCRATCH_PATCH_RIGHT_OFFSET = right_off;
     enrt_wallmaster_put_sprites_behind_bg_if_needed();
+    /* The drawn pair lives in the native render cache: patch it there. */
+    enemy_render_wallmaster_patch((unsigned char)slot,
+                                  (unsigned char)(WM_OBJ_ANIM_FRAME(slot) != 0u));
 
     /* Frame 0 = open hand: nothing to patch, exit. Frame 1 = closed hand:
      * its $9C/$9D left tile is the Keese; substitute $AC. The left/right

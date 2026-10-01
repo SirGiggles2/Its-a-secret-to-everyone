@@ -79,6 +79,11 @@ typedef struct {
 static enemy_render_entry_t
     s_enemy_entries[ENEMY_LOOP_SLOT_LAST + 1u][ENEMY_RENDER_MAX_PER_SLOT];
 static unsigned char s_enemy_count[ENEMY_LOOP_SLOT_LAST + 1u];
+/* Entry written by Anim_WriteSprite (single sprite), which flashes with
+ * FrameCounter bits; the pair writer (Anim_WriteSpritePair) already put
+ * ObjInvincibilityTimer bits in the attrs (NES Z_01.asm:5151, 5365).
+ * Attr bit 2 is unused by the NES OAM. */
+#define ANIM_WRITE_SPRITE_MARKER 0x04u
 
 void enemy_render_native_reset(void)
 {
@@ -110,7 +115,7 @@ void anim_write_sprite_drained(unsigned int tile, unsigned int slot)
             if (n < ENEMY_RENDER_MAX_PER_SLOT) {
                 enemy_render_entry_t *e = &s_enemy_entries[cur_slot][n];
                 e->tile  = (unsigned char)tile;
-                e->attrs = attrs;
+                e->attrs = (unsigned char)(attrs | ANIM_WRITE_SPRITE_MARKER);
                 e->x     = ENEMY_RENDER_OBJ_X(slot);
                 e->y     = ENEMY_RENDER_OBJ_Y(slot);
                 s_enemy_count[cur_slot] = (unsigned char)(n + 1u);
@@ -167,6 +172,34 @@ void enemy_render_publish_pair_left(unsigned char tile,
         /* T-130: item objects above the monster slots (the room item $13)
          * draw through the same NES writers into the weapon cache. */
         weapon_add(cur_slot, tile, attrs, x, y);
+    }
+}
+
+/* Z_04.asm Wallmaster @PatchSprites on the native cache. The NES patches
+ * the two OAM records the Wallmaster just wrote; the Genesis draw goes to
+ * this cache instead (enemy OAM writes are skipped), so the patch never
+ * reached the screen (T-171 t013_route t7611: the hand inside the wall
+ * drawn in front of it, and the closed hand's left half the Keese tile).
+ * Wallmaster_PutSpriteBehindBgIfNeeded: a sprite with X + 8 or X + 0
+ * >= $E9 or < $18 gets attribute $20. Frame 1: tile $9C on the left
+ * sprite becomes $AC, else the right sprite's tile becomes $AC. */
+void enemy_render_wallmaster_patch(unsigned char slot, unsigned char closed_hand)
+{
+    unsigned char n, k;
+    enemy_render_entry_t *pair;
+    if (slot > ENEMY_LOOP_SLOT_LAST) return;
+    n = s_enemy_count[slot];
+    if (n < 2u) return;
+    pair = &s_enemy_entries[slot][n - 2u];
+    for (k = 0u; k < 2u; ++k) {
+        const unsigned char x = pair[k].x;
+        const unsigned char a = (unsigned char)(x + 8u), b = x;
+        if (a >= 0xE9u || a < 0x18u || b >= 0xE9u || b < 0x18u)
+            pair[k].attrs = (unsigned char)(pair[k].attrs | 0x20u);
+    }
+    if (closed_hand) {
+        if (pair[0].tile == 0x9Cu) pair[0].tile = 0xACu;
+        else pair[1].tile = 0xACu;
     }
 }
 
@@ -1070,9 +1103,11 @@ static unsigned int emit_native_entries(unsigned int sat_slot, unsigned char pas
         if (n == 0u) continue;
         if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
 
-        /* Normal Anim_WriteSprite flashes with FrameCounter bits. The
-         * spark uses Anim_WriteSpritePair instead, which flashes with
-         * ObjInvincibilityTimer bits (NES Z_01.asm:5151-5165). */
+        /* Anim_WriteSprite flashes with FrameCounter bits (single-sprite
+         * entries, ANIM_WRITE_SPRITE_MARKER, and meta clouds). The pair
+         * writer flashes with ObjInvincibilityTimer bits, already in the
+         * entry's attrs (T-171: a hit Stalfos showed palette 0, NES 3 =
+         * timer & 3, t013_route t4702); the spark reads the timer here. */
         unsigned char inv_active = (ENEMY_RENDER_INV_TIMER(slot) != 0u);
         unsigned char fc_pal = (unsigned char)(RAM(NES_FRAME_COUNTER) & 0x03u);
 
@@ -1085,8 +1120,9 @@ static unsigned int emit_native_entries(unsigned int sat_slot, unsigned char pas
                 (pass == NATIVE_PASS_OTHER && fireball)) continue;
             if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
 
-            unsigned char render_attrs = e->attrs;
-            if (inv_active) {
+            unsigned char render_attrs = (unsigned char)(e->attrs & ~ANIM_WRITE_SPRITE_MARKER);
+            if (inv_active &&
+                (e->attrs & (ANIM_WRITE_SPRITE_MARKER | META_ATTR_MARKER))) {
                 unsigned char flash_pal = fc_pal;
                 if ((e->attrs & META_ATTR_MARKER) &&
                     e->tile >= ENEMY_RENDER_META_SPARK_OFFSET &&
