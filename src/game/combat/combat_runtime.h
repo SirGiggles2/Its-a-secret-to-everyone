@@ -66,6 +66,8 @@ link_face_t   roomrom_combat_get_swing_face(void);
 /* T-116: WieldRod (rod slot $12) and its UpdateRodOrArrow states $3x. */
 void roomrom_combat_wield_rod(void);
 void roomrom_combat_end_move_and_animate(void);
+/* AnimateLinkBase alone (Link_EndMoveAndDraw callers: halted Link). */
+void roomrom_combat_animate_link_base(void);
 void roomrom_combat_update_rod(void);
 
 #endif

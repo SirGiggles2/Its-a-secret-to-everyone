@@ -675,6 +675,10 @@ static void cave_fade_swap_entry_handler(cave_id_t cid)
     /* T-012: this is InitMode_WalkCave's first frame (submode 8). */
     nes_frames_catch_up(NES_CAVE_ENTER_FRAMES);
     nes_ram[0x0013u] = 8u;
+    /* InitModeB_EnterCave: InitMode_EnterRoom clears ObjInputDir, and
+     * UndergroundExitType = 1 for the way out (T-171). */
+    nes_ram[0x03F8u] = 0u;
+    nes_ram[0x005Au] = 1u;
     s_link_grid_offset = 0x30;
     s_link_pos_frac = 0u;
     /* Mirror spawn into nes_ram ObjX/ObjY[0] so the byte-diff sees $DD at the
@@ -703,6 +707,7 @@ static void cave_fade_emerge_step_handler(unsigned char obj_y,
     s_link_grid_offset = (signed char)grid;
     s_link_pos_frac    = posfrac;
     nes_ram[0x0013u]  = 8u;   /* InitMode_WalkCave */
+    nes_ram[0x03F8u]  = nes_ram[0x0098u];   /* ObjInputDir = ObjDir */
     /* Walk pose driven by cave_fade_anim_tick_handler (6-frame cadence). */
 }
 
@@ -731,6 +736,7 @@ static void cave_fade_anim_tick_handler(unsigned char counter,
 static void cave_fade_walk_done_handler(void)
 {
     nes_ram[0x0013u] = 0u;
+    nes_ram[0x0011u] = 1u;   /* RunCrossRoomTasksAndBeginUpdateMode */
 }
 
 static void cave_fade_swap_exit_handler(void)
@@ -761,6 +767,7 @@ static void cave_fade_load_blank_handler(unsigned char stage)
          * outside mode 5). */
         nes_ram[0x0012u] = nes_ram[0x005Bu];  /* Mode B or shortcut Mode C */
         nes_ram[0x0013u] = 0u;
+        nes_ram[0x0011u] = 0u;                /* EndGameMode: init mode */
         s_nes_load_base = s_frame_counter;
         s_cave_load_blank = 1u;
         roomrom_sprites_set_link_pose((short)-32, (short)-32,
@@ -871,6 +878,9 @@ static void link_nes_finish_grid_cell(void)
 {
     if (link_nes_grid_at_limit()) {
         s_link_grid_offset = 0;
+        /* @TruncGridOffset: a whole tile stepped in mode 5 clears
+         * UndergroundExitType (T-171). */
+        if (nes_ram[0x0012u] == 0x05u) nes_ram[0x005Au] = 0u;
     }
 }
 
@@ -2056,6 +2066,7 @@ static void edge_load_or_clamp(void)
          * CheckMazes may send Link back into the same room (Lost Woods
          * $61, Lost Hills $1B) until the direction sequence is walked. */
         if (s_scene == SCENE_OW) {
+            const u8 next_saved = nes_ram[0x00ECu];
             nes_ram[0x00EBu] = s_room_id;
             nes_ram[0x00ECu] = s_transition_target;
             nes_ram[0x0098u] = (u8)(want == SCROLL_H_RIGHT ? 0x01u :
@@ -2063,6 +2074,9 @@ static void edge_load_or_clamp(void)
                                     want == SCROLL_V_DOWN  ? 0x04u : 0x08u);
             world_check_mazes();
             s_transition_target = nes_ram[0x00ECu];
+            /* NextRoomId is set at InitMode7_Sub1 (ow_scroll.c), as on
+             * the NES; the edge only needs the maze result (T-171). */
+            nes_ram[0x00ECu] = next_saved;
         }
         s_transition_link_x = players[0].x;
         s_transition_link_y = players[0].y;
@@ -3393,6 +3407,17 @@ static unsigned char play_update_objects(void)
     if (s_scene == SCENE_OW && gate_pass) {
         unsigned char standing_tile =
             collision_get_collidable_tile_still(0u);
+        /* NES CheckWarps -> HandleWarpOW stores the tile on every play
+         * frame that passes its gate (UndergroundExitType 0, grid 0,
+         * X on a $10 column, $08 in room $22, Y low nibble $D), not only
+         * on a cave entry (T-171: t111_dark_candle t32 NES $65 = $26). */
+        {
+            const u8 lx = (u8)players[0].x;
+            if (nes_ram[0x005Au] == 0u && nes_ram[0x0394u] == 0u &&
+                y_low == 0x0Du &&
+                ((s_room_id == 0x22u) ? (lx & 0x07u) == 0u : (lx & 0x0Fu) == 0u))
+                nes_ram[0x0065u] = standing_tile;
+        }
         /* Tier 0 verify sentinel: $07FD = last standing tile
          * Link was on. Helps debug entrance detection. */
         DBG_SENTINEL(0x1Du) = standing_tile;
@@ -3982,6 +4007,8 @@ void roomrom_debug_tick(void)
          * Link sprite continues descending = visual desync. */
         if (cave_fade_is_active() && !roomrom_pause_is_active()) {
             cave_fade_tick();
+            /* InitMode10 runs one frame, then mode $10 updates (T-171). */
+            if (nes_ram[0x0012u] == 0x10u) nes_ram[0x0011u] = 1u;
         }
 
         u16 joy = JOY_readJoypad(JOY_1);

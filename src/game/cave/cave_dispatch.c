@@ -825,6 +825,7 @@ void cave_try_take_room_item(void)
  * draw Link statically via native draw_dispatch. Full fidelity
  * (ladder/water/warp/animation) deferred to phase 5
  * Link_EndMoveAndAnimate native port. */
+extern void roomrom_combat_animate_link_base(void);  /* combat_runtime.c */
 static void cave_link_end_move_and_draw_stub(void)
 {
     /* Freeze Link's anim timer (NES Link_EndMoveAndDraw freezes it during
@@ -838,8 +839,12 @@ static void cave_link_end_move_and_draw_stub(void)
      * bonfire's tile $5C + attr $02 — and published a phantom flame at
      * Link's position (120,192). Verified via the live enemy_render
      * publish cache (slot 1 entry 4 = t$5C a$02 @120,192). Drop the
-     * redundant draw; Link still renders via sprite_render. */
+     * redundant draw; Link still renders via sprite_render.
+     * Link_EndMoveAndAnimate then reaches AnimateLinkBase (halted Link
+     * still animates: ObjState $40 is not idle), 6 -> 5 (T-171:
+     * t011_sword_cave FC $DB NES $03D0 = 5). */
     OBJ_ANIM_TIMER(0) = 6u;
+    roomrom_combat_animate_link_base();
 }
 
 void cave_update_person_state_textbox(void)

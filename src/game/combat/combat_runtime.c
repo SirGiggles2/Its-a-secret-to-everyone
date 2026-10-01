@@ -300,6 +300,20 @@ static void animate_link_obj_state(void)
  * while he is not idle, in modes 4 / $10, or while a direction is held
  * (ObjInputDir $3F8); at 0 the object state advances (AnimateLinkObjState)
  * and the counter rolls over to 6 with the movement frame toggled. */
+/* AnimateLinkBase (Z_07.asm:5023): not idle, or mode 4/$10, or a
+ * direction held -> AnimateObjectWalking. */
+void roomrom_combat_animate_link_base(void)
+{
+    unsigned char gm = RAM(0x0012u);
+    if (L_STATE == 0u && gm != 0x04u && gm != 0x10u &&
+        (RAM(0x03F8u) & 0x0Fu) == 0u) return;
+    L_ANIMCNT = (unsigned char)(L_ANIMCNT - 1u);
+    if (L_ANIMCNT != 0u) return;
+    animate_link_obj_state();
+    L_ANIMCNT = 6u;
+    L_ANIMFRAME = (unsigned char)(L_ANIMFRAME ^ 1u);
+}
+
 void link_anim_state_step(void)
 {
     unsigned char gm = RAM(0x0012u);

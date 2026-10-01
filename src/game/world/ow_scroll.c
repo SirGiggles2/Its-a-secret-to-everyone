@@ -211,6 +211,15 @@ unsigned char ow_scroll_tick(short *x, short *y)
         switch (SUB) {
         case 0u: SUB = 1u; break;
         case 1u:
+            /* InitMode7_Sub1: PrevOpenedDoors = CurOpenedDoors, the
+             * entering side becomes CurOpenedDoors, DEC PrevRow, then
+             * CalculateNextRoom. The UW door model publishes its own
+             * $EE/$521; the OW keeps the NES bookkeeping (T-171). */
+            if (!uw) {
+                nes_ram[0x521u] = nes_ram[0xEEu];
+                nes_ram[0xEEu] = opposite(OBJ_DIR);
+                nes_ram[0xEDu] = (unsigned char)(nes_ram[0xEDu] - 1u);
+            }
             nes_ram[0xECu] = target_room;
             if (uw) link_hidden = 1u;
             ROW = 21u;
@@ -332,6 +341,14 @@ unsigned char ow_scroll_tick(short *x, short *y)
         } else if (!UPD) {
             /* InitMode_EnterRoom (OW and UW). */
             nes_ram[0x3A8u] = 0u;
+            if (!uw) {
+                /* Method 2 in the OW: TriggeredDoorDir = the entering
+                 * side if it is in CurOpenedDoors, command 2 (T-171;
+                 * ow_scroll_enter_room_uw does the UW). */
+                nes_ram[0x54u] = 0u;
+                nes_ram[0x55u] = (unsigned char)(opposite(OBJ_DIR) & nes_ram[0xEEu]);
+                if (nes_ram[0x55u]) nes_ram[0x54u] = 0x02u;
+            }
             UPD = 1u;
             if (uw) link_hidden = 1u;
             else GRID = 0u;

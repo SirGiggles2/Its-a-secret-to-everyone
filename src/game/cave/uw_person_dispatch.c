@@ -339,9 +339,11 @@ static inline void uw_person_state_textbox(void)
  * fetch sprite-descriptor pos, draw Link statically. Grumble dialog
  * context = Link halted, no move/warp logic needed. Full
  * Link_EndMoveAndAnimate fidelity deferred. */
+extern void roomrom_combat_animate_link_base(void);  /* combat_runtime.c */
 static void uw_person_link_end_move_stub(void)
 {
     OBJ_ANIM_TIMER(0) = 6u;
+    roomrom_combat_animate_link_base();          /* AnimateLinkBase (T-171) */
     sprite_anim_fetch_obj_pos(0u);
     draw_object_mirrored(0u, 0u);
 }
