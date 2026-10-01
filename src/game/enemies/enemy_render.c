@@ -918,6 +918,20 @@ static inline unsigned short xlat_sat(unsigned char tile, unsigned char attrs)
     return sat;
 }
 
+/* T-097: SAT attribute word for the death spark (NES tiles $62/$64,
+ * item slot $24) drawn in Link's OAM slots by Mode 11 SubA: the stable
+ * spark copy at ROOMROM_SPARK_TILE_BASE and the sprite palette of the NES
+ * attrs (sub-pal 1 = PAL1 colors 4..7), as the monster death spark. */
+unsigned short enemy_render_spark_sat(unsigned char nes_tile, unsigned char nes_attrs)
+{
+    unsigned char off;
+    spark_chr_ensure_uploaded();
+    xlat_refresh();
+    off = (unsigned char)(ROOMROM_SPARK_TILE_BASE - ENEMY_RENDER_META_VRAM_TILE +
+                          ((nes_tile == 0x62u) ? 0u : 2u));
+    return xlat_sat(off, (unsigned char)(nes_attrs | META_ATTR_MARKER));
+}
+
 /* T-092: Genesis SAT attribute word (tile + palette + flips + priority)
  * for an item sprite drawn by the NES item path (status-bar boxes). */
 unsigned short enemy_render_item_sat(unsigned char nes_tile, unsigned char nes_attrs)

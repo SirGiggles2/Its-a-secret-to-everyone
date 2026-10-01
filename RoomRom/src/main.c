@@ -69,6 +69,7 @@
 #include "../../src/game/world/mode_dispatch.h"  /* Phase 9.7 gameplay-mode dispatcher */
 #include "../../src/game/world/level_info_install.h"  /* substrate: install $687E..$6C7D LBA + LevelInfo */
 #include "../../src/game/enemies/enemy_render.h"      /* Phase 7: NES OAM -> Genesis SAT bridge */
+#include "../../src/game/world/mode_death.h"         /* T-097: GameMode $11 */
 /* Phase 7: ROOM_BOUNDS setup. Forward-declare to avoid oracle types
  * header pulling conflicting u8/s32 definitions. */
 extern void roomld_setup_obj_room_bounds(void);
@@ -1147,6 +1148,7 @@ static void refresh_room_metadata(u8 room_id)
 
 static void load_room(u8 room_id)
 {
+    transfer_buf_attr_shadow_reset();   /* T-097: attribute writes end */
     cave_fade_forget_arch();   /* T-011: the plane is redrawn below */
     /* NES Z_05.asm:InitMode_EnterRoom installs OW/UW object bounds from
      * CurLevel. Do this on every full scene load after its level identity
@@ -2492,6 +2494,61 @@ static void mode12_draw_lift(void)
     nes_ram[0x0340u] = saved_cur;
     roomrom_sprites_set_link_lift(players[0].x, players[0].y,
                                   (unsigned char)(nes_ram[0x0052u] != 0u));
+}
+
+/* T-097: InitMode11 HideAllSprites: objects, weapons and the room item go
+ * (the status bar items and Link are redrawn by the mode). */
+void roomrom_mode11_hide_sprites(void)
+{
+    u8 s;
+    enemy_render_reset_oam();
+    enemy_render_native_sweep();
+    for (s = ROOMROM_SPRITE_SLOT_SWORD; s <= ROOMROM_SPRITE_SLOT_MAGIC_SHOT; ++s)
+        VDP_setSpritePosition(s, -32, -32);
+    /* The map's Link dot is an object sprite too (UpdatePlayerPosition
+     * Marker is not called again); the status bar shows the hearts the
+     * death left (FormatStatusBarText). */
+    VDP_setSpritePosition(ROOMROM_SPRITE_SLOT_HUD_PLAYER, -32, -32);
+    inventory_sync_from_native();
+    roomrom_hud_refresh_dynamic();
+    VDP_updateSprites(80u, DMA_QUEUE);
+}
+
+/* Mode 11 sprites from the NES cells: Link (ObjDir, ObjAnimFrame, the
+ * ObjInvincibilityTimer flash) until the spark replaces his two OAM slots
+ * (Sprites+72..79, tiles $62/$64, attrs 1 / $41), then nothing. */
+static void roomrom_mode11_draw(void)
+{
+    const u8 spark = mode11_spark_state();
+    if (spark == 0u) {
+        const u8 d = nes_ram[0x0098u];
+        const link_face_t face = (d & 0x01u) ? LINK_FACE_RIGHT :
+                                 (d & 0x02u) ? LINK_FACE_LEFT :
+                                 (d & 0x08u) ? LINK_FACE_UP : LINK_FACE_DOWN;
+        const u8 frame = (u8)((nes_ram[0x03E4u] & 1u) ^
+            ((face == LINK_FACE_LEFT || face == LINK_FACE_RIGHT) ? 1u : 0u));
+        players[0].face = face;
+        if (nes_ram[0x04F0u] != 0u)
+            roomrom_sprites_set_link_hurt_pose((short)nes_ram[0x0070u], (short)nes_ram[0x0084u],
+                                               face, frame, nes_ram[0x04F0u]);
+        else
+            roomrom_sprites_set_link_pose((short)nes_ram[0x0070u], (short)nes_ram[0x0084u],
+                                          face, frame);
+    } else if (spark == 1u) {
+        const u8 y = nes_ram[0x0248u], x = nes_ram[0x024Bu];
+        VDPSprite *s0 = &vdpSpriteCache[ROOMROM_SPRITE_SLOT_LINK];
+        VDPSprite *s1 = &vdpSpriteCache[ROOMROM_SPRITE_SLOT_LINK_R];
+        s0->y = s1->y = (s16)(y + ROOMROM_PLAY_SPRITE_DY + 0x80);
+        s0->x = (s16)(x + 0x80);
+        s1->x = (s16)(nes_ram[0x024Fu] + 0x80);
+        s0->size = s1->size = SPRITE_SIZE(1, 2);
+        s0->attribut = enemy_render_spark_sat(nes_ram[0x0249u], nes_ram[0x024Au]);
+        s1->attribut = enemy_render_spark_sat(nes_ram[0x024Du], nes_ram[0x024Eu]);
+    } else {
+        VDP_setSpritePosition(ROOMROM_SPRITE_SLOT_LINK, -32, -32);
+        VDP_setSpritePosition(ROOMROM_SPRITE_SLOT_LINK_R, -32, -32);
+    }
+    VDP_updateSprites(80u, DMA_QUEUE);
 }
 
 void roomrom_mode12_begin(void)
@@ -3892,6 +3949,16 @@ void roomrom_debug_tick(void)
         if (nes_ram[0x0012u] == 0x12u) {
             nes_pad_read_between_modes();
             mode12_endlevel_update();
+            transfer_buf_drain();
+            return;
+        }
+
+        /* T-097: GameMode $11 (Link died) runs only its mode routine; the
+         * sprites follow the NES cells (roomrom_mode11_draw). */
+        if (nes_ram[0x0012u] == 0x11u) {
+            nes_pad_read_between_modes();
+            mode11_death_update();
+            roomrom_mode11_draw();
             transfer_buf_drain();
             return;
         }

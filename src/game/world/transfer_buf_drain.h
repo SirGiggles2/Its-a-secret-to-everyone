@@ -58,6 +58,9 @@ extern "C" {
  * writes is a no-op. Safe to call per tick. */
 void transfer_buf_drain(void);
 
+/* T-097: forget attribute writes (a new room was laid out). */
+void transfer_buf_attr_shadow_reset(void);
+
 #ifdef __cplusplus
 }
 #endif

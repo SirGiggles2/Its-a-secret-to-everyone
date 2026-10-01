@@ -6,5 +6,7 @@
 #define MODE_DEATH_H
 
 void mode11_death_update(void);
+/* 0 = Link drawn, 1 = spark in Sprites+72..79, 2 = Link/spark hidden. */
+unsigned char mode11_spark_state(void);
 
 #endif

@@ -62,6 +62,23 @@ static const unsigned char k_white_palette_bottom_half[] = {
     0x30u, 0x30u, 0x30u, 0xFFu
 };
 
+/* T-097 Mode 11 buffers (Z_06.asm:816-830, byte for byte). */
+static const unsigned char k_mode11_bg_palette_bottom_half[] = {   /* $5E */
+    0x3Fu, 0x08u, 0x08u, 0x0Fu, 0x17u, 0x16u, 0x26u, 0x0Fu,
+    0x17u, 0x16u, 0x26u, 0xFFu
+};
+static const unsigned char k_mode11_attrs_top_half[] = {          /* $60 */
+    0x23u, 0xD0u, 0x58u, 0xFFu, 0xFFu
+};
+static const unsigned char k_mode11_attrs_bottom_half[] = {       /* $62 */
+    0x23u, 0xE8u, 0x58u, 0xFFu, 0xFFu
+};
+static const unsigned char k_game_over[] = {                      /* $46 */
+    0x23u, 0xE3u, 0x03u, 0x0Fu, 0x0Fu, 0xCFu, 0x22u, 0x4Cu,
+    0x0Au, 0x10u, 0x0Au, 0x16u, 0x0Eu, 0x24u, 0x18u, 0x1Fu,
+    0x0Eu, 0x1Bu, 0x24u, 0x22u, 0x6Cu, 0x4Au, 0x24u, 0xFFu
+};
+
 /* Selector $18 = LevelInfo_PalettesTransferBuf (Variables.inc: $6B7E),
  * the level's palette record in the installed LevelInfo block:
  * $3F00 x $20 colors + terminator (36 bytes). */
@@ -88,6 +105,18 @@ static const unsigned char *resolve_static_buffer(unsigned char selector,
     case 0x78u:
         *out_len = (unsigned char)sizeof k_white_palette_bottom_half;
         return k_white_palette_bottom_half;
+    case 0x5Eu:
+        *out_len = (unsigned char)sizeof k_mode11_bg_palette_bottom_half;
+        return k_mode11_bg_palette_bottom_half;
+    case 0x60u:
+        *out_len = (unsigned char)sizeof k_mode11_attrs_top_half;
+        return k_mode11_attrs_top_half;
+    case 0x62u:
+        *out_len = (unsigned char)sizeof k_mode11_attrs_bottom_half;
+        return k_mode11_attrs_bottom_half;
+    case 0x46u:
+        *out_len = (unsigned char)sizeof k_game_over;
+        return k_game_over;
     default:
         *out_len = 0u;
         return (const unsigned char *)0;
@@ -160,6 +189,65 @@ static void emit_palette_record(unsigned char lo,
  * T-050: OW playfield cells (NT rows 8..29) go through
  * roomrom_ow_room_render_set_tile, which knows the active room's plane
  * slot, attribute palette, raw-tile cache and walkability. */
+/* T-097: attribute-table writes ($23C0-$23FF, any name table). Each byte
+ * sets the sub-palette of four 2x2 cell quadrants; the play-area cells
+ * (name-table rows 8..29) are redrawn from NES PlayAreaTiles ($6530,
+ * column-major, 22 rows a column) with the sub-palette's atlas copy.
+ * Status-bar attributes (rows 0..7) are the Genesis HUD's own. */
+/* Attribute bytes written since the last room load: name-table text then
+ * takes its sub-palette from them, as the NES does (Mode 11 GAME OVER on
+ * palette 0 after the play area faded). 0 = none written. */
+static unsigned char s_attr_shadow[64];
+static unsigned char s_attr_shadow_active;
+
+void transfer_buf_attr_shadow_reset(void)
+{
+    s_attr_shadow_active = 0u;
+}
+
+static unsigned char attr_shadow_pal(unsigned char col, unsigned char row)
+{
+    const unsigned char v = s_attr_shadow[((row >> 2) << 3) | (col >> 2)];
+    const unsigned char q = (unsigned char)((((row >> 1) & 1u) << 1) | ((col >> 1) & 1u));
+    return (unsigned char)((v >> (q << 1)) & 3u);
+}
+
+static void emit_attribute_record(unsigned char attr_off,
+                                  unsigned char repeat,
+                                  unsigned char count,
+                                  const unsigned char *src,
+                                  unsigned char src_off,
+                                  unsigned char src_end)
+{
+    unsigned char i;
+    for (i = 0u; i < count; i++) {
+        const unsigned char k = (unsigned char)(attr_off + i);
+        unsigned char v, dr, dc;
+        if (k >= 0x40u) break;
+        if ((unsigned char)(src_off + (repeat ? 0u : i)) >= src_end) break;
+        v = src[src_off + (repeat ? 0u : i)];
+        s_attr_shadow[k] = v;
+        s_attr_shadow_active = 1u;
+        for (dr = 0u; dr < 4u; dr++) {
+            const unsigned char row = (unsigned char)(((k >> 3) << 2) + dr);
+            if (row < 8u || row >= 30u) continue;
+            for (dc = 0u; dc < 4u; dc++) {
+                const unsigned char col = (unsigned char)(((k & 7u) << 2) + dc);
+                const unsigned char q = (unsigned char)(((dr >> 1) << 1) | (dc >> 1));
+                const unsigned char pal = (unsigned char)((v >> (q << 1)) & 3u);
+                const unsigned char raw =
+                    nes_ram[0x6530u + (unsigned short)col * 0x16u + (unsigned char)(row - 8u)];
+                const unsigned short slot = bg_sparse_tile_lut[raw][pal];
+                unsigned short pc, pr;
+                roomrom_main_nt_cell_to_plane(col, row, &pc, &pr);
+                render_set_plane_a_word(pc, pr, (slot == 0xFFFFu)
+                    ? (unsigned short)PLANE_BRIDGE_BLANK_TILE
+                    : (unsigned short)(ROOMROM_BG_TILE_BASE + slot));
+            }
+        }
+    }
+}
+
 static void emit_nametable_record(unsigned char hi,
                                   unsigned char lo,
                                   unsigned char ctrl,
@@ -173,10 +261,9 @@ static void emit_nametable_record(unsigned char hi,
     const unsigned char ow = (roomrom_main_current_scene() == ROOMROM_MAIN_SCENE_OW);
     /* PPU addr = ((hi & 0x0F) << 8) | lo; range $0000..$03FF = NT0 cells. */
     unsigned short ppu_off = (unsigned short)(((hi & 0x0Fu) << 8) | lo);
-    /* Only NT0 cells (offset 0..$3BF) addressable here; attribute table
-     * ($3C0-$3FF) skipped (separate attr-format record, NES handles
-     * via different path). Wrap-out checked. */
     if (ppu_off >= 0x3C0u) {
+        emit_attribute_record((unsigned char)(ppu_off - 0x3C0u), repeat, count,
+                              src, src_off, src_end);
         return;
     }
     unsigned char nes_row  = (unsigned char)(ppu_off >> 5);   /* /32 */
@@ -200,6 +287,16 @@ static void emit_nametable_record(unsigned char hi,
         unsigned char nes_tile = src[src_off + (repeat ? 0u : i)];
         unsigned char cell_row = (unsigned char)(nes_row + (vertical ? i : 0u));
         unsigned char cell_col = (unsigned char)(nes_col + (vertical ? 0u : i));
+        if (s_attr_shadow_active && cell_row < 30u && cell_col < 32u) {
+            const unsigned short sl =
+                bg_sparse_tile_lut[nes_tile][attr_shadow_pal(cell_col, cell_row)];
+            unsigned short qc, qr;
+            roomrom_main_nt_cell_to_plane(cell_col, cell_row, &qc, &qr);
+            render_set_plane_a_word(qc, qr, (sl == 0xFFFFu)
+                ? (unsigned short)PLANE_BRIDGE_BLANK_TILE
+                : (unsigned short)(ROOMROM_BG_TILE_BASE + sl));
+            continue;
+        }
         if (ow && cell_row >= 8u && cell_row < 30u && cell_col < 32u &&
             roomrom_ow_room_render_set_tile(cell_col,
                                             (unsigned char)(cell_row - 8u),
