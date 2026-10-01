@@ -144,7 +144,18 @@ match the NES that did not; suite 51/51 throughout.
   EndGameMode12 cells (t132 t911). These hid in the tick-0 bucket of the
   report: also scan cells that differ from boot when a value looks wrong.
 
-## Open queue (from docs/audit/baseline_mismatch.md, 27 cells)
+- 2026-10-01 RAM QUEUE EMPTY: baseline report 0 open / 13 accepted, and
+  `tools/audit/rediverge_scan.py` (cells that match then split again,
+  which the first-tick baselines file under boot state) 0 cells, over all
+  67 gated presets. Last fixes: NES DestroyMonster everywhere, UET 2 on
+  every level exit, StatusBarMapTrigger consumed, ShootLimited $59, Link
+  q-speed in the NES cell. NEXT (no RAM evidence left in these presets):
+  (1) visual byte-diff sweep (`tools/lockstep/screen_diff.py` at sampled
+  ticks of every preset: RAM can match while pixels differ, e.g. T-170),
+  (2) coverage: interactive L2-L9 routes and boss fights (Codex's idle boss
+  presets), (3) T-097 death mode stubs, Wallmaster grab, (4) T-172 lag.
+
+## Original open queue at handoff (historical; now empty)
 
 Work top-down. Each line = cell, presets@first tick, what is known.
 

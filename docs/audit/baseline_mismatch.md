@@ -2,23 +2,6 @@
 
 | Cell | Name | Presets | Earliest (preset@tick) |
 |---|---|---|---|
-| $0052 | ProcessedNarrowObj | 3 | t121_ring1@106, t121_ring2@106, t013_route@4111 |
-| $0059 | EmptyMonsterSlot | 1 | t129_enemy_sweep@4829 |
-| $005A | UndergroundExitType | 1 | t013_route@8465 |
-| $00C1 | ObjShoveDir+1 | 1 | t013_route@7467 |
-| $00C2 | ObjShoveDir+2 | 1 | t013_route@6734 |
-| $00C3 | ObjShoveDir+3 | 1 | t013_route@6773 |
-| $00C5 | ObjShoveDir+5 | 1 | t013_route@4620 |
-| $00D4 | ObjShoveDistance+1 | 1 | t013_route@7467 |
-| $00D5 | ObjShoveDistance+2 | 1 | t013_route@6734 |
-| $00D6 | ObjShoveDistance+3 | 1 | t013_route@6773 |
-| $00D8 | ObjShoveDistance+5 | 1 | t013_route@4620 |
-| $03BC | Moldorm_ObjBounceDir | 1 | t111_dark_candle@1108 |
-| $0406 | ObjMetastate+1 | 1 | t013_route@7467 |
-| $0407 | ObjMetastate+2 | 1 | t013_route@6734 |
-| $0408 | ObjMetastate+3 | 1 | t013_route@6773 |
-| $040A | ObjMetastate+5 | 1 | t013_route@4620 |
-| $04E5 | StatusBarMapTrigger | 1 | t013_route@6987 |
 
 ## Accepted (Genesis-native or better)
 
@@ -35,4 +18,5 @@
 | $005E | SubmenuScrollProgress | 5 | SubmenuScrollProgress: NES pause-menu scroll; native Genesis menu (T-165) |
 | $00E1 | MenuState | 5 | MenuState: NES pause-menu scroll states; native Genesis menu (T-165) |
 | $00FC | CurVScroll | 5 | CurVScroll: NES pause-menu vertical scroll; native Genesis menu (T-165) |
+| $0052 | ProcessedNarrowObj | 3 | ProcessedNarrowObj: Anim_WriteItemSprites scratch, last value set by NES status-bar item draws (Genesis HUD is native); read only by the item-lift draw right after setting it |
 | $052F | MazeStep | 1 | MazeStep: same value ~1 tick earlier (Genesis runs CheckMazes at the screen edge to stage the next room) |
