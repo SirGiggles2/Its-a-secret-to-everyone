@@ -908,7 +908,13 @@ unsigned short enemy_render_item_sat(unsigned char nes_tile, unsigned char nes_a
  * Coverage: PARTIAL (shared submission of existing per-frame producers).
  * Stance: EXTEND. Boss OAM and native projectile/item caches are disjoint;
  * both must feed the same bounded SAT chain in a mixed boss scene. */
-static unsigned int emit_native_entries(unsigned int sat_slot)
+/* In boss rooms, NES fireball OAM precedes the later boss body/neck OAM
+ * (Gleeok: shot slot 28, neck slots 29..55).  Keep that order in the
+ * Genesis SAT so the boss cannot cover its own projectile. */
+#define NATIVE_PASS_ALL             0u
+#define NATIVE_PASS_FIREBALLS       1u
+#define NATIVE_PASS_OTHER           2u
+static unsigned int emit_native_entries(unsigned int sat_slot, unsigned char pass)
 {
     unsigned int slot;
     xlat_refresh();
@@ -929,6 +935,9 @@ static unsigned int emit_native_entries(unsigned int sat_slot)
             enemy_render_entry_t *e = &s_enemy_entries[slot][ei];
             unsigned char y = e->y;
             if (y == 0xF0u) continue;
+            unsigned char fireball = (e->tile == 0x44u || e->tile == 0x45u);
+            if ((pass == NATIVE_PASS_FIREBALLS && !fireball) ||
+                (pass == NATIVE_PASS_OTHER && fireball)) continue;
             if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
 
             unsigned char render_attrs = e->attrs;
@@ -968,6 +977,9 @@ static unsigned int emit_native_entries(unsigned int sat_slot)
                 if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
                 enemy_render_entry_t *e = &s_weapon_entries[wi][ei];
                 if (e->y == 0xF0u) continue;
+                unsigned char fireball = (e->tile == 0x44u || e->tile == 0x45u);
+                if ((pass == NATIVE_PASS_FIREBALLS && !fireball) ||
+                    (pass == NATIVE_PASS_OTHER && fireball)) continue;
                 unsigned short sat_attrs = xlat_sat(e->tile, e->attrs);
                 unsigned char link = (sat_slot < ENEMY_RENDER_SLOT_LAST)
                                          ? (unsigned char)(sat_slot + 1u) : 0u;
@@ -1012,6 +1024,7 @@ void enemy_render_sweep_oam_to_sat(void)
      * scatters Anim_WriteSprite writes across byte offsets $60..$FC =
      * OAM slot 24..63. Slots 0..23 are NEVER populated. Skip them. */
     xlat_refresh();   /* T-125: table lookups, as the native path */
+    sat_slot = emit_native_entries(sat_slot, NATIVE_PASS_FIREBALLS);
     for (i = 24u; i < NES_OAM_SLOT_COUNT; ++i) {
         unsigned short base = (unsigned short)(NES_SPRITES_BASE + i * 4u);
         unsigned char y     = RAM(base + 0u);
@@ -1054,7 +1067,7 @@ void enemy_render_sweep_oam_to_sat(void)
         if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
     }
 
-    sat_slot = emit_native_entries(sat_slot);
+    sat_slot = emit_native_entries(sat_slot, NATIVE_PASS_OTHER);
 
     /* 2026-05-15 perf fix: drop the up-to-54-slot pad loop. Write a
      * single terminator at the next slot with link=0, hiding it off-
@@ -1164,7 +1177,7 @@ void enemy_render_native_sweep(void)
     }
 
 
-    sat_slot = emit_native_entries(sat_slot);
+    sat_slot = emit_native_entries(sat_slot, NATIVE_PASS_ALL);
 
     /* Terminator: hide remaining SAT slots via chain break (link=0). */
     if (sat_slot <= ENEMY_RENDER_SLOT_LAST) {

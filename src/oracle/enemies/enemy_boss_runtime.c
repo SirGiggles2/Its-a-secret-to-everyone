@@ -875,8 +875,8 @@ animate_eye:
             (unsigned char)(0xC0u | ENEMY_RNG_A(slot));
     }
 
-    /* Decrement next-open-eye every other frame (driven by attr-row LSB) */
-    if ((ENEMY_CUR_SPRITE_ATTR_ROW & 1) == 0)
+    /* NES FrameCounter LSR / BCC skips even frames (Z_04.asm:8318). */
+    if ((ENEMY_CUR_SPRITE_ATTR_ROW & 1) != 0)
         ENEMY_GOHMA_NEXT_OPEN_EYE(slot)--;
 
     open_eye = ENEMY_GOHMA_OPEN_EYE_TIMER(slot);

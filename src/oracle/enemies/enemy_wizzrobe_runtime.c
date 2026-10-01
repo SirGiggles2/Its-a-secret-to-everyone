@@ -196,12 +196,24 @@ static unsigned char wizzrobe_get_collidable_tile_for_dir(unsigned int slot,
 {
     /* DEY: 8-way index = dir - 1. */
     unsigned char idx = (unsigned char)(y_dir - 1u);
-    if (idx >= 10u) return 0u;
+    signed char off_x, off_y;
+    if (idx == 0xFFu) {
+        /* NES dir=0 underflows DEY. Absolute,Y uses unsigned $FF, so
+         * it reads 255 bytes AFTER each table, not before it. USA ROM
+         * file $11F28+$FF / $11F32+$FF holds $F0 / $9F. Ganon takes
+         * this path in Q1 L9; retain the NES's in-bank lookup. */
+        off_x = (signed char)0xF0;
+        off_y = (signed char)0x9F;
+    } else {
+        if (idx >= 10u) return 0u;
+        off_x = k_wiz_coll_off_x[idx];
+        off_y = k_wiz_coll_off_y[idx];
+    }
 
     unsigned char saved_x = (unsigned char)WIZ_X(slot);
     unsigned char saved_y = (unsigned char)WIZ_Y(slot);
-    WIZ_X(slot) = (unsigned char)(saved_x + k_wiz_coll_off_x[idx]);
-    WIZ_Y(slot) = (unsigned char)(saved_y + k_wiz_coll_off_y[idx]);
+    WIZ_X(slot) = (unsigned char)(saved_x + off_x);
+    WIZ_Y(slot) = (unsigned char)(saved_y + off_y);
     unsigned char c = wizzrobe_get_base_collidable_tile(slot);
     WIZ_X(slot) = saved_x;
     WIZ_Y(slot) = saved_y;

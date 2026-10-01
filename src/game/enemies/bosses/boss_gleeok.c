@@ -263,48 +263,48 @@ static void gleeok_expand_segment(unsigned int slot)
 {
     if ((unsigned char)ENEMY_RNG_A(0) & 0x80u) {
         /* Vertical expand. */
-        const unsigned char cur = ENEMY_GLEEOK_SEG_Y_TARGET(slot);
-        const unsigned char nxt = ENEMY_GLEEOK_SEG_Y(slot);
+        const unsigned char cur = ENEMY_GLEEOK_SEG_Y(slot);
+        const unsigned char nxt = ENEMY_GLEEOK_SEG_Y_TARGET(slot);
         unsigned char y = (unsigned char)(cur + 2u);
-        if (cur >= nxt) {
-            /* DEY DEY DEY DEY -> y = cur - 2. */
+        if (cur <= nxt) {
+            /* NES BEQ/BCS: equal or below moves away by -2. */
             y = (unsigned char)(y - 4u);
         }
-        ENEMY_GLEEOK_SEG_Y_TARGET(slot) = y;
+        ENEMY_GLEEOK_SEG_Y(slot) = y;
     } else {
         /* Horizontal expand (Z_04.asm:9029). */
-        const unsigned char cur = ENEMY_GLEEOK_SEG_X_TARGET(slot);
-        const unsigned char nxt = ENEMY_GLEEOK_SEG_X(slot);
+        const unsigned char cur = ENEMY_GLEEOK_SEG_X(slot);
+        const unsigned char nxt = ENEMY_GLEEOK_SEG_X_TARGET(slot);
         unsigned char x = (unsigned char)(cur + 2u);
         if (cur < nxt) {
             x = (unsigned char)(x - 4u);
         }
-        ENEMY_GLEEOK_SEG_X_TARGET(slot) = x;
+        ENEMY_GLEEOK_SEG_X(slot) = x;
     }
 }
 
 static void gleeok_contract_segment_x_local(unsigned int slot)
 {
     /* Z_04.asm:9039 — move toward next segment X. */
-    const unsigned char cur = ENEMY_GLEEOK_SEG_X_TARGET(slot);
-    const unsigned char nxt = ENEMY_GLEEOK_SEG_X(slot);
+    const unsigned char cur = ENEMY_GLEEOK_SEG_X(slot);
+    const unsigned char nxt = ENEMY_GLEEOK_SEG_X_TARGET(slot);
     unsigned char x = (unsigned char)(cur + 2u);
     if (cur >= nxt) {
         x = (unsigned char)(x - 4u);
     }
-    ENEMY_GLEEOK_SEG_X_TARGET(slot) = x;
+    ENEMY_GLEEOK_SEG_X(slot) = x;
 }
 
 static void gleeok_contract_segment_y_local(unsigned int slot)
 {
     /* Z_04.asm:9018 — move toward next segment Y. */
-    const unsigned char cur = ENEMY_GLEEOK_SEG_Y_TARGET(slot);
-    const unsigned char nxt = ENEMY_GLEEOK_SEG_Y(slot);
+    const unsigned char cur = ENEMY_GLEEOK_SEG_Y(slot);
+    const unsigned char nxt = ENEMY_GLEEOK_SEG_Y_TARGET(slot);
     unsigned char y = (unsigned char)(cur + 2u);
     if (cur > nxt) {
         y = (unsigned char)(y - 4u);
     }
-    ENEMY_GLEEOK_SEG_Y_TARGET(slot) = y;
+    ENEMY_GLEEOK_SEG_Y(slot) = y;
 }
 
 static void gleeok_contract_segment_local(unsigned int slot)
@@ -507,17 +507,17 @@ void c_gleeok_draw_body(void)
         ENEMY_GLEEOK_ANIM_CNTR = timer;
         /* Cycle body anim frame 0..3. */
         {
-            /* GleeokBodyAnimationFrame at $0512 (after dead neck mask
-             * $0511). Same NES address. */
-            unsigned char frame = (unsigned char)RAM(0x0512u);
+            /* NES GleeokBodyAnimationFrame is $04E7; $0512 is
+             * LinkParalyzed and must never be used as sprite scratch. */
+            unsigned char frame = (unsigned char)ENEMY_GLEEOK_BODY_FRAME;
             frame = (unsigned char)((frame + 1u) & 0x03u);
-            RAM(0x0512u) = frame;
+            ENEMY_GLEEOK_BODY_FRAME = frame;
         }
     }
 
     /* Write 2 rows x 3 cols using k_body_tiles0 + base tile offset. */
     {
-        const unsigned char frame = (unsigned char)RAM(0x0512u) & 0x03u;
+        const unsigned char frame = (unsigned char)ENEMY_GLEEOK_BODY_FRAME & 0x03u;
         unsigned char tile_idx = k_body_base_tile_offsets[frame];
         unsigned char row;
         for (row = 0u; row < 2u; row++) {

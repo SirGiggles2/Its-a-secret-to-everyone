@@ -34,8 +34,8 @@
 
 | Cell | Name | Presets | Reason |
 |---|---|---|---|
-| $0342 | FirstSpriteIndex | 63 | FirstSpriteIndex: same NES OAM flicker rotation (better) |
-| $0341 | RollingSpriteIndex | 36 | RollingSpriteIndex: NES OAM rotation for 8-per-line flicker; Genesis draws all sprites, no flicker (better) |
+| $0342 | FirstSpriteIndex | 67 | FirstSpriteIndex: same NES OAM flicker rotation (better) |
+| $0341 | RollingSpriteIndex | 40 | RollingSpriteIndex: NES OAM rotation for 8-per-line flicker; Genesis draws all sprites, no flicker (better) |
 | $0058 | VScrollAddrHi | 16 | VScrollAddrHi: NES PPU name-table address of the vertical scroll; Genesis scrolls planes |
 | $0412 | TriforceGlowTimer | 8 | TriforceGlowTimer ($412+0): one-tick sprite-helper scratch at cave entry, cleared by InitMode_EnterRoom the next tick |
 | $00E3 | IsSprite0CheckActive | 7 | IsSprite0CheckActive: NES sprite-0 status-bar split; Genesis HUD is a window plane |

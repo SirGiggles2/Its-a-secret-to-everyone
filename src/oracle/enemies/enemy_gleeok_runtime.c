@@ -96,7 +96,8 @@ void enrt_update_gleeok(unsigned int slot) {
         {
             unsigned char chosen = (unsigned char)(ENEMY_CUR_SPRITE_ATTR_ROW & 0x03u);
             ENEMY_SHOT_TYPE_SCRATCH = chosen;       /* RAM[$00] */
-            if ((unsigned char)slot == chosen) {
+            /* NES Gleeok_FetchNeckAddrs leaves X = GleeokCurNeck. */
+            if ((unsigned char)neck_index == chosen) {
                 c_gleeok_move_neck();
                 c_gleeok_move_head();
                 /* Switch focus to the head slot (5). If RNG <0x20 and slot
@@ -125,6 +126,8 @@ void enrt_update_gleeok(unsigned int slot) {
             }
         }
     }
+    /* NES @NextLoopNeck decrements the shared byte past zero. */
+    ENEMY_GLEEOK_NECK_INDEX = 0xFFu;
 }
 
 /*--------------------------------------------------------------------
@@ -207,7 +210,8 @@ void enrt_gleeok_store_ref_seg_distance(unsigned int signed_ref_dist) {
         {
             unsigned char cur = ENEMY_GLEEOK_SEG_X((unsigned int)i);
             unsigned char nudged = (unsigned char)(cur + 1);
-            if (cur >= ref_x)
+            /* NES CMP cur / BCS keeps +1 when reference equals cur. */
+            if (cur > ref_x)
                 nudged = (unsigned char)(nudged - 2);
             ENEMY_GLEEOK_SEG_X((unsigned int)i) = nudged;
         }
