@@ -175,3 +175,28 @@ void level_info_install_uw(unsigned char level, unsigned char quest)
      * old 256-stride misread that produced $FFFF/$A672) pointed dungeons at
      * the overworld flags and wiped them on every dungeon entry; removed. */
 }
+
+/* NES GameMode 2 one step a tick (T-171): InitMode2_Sub0 copies the level
+ * block, InitMode2_Sub1 the level info, UpdateMode2Load_Full applies the
+ * second-quest patches (Z_06.asm:60-110, 202). level 0 = overworld. */
+void level_info_mode2_step(unsigned char step, unsigned char level,
+                           unsigned char quest)
+{
+    const unsigned char q2 = (unsigned char)(quest == 2u);
+    if (step == 0u) {
+        const unsigned char *src = &rooms_overworld[BLOB_OW_LEVELBLOCK_OFF];
+        if (level != 0u && level <= 9u)
+            src = &rooms_dungeons[(q2 ? 2u * BLOB_UW_BLOCK_BYTES : 0u) +
+                                  (level <= 6u ? 0u : BLOB_UW_BLOCK_BYTES)];
+        copy_to_nes_ram(NES_LBA_A_BASE, src, NES_LBA_BLOCK_BYTES);
+    } else if (step == 1u) {
+        const unsigned char *src = &rooms_overworld[BLOB_OW_LEVELINFO_OFF];
+        if (level != 0u && level <= 9u)
+            src = &rooms_dungeons[BLOB_UW_LEVELINFO_BASE +
+                                  ((unsigned int)(level - 1u)) * BLOB_UW_LEVELINFO_STRIDE];
+        copy_to_nes_ram(NES_LEVEL_INFO_BASE, src, NES_LEVEL_INFO_BYTES);
+    } else if (q2) {
+        if (level == 0u) level_info_apply_q2_ow_patch();
+        else level_info_apply_q2_patch(level);
+    }
+}

@@ -23,5 +23,8 @@ void level_info_install_uw(unsigned char level, unsigned char quest);
  * called by level_info_install_uw when quest == 2. */
 void level_info_apply_q2_patch(unsigned char level);
 void level_info_apply_q2_ow_patch(void);
+/* GameMode 2 step 0 (level block), 1 (level info), 2 (Q2 patches). */
+void level_info_mode2_step(unsigned char step, unsigned char level,
+                           unsigned char quest);
 
 #endif

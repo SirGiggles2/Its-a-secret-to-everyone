@@ -298,7 +298,7 @@ static u8             s_ow_edge = 0u;
 static u8             s_uw_edge = 0u;
 /* T-132: level entry from the OW (NES modes $10 / 2 / 3, then 4). */
 enum { LVL_NONE = 0, LVL_STAIRS, LVL_CURTAIN, LVL_EXIT_LOAD, LVL_STEP_OUT,
-       LVL_CAVE_EXIT, LVL_PLAY_INIT, LVL_MODE3_INIT };
+       LVL_CAVE_EXIT, LVL_PLAY_INIT, LVL_MODE3_INIT, LVL_MODE2_INIT };
 static u8             s_lvl_phase = LVL_NONE;
 static u8             s_lvl_target_y = 0u;
 static u8             s_lvl_step = 0u;
@@ -2270,8 +2270,12 @@ static void scroll_finalize_room(void)
      * room enter (mode 4); we mirror that here so adjacent
      * OW/UW rooms populate enemy slots when Link scrolls in.
      * Without this, ObjType[1..count] stays zero across
-     * room transitions and the world appears empty. */
-    enemy_loop_room_init(s_room_id, (unsigned char)s_scene,
+     * room transitions and the world appears empty.
+     * T-171: a scroll is always a real InitMode_EnterRoom, also into the
+     * same room id (Lost Hills $1B / Lost Woods $61 loop back): NES clears
+     * $300-$51F and re-places objects; the same-room guard skipped that
+     * (t111_dark_candle t1322: ObjInputDir kept, Link animated). */
+    enemy_loop_room_reenter(s_room_id, (unsigned char)s_scene,
     s_scene == SCENE_UW ? roomrom_uw_room_render_get_level() : 0u,
     s_scene == SCENE_UW ? roomrom_uw_room_render_get_quest() : 0u);
     request_boss_chr_if_boss_room();
@@ -2543,6 +2547,35 @@ static void begin_mode8_continue(void)
     s_lvl_phase = LVL_MODE3_INIT;
 }
 
+/* T-171: GameMode 2 not started by a Genesis load path (a staged level
+ * warp: CurLevel set, GameMode 2, IsUpdatingMode 0). NES ticks: InitMode2
+ * Sub0 (ClearRoomHistory, LevelKillCounts, level block), Sub1 (level
+ * info, IsUpdatingMode 1), UpdateMode2Load (Q2 patches, GoToNextMode);
+ * t171_warp_l2 NES FC $5E/$5F/$60, mode 3 Sub0 at $61. The room itself
+ * loads at mode 3 Sub8 (mode3_init_tick). */
+static void mode2_init_tick(void)
+{
+    const u8 lvl = nes_ram[0x0010u];
+    const u8 quest = roomrom_main_current_quest();
+    if (nes_ram[0x0011u] != 0u) {                /* UpdateMode2Load */
+        level_info_mode2_step(2u, lvl, quest);
+        nes_ram[0x0012u] = 0x03u;
+        nes_ram[0x0011u] = 0u;
+        nes_ram[0x0013u] = 0u;
+        s_lvl_phase = LVL_NONE;                  /* mode 3 hook next tick */
+        return;
+    }
+    if (nes_ram[0x0013u] == 0u) {                /* InitMode2 Sub0 */
+        init_mode2_sub0();
+        level_info_mode2_step(0u, lvl, quest);
+        nes_ram[0x0013u] = 1u;
+        return;
+    }
+    level_info_mode2_step(1u, lvl, quest);       /* Sub1 */
+    nes_ram[0x0013u] = 0u;
+    nes_ram[0x0011u] = 1u;
+}
+
 static void mode3_init_tick(void)
 {
     rr_warp_outcome_t out = {0};
@@ -2810,6 +2843,10 @@ static void level_entry_tick(void)
     roomrom_scene_uw_sprite_base_tick();
     if (s_lvl_phase == LVL_CAVE_EXIT) {
         cave_exit_tick();
+        return;
+    }
+    if (s_lvl_phase == LVL_MODE2_INIT) {         /* T-171 staged level load */
+        mode2_init_tick();
         return;
     }
     if (s_lvl_phase == LVL_MODE3_INIT) {         /* T-013 mode 8 CONTINUE */
@@ -3713,6 +3750,11 @@ void roomrom_debug_tick(void)
             s_lvl_exiting = 0u;
             s_lvl_phase = LVL_MODE3_INIT;
         }
+        if (s_lvl_phase == LVL_NONE && nes_ram[0x0012u] == 0x02u &&
+            nes_ram[0x0011u] == 0u) {
+            s_lvl_exiting = 0u;
+            s_lvl_phase = LVL_MODE2_INIT;
+        }
 
         /* T-132: level entry (stairs, load, curtain). */
         if (s_lvl_phase != LVL_NONE) {
@@ -3878,6 +3920,11 @@ void roomrom_debug_tick(void)
                                               players[0].face, 0u);
 
             if (nes_scroll_enabled() && ow_done) {
+                /* InitMode5Play: DrawSpritesBetweenRooms then
+                 * Link_EndMoveAndAnimate, with ObjInputDir still the
+                 * walk-in direction (T-171: t171_warp_l2 NES $03D0
+                 * 5 -> 4 at FC $C4, t131_uw_doors t788). */
+                roomrom_combat_end_move_and_animate();
                 if (s_lvl_enter_only) roomrom_hud_set_counts_hidden(0u);
                 s_lvl_enter_only = 0u;
                 /* T-131: the room was made current at mode 4 entry
