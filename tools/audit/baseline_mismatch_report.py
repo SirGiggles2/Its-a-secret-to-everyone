@@ -43,6 +43,15 @@ ACCEPTED = {
     0x052F: "MazeStep: same value ~1 tick earlier (Genesis runs CheckMazes at the screen edge to stage the next room)",
 }
 
+# (preset, first tick) pairs explained for every cell that starts there:
+# a transient in a mode the Genesis runs natively, ending in the NES state.
+ACCEPTED_ONSETS = {
+    ("t013_save", 255): "NES UpdateModeDSave mid-checksum pointer scratch in $C0-$CF (lag frame); Genesis writes the NES end state at save end (mode_save.c)",
+    ("t013_save", 256): "same save pointer scratch, NES Sub1 in progress",
+    ("save_roundtrip", 131): "same save pointer scratch ($C0-$CF) during mode $0D",
+    ("save_roundtrip", 132): "same save pointer scratch, NES Sub1 in progress",
+}
+
 
 def cell_names() -> dict[int, str]:
     sys.path.insert(0, str(ROOT / "tools" / "lockstep"))
@@ -59,7 +68,7 @@ def main() -> None:
     for f in sorted(BASE.glob("*.json")):
         d = json.loads(f.read_text(encoding="utf-8"))
         for k, t in d.get("cells", {}).items():
-            if t >= args.min_tick:
+            if t >= args.min_tick and (d.get("preset", f.stem), t) not in ACCEPTED_ONSETS:
                 pool.setdefault(int(k, 16), []).append((t, d.get("preset", f.stem)))
     names = cell_names()
     rows = ["## Open (bug candidates)", "",

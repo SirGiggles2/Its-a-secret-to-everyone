@@ -581,7 +581,8 @@ unsigned int c_shoot_if_wanted(unsigned int shot_type, unsigned int slot)
     {
         unsigned int y = 0x0Bu;
         for (;;) {
-            if (ENEMY_TYPE(y) == 0u) { empty = y; break; }
+            /* FindEmptyMonsterSlot: STY EmptyMonsterSlot ($59, T-171). */
+            if (ENEMY_TYPE(y) == 0u) { empty = y; ENEMY_NEXT_SHOT_SLOT = (unsigned char)y; break; }
             if (y == 0x01u) break;
             y--;
         }

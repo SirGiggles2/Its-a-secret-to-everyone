@@ -316,6 +316,10 @@ static void begin_cave_exit(void);
  * black opening: method 1-a step out; else the stairs). */
 static u8            s_cave_entrance_tile = 0x24u;
 static short         s_tick_start_link_y = 0;   /* players[0].y at tick start */
+/* T-171: Link's move/animate cells at tick start, for the cave exit
+ * (NES CheckCaveEdge leaves before UpdatePlayer moves or animates). */
+static signed char   s_tick_start_grid;
+static u8            s_tick_start_frac, s_tick_start_anim, s_tick_start_frame;
 static rr_warp_outcome_t s_lvl_out;
 static u8             s_scroll_frame    = 0u;     /* counts up during scroll */
 static u8             s_scroll_total_frames = SCROLL_TOTAL_FRAMES_SMOOTH;
@@ -1930,9 +1934,17 @@ static void edge_load_or_clamp(void)
          * tick 806, was 805). */
         if (s_tick_start_link_y >= 0xDD && players[0].y >= 0xDD &&
             (s_joy_prev & BUTTON_DOWN)) {
-            /* NES leaves before moving: take back this tick's step. */
+            /* NES leaves before moving: take back this tick's step,
+             * movement and animation alike (T-171: t134_cave_exit
+             * t443 grid/frac/ObjAnimCounter kept the extra step). */
             players[0].y = s_tick_start_link_y;
             nes_ram[0x0084u] = (unsigned char)players[0].y;
+            s_link_grid_offset = s_tick_start_grid;
+            s_link_pos_frac = s_tick_start_frac;
+            nes_ram[0x0394u] = (u8)s_tick_start_grid;
+            nes_ram[0x03A8u] = s_tick_start_frac;
+            nes_ram[0x03D0u] = s_tick_start_anim;
+            nes_ram[0x03E4u] = s_tick_start_frame;
             begin_cave_exit();   /* T-135: NES mode $0A */
         }
         return;
@@ -2729,6 +2741,7 @@ static void begin_cave_exit(void)
     s_cave_load_blank = 1u;                 /* no Link redraw from here */
     nes_ram[0x0012u] = 0x0Au;
     nes_ram[0x0013u] = 0u;
+    nes_ram[0x0011u] = 0u;                  /* EndPrepareMode */
     s_nes_load_base = s_frame_counter;
     s_lvl_step = 0u;
     s_lvl_phase = LVL_CAVE_EXIT;
@@ -2813,6 +2826,12 @@ void roomrom_main_begin_level_entry(const rr_warp_outcome_t *out)
     /* Z_05.asm @LoadLevel: CaveSourceRoomId = the OW room of the entrance
      * (a Continue in the OW after the level starts there). */
     if (s_scene == SCENE_OW) nes_ram[0x0526u] = s_room_id;
+    /* @LoadLevel: CurLevel from the cave index, TargetMode 2 (load a level),
+     * when the stairs start (T-171: t054 t787 NES $10 = 1, $5B = 2). */
+    if (s_scene == SCENE_OW) {
+        nes_ram[0x0010u] = out->dest_level;
+        nes_ram[0x005Bu] = 0x02u;
+    }
     nes_ram[0x0070u] = (unsigned char)players[0].x;
     nes_ram[0x0084u] = (unsigned char)players[0].y;
     tile = collision_get_collidable_tile_still(0u);
@@ -3709,6 +3728,10 @@ void roomrom_debug_tick(void)
         DBG_SENTINEL(0x16u) = (unsigned char)players[0].y;
         DBG_SENTINEL(0x17u) = s_room_id;
         s_tick_start_link_y = players[0].y;   /* T-011: cave edge check */
+        s_tick_start_grid  = s_link_grid_offset;
+        s_tick_start_frac  = s_link_pos_frac;
+        s_tick_start_anim  = nes_ram[0x03D0u];
+        s_tick_start_frame = nes_ram[0x03E4u];
         /* T-125 frame budget probe, in the 6502 stack page (unused by the
          * port, masked by the lockstep diff): $01FE = frames the previous
          * tick ran past its own (0 = it fit), $01FF = VDP V counter when

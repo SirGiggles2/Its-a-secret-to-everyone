@@ -2,36 +2,19 @@
 
 | Cell | Name | Presets | Earliest (preset@tick) |
 |---|---|---|---|
-| $0059 | EmptyMonsterSlot | 15 | t123_slow_tiles@172, hud_marker@185, ow_walk@185, t050_pond_fairy@241 |
 | $0065 | UndergroundEntranceTile | 11 | t111_dark_candle@32, t123_slow_tiles@32, t054_uw_block42_nes@668, t114_uw_wall@668 |
-| $0010 | CurLevel | 10 | t054_uw_block42_nes@787, t114_uw_wall@787, t128_uw_blocks@787, t129_enemy_sweep@787 |
-| $005B | TargetMode | 10 | t054_uw_block42_nes@787, t114_uw_wall@787, t128_uw_blocks@787, t129_enemy_sweep@787 |
 | $03D0 | ObjAnimCounter | 9 | t134_cave_exit@443, t011_exit_idle@709, t011_sword_cave@709, t011_sword_swing_exit@709 |
-| $0011 | IsUpdatingMode | 6 | t134_cave_exit@443, t011_exit_idle@709, t011_sword_cave@709, t011_sword_swing_exit@709 |
-| $0394 | ObjRemDistance | 6 | t134_cave_exit@443, t011_exit_idle@709, t011_sword_cave@709, t011_sword_swing_exit@709 |
-| $03A8 | Item_ObjItemLifetime | 6 | t134_cave_exit@443, t011_exit_idle@709, t011_sword_cave@709, t011_sword_swing_exit@709 |
 | $03E4 | ObjAnimFrame | 4 | t012_route@140, t013_route@140, t114_uw_wall@1044, t131_uw_ndoor@1056 |
 | $0052 | ProcessedNarrowObj | 3 | t121_ring1@106, t121_ring2@106, t013_route@4111 |
-| $00C1 | ObjShoveDir+1 | 3 | save_roundtrip@131, t013_save@255, t013_route@7467 |
-| $00C2 | ObjShoveDir+2 | 3 | save_roundtrip@131, t013_save@255, t013_route@6734 |
-| $00C3 | ObjShoveDir+3 | 3 | save_roundtrip@131, t013_save@255, t013_route@6773 |
-| $00C5 | ObjShoveDir+5 | 3 | save_roundtrip@131, t013_save@255, t013_route@4620 |
 | $005A | UndergroundExitType | 2 | t132_uw_exit@911, t013_route@8465 |
-| $00C0 | ObjShoveDir | 2 | save_roundtrip@132, t013_save@256 |
-| $00C4 | ObjShoveDir+4 | 2 | save_roundtrip@131, t013_save@255 |
-| $00C6 | ObjShoveDir+6 | 2 | save_roundtrip@131, t013_save@255 |
-| $00C7 | ObjShoveDir+7 | 2 | save_roundtrip@131, t013_save@255 |
-| $00C8 | ObjShoveDir+8 | 2 | save_roundtrip@131, t013_save@255 |
-| $00C9 | ObjShoveDir+9 | 2 | save_roundtrip@131, t013_save@255 |
-| $00CA | ObjShoveDir+10 | 2 | save_roundtrip@131, t013_save@255 |
-| $00CB | ObjShoveDir+11 | 2 | save_roundtrip@131, t013_save@255 |
-| $00CC | ObjShoveDir+12 | 2 | save_roundtrip@131, t013_save@255 |
-| $00CD | ObjShoveDir+13 | 2 | save_roundtrip@131, t013_save@255 |
-| $00CE | ObjShoveDir+14 | 2 | save_roundtrip@131, t013_save@255 |
-| $00CF | ObjShoveDir+15 | 2 | save_roundtrip@131, t013_save@255 |
 | $00EE | CurOpenedDoors | 2 | t132_uw_exit@911, t013_route@5421 |
 | $0027 | DoorTimer | 1 | t013_route@5413 |
 | $0054 | TriggeredDoorCmd | 1 | t013_route@5413 |
+| $0059 | EmptyMonsterSlot | 1 | t129_enemy_sweep@4829 |
+| $00C1 | ObjShoveDir+1 | 1 | t013_route@7467 |
+| $00C2 | ObjShoveDir+2 | 1 | t013_route@6734 |
+| $00C3 | ObjShoveDir+3 | 1 | t013_route@6773 |
+| $00C5 | ObjShoveDir+5 | 1 | t013_route@4620 |
 | $00D4 | ObjShoveDistance+1 | 1 | t013_route@7467 |
 | $00D5 | ObjShoveDistance+2 | 1 | t013_route@6734 |
 | $00D6 | ObjShoveDistance+3 | 1 | t013_route@6773 |

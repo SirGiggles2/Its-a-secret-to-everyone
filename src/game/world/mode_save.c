@@ -40,6 +40,34 @@ unsigned char g_mode_save_last_result = 0u;
  *     rows after InitModeD, k = 0, 1, 2: $0D/0, $0D/0, $0D/1, $00/1
  *     (Sub1 shows at k = 1).
  * The save ends at k = 2 either way. */
+/* NES SaveFileBAddressSets (Z_02.asm:1281): per-slot [$C0..$CD] pointer
+ * sets of the save routines (Items, World Flags, Unknown, Name, ...). */
+static const unsigned char k_file_b_addr_sets[3][14] = {
+    { 0x98u,0x68u,0x10u,0x69u,0x80u,0x68u,0x90u,0x6Du,0x93u,0x6Du,0x96u,0x6Du,0x99u,0x6Du },
+    { 0xC0u,0x68u,0x90u,0x6Au,0x88u,0x68u,0x91u,0x6Du,0x94u,0x6Du,0x97u,0x6Du,0x9Au,0x6Du },
+    { 0xE8u,0x68u,0x10u,0x6Cu,0x90u,0x68u,0x92u,0x6Du,0x95u,0x6Du,0x98u,0x6Du,0x9Bu,0x6Du },
+};
+
+/* The NES save keeps its file pointers in $C0-$CF (ObjShoveDir cells):
+ * after UpdateModeDSave they hold the slot's address set with the World
+ * Flags pointer [$C2:C3] advanced $180, and the checksum in [$CE:CF].
+ * InitMode_EnterRoom clears $C0-$CB later; $CC-$CF stay into play
+ * (T-171: t171_save_resume_nes t257/t378). */
+static void save_pointer_scratch(void)
+{
+    const unsigned char slot = (unsigned char)RAM(0x0016u);
+    unsigned char i;
+    unsigned short wf;
+    if (slot >= 3u) return;
+    for (i = 0u; i < 14u; ++i) RAM(0x00C0u + i) = k_file_b_addr_sets[slot][i];
+    wf = (unsigned short)(((unsigned short)RAM(0x00C3u) << 8) | RAM(0x00C2u));
+    wf = (unsigned short)(wf + 0x180u);
+    RAM(0x00C2u) = (unsigned char)wf;
+    RAM(0x00C3u) = (unsigned char)(wf >> 8);
+    RAM(0x00CEu) = nes_ram[0x6524u + 2u * slot];
+    RAM(0x00CFu) = nes_ram[0x6525u + 2u * slot];
+}
+
 static unsigned char s_running;
 static unsigned char s_k;
 static unsigned char s_after_init;
@@ -64,6 +92,7 @@ void mode13_save_update(void)
         s_running = 1u;
         s_k = 0u;
         g_mode_save_last_result = save_game_save_current() ? 1u : 2u;
+        save_pointer_scratch();
     } else {
         ++s_k;
     }
