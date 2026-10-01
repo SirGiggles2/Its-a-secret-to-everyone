@@ -115,6 +115,20 @@ match the NES that did not; suite 51/51 throughout.
   and the settle frame do not animate; Sub8 first frame counter 4. t012
   descent 72/72 frame states equal (was off by one from t140).
 
+- 2026-10-01 Claude (resumed after reviewing Codex 5bcf08a4..ec053496;
+  committed Codex's transition.c `$49E` WIP as 2d19819a, suite 67/67).
+- Dungeon room exit lagged 2 frames on Genesis (t131_uw_ndoor/t114 tick
+  1056/1044 `$03E4` "mismatch"): the per-tick RAM sample landed mid-tick.
+  `--pc-profile` showed `roomrom_uw_room_render_set_live_door_priority`
+  doing 704 uncached VRAM reads on the destination rows, which NES-scroll
+  mode hasn't drawn yet. Skipped in NES-scroll mode. Edge tick now one
+  frame, animates like NES; whole room change 141 frames vs NES 142.
+- METHOD NOTE: a per-tick mismatch that "heals" next tick may be Genesis
+  LAG, not logic. Check `<plat>.fram` FrameCounter ($15) per frame: a
+  repeated FC on Genesis where NES advances = lag frame = "runs worse",
+  fix the cost (`run_lockstep --pc-profile F0:F1` + `pc_profile.py
+  <dir>/gen.pcprof`).
+
 ## Open queue (from docs/audit/baseline_mismatch.md, 27 cells)
 
 Work top-down. Each line = cell, presets@first tick, what is known.

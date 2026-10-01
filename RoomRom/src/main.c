@@ -2217,8 +2217,13 @@ static void edge_load_or_clamp(void)
             if (s_scene == SCENE_UW) {
                 roomrom_uw_room_render_set_live_door_priority(
                     s_active_slot_x, s_active_row_base, 0u);
-                roomrom_uw_room_render_set_live_door_priority(
-                    s_active_slot_x, s_transition_row_base, 0u);
+                /* NES-scroll mode stages the destination rows column by
+                 * column in mode 7, after this: they hold nothing to fix
+                 * yet, and the uncached read is 704 VRAM reads (T-171:
+                 * t131_uw_ndoor room exit lagged 2 frames). */
+                if (!nes_scroll_enabled())
+                    roomrom_uw_room_render_set_live_door_priority(
+                        s_active_slot_x, s_transition_row_base, 0u);
             }
             /* DELIBERATELY DO NOT CALL clear_hud_underlay_for_row_base
              * during v-scroll staging. The transition room render writes
