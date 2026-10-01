@@ -49,7 +49,7 @@ static void item_take_class0_complex(unsigned char item_slot)
         return;
     }
     if (item_slot == 0x11u) {
-        ITEM_GOT_CLOCK_FLAG = 1u;
+        ITEM_STATUS_BAR_MAP_TRIGGER = 1u;
     }
     {
         unsigned char level = (unsigned char)(level_raw - 1u);

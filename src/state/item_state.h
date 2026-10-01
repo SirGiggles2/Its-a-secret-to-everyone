@@ -9,7 +9,7 @@
 #define ITEM_LEVEL_RAW                 RAM(0x0010)
 #define GAME_MODE                      RAM(0x0012)
 
-#define ITEM_GOT_CLOCK_FLAG            RAM(0x04E5)
+#define ITEM_STATUS_BAR_MAP_TRIGGER    RAM(0x04E5)  /* NES StatusBarMapTrigger: map taken */
 #define ITEM_FREEZE_FLAG               RAM(0x0506)
 #define ITEM_PICKUP_ID                 RAM(0x0505)
 

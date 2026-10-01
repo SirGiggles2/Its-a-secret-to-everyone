@@ -882,14 +882,9 @@ extern void enrt_set_up_fairy_object(unsigned int slot);
  * ends at 0 either way (@Reset after SetUpDroppedItem). */
 static void native_destroy_monster(unsigned int slot)
 {
-    ENEMY_TYPE(slot)          = 0u;
-    ENEMY_OBJ_SHOVE_DIR(slot) = 0u;
-    OBJ(0x00D3u, slot)        = 0u;     /* ObjShoveDistance */
-    ENEMY_MOVE_TIMER(slot)    = 0u;
-    OBJ_STATE(slot)           = 0u;
-    ENEMY_HIT_REACTION(slot)  = 0u;     /* ObjInvincibilityTimer $4F0 */
-    ENEMY_ALIVE_FLAG(slot)    = 0xFFu;  /* DestroyObject_WRAM */
-    ENEMY_METASTATE(slot)     = 0u;
+    /* NES DestroyMonster = SetTypeAndClearObject(0) -> DestroyObject_WRAM
+     * (metastate 1, T-171). */
+    core_set_type_and_clear_object(0u, slot);
 }
 
 /* SetUpDroppedItem (NES Z_04.asm:11103) — drop-item id lookup + fairy gate +

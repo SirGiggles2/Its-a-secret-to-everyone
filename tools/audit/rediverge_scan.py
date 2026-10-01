@@ -27,7 +27,7 @@ sys.path.insert(0, str(ROOT / "tools" / "lockstep"))
 sys.path.insert(0, str(ROOT / "tools" / "audit"))
 import gate  # type: ignore  # noqa: E402
 import diff  # type: ignore  # noqa: E402
-from baseline_mismatch_report import ACCEPTED  # noqa: E402
+from baseline_mismatch_report import ACCEPTED, ACCEPTED_ONSETS  # noqa: E402
 
 
 def masked(a: int) -> bool:
@@ -70,6 +70,8 @@ def main() -> int:
         if not (d / "nes.ram").exists() or not (d / "gen.ram").exists():
             continue
         for cell, t in scan(d).items():
+            if (name, t) in ACCEPTED_ONSETS:
+                continue
             pool.setdefault(cell, []).append((t, name))
     rows = ["| Cell | Name | Presets | First re-divergence (preset@tick) |", "|---|---|---|---|"]
     for cell in sorted(pool, key=lambda c: (-len(pool[c]), c)):

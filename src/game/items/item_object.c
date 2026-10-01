@@ -37,14 +37,15 @@ extern void c_move_flyer(unsigned int slot);
 
 /* DestroyMonster_Bank4 — clear slot. Inline to avoid the static binding
  * in enemy_walker_bridge.c. Same fields as native_destroy_monster. */
+extern void core_set_type_and_clear_object(unsigned int type, unsigned int slot);
+
 static void item_obj_destroy(unsigned int slot)
 {
-    ENEMY_TYPE(slot)          = 0u;
-    ENEMY_MOVE_TIMER(slot)    = 0u;
-    OBJ_STATE(slot)           = 0u;
-    ENEMY_INVINCIBILITY(slot) = 0u;
-    ENEMY_ALIVE_FLAG(slot)    = 0xFFu;   /* DestroyObject_WRAM */
-    ENEMY_METASTATE(slot)     = 0u;
+    /* NES DestroyMonster = SetTypeAndClearObject(0): DestroyObject_WRAM
+     * clears shove dir/distance, timer, state, invincibility TIMER ($4F0),
+     * sets uninitialized $FF and metastate 1 (T-171: the copy here wrote
+     * $4B2, kept the shove cells and set metastate 0; t013_route t4620). */
+    core_set_type_and_clear_object(0u, slot);
 }
 
 /* NES Abs operates on the signed result of an 8-bit subtraction. */

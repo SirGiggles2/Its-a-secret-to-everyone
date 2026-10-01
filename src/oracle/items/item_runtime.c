@@ -11,7 +11,7 @@ static void itemrt_take_class0_complex(unsigned char item_slot) {
         return;
     }
     if (item_slot == 0x11) {
-        ITEM_GOT_CLOCK_FLAG = 1;
+        ITEM_STATUS_BAR_MAP_TRIGGER = 1;
     }
     {
         unsigned char level = (unsigned char)(level_raw - 1);

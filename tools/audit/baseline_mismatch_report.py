@@ -41,6 +41,13 @@ ACCEPTED = {
     0x00FC: "CurVScroll: NES pause-menu vertical scroll; native Genesis menu (T-165)",
     0x0412: "TriforceGlowTimer ($412+0): one-tick sprite-helper scratch at cave entry, cleared by InitMode_EnterRoom the next tick",
     0x052F: "MazeStep: same value ~1 tick earlier (Genesis runs CheckMazes at the screen edge to stage the next room)",
+    0x0343: "LeftSpriteOffset: NES OAM slot rotation for 8-per-line flicker (better: no flicker)",
+    0x0344: "RightSpriteOffset: NES OAM slot rotation for 8-per-line flicker (better: no flicker)",
+    0x00E8: "CurColumn: NES column-by-column PPU transfer during scrolls; Genesis stages columns natively",
+    0x00FE: "CurPpuMask_2001: NES PPU mask shadow (grayscale/rendering bits); Genesis display control is native",
+    0x0014: "TileBufSelector: NES NMI transfer cue (cleared at NMI); Genesis applies the same CRAM natively (sprite sub-pal 3 = NES row 7 checked: L1 boss room, OW $78)",
+    0x0052: "ProcessedNarrowObj: Anim_WriteItemSprites scratch, last value set by NES status-bar item draws (Genesis HUD is native); read only by the item-lift draw right after setting it",
+    0x00EF: "NES pause-menu cursor: previous frame's input direction; Genesis pause menu is native (T-165, function not memory)",
 }
 
 # (preset, first tick) pairs explained for every cell that starts there:

@@ -2959,8 +2959,10 @@ static void level_entry_tick(void)
             nes_ram[0x00EEu] = (u8)(((d >> 1) & 0x05u) | ((d << 1) & 0x0Au));
             nes_ram[0x00EDu] = (u8)(nes_ram[0x00EDu] - 1u);
             nes_ram[0x00ECu] = s_lvl_exit_next;
-            nes_ram[0x005Au] = 0x02u;
         }
+        /* EndGameMode12 (door exit and the triforce exit alike):
+         * UndergroundExitType 2 (T-171: t132 t911, t013_route t8465). */
+        nes_ram[0x005Au] = 0x02u;
         /* Mode 2 (display off) + mode 3 submodes: back to the OW room. */
         nes_ram[0x0012u] = 0x02u;
         nes_ram[0x0013u] = 0u;
@@ -3581,6 +3583,15 @@ static unsigned char play_update_objects(void)
          * UpdateDoors after the object loop (Z_07.asm:1983). */
         enemy_loop_play_tail(s_scene == SCENE_UW ? 1u : 0u);
         if (s_scene == SCENE_UW) uw_door_state_update();
+    }
+    /* @TransferStatusBarMap (Z_07.asm:2011), before @FinishUpdatePlay's
+     * room item (a map taken this frame is shown next frame): with no dynamic transfer
+     * pending, a set StatusBarMapTrigger is cleared and the level's status
+     * bar map cued ($44; the Genesis HUD draws the map itself) (T-171:
+     * t013_route t6987, the trigger never cleared). */
+    if (nes_ram[0x0301u] == 0u && nes_ram[0x04E5u] != 0u) {
+        nes_ram[0x04E5u] = 0u;
+        nes_ram[0x0014u] = 0x44u;
     }
     /* NES source: Z_04.asm:Ganon_Dying; Z_01.asm:TryTakeRoomItem;
      * Z_07.asm AnimateItemObject (drained draw_animate_item_object).
