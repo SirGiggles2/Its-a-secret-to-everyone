@@ -19,6 +19,8 @@ void roomrom_hud_draw(unsigned char hud_id, unsigned char room_id,
 void roomrom_hud_refresh_dynamic(void);
 /* T-172: play-tick refresh on the NES status-bar cadence (even FrameCounter). */
 void roomrom_hud_refresh_play(void);
+void roomrom_hud_preset_counts_hidden(void);
+void roomrom_hud_play_flush(void);
 /* NES FormatStatusBarText ran this tick (World_ChangeRupees). */
 void roomrom_hud_status_bar_formatted(void);
 /* Selector $44 (status bar map transfer) drained: show the map. */

@@ -760,6 +760,15 @@ void roomrom_hud_set_counts_hidden(unsigned char hidden)
     draw_hud_dynamic(s_hud_id_cached);
 }
 
+/* T-172: hide the counts and hearts for the next HUD draw without drawing
+ * now (a level load then draws the HUD once, already blank). */
+void roomrom_hud_preset_counts_hidden(void)
+{
+    if (s_hud_counts_hidden) return;
+    s_hud_counts_hidden = 1u;
+    s_hud_force = 1u;
+}
+
 void roomrom_hud_invalidate(void)
 {
     s_hud_built = 0u;
@@ -810,6 +819,7 @@ void roomrom_hud_set_bottom_mode(unsigned char bottom)
  * snapshot. ~99% of ticks have unchanged inventory; skipping the redraw
  * saves ~15 active-display VDP_setTileMapXY writes per skipped frame. */
 static unsigned char s_status_due;
+static unsigned char s_play_hud_pending;
 
 void roomrom_hud_status_bar_formatted(void)
 {
@@ -844,6 +854,13 @@ static void hud_refresh_impl(unsigned char nes_cadence)
     /* T-172: NES status-bar updates are transfer records shown after the
      * next NMI; the cells are written at the start of the next tick
      * (t050_rock_push t318: a heart one frame early). */
+    if (nes_cadence) {
+        /* Drawn at the start of the next tick, in its VBlank (the NES NMI
+         * transfer): the work leaves the busy play tick (t171_patra_sword
+         * t429 overran with the hearts redraw). */
+        s_play_hud_pending = 1u;
+        return;
+    }
     render_plane_defer(1u);
     draw_hud_dynamic(s_hud_id_cached);
     render_plane_defer(0u);
@@ -858,4 +875,13 @@ void roomrom_hud_refresh_dynamic(void)
 void roomrom_hud_refresh_play(void)
 {
     hud_refresh_impl(1u);
+}
+
+/* Tick start, after the VBlank process: the play tick's status-bar draw. */
+void roomrom_hud_play_flush(void)
+{
+    if (!s_play_hud_pending) return;
+    s_play_hud_pending = 0u;
+    if (s_hud_id_cached == 0xFFu) return;
+    draw_hud_dynamic(s_hud_id_cached);
 }

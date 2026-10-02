@@ -569,7 +569,9 @@ void render_set_window_word(unsigned short col, unsigned short row,
     /* T-172: same deferral as the plane cells (status-bar changes reach
      * the NES screen in the next NMI). */
     if (s_pd_on) {
-        plane_word(VDP_getPlaneAddress(WINDOW, col, row), word);
+        /* = VDP_getPlaneAddress(WINDOW, col, row), inline. */
+        plane_word((unsigned short)(VDP_WINDOW + (((col & (windowWidth - 1u)) +
+                   ((row & 31u) << windowWidthSft)) << 1)), word);
         return;
     }
     VDP_setTileMapXY(WINDOW, word, col, row);

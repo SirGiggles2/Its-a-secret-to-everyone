@@ -1472,6 +1472,16 @@ static void pause_restore_room(void)
  * room plane is scrolled (same mapping as curtain_addr and
  * mark_link_behind_bg). T-166: UW person text used plane row nt_row + 7
  * with no scroll and landed rows below / columns left of the NES text. */
+/* T-172: the curtain buffer (22 x 32 words) as row staging for queued
+ * VBlank DMA while no curtain is shown; it also holds the mode-3 UW
+ * precompute, which is dropped. 0 = not available. */
+unsigned short *roomrom_main_row_stage(void)
+{
+    if (s_lvl_phase == LVL_CURTAIN) return (unsigned short *)0;
+    roomrom_uw_room_render_prepare_drop();
+    return &s_curtain[0][0];
+}
+
 void roomrom_main_nt_cell_to_plane(unsigned char col, unsigned char nt_row,
                                    unsigned short *pc, unsigned short *pr)
 {
@@ -2778,11 +2788,14 @@ static void mode3_init_tick(void)
          * on the Sub2-7 ticks the NES spends on attributes / status bar,
          * so Sub8's LayOutRoom fits NES time (t013_continue t223: 8
          * frames vs NES 3). */
+        /* T-172: the layout summary and one column on Sub2 (it and three
+         * columns overran Sub2, t171_flute_pond t30), then three a tick
+         * (four overran Sub7 into the VBlank, t013_continue). */
         if (sub >= 2u && nes_ram[0x0010u] == 0u)
-            roomrom_ow_room_render_prepare(nes_ram[0x00EBu], 3u);
+            roomrom_ow_room_render_prepare(nes_ram[0x00EBu], sub == 2u ? 1u : 3u);
         /* UW: the room's tile words into the idle curtain buffer
          * (t171_patra_sword t300: Sub8 6 frames vs NES 4). */
-        else if (sub >= 2u)
+        else if (sub >= 2u && nes_ram[0x0010u] != 0u)
             roomrom_uw_room_render_prepare(nes_ram[0x00EBu], &s_curtain[0][0], 3u);
         nes_ram[0x0013u] = (u8)(sub + 1u);
         return;
@@ -2798,6 +2811,7 @@ static void mode3_init_tick(void)
     out.dest_redux_flag = current_redux_flag();
     render_display_enable(0u);
     VDP_setWindowOnTop(ROOMROM_HUD_ROWS);
+    roomrom_hud_preset_counts_hidden();          /* level_hud_static_only below */
     s_warp_defer_enter_room = 1u;               /* objects at mode 4 */
     roomrom_main_apply_warp_outcome(&out);
     s_underground_exit_type = 0u;
@@ -3902,6 +3916,7 @@ void roomrom_debug_tick(void)
         nes_ram[0x01FEu] = (u8)(vtimer - s_tick_vtimer);
         SYS_doVBlankProcess();
         render_plane_defer_flush();   /* T-172: last tick's transfer cells (NMI) */
+        roomrom_hud_play_flush();     /* T-172: last play tick's status bar */
         s_tick_vtimer = vtimer;
         /* Phase Q v2: roll per-frame DMA byte tally into peak tracker
          * and reset accumulator for next frame. Probes read peak via

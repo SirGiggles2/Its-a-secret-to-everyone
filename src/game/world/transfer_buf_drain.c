@@ -247,6 +247,70 @@ static unsigned char attr_shadow_pal(unsigned char col, unsigned char row)
     return (unsigned char)((v >> (q << 1)) & 3u);
 }
 
+extern unsigned short *roomrom_main_row_stage(void);   /* main.c (T-172) */
+
+/* T-172: a record of whole attribute rows (Mode 11's death palette: 24
+ * bytes = 12 name-table rows each) rewrote ~380 cells one VDP address at a
+ * time: Death_Sub4/Sub5 took 3 frames each (NES 1). Build each name-table
+ * row in the row stage and queue it for the next VBlank (the NMI timing
+ * of the per-cell deferral). Returns 0 when the record does not qualify or
+ * the stage / DMA queue is unavailable (the caller then goes per cell). */
+static unsigned char emit_attribute_rows(unsigned char attr_off, unsigned char repeat,
+                                         unsigned char count, const unsigned char *src,
+                                         unsigned char src_off, unsigned char src_end)
+{
+    unsigned short *stage;
+    unsigned char i, row, row0, row1;
+    if ((attr_off & 7u) || (count & 7u) || count == 0u ||
+        (unsigned short)attr_off + count > 0x40u)
+        return 0u;
+    if (repeat ? src_off >= src_end : (unsigned char)(src_off + count) > src_end)
+        return 0u;
+    stage = roomrom_main_row_stage();
+    if (!stage) return 0u;
+    for (i = 0u; i < count; i++) {
+        s_attr_shadow[attr_off + i] = src[src_off + (repeat ? 0u : i)];
+    }
+    s_attr_shadow_active = 1u;
+    row0 = (unsigned char)((attr_off >> 3) << 2);
+    row1 = (unsigned char)(((attr_off + count) >> 3) << 2);
+    if (row0 < 8u) row0 = 8u;
+    if (row1 > 30u) row1 = 30u;
+    for (row = row0; row < row1; ++row) {
+        unsigned short *w = stage + (unsigned short)(row - 8u) * 32u;
+        /* PlayAreaTiles is column-major (22 rows): step a column at a time. */
+        const unsigned char *pa = (const unsigned char *)(unsigned long)
+            &nes_ram[0x6530u + (unsigned char)(row - 8u)];
+        const unsigned char *at = &s_attr_shadow[(row >> 2) << 3];
+        const unsigned char vshift = (unsigned char)(((row >> 1) & 1u) << 2);
+        unsigned short pc, pr;
+        unsigned char col;
+        for (col = 0u; col < 32u; col = (unsigned char)(col + 2u)) {
+            /* attr_shadow_pal: one 2x2 quadrant per two columns. */
+            const unsigned char pal = (unsigned char)((at[col >> 2] >>
+                (vshift | (((col >> 1) & 1u) << 1))) & 3u);
+            const unsigned short s0 = bg_sparse_tile_lut[pa[0]][pal];
+            const unsigned short s1 = bg_sparse_tile_lut[pa[0x16u]][pal];
+            w[col] = (s0 == 0xFFFFu) ? (unsigned short)PLANE_BRIDGE_BLANK_TILE
+                                     : (unsigned short)(ROOMROM_BG_TILE_BASE + s0);
+            w[col + 1u] = (s1 == 0xFFFFu) ? (unsigned short)PLANE_BRIDGE_BLANK_TILE
+                                          : (unsigned short)(ROOMROM_BG_TILE_BASE + s1);
+            pa += 2u * 0x16u;
+        }
+        /* Columns are consecutive plane cells (scroll offsets are whole
+         * cells: ((col << 3) - sx) & 511 >> 3 = first + col, mod 64). */
+        roomrom_main_nt_cell_to_plane(0u, row, &pc, &pr);
+        if (pc + 32u <= 64u) {
+            if (!render_plane_a_queue_row(pr, pc, w, 32u)) return 0u;
+        } else {
+            const unsigned short n = (unsigned short)(64u - pc);
+            if (!render_plane_a_queue_row(pr, pc, w, n)) return 0u;
+            if (!render_plane_a_queue_row(pr, 0u, w + n, (unsigned short)(32u - n))) return 0u;
+        }
+    }
+    return 1u;
+}
+
 static void emit_attribute_record(unsigned char attr_off,
                                   unsigned char repeat,
                                   unsigned char count,
@@ -255,6 +319,7 @@ static void emit_attribute_record(unsigned char attr_off,
                                   unsigned char src_end)
 {
     unsigned char i;
+    if (emit_attribute_rows(attr_off, repeat, count, src, src_off, src_end)) return;
     for (i = 0u; i < count; i++) {
         const unsigned char k = (unsigned char)(attr_off + i);
         unsigned char v, dr, dc;
