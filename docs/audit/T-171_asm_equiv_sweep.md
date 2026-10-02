@@ -14,6 +14,9 @@ disassembly; none is a live NES-vs-Genesis capture.
     - every block between a branch and its target (keeps branches in range);
     - neighbouring blocks for `:-` / `:+` anonymous labels.
   - It stops at stubs and at cross-bank `*_Bank<n>` trampolines.
+  - Data blocks pull in the data blocks after them (tables are indexed past their end).
+  - Fall-through is decided by the last instruction; trailing filler data is ignored.
+  - A `*_Bank<n>` label stops the walk only if it calls SwitchBank, and never against a same-bank branch.
   - Raw `JMP $EEB8` bytes are resolved through the Trax disassembly (`closure.RAW_TARGETS`).
   - A bank-local label defined in two banks (e.g. `Exit`) is renamed per bank.
   - Assembled with ca65/ld65 at `$8000`; runs in py65.
@@ -37,11 +40,14 @@ disassembly; none is a live NES-vs-Genesis capture.
   - CheckMonsterCollisions, which has its own spec;
   - CheckLinkCollision;
   - Link_EndMoveAndAnimate_Bank4, logging Link X/Y.
+  - Also stubbed: Anim_WriteSprite, WriteBossSprite, the over-Link draws and Link_EndMoveAndDraw_Bank4. Gleeok compares NES OAM directly, because both machines write it.
 - **Genesis options** are pinned to vanilla (Like-Like eats the shield).
+- **Documented NES hang**: `skip_no_return` skips and counts the cases where a Lanmola head boxed in on 3 sides loops forever. The disassembly says no room allows it.
+- `--watch addr,...` with `--debug K` lists every NES instruction that writes those cells.
 
 Run with `python tools/audit/asm_equiv/asm_equiv.py [SPEC...] --cases N [--seed S]`. Use `--debug K --cells ...` for a NES label trace of case K.
 
-## Result (seed 56, 1000 cases per spec, 62 specs)
+## Result (seed 56, 1000 cases per spec, 76 specs)
 
 ```
 ALL PASS
@@ -50,9 +56,10 @@ ALL PASS
 | Group | Specs |
 |---|---|
 | Core | CheckLadder, LadderSetup, UpdateDock, GetCollidableTile, GetCollidableTileStill, GetCollidingTileMoving, BoundByRoom, AddQSpeed, SubQSpeed, MoveObject, MoveShot, AnimateObjectWalking, CycleCurSpriteIndex, Walker_Move, DoObjectsCollideWithThresholds, FindEmptyMonsterSlot, ReverseObjDir, GetObjectMiddle, CompareHeartsToContainers, FormatDecimalByte, CheckMazes, World_ChangeRupees, GetRoomFlags, CheckMonsterCollisions, TakeItem, IsDistanceSafeToSpawn, World_FillHearts, KeeseFlight |
+| Bosses / specials | UpdateVire, UpdateDigdogger, UpdatePatraChild, UpdatePatra, UpdatePondFairy, UpdateDodongo, UpdateGohma, UpdateZelda, UpdateLamnola, UpdateManhandla, UpdateAquamentus, UpdateGanon, UpdateMoldorm, UpdateGleeok, UpdateGleeokHead |
 | Monsters | UpdateOctorock, UpdateMoblin, UpdateLynel, UpdateGoriya, UpdateStalfos, UpdateDarknut, UpdateRope, UpdateZol, UpdateGel, UpdateGhini, UpdateFlyingGhini, UpdatePeahat, UpdateKeese, UpdateTektiteOrBoulder, UpdateBlueLeever, UpdateRedLeever, UpdateZora, UpdatePolsVoice, UpdateLikeLike, UpdateArmos, UpdateBoulderSet, UpdateBlueWizzrobe, UpdateRedWizzrobe, UpdateWallmaster, UpdateBubble, UpdateGibdo, UpdateGuardFire, UpdateStandingFire, UpdateMonsterShot, UpdateFireball, UpdateMonsterArrow, UpdateArrowOrBoomerang, UpdateDeadDummy |
 
-Bosses and the remaining object types are in progress. Their specs exist and fail; they do not count above.
+Not yet covered: the remaining object types and the InitObject routines (Trap, Whirlwind, RupeeStash, people, item, rock/tree/wall, block).
 
 ## Defects found and fixed (each FAIL before, PASS after)
 
@@ -77,6 +84,19 @@ Bosses and the remaining object types are in progress. Their specs exist and fai
 | UpdateMonsterArrow (Z_04) | same | Tested `[0C]` (set by a parry) instead of `[06]`; non-`$1x/$2x/$30` states bounced | Parried arrows vanished instead of bouncing |
 | DrawArrow vs DrawArrowOrBoomerangAndCheckCollisions (Z_07) | `world/draw_dispatch.c` | Spark frame/flip applied inside DrawArrow | Sparking arrow drawn from `@CheckShooter` showed the spark frame |
 | CalcBoomerangFrame (Z_07) | same | Wrote `[05]`; NES writes `[04]` only | Right half uses NES's stale `[05]` again (see Windows checks) |
+| UpdateVire @SplitUp (Z_04) | `oracle/enemies/enemy_boss_runtime.c` | Bumped ActiveMonsterShots instead of RoomObjCount; loop made 3 keeses (NES 2) | Extra keese per split; room-clear count off |
+| DrawVire (Z_04) | same | Frame read before the animation advance | Animation one frame behind |
+| Dodongo_Draw (Z_04) | `oracle/enemies/enemy_dodongo_runtime.c` | Shifted ObjX for the right half; the draw reads `[00]` | Right half drawn at the left half's leftover X |
+| Dodongo stun / bloated timers (Z_04) | `enemy_dodongo_runtime.c`, `bosses/boss_dodongo.c` | `DEY/BPL` approximated | None for game values |
+| Pond Fairy @DrawLinkAndHearts (Z_04) | `enemies/enemy_flyer_bridge.c` | Link_EndMoveAndAnimate_Bank4 (ObjState 0, restored) missing | Link not animated/ended through the NES path in the fairy scene |
+| UpdateZelda_State1 (Z_04) | `enemies/enemy_walker_bridge.c` | Link_EndMoveAndDraw_Bank4 and FillTileMap missing | Link not drawn through the NES path; play-area tile map not blanked before mode `$13` |
+| Gohma_CheckCollisions, Gohma move (Z_04) | `bosses/boss_gohma.c`, `enemy_boss_runtime.c` | `[0F]` counter ended at 1 (NES 0); `[02]` mask kept local | Scratch only |
+| Lamnola_UpdateHead @TurnTowardLink (Z_04) | `oracle/enemies/enemy_lamnola_runtime.c` | Tested the head's direction; NES tests Link's (`BIT ObjDir`) | Lanmola turned toward Link on the wrong condition |
+| Manhandla_Move, Lamnola_Move (Z_04) | `enemy_manhandla_runtime.c`, `enemy_lamnola_runtime.c` | `[02]`/`[03]` kept local | Scratch only |
+| Aquamentus_Shoot (Z_04) | `enemies/enemy_boss_bridge.c`, `enemy_projectile_runtime.c` | Offset stored at stale EmptyMonsterSlot when no slot was free | A live fireball's drift could be overwritten |
+| UpdateMoldorm (Z_04) | `oracle/enemies/enemy_moldorm_runtime.c` | Copied ObjInvincibilityMask instead of ObjInvincibilityTimer to the tail | Revived tail lost its weapon mask, flashed wrong |
+| Ganon (Z_04) | `oracle/enemies/enemy_ganon_runtime.c` | Brown state on even frames (NES odd); burst offset `+7` (NES `+8`, carry); colour overwrite relative (NES absolute); roar passed bitmap `$10` to a 1..7 sample index | Ganon flicker phase reversed; ashes 1 px off; InitGanon roar silent |
+| Patra / Gleeok helpers (Z_04) | `enemy_patra_runtime.c`, `bosses/boss_gleeok.c` | ShiftMultiply/Rotate/DecreaseAngle, Gleeok writers keep NES scratch | Scratch only |
 
 Mutation checks (T-056 doc, Octorock anim/turn-rate constants) confirm the harness catches single-constant errors.
 
@@ -100,6 +120,12 @@ Mutation checks (T-056 doc, Octorock anim/turn-rate constants) confirm the harne
 1. `Debug.bat`, full suite and `lag_gate.py`. GetCollidableTile now does two stores per call; the shot and shove helpers do a few more.
 2. Screen at `t057_food_bait` t605: the Goriya boomerang's right half now takes its attribute from the stale `[05]`, as the NES does. Expect OAM `$00/$40` as captured before. A mismatch means an earlier `[05]` writer still differs.
 3. Routes with ropes, tektites, wizzrobes, Pols Voice and arrow-shooting moblins: RAM parity is expected to improve. Re-bless only from NES captures.
+4. Boss routes: Vire splits (two keeses), Dodongo right half, Lanmola turns, Moldorm segment death, Aquamentus fireballs, Gohma, Manhandla, Patra.
+5. Ganon: brown-flicker phase, burst position, roar audible.
+6. Scenes now running the NES Link_EndMoveAndAnimate path:
+   - Pond Fairy (`t171_flute_pond`);
+   - Zelda rescue: story pose versus draw-pending.
+   Check screens and Link RAM on both.
 
 ## Not covered by this gate
 
