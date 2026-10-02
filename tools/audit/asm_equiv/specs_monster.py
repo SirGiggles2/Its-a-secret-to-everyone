@@ -514,6 +514,31 @@ def gen_moldorm(types, states):
 
 
 GENS["UpdateMoldorm"] = gen_moldorm
+
+
+def gen_ganon(types, states):
+    """Ganon in slot 1: scene phase 0..2, dying phase 0 or through the ash
+    sequence, brown-state countdown, animation frame 0..7."""
+    base = gen_typed(types, [0], [1])
+
+    def gen(r, m):
+        c = base(r, m)
+        m[0x445] = r.choice([0, 1, 2, 2, 2])                  # Ganon_ScenePhase
+        m[0x42C + 1] = r.choice([0, 0, 0, 1, 0x4F, 0x50, 0x51, 0x80, 0xFF])   # Ganon_ObjPhase
+        m[0xAC + 1] = r.choice([0, 0, 1, 0x2F, 0x30, 0x40])   # brown-state countdown
+        m[0x46B + 1] = r.randrange(6)                         # Ganon_ObjAnimationFrame 0..5
+        m[0x478 + 1] = pick(r, [0, 8, 0x10])                  # Ganon_ObjCloudDist
+        m[0x98 + 1] = r.choice([1, 2, 4, 8])
+        for s_ in range(2, 10):                               # burst rays: 8-way dirs
+            m[0x98 + s_] = r.choice(DIRS8)
+        # DynTileBuf is $302..$33F; a record must fit (CurObjIndex follows).
+        m[0x301] = r.choice([0, 0, 8, 0x10, 0x30])            # DynTileBufLen
+        m[0x51F] = r.choice([0, 1, 2])                         # CandleState
+        return c
+    return gen
+
+
+GENS["UpdateGanon"] = gen_ganon
 SPECS += [monster_spec(e, f, GENS.get(e, gen_typed)(t, list(st)))
           for e, f, t, st in STATEFUL]
 for _s in SPECS:

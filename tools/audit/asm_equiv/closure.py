@@ -10,7 +10,8 @@ Starting at the roots, every global label referenced by an included block
     are indexed past their end);
   - anonymous labels: a block using ":-" / ":+" pulls in the block
     before / after (the ":" it binds to may sit across a global label);
-  - cross-bank trampolines (*_Bank<n>) always stop;
+  - cross-bank trampolines (*_Bank<n> that call SwitchBank) stop unless a
+    same-bank branch targets them;
   - stop labels (stubs, or names the spec stops at) are never included; the
     runner auto-stubs them as "unexpected" unless asm_stubs define them.
 Blocks are emitted in file order, adjacent blocks merged into one run.
@@ -102,7 +103,15 @@ def closure(ref: Path, files: list[str], roots: list[str], stop: set[str]):
 
     # Cross-bank trampolines (Link_EndMoveAndAnimate_Bank4, ...) lead into
     # whole other subsystems; they stop the walk and trap if reached.
-    tramp = {name for b in banks.values() for _, name in b.labels if TRAMPOLINE.search(name)}
+    # A *_Bank<n> label is a trampoline only if it switches banks
+    # (IsDarkRoom_Bank4 is plain local code).
+    tramp = set()
+    for b in banks.values():
+        for n, (_, name) in enumerate(b.labels):
+            if TRAMPOLINE.search(name):
+                lo, hi = b.block(n)
+                if any("SwitchBank" in l.split(";", 1)[0] for l in b.lines[lo:hi]):
+                    tramp.add(name)
     chosen: dict[str, set[int]] = {f: set() for f in files}
     work: list[tuple[str, int]] = []
 

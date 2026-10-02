@@ -44,9 +44,9 @@
  *             per-line. Ganon movement and burst rays share the complete
  *             BlueWizzrobe primitives in enemy_wizzrobe_runtime.c
  *             (Z_04.asm:7100-7230), including collidable-tile response.
- *             play_sample now forwards to audio_sfx_play (XGM SFX path
- *             landed Phase 10.3). Boot-smoke ok: ROM links + frame_counter
- *             ticks. A connected Ganon encounter remains unverified.
+ *             play_sample writes SampleRequest ($0601) for
+ *             audio_requests.c (T-171). A connected Ganon encounter
+ *             remains unverified.
  *
  * Stance:     EXTEND — composes drained shared Wizzrobe movement.
  *             Ganon encounter and ending remain integration TODO.
@@ -60,12 +60,12 @@
 #include "../combat/link_collision_runtime.h"
 #include "../world/sprite_runtime.h"
 
-/* Z_07.asm — PlaySample audio routing. Forwards to the audio_sfx_play
- * shim (now wired through audio_adapter.c -> XGM sample channels). */
-extern void audio_sfx_play(unsigned char sfx);
+/* NES STA SampleRequest: the request cell audio_requests.c consumes.
+ * audio_sfx_play takes a sample index 1..7, not this bitmap ($10 asked
+ * for "sample 16", so InitGanon's roar never played; T-171). */
 static void play_sample(unsigned char sample_id)
 {
-    audio_sfx_play(sample_id);
+    RAM(0x0601u) = sample_id;
 }
 
 /* ---------- NES static tables (verbatim bytes) ---------- */
@@ -298,8 +298,9 @@ static void ganon_update_brown_state(unsigned int slot)
 {
     unsigned char fc = GANON_FRAME_COUNTER;
 
-    /* Every other frame decrement state; every frame draw. */
-    if ((fc & 0x01u) == 0u) {
+    /* NES LDA FrameCounter / LSR / BCC: odd frames decrement the state
+     * and (translucent phase) draw; the drain used even frames (T-171). */
+    if ((fc & 0x01u) != 0u) {
         unsigned char st = (unsigned char)(ENEMY_STATE_TIMER(slot) - 1u);
         ENEMY_STATE_TIMER(slot) = st;
         if (st == 0u) {
@@ -315,7 +316,7 @@ static void ganon_update_brown_state(unsigned int slot)
         ganon_draw_body(slot);
         return;
     }
-    if ((fc & 0x01u) == 0u) {
+    if ((fc & 0x01u) != 0u) {
         ganon_draw_body(slot);
     }
 }
@@ -339,8 +340,14 @@ static void ganon_dying(unsigned int slot)
     if (phase == 0x50u) {
         /* Set up burst + ashes + position offset. */
         ganon_append_palette_row_transfer_record(0x08u); /* Triforce. */
-        ENEMY_X(slot) = (unsigned char)(ENEMY_X(slot) + 0x07u);
-        ENEMY_Y(slot) = (unsigned char)(ENEMY_Y(slot) + 0x08u);
+        /* NES ADC #$07 / ADC #$08 without CLC: the record copy ends on
+         * CPY #$08 (equal, carry set), so X += 8 and Y += 8 + carry out
+         * of the X add (T-171). */
+        {
+            const unsigned int sx = (unsigned int)ENEMY_X(slot) + 0x07u + 1u;
+            ENEMY_X(slot) = (unsigned char)sx;
+            ENEMY_Y(slot) = (unsigned char)(ENEMY_Y(slot) + 0x08u + (sx >> 8));
+        }
         ganon_set_up_burst_rays(slot);
         enrt_play_boss_death_cry();
         GANON_SONG_REQUEST = 0x02u;
@@ -561,14 +568,16 @@ static void ganon_append_palette_row_transfer_record(unsigned char y_end)
 
     /* Copy 8-byte template into DynTileBuf[len..len+8). */
     for (i = 0u; i < 8u; ++i) {
-        GANON_DYNTILEBUF((unsigned int)(buf_idx + i)) = GanonColorTransferRecord[i];
+        GANON_DYNTILEBUF((unsigned char)(buf_idx + i)) = GanonColorTransferRecord[i];   /* X wraps */
     }
     GANON_DYNTILEBUF_LEN = (unsigned char)(buf_idx + 8u);
 
-    /* Overwrite last 3 colors at [+4..+6] using y_end..y_end-2. */
+    /* Overwrite three colors with y_end..y_end-2. NES STA DynTileBuf+4,X
+     * is absolute: entries 4..6 of the buffer, wherever this record went
+     * (T-171). */
     y = y_end;
     for (rev = 2; rev >= 0; --rev) {
-        GANON_DYNTILEBUF((unsigned int)(buf_idx + 4u + (unsigned int)rev)) = GanonColorSets[y];
-        if (y > 0u) --y;
+        GANON_DYNTILEBUF((unsigned int)(4u + (unsigned int)rev)) = GanonColorSets[y];
+        --y;
     }
 }
