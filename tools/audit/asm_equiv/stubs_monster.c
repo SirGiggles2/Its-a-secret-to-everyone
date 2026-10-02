@@ -20,3 +20,8 @@ void link_collision_check_monster_collisions(unsigned int slot)
 {
     eq_log_byte('K'); eq_log_byte((unsigned char)slot);
 }
+
+void link_collision_check_link_collision(unsigned int slot)
+{
+    eq_log_byte('L'); eq_log_byte((unsigned char)slot);
+}

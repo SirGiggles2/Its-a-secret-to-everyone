@@ -41,6 +41,14 @@ DrawObjectNotMirrored:
     JSR EqLogDraw
     LDA $5005
     RTS
+CheckLinkCollision:
+    STX H_TMPX
+    LDA #'L'
+    JSR LogA
+    LDA H_TMPX
+    JSR LogA
+    LDX H_TMPX
+    RTS
 CheckMonsterCollisions:
     STX H_TMPX
     LDA #'K'
@@ -194,3 +202,140 @@ SPECS += [
          asm=ZOL_ASM, c_sources=COMMON_C, entry="UpdateGel", gen=gen_zol([0x14, 0x15]),
          call=lambda lib, c: lib.enrt_update_gel(U(c["x"])), **MONSTER_COMMON),
 ]
+
+
+# ------------------------------------------------ ghini, flyers
+
+FLYER_ASM = ZOL_ASM + [
+    ("Z_04.asm", "UpdateKeese:", "UpdateZol:"),
+    ("Z_04.asm", "Directions8:", "PatraSines:"),
+    ("Z_04.asm", "UpdateGhini:", "SecretArmosRoomIds:"),
+    ("Z_04.asm", "UpdateFlyingGhini:", "PlaySecretFoundTune:"),
+    ("Z_07.asm", "ResetMovingDir:", "GoWalkableDir:"),
+    ("Z_07.asm", "ResetShoveInfo:", "ShoveMoveMin:"),
+]
+FLYER_C = COMMON_C + ["src/oracle/enemies/enemy_flyer_runtime.c",
+                      "src/game/enemies/enemy_dispatch.c",
+                      "src/game/enemies/enemy_jumper_bridge.c"]
+
+
+def gen_flyer(types):
+    base = gen_typed(types)
+
+    def gen(r, m):
+        c = base(r, m)
+        x = c["x"]
+        m[0x444 + x] = r.randrange(6)                         # Flyer_ObjFlyingState
+        m[0x42C + x] = pick(r, [0, 1, 2, 6])                  # Flyer_ObjTurns
+        m[0x41F + x] = pick(r, [0x00, 0x20, 0x40, 0x80, 0xA0, 0xC0])
+        m[0x98 + x] = r.choice([8, 9, 1, 5, 4, 6, 2, 0x0A])
+        m[0x70 + x], m[0x84 + x] = r.randrange(0x10, 0xF0), r.randrange(0x40, 0xE0)
+        return c
+    return gen
+
+
+def pick(r, common, p=0.85):
+    return r.choice(common) if r.random() < p else r.randrange(256)
+
+
+SPECS += [
+    dict(name="UpdateGhini", doc="Z_04 UpdateGhini (wanderer $FF, draw, kill flying ghinis) vs enrt_update_ghini",
+         asm=FLYER_ASM, c_sources=FLYER_C, entry="UpdateGhini", gen=gen_typed([0x21]),
+         call=lambda lib, c: lib.enrt_update_ghini(U(c["x"])), **MONSTER_COMMON),
+    dict(name="UpdateFlyingGhini", doc="Z_04 UpdateFlyingGhini vs enrt_update_flying_ghini",
+         asm=FLYER_ASM, c_sources=FLYER_C, entry="UpdateFlyingGhini", gen=gen_flyer([0x22]),
+         call=lambda lib, c: lib.enrt_update_flying_ghini(U(c["x"])), **MONSTER_COMMON),
+    dict(name="UpdatePeahat", doc="Z_04 UpdatePeahat vs enrt_update_peahat",
+         asm=FLYER_ASM, c_sources=FLYER_C, entry="UpdatePeahat", gen=gen_flyer([0x1A]),
+         call=lambda lib, c: lib.enrt_update_peahat(U(c["x"])), **MONSTER_COMMON),
+    dict(name="UpdateKeese", doc="Z_04 UpdateKeese (flight, draw, collisions, shove reset) vs enrt_update_keese",
+         asm=FLYER_ASM, c_sources=FLYER_C, entry="UpdateKeese", gen=gen_flyer([0x1B, 0x1C, 0x1D]),
+         call=lambda lib, c: lib.enrt_update_keese(U(c["x"])), **MONSTER_COMMON),
+]
+
+
+# ------------------------------------------------ closure-built specs
+# The NES side comes from closure.py: everything reachable from the entry
+# in the game banks below, stopping at the logged stubs.
+
+BANKS = ["Z_04.asm", "Z_07.asm", "Z_01.asm", "Z_05.asm"]
+
+
+def _enemy_c_all() -> list[str]:
+    """Every Debug-build TU of the enemy runtime and its substrate, except
+    the draw / Link-collision owners (logged stubs) and render/probe code."""
+    import sys
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[3]
+    sys.path.insert(0, str(root / "tools" / "debug"))
+    argv, sys.argv = sys.argv, [sys.argv[0]]
+    import build_debug as b
+    sys.argv = argv
+    keep = ("src/oracle/enemies/", "src/game/enemies/")
+    extra = {"src/game/core/core_dispatch.c", "src/game/world/object_dispatch.c",
+             "src/game/world/sprite_dispatch.c", "src/game/combat/collision_dispatch.c",
+             "src/game/enemies/obj_lists.c", "src/game/room/room_dispatch.c"}
+    drop = ("enemy_render.c", "/probes/")
+    out = []
+    for src, _ in b.ROOMROM_C_SOURCES:
+        src = str(src).replace("\\", "/")
+        if (src.startswith(keep) or src in extra) and not any(d in src for d in drop):
+            out.append(src)
+    return out
+
+
+ENEMY_C_ALL = _enemy_c_all()
+
+
+def auto_spec(name, entry, types, cfun, c_sources, doc, gen=None, **kw):
+    d = dict(name=name, doc=doc, closure={"files": BANKS, "stop": kw.pop("stop", [])},
+             c_sources=c_sources, entry=entry, gen=gen or gen_typed(types),
+             call=lambda lib, c: getattr(lib, cfun)(U(c["x"])))
+    d.update(MONSTER_COMMON)
+    d.update(kw)
+    return d
+
+
+SPECS += [
+    auto_spec("UpdateOctorockAuto", "UpdateOctorock", [0x07, 0x08, 0x09, 0x0A],
+              "enrt_update_octorock", ENEMY_C_ALL, "UpdateOctorock, closure-built NES side",
+              gen=gen_octorock),
+]
+
+
+def gen_state(types, states):
+    """gen_typed plus ObjState drawn from the routine's real state range."""
+    base = gen_typed(types)
+
+    def gen(r, m):
+        c = base(r, m)
+        m[0xAC + c["x"]] = r.choice(states)
+        return c
+    return gen
+
+
+AUTO = [
+    # name, NES entry, types, C function, ObjState values
+    ("TektiteOrBoulder", "UpdateTektiteOrBoulder", [0x0D, 0x0E, 0x20], "enrt_update_tektite_or_boulder", range(4)),
+    ("BlueLeever", "UpdateBlueLeever", [0x0F], "enrt_update_blue_leever", range(6)),
+    ("RedLeever", "UpdateRedLeever", [0x10], "enrt_update_red_leever", range(6)),
+    ("Zora", "UpdateZora", [0x11], "enrt_update_zora", range(6)),
+    ("PolsVoice", "UpdatePolsVoice", [0x16], "enrt_update_pols_voice", range(4)),
+    ("LikeLike", "UpdateLikeLike", [0x17], "enrt_update_like_like", range(4)),
+    ("Armos", "UpdateArmos", [0x1E], "enrt_update_armos", range(4)),
+    ("BoulderSet", "UpdateBoulderSet", [0x1F], "enrt_update_boulder_set", range(4)),
+    ("BlueWizzrobe", "UpdateBlueWizzrobe", [0x23], "enrt_update_blue_wizzrobe", range(4)),
+    ("RedWizzrobe", "UpdateRedWizzrobe", [0x24], "enrt_update_red_wizzrobe", range(4)),
+    ("Wallmaster", "UpdateWallmaster", [0x27], "enrt_update_wallmaster", range(4)),
+    ("Bubble", "UpdateBubble", [0x2B, 0x2C, 0x2D], "enrt_update_bubble", range(4)),
+    ("Gibdo", "UpdateGibdo", [0x30], "enrt_update_gibdo", range(4)),
+    ("GuardFire", "UpdateGuardFire", [0x3F], "enrt_update_guard_fire", range(4)),
+    ("StandingFire", "UpdateStandingFire", [0x40], "enrt_update_standing_fire", range(4)),
+    ("MonsterShot", "UpdateMonsterShot", [0x53, 0x54, 0x57, 0x58, 0x59, 0x5A], "enrt_update_monster_shot", [0x10, 0x10, 0x11, 0x20, 0x21, 0]),
+    ("Fireball", "UpdateFireball", [0x55, 0x56], "enrt_update_fireball", [0x10, 0x10, 0x11, 0]),
+    ("MonsterArrow", "UpdateMonsterArrow", [0x5B], "enrt_update_monster_arrow", [0x10, 0x10, 0x11, 0x20, 0]),
+    ("ArrowOrBoomerang", "UpdateArrowOrBoomerang", [0x5C], "enrt_update_arrow_or_boomerang", [0x10, 0x10, 0x11, 0x20, 0x30, 0]),
+    ("DeadDummy", "UpdateDeadDummy", [0x5D], "z07_update_dead_dummy", range(4)),
+]
+SPECS += [auto_spec("Update" + n, e, t, f, ENEMY_C_ALL, f"Z_04 {e} vs {f} (closure-built)",
+                    gen=gen_state(t, list(st))) for n, e, t, f, st in AUTO]

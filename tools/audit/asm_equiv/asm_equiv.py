@@ -135,9 +135,24 @@ def asm_source(spec, auto: list[str]) -> str:
     src += ['.SEGMENT "CODE"', CORE_ASM, spec.get("asm_stubs", "")]
     for k, name in enumerate(auto, start=1):
         src.append(f"{name}:\n    LDA #${k:02X}\n    JMP Unexpected")
-    for header, text in merged_cuts(spec["asm"]):
+    for header, text in merged_cuts(spec.get("asm", [])):
         src.append(f"{header}\n{text}")
+    if spec.get("closure"):
+        src += [f"{h}\n{t}" for h, t in closure_cuts(spec)]
     return "\n".join(src)
+
+
+def closure_cuts(spec) -> list[tuple[str, str]]:
+    """Automatic cut list (closure.py) from spec["closure"]:
+    {"files": [...], "roots": [...], "stop": [...]}; roots default to the
+    entry, stubs (CORE_ASM, asm_stubs) always stop the walk."""
+    import closure
+    cfg = spec["closure"]
+    stubs = CORE_ASM + spec.get("asm_stubs", "")
+    stop = set(cfg.get("stop", ())) | set(re.findall(r"^([A-Za-z_]\w*):", stubs, re.M))
+    roots = cfg.get("roots") or [spec["entry"]]
+    runs = closure.closure(REF, cfg["files"], [r for r in roots if r not in stop], stop)
+    return closure.emit(REF, runs)
 
 
 _DATA_LABELS: set[str] | None = None
@@ -172,7 +187,8 @@ def build_6502(spec, td: Path) -> tuple[bytes, dict[str, int], list[str]]:
     for _ in range(4):
         (td / "eq.s").write_text(asm_source(spec, auto), encoding="latin-1")
         (td / "eq.cfg").write_text(LD_CFG)
-        subprocess.run(["ca65", "-g", "--auto-import", "-I", str(REF), "-o",
+        subprocess.run(["ca65", "-g", "--auto-import", "-I", str(REF),
+                        "--bin-include-dir", str(REF), "-o",
                         str(td / "eq.o"), str(td / "eq.s")], check=True)
         r = subprocess.run(["ld65", "-C", str(td / "eq.cfg"), "-o", str(td / "eq.bin"),
                             "-Ln", str(td / "eq.lbl"), str(td / "eq.o")],
@@ -263,7 +279,11 @@ class Nes:
             if mpu.pc == trap:
                 return bytearray(m[0:MEM]), mpu.a, mpu.p & mpu.CARRY
             mpu.step()
-        raise RuntimeError(f"{entry}: no return")
+        raise NoReturn(trace[-16:] if trace else [])
+
+
+class NoReturn(Exception):
+    """The 6502 side did not return within the step budget."""
 
 
 def base_mem(r: random.Random) -> bytearray:
@@ -303,8 +323,22 @@ def run_spec(spec, cases: int, seed: int, verbose: bool) -> tuple[bool, str]:
         for k in range(cases):
             case = spec["gen"](r, base_mem(r))
             mem = case["mem"]
-            n, a_out, c_out = nes.run(mem, spec["entry"], case.get("a", 0), case.get("x", 0),
-                               case.get("y", 0), case.get("carry", 0))
+            try:
+                n, a_out, c_out = nes.run(mem, spec["entry"], case.get("a", 0),
+                                          case.get("x", 0), case.get("y", 0),
+                                          case.get("carry", 0))
+            except NoReturn:
+                tr: list[str] = []
+                try:
+                    nes.run(mem, spec["entry"], case.get("a", 0), case.get("x", 0),
+                            case.get("y", 0), case.get("carry", 0), trace=tr)
+                except NoReturn as nr:
+                    tr = nr.args[0]
+                errs.append(f"{spec['name']} case {k}: NES no return; last labels "
+                            + " ".join(tr))
+                if len(errs) > 30:
+                    break
+                continue
             ctypes.memmove(gmem, bytes(mem), MEM)
             ret = spec["call"](lib, case)
             c = bytearray(gmem)
@@ -396,7 +430,10 @@ def main() -> int:
         return 0
     ok_all = True
     for s in chosen:
-        ok, text = run_spec(s, a.cases, a.seed, a.verbose)
+        try:
+            ok, text = run_spec(s, a.cases, a.seed, a.verbose)
+        except Exception as e:      # build failure: report, keep sweeping
+            ok, text = False, f"{s['name']}: ERROR {type(e).__name__}: {e}"
         print(text)
         ok_all &= ok
     print("ALL PASS" if ok_all else "FAILURES")

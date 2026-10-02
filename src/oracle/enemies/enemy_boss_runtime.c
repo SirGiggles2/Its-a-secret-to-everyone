@@ -65,7 +65,7 @@ static void enrt_jumper_move_y(unsigned char accel, signed char max_speed_hi,
 static void enrt_jumper_animate_and_check_collisions(unsigned int slot) {
     unsigned char frame;
 
-    z07_anim_fetch_obj_pos(slot);
+    RAM(0x000D) = z07_anim_fetch_obj_pos(slot);   /* NES STA $0D (A = 0), T-171 */
     if (ENEMY_TYPE(slot) != 0x20) {
         /* Drain Rule D1: NES Z_04.asm:2482 leaves A holding ObjState
          * when BNE enters @DrawTektite.  State 1 therefore draws image 1;
@@ -180,7 +180,9 @@ void enrt_update_tektite_or_boulder(unsigned int slot) {
     signed char x_step;
 
     if (ENEMY_JUMPER_SHOVE(slot) != 0) {
-        enrt_jumper_animate_and_check_collisions(slot);
+        /* NES: raw `JMP $EEB8` = Obj_Shove (Trax bank 4 $108FC); no draw
+         * or collision check on shove frames (T-171). */
+        c_obj_shove(slot);
         return;
     }
     if ((ENEMY_PAUSE_FLAG | ENEMY_STUN_TIMER(slot)) != 0) {
