@@ -3527,7 +3527,6 @@ static unsigned char play_update_objects(void)
      * halves bumped beyond SAT slot 79 by stale records).
      * Clear-before-draw mirrors the NES NMI sentinel pass. */
     enemy_render_reset_oam();
-    roomrom_hud_refresh_dynamic();
     /* Plan v5c T6.5 â€” mini-map position marker flash + room
      * change refresh. Per NES Z_01.asm:4095-4146 the marker
      * flashes every 16 frames keyed on FrameCounter ($0015). */
@@ -3818,6 +3817,11 @@ static void play_finish(void)
      * updates. Bounded walk; $3F (palette) entries forward to
      * render_cram_write_color, $20-$2F (nametable) entries are
      * skipped pending plane bridge. */
+    /* T-172: NES UpdateHeartsAndRupees ends the play update and its
+     * status-bar records show after the next NMI: refresh the HUD after
+     * every writer of this tick (it ran before the objects, so damage
+     * showed a frame late and pickups before them a frame early). */
+    roomrom_hud_refresh_play();
     transfer_buf_drain();
 }
 

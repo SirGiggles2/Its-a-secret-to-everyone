@@ -21,6 +21,8 @@
 #include "door_state.h"
 #include "uw_render.h"  /* Phase 12.2 promoted */
 #include "platform_abi.h"
+#include "render_abi.h"                      /* render_plane_defer (T-172) */
+#include "../world/transfer_buf_drain.h"    /* transfer_buf_note_native_record */
 
 extern const unsigned char rooms_dungeons[];
 
@@ -323,6 +325,9 @@ static void door_anim_step(unsigned char dir, unsigned char open)
     unsigned char rows = horiz ? 2u : 3u;
     unsigned char prov, face, i;
     const unsigned char *src;
+    /* T-172: the NES writes these cells as DynTileBuf records (shown after
+     * the next NMI, and the buffer is busy for World_ChangeRupees). */
+    transfer_buf_note_native_record();
     /* PrepareWriteHorizontalDoorTransferRecords: keys and shutter play
      * the door sound. */
     if (t >= DOOR_TYPE_KEY) nes_ram[0x0601u] |= 0x04u;   /* PlaySample $04: door */
@@ -335,6 +340,7 @@ static void door_anim_step(unsigned char dir, unsigned char open)
     }
     if (face == 0u || face > 5u) return;
     src = &k_door_face_tiles[dir][(unsigned short)(face - 1u) * 12u];
+    render_plane_defer(1u);
     for (i = 0u; i < 4u; ++i) {
         unsigned char k = k_anim_face_idx[dir][i];
         unsigned char half = (unsigned char)(k / 6u);
@@ -353,6 +359,7 @@ static void door_anim_step(unsigned char dir, unsigned char open)
         roomrom_uw_room_render_write_tile_nt(col, row, src[k],
             roomrom_uw_room_render_palette_at(col, (unsigned char)(row + 8u)));
     }
+    render_plane_defer(0u);
 }
 
 /* UpdateDoors (Z_05.asm:5006). Commands: 6 -> 7 -> opened, 2 -> 3 ->

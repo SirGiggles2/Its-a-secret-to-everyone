@@ -2,6 +2,8 @@
 #include "../abi/platform_abi.h"
 #include "../game/hud/hud_dispatch.h"
 #include "../game/hud/heart_container_anim.h"
+extern void roomrom_hud_status_bar_formatted(void);   /* hud_runtime.c (T-172) */
+extern unsigned char transfer_buf_dyn_busy(void);       /* transfer_buf_drain.c */
 
 /* Phase 6 Task 6.10.4 — singleton inventory storage.
  *
@@ -150,7 +152,15 @@ void inventory_rupee_tick(unsigned char frame_counter)
     unsigned short previous = g_inventory.rupees;
     /* UpdateHeartsAndRupees: World_FillHearts then World_ChangeRupees. */
     hud_world_fill_hearts();
-    hud_tick_native_rupees(frame_counter);
+    /* World_ChangeRupees returns while a static transfer buffer is chosen
+     * or the dynamic one holds a record; otherwise it moves a rupee and,
+     * on even frames, formats the status bar (hearts, counts) for the
+     * next NMI. The Genesis HUD draws it then (T-172: t171_manhandla_sword
+     * t1061, a pending record delayed the hearts to t1063). */
+    if (nes_ram[0x0014u] == 0u && !transfer_buf_dyn_busy()) {
+        hud_tick_native_rupees(frame_counter);
+        if (!(frame_counter & 1u)) roomrom_hud_status_bar_formatted();
+    }
     g_inventory.rupees = nes_ram[0x066Du];
     g_inventory.rupees_to_add = nes_ram[0x067Du];
     g_inventory.rupees_to_sub = nes_ram[0x067Eu];

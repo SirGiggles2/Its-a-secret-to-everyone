@@ -17,6 +17,10 @@ void roomrom_hud_draw(unsigned char hud_id, unsigned char room_id,
  * first roomrom_hud_draw(). No-op until HUD has been drawn at least
  * once. */
 void roomrom_hud_refresh_dynamic(void);
+/* T-172: play-tick refresh on the NES status-bar cadence (even FrameCounter). */
+void roomrom_hud_refresh_play(void);
+/* NES FormatStatusBarText ran this tick (World_ChangeRupees). */
+void roomrom_hud_status_bar_formatted(void);
 /* Selector $44 (status bar map transfer) drained: show the map. */
 void roomrom_hud_status_bar_map_cue(void);
 

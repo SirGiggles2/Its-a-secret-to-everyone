@@ -393,10 +393,14 @@ static void cloud_chr_ensure_uploaded(void)
  * Drained C: the existing one-time FX upload owners above.
  * Coverage: first cloud/death-spark draw; fixed reserved VRAM survives scenes.
  * Stance: EXTEND residency preparation before gameplay, retaining lazy guards. */
+static void ensure_fireball_chr(void);
 void enemy_render_prepare_fx_chr(void)
 {
     cloud_chr_ensure_uploaded();
     spark_chr_ensure_uploaded();
+    /* T-172: the first boss fireball uploaded it mid-fight (Gleeok
+     * t171_boss_l8 t312 lag frame). Fixed VRAM, survives scene loads. */
+    ensure_fireball_chr();
 }
 
 /* T-110 / T-116: weapon-slot ($0E, $10, $11) sprite cache. Owned by the
@@ -700,6 +704,47 @@ static unsigned char s_pt1_lvl[PT1_PAIR_SLOTS];
 static unsigned char s_pt1_used[PT1_PAIR_SLOTS];
 static unsigned char s_pt1_next;
 
+/* T-172: CHR cache fills (sub-palette 3 copies, PT1 pairs) are built in
+ * one of these 64-byte buffers and queued for the next VBlank DMA with the
+ * SAT, instead of an immediate DMA during the display. Buffers are free
+ * again at the next tick (the queue drains in its VBlank). */
+#define CHR_STAGE_BUFS 4u
+static unsigned long s_chr_stage[CHR_STAGE_BUFS][16];
+static unsigned char s_chr_stage_used;
+static unsigned char s_chr_stage_stamp = 0xFFu;
+
+static unsigned long *chr_stage_take(void)
+{
+    if (s_chr_stage_stamp != (unsigned char)RAM(0x0015u)) {
+        s_chr_stage_stamp = (unsigned char)RAM(0x0015u);
+        s_chr_stage_used = 0u;
+    }
+    if (s_chr_stage_used >= CHR_STAGE_BUFS) return (unsigned long *)0;
+    return s_chr_stage[s_chr_stage_used];
+}
+
+static unsigned char chr_stage_queue(unsigned short vram_tile, const unsigned long *buf)
+{
+    if (!render_vram_queue_words((unsigned short)(vram_tile * 32u),
+                                 (const unsigned short *)(const void *)buf, 32u))
+        return 0u;
+    s_chr_stage_used = (unsigned char)(s_chr_stage_used + 1u);
+    return 1u;
+}
+
+/* Clear every 4bpp pixel equal to `zero` (1..15) in eight-pixel longs. */
+static void chr_clear_color(unsigned long *d, unsigned char words, unsigned char zero)
+{
+    const unsigned long pat = (unsigned long)zero * 0x11111111UL;
+    unsigned char w;
+    for (w = 0u; w < words; ++w) {
+        const unsigned long x = d[w];
+        const unsigned long t = x ^ pat;
+        const unsigned long eq = ~(t | (t >> 1) | (t >> 2) | (t >> 3)) & 0x11111111UL;
+        d[w] = x & ~(eq * 0xFUL);
+    }
+}
+
 static unsigned short pt1_pair(unsigned char nes_tile, unsigned char sub_pal)
 {
     const unsigned char top = (unsigned char)(nes_tile & 0xFEu);
@@ -711,6 +756,28 @@ static unsigned short pt1_pair(unsigned char nes_tile, unsigned char sub_pal)
             return (unsigned short)(ROOMROM_PT1_PAIR_TILE_BASE + 2u * i);
     }
     i = (unsigned char)(s_pt1_next++ % PT1_PAIR_SLOTS);
+    {
+        unsigned long *buf = chr_stage_take();
+        if (buf) {
+            const unsigned short zero = (unsigned short)((sub_pal & 3u) << 2);
+            for (k = 0u; k < 2u; ++k) {
+                const unsigned short slot =
+                    bg_sparse_tile_lut[(unsigned char)(top + k)][sub_pal & 3u];
+                unsigned long *t = buf + 8u * k;
+                if (slot == 0xFFFFu) {
+                    unsigned char w;
+                    for (w = 0u; w < 8u; ++w) t[w] = 0u;
+                } else {
+                    render_vram_read_run((unsigned short)((ROOMROM_BG_TILE_BASE + slot) * 32u),
+                                         (unsigned short *)(void *)t, 16u);
+                    /* BG pixel 0 is color 4k (opaque); a sprite's is clear. */
+                    if (zero) chr_clear_color(t, 8u, (unsigned char)zero);
+                }
+            }
+            if (chr_stage_queue((unsigned short)(ROOMROM_PT1_PAIR_TILE_BASE + 2u * i), buf))
+                goto filled;
+        }
+    }
     for (k = 0u; k < 2u; ++k) {
         unsigned short words[16];
         const unsigned short slot = bg_sparse_tile_lut[(unsigned char)(top + k)][sub_pal & 3u];
@@ -738,6 +805,7 @@ static unsigned short pt1_pair(unsigned char nes_tile, unsigned char sub_pal)
         render_chr_upload((unsigned short)((ROOMROM_PT1_PAIR_TILE_BASE + 2u * i + k) * 32u),
                           (const unsigned char *)words, 32u);
     }
+filled:
     s_pt1_tile[i] = top;
     s_pt1_pal[i] = sub_pal;
     s_pt1_lvl[i] = lvl;
@@ -871,6 +939,24 @@ static unsigned short __attribute__((noinline)) sp3_fill(unsigned short src, uns
     if (!level_chr_swap_is_ready() ||
         (boss != LEVEL_CHR_SWAP_IDLE && boss != LEVEL_CHR_SWAP_READY))
         return 0xFFFFu;                          /* source tiles in flux */
+    {
+        unsigned long *buf = chr_stage_take();
+        if (buf) {
+            unsigned char w;
+            render_vram_read_run((unsigned short)(src * 32u),
+                                 (unsigned short *)(void *)buf, 32u);
+            for (w = 0u; w < 16u; ++w) {
+                /* Eight 4bpp pixels: +12 where the pixel is 1..3 (k_sp3_lut). */
+                const unsigned long x = buf[w];
+                const unsigned long m = (x | (x >> 1)) & ~((x >> 2) | (x >> 3)) & 0x11111111UL;
+                buf[w] = x + (m << 3) + (m << 2);
+            }
+            if (chr_stage_queue((unsigned short)(ROOMROM_SUBPAL3_PAIR_TILE_BASE + 2u * i), buf)) {
+                s_sp3_src[i] = (unsigned short)(src + 1u);
+                return (unsigned short)(ROOMROM_SUBPAL3_PAIR_TILE_BASE + 2u * i);
+            }
+        }
+    }
     {
         /* Both tiles of the pair are adjacent: one read, one write. */
         unsigned short words[32];

@@ -809,7 +809,14 @@ void roomrom_hud_set_bottom_mode(unsigned char bottom)
  * SAT DMA Lag Fix Plan D (debate 2026-05-09): dirty-gate via inventory
  * snapshot. ~99% of ticks have unchanged inventory; skipping the redraw
  * saves ~15 active-display VDP_setTileMapXY writes per skipped frame. */
-void roomrom_hud_refresh_dynamic(void)
+static unsigned char s_status_due;
+
+void roomrom_hud_status_bar_formatted(void)
+{
+    s_status_due = 1u;
+}
+
+static void hud_refresh_impl(unsigned char nes_cadence)
 {
     if (s_hud_id_cached == 0xFFu)
         return; /* HUD has not been drawn yet — nothing to refresh. */
@@ -818,6 +825,13 @@ void roomrom_hud_refresh_dynamic(void)
      * the new tile makes it to VRAM. */
     hud_heart_container_anim_tick();
     unsigned char anim_active = hud_heart_container_anim_active();
+    /* T-172: in play the status bar (hearts and counts) follows NES
+     * World_ChangeRupees: formatted on even frames when no transfer record
+     * is pending (roomrom_hud_status_bar_formatted), shown after the next
+     * NMI (t050_rock_push t317 damage: NES t319). Keep changes pending. */
+    if (nes_cadence && !anim_active && !s_map_cue && !s_status_due)
+        return;
+    s_status_due = 0u;
     if (!anim_active && !s_map_cue && !native_hud_changed() &&
         !inventory_hud_consume_dirty()) {
         return; /* Inventory unchanged + no anim — skip the VDP traffic. */
@@ -827,6 +841,21 @@ void roomrom_hud_refresh_dynamic(void)
          * has a clean dirty bit for normal inventory changes. */
         (void)inventory_hud_consume_dirty();
     }
+    /* T-172: NES status-bar updates are transfer records shown after the
+     * next NMI; the cells are written at the start of the next tick
+     * (t050_rock_push t318: a heart one frame early). */
+    render_plane_defer(1u);
     draw_hud_dynamic(s_hud_id_cached);
+    render_plane_defer(0u);
+}
 
+void roomrom_hud_refresh_dynamic(void)
+{
+    hud_refresh_impl(0u);
+}
+
+/* Mode-5 play tick: UpdateHeartsAndRupees cadence (see above). */
+void roomrom_hud_refresh_play(void)
+{
+    hud_refresh_impl(1u);
 }

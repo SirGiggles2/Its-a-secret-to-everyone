@@ -56,6 +56,10 @@ extern "C" {
 /* Drain pending TRANSFER_BUF records. Resets TRANSFER_BUF_POS to 0
  * and stamps a $FF sentinel at byte 0 so a re-entry with no new
  * writes is a no-op. Safe to call per tick. */
+/* T-172: native stand-in for an NES DynTileBuf record this tick. */
+void transfer_buf_note_native_record(void);
+/* 1 while DynTileBuf holds a record (NES or native) until the drain. */
+unsigned char transfer_buf_dyn_busy(void);
 void transfer_buf_drain(void);
 
 /* T-097: forget attribute writes (a new room was laid out). */

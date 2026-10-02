@@ -566,6 +566,12 @@ void render_update_sprites(unsigned short count)
 void render_set_window_word(unsigned short col, unsigned short row,
                             unsigned short word)
 {
+    /* T-172: same deferral as the plane cells (status-bar changes reach
+     * the NES screen in the next NMI). */
+    if (s_pd_on) {
+        plane_word(VDP_getPlaneAddress(WINDOW, col, row), word);
+        return;
+    }
     VDP_setTileMapXY(WINDOW, word, col, row);
 }
 

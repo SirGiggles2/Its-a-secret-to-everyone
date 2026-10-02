@@ -472,8 +472,24 @@ static void drain_static_selector(void)
     TILE_BUF_SELECTOR = 0u;
 }
 
+/* T-172: a Genesis-native writer that replaces an NES DynTileBuf record
+ * (door animation) notes it here, so NES code that tests the buffer
+ * (World_ChangeRupees) sees it occupied until this tick's drain (NMI). */
+static unsigned char s_native_record;
+
+void transfer_buf_note_native_record(void)
+{
+    s_native_record = 1u;
+}
+
+unsigned char transfer_buf_dyn_busy(void)
+{
+    return (unsigned char)(s_native_record || !(nes_ram[0x0302u] & 0x80u));
+}
+
 void transfer_buf_drain(void)
 {
+    s_native_record = 0u;
     /* The NES transfers these records in the next frame's NMI: the cells
      * are written at the start of the next tick (render_plane_defer_flush
      * after the VBlank process), the RAM side effects stay here. */
