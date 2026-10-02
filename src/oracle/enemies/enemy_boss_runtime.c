@@ -867,6 +867,7 @@ void enrt_update_gohma(unsigned int slot) {
     if (dir & dist_mask) ENEMY_Y(slot)++;          /* down */
     dist_mask <<= 1;
     if (dir & dist_mask) ENEMY_Y(slot)--;          /* up */
+    RAM(0x0002u) = dist_mask;                       /* NES mask in [02] ($08) */
 
     if (ENEMY_GOHMA_DIST_TRAVELED(slot) != 0x20)
         goto animate_eye;

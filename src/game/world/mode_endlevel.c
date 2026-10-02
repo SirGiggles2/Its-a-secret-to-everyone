@@ -27,6 +27,7 @@
 #include "platform_abi.h"
 #include "mode_endlevel.h"
 #include "progress_dispatch.h"   /* progress_update_world_curtain_effect */
+#include "world_dispatch.h"      /* world_fill_tile_map */
 #include "hud/hud_dispatch.h"    /* hud_world_fill_hearts, hud_tick_native_rupees */
 
 /* NES Variables.inc. */
@@ -45,9 +46,6 @@
 #define M12_CUR_PPU_CTRL_2000  RAM(0x00FFu)
 #define M12_CUR_PPU_MASK_2001  RAM(0x00FEu)
 
-/* PlayAreaTiles (WRAM $6530): 32 columns x 22 rows. */
-#define M12_PLAY_AREA_TILES    0x6530u
-#define M12_PLAY_AREA_BYTES    (32u * 22u)
 
 /* Genesis presentation / flow hooks (RoomRom/src/main.c). */
 extern void roomrom_mode12_begin(void);                 /* InitMode12 visuals */
@@ -57,13 +55,12 @@ extern void roomrom_mode12_exit(void);                  /* after EndGameMode12 *
 
 static void init_mode12(void)
 {
-    unsigned int i;
     M12_SONG_REQUEST = 0x04u;          /* "End Level" song */
     M12_CURTAIN_DEC_COL = 0x20u;
     M12_CURTAIN_INC_COL = 0x01u;
     M12_OBJ_TIMER_LINK = 0x30u;
-    for (i = 0u; i < M12_PLAY_AREA_BYTES; ++i)       /* FillTileMap($24) */
-        nes_ram[M12_PLAY_AREA_TILES + i] = 0x24u;
+    RAM(0x000Au) = 0x24u;              /* FillTileMap($24) */
+    world_fill_tile_map();
     M12_IS_UPDATING_MODE = (unsigned char)(M12_IS_UPDATING_MODE + 1u);
     M12_ITEM_TYPE_TO_LIFT = 0x1Bu;     /* triforce */
     roomrom_mode12_begin();

@@ -54,6 +54,9 @@ DrawObjectNotMirroredOverLink:
     JSR EqLogDraw
     LDA $5005
     RTS
+Link_EndMoveAndDraw_Bank4:
+    LDA #$06
+    STA ObjAnimCounter
 Link_EndMoveAndAnimate_Bank4:
     LDA #'A'
     JSR LogA

@@ -29,6 +29,8 @@ extern "C" {
  * WORLD_TMP2 (mid-X) + WORLD_TMP3 (mid-Y). NES GetObjectMiddle at
  * Z_01.asm:5498. Used by collision detection in subsequent ports. */
 void world_get_object_middle(unsigned int slot);
+/* FillTileMap: PlayAreaTiles ($6530..$67EF) := [0A]; [00:01] = $67F0. */
+void world_fill_tile_map(void);
 
 /* Maze step-tracker for the forest ($61) and mountain ($1B) overworld
  * mazes. Reads LINK_DIR + CUR_ROOM_ID + WORLD_MAZE_STEP, advances or

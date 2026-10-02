@@ -88,13 +88,14 @@ void c_gohma_animate_and_draw(unsigned int eye_frame, unsigned int slot)
 void c_gohma_check_collisions(unsigned int slot)
 {
     const unsigned char saved_x = (unsigned char)ENEMY_X(slot);
-    unsigned int part;
 
+    /* [0F] itself is the loop counter (5..1, 0 on exit), as on the NES. */
     ENEMY_X(slot) = (unsigned char)(saved_x - 0x10u);
-    for (part = 5u; part != 0u; --part) {
-        ENEMY_FRAME_FLAGS = (unsigned char)part;
+    ENEMY_FRAME_FLAGS = 5u;
+    do {
         c_check_monster_collisions(slot);
         ENEMY_X(slot) = (unsigned char)(ENEMY_X(slot) + 8u);
-    }
+        ENEMY_FRAME_FLAGS = (unsigned char)(ENEMY_FRAME_FLAGS - 1u);
+    } while (ENEMY_FRAME_FLAGS != 0u);
     ENEMY_X(slot) = saved_x;
 }

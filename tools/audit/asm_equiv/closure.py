@@ -102,14 +102,14 @@ def closure(ref: Path, files: list[str], roots: list[str], stop: set[str]):
 
     # Cross-bank trampolines (Link_EndMoveAndAnimate_Bank4, ...) lead into
     # whole other subsystems; they stop the walk and trap if reached.
-    stop = set(stop) | {name for b in banks.values() for _, name in b.labels
-                        if TRAMPOLINE.search(name)}
+    tramp = {name for b in banks.values() for _, name in b.labels if TRAMPOLINE.search(name)}
     chosen: dict[str, set[int]] = {f: set() for f in files}
     work: list[tuple[str, int]] = []
 
-    def add(f: str, n: int):
+    def add(f: str, n: int, branch: bool = False):
+        # A same-bank branch must reach its target, trampoline or not.
         name = banks[f].labels[n][1]
-        if name in stop or n in chosen[f]:
+        if name in stop or (name in tramp and not branch) or n in chosen[f]:
             return
         chosen[f].add(n)
         work.append((f, n))
@@ -129,7 +129,8 @@ def closure(ref: Path, files: list[str], roots: list[str], stop: set[str]):
                 continue
             is_data = op.startswith(".")
             code |= not is_data
-            last = op
+            if not is_data:
+                last = op           # last instruction (trailing filler data ignored)
             for ident in IDENT.findall(rest):
                 if ident in ("A", "X", "Y") or ident in stop:
                     continue
@@ -137,10 +138,11 @@ def closure(ref: Path, files: list[str], roots: list[str], stop: set[str]):
                 if g is None:
                     continue
                 m = banks[g].index[ident]
-                add(g, m)
-                if op in BRANCHES and g == f:
+                is_branch = op in BRANCHES and g == f
+                add(g, m, is_branch)
+                if is_branch:
                     for k in range(min(n, m), max(n, m) + 1):
-                        add(f, k)
+                        add(f, k, True)
         if code and last not in ENDS and n + 1 < len(bank.labels):
             add(f, n + 1)
         # Tables are indexed past their end into the next table (Dodongo

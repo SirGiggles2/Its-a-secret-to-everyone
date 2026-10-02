@@ -37,6 +37,7 @@
 #include "world/draw_dispatch.h"
 #include "world/sprite_dispatch.h"
 #include "world/object_dispatch.h"   /* object_bound_by_room, object_move_object */
+#include "world/world_dispatch.h"    /* world_fill_tile_map */
 #include "world/dyn_tile_dispatch.h" /* dyn_tile_change_tile_obj_tiles (step 6c) */
 #include "core/core_dispatch.h"      /* core_get_opposite_dir, core_reset_moving_dir,
                                         core_reset_obj_metastate_and_timer */
@@ -1348,6 +1349,10 @@ void enrt_update_zelda(unsigned int slot)
         ENEMY_MOVE_TIMER(slot) = 0x80u;
         return;
     }
+    /* Link_EndMoveAndDraw_Bank4: animation counter 6 (no animation), then
+     * Link_EndMoveAndAnimate through the Link owner (T-171). */
+    RAM(0x03D0u) = 0x06u;
+    roomrom_main_link_end_move_from_object();
     if ((unsigned char)ENEMY_MOVE_TIMER(slot) != 0u) return;
     RAM(0x0011u) = 0u; /* IsUpdatingMode */
     RAM(NES_SUB_MODE) = 0u;
@@ -1356,4 +1361,5 @@ void enrt_update_zelda(unsigned int slot)
     ENEMY_X(12u) = 0x20u;
     ENEMY_X(13u) = 0x01u;
     RAM(0x000Au) = 0x24u; /* FillTileMap blank tile selector. */
+    world_fill_tile_map();  /* JMP FillTileMap (T-171) */
 }

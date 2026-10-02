@@ -188,3 +188,15 @@ void world_get_object_middle(unsigned int slot)
     WORLD_TMP2 = (uint8_t)(OBJ_X(slot) + offset_x);
     WORLD_TMP3 = (uint8_t)(OBJ_Y(slot) + 8u);
 }
+
+/* FillTileMap (Z_07.asm): PlayAreaTiles $6530..$67EF := [0A]. Leaves the
+ * NES pointer [00:01] at $67F0, as the loop does. */
+void world_fill_tile_map(void)
+{
+    const unsigned char tile = (unsigned char)nes_ram[0x000Au];
+    unsigned int a;
+    for (a = 0x6530u; a < 0x67F0u; ++a)
+        nes_ram[a] = tile;
+    nes_ram[0x0000u] = 0xF0u;
+    nes_ram[0x0001u] = 0x67u;
+}
