@@ -3870,13 +3870,28 @@ static void nes_frame_timers_and_random(void)
             nes_ram[0x0026u] = 0x09u;  /* reset stun cycle */
             loop_end = 0x4Eu;  /* extended loop $4E..$27 */
         }
-        /* T-125: pointer walk (independent cells, order-free). */
+        /* T-125: pointer walk (independent cells, order-free). T-172: four
+         * cells at a time skip when all are 0 ($28..$3B and $3C..$4B are
+         * long-aligned); most timers are idle in a busy room too. */
         {
-            unsigned char *t = &nes_ram[0x0027u];
-            unsigned char *end = &nes_ram[(unsigned short)loop_end + 1u];
-            do {
+            unsigned char *t = (unsigned char *)(unsigned long)&nes_ram[0x0027u];
+            unsigned char *const end = (unsigned char *)(unsigned long)
+                &nes_ram[(unsigned short)loop_end + 1u];
+            if (*t != 0u) --*t;                       /* $27 */
+            ++t;
+            while (t + 4 <= end) {
+                if (*(const unsigned long *)(const void *)t != 0u) {
+                    if (t[0]) --t[0];
+                    if (t[1]) --t[1];
+                    if (t[2]) --t[2];
+                    if (t[3]) --t[3];
+                }
+                t += 4;
+            }
+            while (t != end) {
                 if (*t != 0u) --*t;
-            } while (++t != end);
+                ++t;
+            }
         }
     }
 
