@@ -79,8 +79,12 @@ unsigned char collision_do_objects_collide(unsigned int threshold)
     return collision_do_objects_collide_with_thresholds();
 }
 
-unsigned char collision_get_collidable_tile(unsigned int hotspot_offset,
-                                            unsigned int slot)
+/* nes_scratch: also leave the column address in [00:01] as the NES does
+ * (T-056: CheckLadder reads [00] after its GetCollidingTileMoving). The
+ * plain entry points skip the two stores (busy-room budget, T-172). */
+static inline __attribute__((always_inline)) unsigned char
+collidable_tile(unsigned int hotspot_offset, unsigned int slot,
+                const unsigned char nes_scratch)
 {
     /* drain at collision_runtime.c:239-308. NES GetCollidableTile. */
     COMBAT_HITBOX_X = (uint8_t)hotspot_offset;
@@ -118,6 +122,10 @@ unsigned char collision_get_collidable_tile(unsigned int hotspot_offset,
     const unsigned short col_addr =
         (unsigned short)(((unsigned short)k_play_area_column_addrs[col_idx]) |
                          ((unsigned short)k_play_area_column_addrs[col_idx + 1u] << 8));
+    if (nes_scratch) {
+        nes_ram[0x0000u] = k_play_area_column_addrs[col_idx];
+        nes_ram[0x0001u] = k_play_area_column_addrs[col_idx + 1u];
+    }
 
     /* NES SBC #$40 wraps at 8 bits before the LSRs (T-147: a red leever
      * placed at Y $FD -> adjusted Y $08 -> row $19, the next column's row
@@ -160,6 +168,12 @@ unsigned char collision_get_collidable_tile(unsigned int hotspot_offset,
     return (unsigned char)ENEMY_COLLIDED_TILE(slot);
 }
 
+unsigned char collision_get_collidable_tile(unsigned int hotspot_offset,
+                                            unsigned int slot)
+{
+    return collidable_tile(hotspot_offset, slot, 0u);
+}
+
 unsigned char collision_get_collidable_tile_still(unsigned int slot)
 {
     /* drain at collision_runtime.c:310-313. */
@@ -167,24 +181,26 @@ unsigned char collision_get_collidable_tile_still(unsigned int slot)
     return collision_get_collidable_tile(0u, slot);
 }
 
-unsigned char collision_get_colliding_tile_moving(unsigned int slot)
+/* NES GetCollidingTileMoving: hotspot -8 (Link) / -$10 for up, left or no
+ * direction in [0F], 8 for down, $10 for right. */
+static inline __attribute__((always_inline)) unsigned char
+colliding_tile_moving(unsigned int slot, const unsigned char nes_scratch)
 {
     /* drain at collision_runtime.c:315-330. */
-    unsigned char hotspot;
-    if (slot == 0u) {
-        hotspot = 0xF8u;
-    } else {
-        hotspot = 0xF0u;
-    }
+    unsigned char hotspot = (slot == 0u) ? 0xF8u : 0xF0u;
     const unsigned char dir = COMBAT_PART_INDEX;
-    if (dir & 0x05u) {
-        if (dir & 0x04u) {
-            hotspot = 8u;
-        } else {
-            hotspot = 16u;
-        }
-    }
-    return collision_get_collidable_tile(hotspot, slot);
+    if (dir & 0x05u) hotspot = (dir & 0x04u) ? 8u : 16u;
+    return collidable_tile(hotspot, slot, nes_scratch);
+}
+
+unsigned char collision_get_colliding_tile_moving(unsigned int slot)
+{
+    return colliding_tile_moving(slot, 0u);
+}
+
+unsigned char collision_get_colliding_tile_moving_nes(unsigned int slot)
+{
+    return colliding_tile_moving(slot, 1u);
 }
 
 /* --------------------------------------------------------------- */

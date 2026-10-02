@@ -196,8 +196,9 @@
  * here on demand: 4 cached pairs, drawn with PAL1. 1432..1439 (free). */
 #define ROOMROM_PT1_PAIR_TILE_BASE 1432u
 #define ROOMROM_PT1_PAIR_TILE_COUNT 8u
-/* The pause inventory owns 1280..1295. Its ROM-derived marker pair
- * (indices 14/15) is also uploaded at gameplay boot for the Original HUD. */
+/* The pause inventory owns 1280..1295. All 16 live-extracted tiles are
+ * also uploaded at gameplay boot: the marker pair (14/15) for the Original
+ * HUD, raft $6C (4/5) and ladder $76 (6/7) for the world sprites (T-056). */
 #define ROOMROM_SUBSCREEN_SPRITE_TILE_BASE 1280u
 #define ROOMROM_SUBSCREEN_SPRITE_TILE_COUNT 16u
 #define ROOMROM_HUD_COMPASS_MARKER_TILE 1294u

@@ -74,6 +74,16 @@ short roomrom_main_current_link_y(void);
 void roomrom_main_set_link_story_pose(unsigned char x, unsigned char y,
                                      unsigned char face);
 
+/* T-056: Link's typed state from the NES cells after NES object code
+ * moved/turned him (UpdateDock). */
+void roomrom_main_link_sync_from_nes(void);
+/* T-056: Link_EndMoveAndAnimate called from an object update (UpdateDock):
+ * ladder setup + CheckWarps (mode 5), AnimateLinkBase, Link redrawn. */
+void roomrom_main_link_end_move_from_object(void);
+/* T-056: start the OW scroll toward ObjDir now (UpdateDock's
+ * GoToNextModeFromPlay, after its draw). */
+void roomrom_main_ow_scroll_from_object(void);
+
 /* Read Link's grid offset (NES ObjGridOffset). Coordinator gates rule 2. */
 signed char roomrom_main_current_link_grid_offset(void);
 

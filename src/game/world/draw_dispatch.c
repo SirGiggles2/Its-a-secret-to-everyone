@@ -636,6 +636,15 @@ static void anim_write_static_item_sprites_with_attributes(
     anim_write_item_sprites(slot, item_slot);
 }
 
+/* T-056: Anim_WriteStaticItemSpritesWithAttributes for callers that
+ * staged [00]/[01] (Anim_FetchObjPosForSpriteDescriptor): ladder (item
+ * slot $0C) and raft (item slot $09), both attribute 0. */
+void draw_static_item_sprites(unsigned char attrs, unsigned int slot,
+                              unsigned int item_slot)
+{
+    anim_write_static_item_sprites_with_attributes(attrs, slot, item_slot);
+}
+
 /* T-050: Anim_WriteItemSprites entry for callers that staged [00]/[01]
  * position, [04]/[05] attributes, [0C] frame and [0F] flip themselves
  * (DrawFairy). */

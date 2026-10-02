@@ -1,0 +1,67 @@
+{
+ "name": "t056_raft",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {
+  "0x657": 1,
+  "0x660": 1
+ },
+ "stages": [
+  [
+   30,
+   "wr(0x526, 0x55)\nwr(0x11, 0)\nwr(0x12, 3)\nwr(0x13, 0)"
+  ],
+  [
+   80,
+   "wr(0x70, 128)\nwr(0x84, 157)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(128, 157, 8)\nlog(string.format('start room %02X gm %02X link %02X,%02X d %02X st %02X grid %02X ladder %02X raft-slot-st %02X', rd(0xEB), rd(0x12), rd(0x70), rd(0x84), rd(0x98), rd(0xAC), rd(0x394), rd(0x64), rd(0xB7)))"
+  ],
+  [
+   120,
+   "log(string.format('t120 room %02X gm %02X link %02X,%02X d %02X st %02X grid %02X ladder %02X raft-slot-st %02X', rd(0xEB), rd(0x12), rd(0x70), rd(0x84), rd(0x98), rd(0xAC), rd(0x394), rd(0x64), rd(0xB7)))"
+  ],
+  [
+   180,
+   "log(string.format('t180 room %02X gm %02X link %02X,%02X d %02X st %02X grid %02X ladder %02X raft-slot-st %02X', rd(0xEB), rd(0x12), rd(0x70), rd(0x84), rd(0x98), rd(0xAC), rd(0x394), rd(0x64), rd(0xB7)))"
+  ],
+  [
+   300,
+   "log(string.format('t300 room %02X gm %02X link %02X,%02X d %02X st %02X grid %02X ladder %02X raft-slot-st %02X', rd(0xEB), rd(0x12), rd(0x70), rd(0x84), rd(0x98), rd(0xAC), rd(0x394), rd(0x64), rd(0xB7)))"
+  ],
+  [
+   420,
+   "log(string.format('t420 room %02X gm %02X link %02X,%02X d %02X st %02X grid %02X ladder %02X raft-slot-st %02X', rd(0xEB), rd(0x12), rd(0x70), rd(0x84), rd(0x98), rd(0xAC), rd(0x394), rd(0x64), rd(0xB7)))"
+  ],
+  [
+   560,
+   "log(string.format('t560 room %02X gm %02X link %02X,%02X d %02X st %02X grid %02X ladder %02X raft-slot-st %02X', rd(0xEB), rd(0x12), rd(0x70), rd(0x84), rd(0x98), rd(0xAC), rd(0x394), rd(0x64), rd(0xB7)))"
+  ],
+  [
+   700,
+   "log(string.format('t700 room %02X gm %02X link %02X,%02X d %02X st %02X grid %02X ladder %02X raft-slot-st %02X', rd(0xEB), rd(0x12), rd(0x70), rd(0x84), rd(0x98), rd(0xAC), rd(0x394), rd(0x64), rd(0xB7)))"
+  ]
+ ],
+ "script": [
+  [
+   90,
+   ""
+  ],
+  [
+   40,
+   "U"
+  ],
+  [
+   260,
+   ""
+  ],
+  [
+   160,
+   "D"
+  ],
+  [
+   250,
+   ""
+  ]
+ ],
+ "clock": "play",
+ "_note": "T-056 Q1 OW room $55 dock (X $80, tile $76 row Y80): Link at ($80,$9D) walks up to Y $7D -> UpdateDock state 2: halted, secret tune, raft up 1 px/frame to Y $3D, GoToNextModeFromPlay -> scroll north to $45 (L4 lake). Then Down back to the south edge of $45 -> $55 at Y $3D -> state 1, raft down to $7F (grid offset 2). Map from tools/lockstep/ow_map.py; NOT yet captured (Windows)."
+}

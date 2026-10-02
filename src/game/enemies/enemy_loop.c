@@ -36,6 +36,7 @@
 #include "../items/item_object.h"         /* Plan v5c $60 UpdateItem */
 #include "../world/render/ow_render.h"      /* T-050 roomrom_ow_room_tile_object */
 #include "../world/pushblock.h"             /* T-054 moving block sprite */
+#include "../world/dock.h"                  /* T-056 UpdateDock */
 
 /* NES Z_07.asm:5227 ObjectTypeToHpPairs — packed HP, 2 per byte.
  * Indexed by ObjType/2. Even-type uses high nibble (AND #$F0); odd-type
@@ -1095,8 +1096,9 @@ const enemy_update_fn enemy_update_fns[ENEMY_LOOP_TYPE_MAX] = {
      * this row the type-$60 slot tick is a no-op: drops appear but
      * never decay and never get picked up. */
     [0x60] = item_object_update,            /* DroppedItem */
-    /* T-050 OW tile objects (NES UpdateObject_JumpTable $62-$67). The
-     * dock $61 is T-056 (raft); UW block $68 is T-054. */
+    /* T-050 OW tile objects (NES UpdateObject_JumpTable $61-$67); UW
+     * block $68 is T-054. Dock $61 / raft: T-056 (dock.c). */
+    [0x61] = world_update_dock,               /* Dock */
     [0x2F] = enrt_update_pond_fairy,          /* PondFairy */
     [0x5E] = room_update_flute_secret,        /* FluteSecret (T-171) */
     [0x62] = room_update_rock_or_gravestone,  /* Rock */
@@ -1252,8 +1254,13 @@ static void enemy_loop_room_init_impl(unsigned char room_id, unsigned char scene
      * before any room object setup (ZoraActive $514, object q-speeds,
      * counters, ...). Only on a real entry: the repeat-entry guard below
      * returns without touching room state. */
-    if (!same_room && !s_fix_arm_suppress_room_init)
+    if (!same_room && !s_fix_arm_suppress_room_init) {
         core_clear_ram0300_up_to(5u, 0x1Fu);
+        /* ResetInvObjState's LadderSlot half (T-056): no ladder is out in
+         * a newly entered room. Its weapon-slot half stays with the
+         * weapon owners (bomb.c room-change reset). */
+        RAM(0x0064u) = 0u;
+    }
     /* InitMode_EnterRoom @PlaceObjects: CurObjIndex = $B, ready for the
      * first mode 5 frame (T-171: t013_route t883 after a cave exit). */
     RAM(0x0340u) = 0x0Bu;

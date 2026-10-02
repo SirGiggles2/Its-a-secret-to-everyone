@@ -57,6 +57,10 @@ void draw_animate_item_object(unsigned char item_id, unsigned int slot);
 void draw_item_by_slot(unsigned int item_slot, unsigned int slot);
 /* Anim_WriteItemSprites with caller-staged [00]/[01]/[04]/[05]/[0C]/[0F]. */
 void draw_anim_write_item_sprites(unsigned int slot, unsigned int item_slot);
+/* T-056: Anim_WriteStaticItemSpritesWithAttributes (Z_01.asm): attributes,
+ * object slot, item slot; [00]/[01] already hold the position. */
+void draw_static_item_sprites(unsigned char attrs, unsigned int slot,
+                              unsigned int item_slot);
 
 /* DrawItemInInventory (Z_07.asm:2011). Reads item value from
  * RAM($0657+slot) into TMP4, then DrawItemBySlot. */

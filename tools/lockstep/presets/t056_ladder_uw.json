@@ -1,0 +1,71 @@
+{
+ "name": "t056_ladder_uw",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {
+  "0x657": 1,
+  "0x663": 1
+ },
+ "stages": [
+  [
+   50,
+   "wr(0x10, 1)\nwr(0x11, 0)\nwr(0x12, 2)\nwr(0x13, 0)"
+  ],
+  [
+   330,
+   "wr(0x6BAD, 0x23)\nwr(0x11, 0)\nwr(0x12, 3)\nwr(0x13, 0)"
+  ],
+  [
+   500,
+   "wr(0x70, 32)\nwr(0x84, 141)\nwr(0x98, 1)\nwr(0x394, 0)\ngen_link_pos(32, 141, 1)\nlog(string.format('start room %02X gm %02X link %02X,%02X d %02X st %02X grid %02X ladder %02X raft-slot-st %02X', rd(0xEB), rd(0x12), rd(0x70), rd(0x84), rd(0x98), rd(0xAC), rd(0x394), rd(0x64), rd(0xB7)))"
+  ],
+  [
+   560,
+   "log(string.format('t560 room %02X gm %02X link %02X,%02X d %02X st %02X grid %02X ladder %02X raft-slot-st %02X', rd(0xEB), rd(0x12), rd(0x70), rd(0x84), rd(0x98), rd(0xAC), rd(0x394), rd(0x64), rd(0xB7)))"
+  ],
+  [
+   640,
+   "log(string.format('t640 room %02X gm %02X link %02X,%02X d %02X st %02X grid %02X ladder %02X raft-slot-st %02X', rd(0xEB), rd(0x12), rd(0x70), rd(0x84), rd(0x98), rd(0xAC), rd(0x394), rd(0x64), rd(0xB7)))"
+  ],
+  [
+   720,
+   "log(string.format('t720 room %02X gm %02X link %02X,%02X d %02X st %02X grid %02X ladder %02X raft-slot-st %02X', rd(0xEB), rd(0x12), rd(0x70), rd(0x84), rd(0x98), rd(0xAC), rd(0x394), rd(0x64), rd(0xB7)))"
+  ],
+  [
+   800,
+   "log(string.format('t800 room %02X gm %02X link %02X,%02X d %02X st %02X grid %02X ladder %02X raft-slot-st %02X', rd(0xEB), rd(0x12), rd(0x70), rd(0x84), rd(0x98), rd(0xAC), rd(0x394), rd(0x64), rd(0xB7)))"
+  ]
+ ],
+ "script": [
+  [
+   510,
+   ""
+  ],
+  [
+   100,
+   "R"
+  ],
+  [
+   40,
+   ""
+  ],
+  [
+   100,
+   "L"
+  ],
+  [
+   40,
+   ""
+  ],
+  [
+   60,
+   "U"
+  ],
+  [
+   200,
+   ""
+  ]
+ ],
+ "clock": "play",
+ "_note": "T-056 Q1 L1 room $23 (moat, $F4 tiles, uw_room_blob entry 1): GameMode-2 warp to L1, mode-3 reload via StartRoomId $6BAD. Link at ($20,$8D) facing right: tile at X+$10 row Y98 is $F4 -> ladder at ($30,$90); crosses cols 6-7 onto floor col 8, ladder put away at distance $10; back west over the ladder, then up. NOT yet captured (Windows)."
+}

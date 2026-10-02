@@ -1008,6 +1008,14 @@ static inline unsigned short translate_tile(unsigned char nes_tile,
                                 (unsigned short)nes_tile);
     }
     if (nes_attrs & ITEM_ATTR_MARKER) {
+        /* T-056: raft $6C (item slot $09) and ladder $76 (item slot $0C)
+         * use the live-extracted pause tiles, resident from gameplay boot
+         * (inventory_sprite_chr idx 4/5 and 6/7, sub-pal-0 encoding).
+         * The atlas has no $6C and its $76 entry holds other art. */
+        if (nes_tile == 0x6Cu)
+            return (unsigned short)(ROOMROM_SUBSCREEN_SPRITE_TILE_BASE + 4u);
+        if (nes_tile == 0x76u)
+            return (unsigned short)(ROOMROM_SUBSCREEN_SPRITE_TILE_BASE + 6u);
         /* 2026-05-22 — route item tiles to ITEM atlas. NES tile ID
          * maps to atlas index via lookup. Genesis VRAM slot =
          * ITEM_TILE_BASE + atlas_index. */

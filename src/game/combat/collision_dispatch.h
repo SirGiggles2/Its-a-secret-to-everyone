@@ -32,6 +32,9 @@ unsigned char collision_get_collidable_tile_still(unsigned int slot);
 /* Compute hotspot offset from slot+dir, then collision_get_collidable_tile.
  * NES GetCollidingTileMoving. */
 unsigned char collision_get_colliding_tile_moving(unsigned int slot);
+/* Same, also writing the NES column address to [00:01] (GetCollidableTile
+ * scratch) for ports that read it afterwards (T-056 CheckLadder). */
+unsigned char collision_get_colliding_tile_moving_nes(unsigned int slot);
 
 /* Dispatch monster-vs-weapon collision response: gohma special path,
  * direction-based parry for $0B/$0C, dirward-flip for $12/$13, deal

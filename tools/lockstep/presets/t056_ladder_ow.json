@@ -1,0 +1,59 @@
+{
+ "name": "t056_ladder_ow",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {
+  "0x657": 1,
+  "0x663": 1
+ },
+ "stages": [
+  [
+   30,
+   "wr(0x526, 0x5F)\nwr(0x11, 0)\nwr(0x12, 3)\nwr(0x13, 0)"
+  ],
+  [
+   80,
+   "wr(0x70, 128)\nwr(0x84, 141)\nwr(0x98, 1)\nwr(0x394, 0)\ngen_link_pos(128, 141, 1)\nlog(string.format('start room %02X gm %02X link %02X,%02X d %02X st %02X grid %02X ladder %02X raft-slot-st %02X', rd(0xEB), rd(0x12), rd(0x70), rd(0x84), rd(0x98), rd(0xAC), rd(0x394), rd(0x64), rd(0xB7)))"
+  ],
+  [
+   140,
+   "log(string.format('t140 room %02X gm %02X link %02X,%02X d %02X st %02X grid %02X ladder %02X raft-slot-st %02X', rd(0xEB), rd(0x12), rd(0x70), rd(0x84), rd(0x98), rd(0xAC), rd(0x394), rd(0x64), rd(0xB7)))"
+  ],
+  [
+   220,
+   "log(string.format('t220 room %02X gm %02X link %02X,%02X d %02X st %02X grid %02X ladder %02X raft-slot-st %02X', rd(0xEB), rd(0x12), rd(0x70), rd(0x84), rd(0x98), rd(0xAC), rd(0x394), rd(0x64), rd(0xB7)))"
+  ],
+  [
+   320,
+   "log(string.format('t320 room %02X gm %02X link %02X,%02X d %02X st %02X grid %02X ladder %02X raft-slot-st %02X', rd(0xEB), rd(0x12), rd(0x70), rd(0x84), rd(0x98), rd(0xAC), rd(0x394), rd(0x64), rd(0xB7)))"
+  ],
+  [
+   420,
+   "log(string.format('t420 room %02X gm %02X link %02X,%02X d %02X st %02X grid %02X ladder %02X raft-slot-st %02X', rd(0xEB), rd(0x12), rd(0x70), rd(0x84), rd(0x98), rd(0xAC), rd(0x394), rd(0x64), rd(0xB7)))"
+  ]
+ ],
+ "script": [
+  [
+   90,
+   ""
+  ],
+  [
+   130,
+   "R"
+  ],
+  [
+   60,
+   ""
+  ],
+  [
+   130,
+   "L"
+  ],
+  [
+   200,
+   ""
+  ]
+ ],
+ "clock": "play",
+ "_note": "T-056 Q1 OW ladder room $5F (LadderRoomsOW): mode-3 reload via CaveSourceRoomId. Link at ($80,$8D) facing right walks east: col 9 water $8E -> ladder (Link_EndMoveAndAnimate, slot = FindEmptyMonsterSlot), stepping stone col 10 ($76), water col 11 -> ladder again, heart container col 12 (X $C0, Y $90). Then walks back west. Tiles from tools/lockstep/ow_map.py; NOT yet captured (Windows)."
+}

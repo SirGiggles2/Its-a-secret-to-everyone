@@ -346,12 +346,16 @@ void roomrom_sprites_upload_persistent_chr(void)
         }
     }
 
-    /* NES compass marker attr $03 uses sprite sub-pal 3, which the
-     * subscreen renders with the ROM-derived pixel-9 biased $3E pair
-     * on PAL0. Keep that pair resident in its existing inventory VRAM
-     * reservation so the gameplay HUD can use it before opening pause. */
-    render_chr_upload((unsigned short)(ROOMROM_HUD_COMPASS_MARKER_TILE * 32u),
-                      &k_inventory_sprite_chr[14][0], 64u);
+    /* The pause inventory's 16 live-extracted tiles stay resident in
+     * their reservation (1280..1295; the pause re-uploads the same
+     * bytes): the gameplay HUD uses the compass marker pair (14/15, NES
+     * attr $03 drawn with the pixel-9 biased $3E pair on PAL0) before
+     * pause opens, and the world raft $6C (4/5) and ladder $76 (6/7) use
+     * theirs (T-056: neither is in the items atlas; its $76 entry is
+     * not the ladder). */
+    render_chr_upload((unsigned short)(ROOMROM_SUBSCREEN_SPRITE_TILE_BASE * 32u),
+                      &k_inventory_sprite_chr[0][0],
+                      (unsigned short)(ROOMROM_SUBSCREEN_SPRITE_TILE_COUNT * 32u));
 
     /* Prepare fixed FX with persistent CHR, before controller play.
      * First use during a Patra beam burst/death previously missed VBlank. */

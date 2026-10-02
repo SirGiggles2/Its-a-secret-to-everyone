@@ -42,13 +42,20 @@ def main() -> int:
     a = ap.parse_args()
     flags = [f for f in b.CFLAGS if f not in ("-m68000", "-ffixed-a4", "-O3")]
     flags += ['-Dasm(x)=__asm__("r12")', "-O0", "-fno-common", "-w",
-              "-Werror=implicit-function-declaration"]
+              "-Werror=implicit-function-declaration",
+              # always_inline bodies live in other TUs (LTO on m68k).
+              "-Dalways_inline=noinline"]
+    incs = b.include_args()
+    if not (b.SGDK / "inc" / "genesis.h").exists():
+        # No SGDK tree (Linux cloud session): host stand-in headers.
+        incs = [f"-I{ROOT / 'tools' / 'audit' / 'host_sgdk_stub'}"] + incs
+        print("SGDK headers absent: using tools/audit/host_sgdk_stub")
     defs, und = collections.defaultdict(list), collections.defaultdict(list)
     errors = 0
     with tempfile.TemporaryDirectory() as td:
         for i, src in enumerate(sources()):
             obj = f"{td}/{i}.o"
-            r = subprocess.run(["gcc", "-c"] + flags + b.include_args() + [src, "-o", obj],
+            r = subprocess.run(["gcc", "-c"] + flags + incs + [src, "-o", obj],
                                cwd=ROOT, capture_output=True, text=True)
             if r.returncode:
                 if src in HOST_ASM_TU:

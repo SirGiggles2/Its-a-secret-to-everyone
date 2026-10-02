@@ -248,6 +248,8 @@ ROOMROM_C_SOURCES = [
     ("src/game/world/ow_meta.c",    "world_ow_meta.o"),
     ("src/game/world/transition.c", "world_transition.o"),
     ("src/game/world/ow_scroll.c", "ow_scroll.o"),
+    ("src/game/world/link_ladder.c", "world_link_ladder.o"),  # T-056 NES ladder (CheckLadder + setup)
+    ("src/game/world/dock.c", "world_dock.o"),  # T-056 NES UpdateDock (raft)
     ("RoomRom/data/levelinfo_start_rooms.c", "levelinfo_start_rooms.o"),
     ("RoomRom/src/probes/metadata_probe.c", "metadata_probe.o"),
     # Task 5.5: door-type expected table for L1Q1 verification

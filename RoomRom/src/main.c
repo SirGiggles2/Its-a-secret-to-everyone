@@ -49,6 +49,7 @@
 #include "../../src/game/world/trap_dispatch.h"     /* CheckPassiveTileObjects on OW collision */
 #include "../../src/game/dungeon/uw_dark.h"
 #include "../../src/game/dungeon/link_doorway.h"  /* T-131 */
+#include "../../src/game/world/link_ladder.h"     /* T-056 */
 #include "../../src/game/audio/audio_requests.h"         /* T-127: NES sound request cells */              /* T-111: dark rooms by palette */
 #include "../../src/game/cave/uw_person_dispatch.h"    /* T-120: CheckPersonBlocking */
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
@@ -1001,6 +1002,41 @@ static link_dir_t link_dir_of_lowest_bit(unsigned char b)
     if (b & 0x04u) return LINK_DIR_DOWN;
     if (b & 0x08u) return LINK_DIR_UP;
     return LINK_DIR_NONE;
+}
+
+/* T-056: NES code outside UpdatePlayer moved or turned Link in the NES
+ * cells (UpdateDock): take position, grid offset and facing from them. */
+void roomrom_main_link_sync_from_nes(void)
+{
+    const link_dir_t d = link_dir_of_lowest_bit(nes_ram[0x0098u]);
+    players[0].x = (short)nes_ram[0x0070u];
+    players[0].y = (short)nes_ram[0x0084u];
+    s_link_grid_offset = (signed char)nes_ram[0x0394u];
+    if (d != LINK_DIR_NONE) {
+        s_link_dir = d;
+        players[0].face = (d == LINK_DIR_LEFT)  ? LINK_FACE_LEFT :
+                          (d == LINK_DIR_RIGHT) ? LINK_FACE_RIGHT :
+                          (d == LINK_DIR_UP)    ? LINK_FACE_UP : LINK_FACE_DOWN;
+    }
+}
+
+/* T-056: Link_EndMoveAndAnimate called by an object (UpdateDock's
+ * Link_EndMoveAndAnimate_Bank4) while UpdatePlayer returned (Link halted):
+ * ladder setup and CheckWarps in mode 5, AnimateLinkBase, and Link drawn
+ * at his new position after the objects (draw_link_pending). */
+void roomrom_main_link_end_move_from_object(void)
+{
+    roomrom_main_link_sync_from_nes();
+    if (nes_ram[0x0522u] != 0u) return;
+    if (nes_ram[0x0012u] == 0x05u) {
+        link_ladder_end_move();
+        record_warp_tile_ow();   /* @CheckWarps keeps ObjCollidedTile */
+    }
+    roomrom_combat_animate_link_base();
+    s_link_frame = (u8)((nes_ram[0x03E4u] & 1u) ^
+        ((players[0].face == LINK_FACE_LEFT ||
+          players[0].face == LINK_FACE_RIGHT) ? 1u : 0u));
+    s_link_draw_pending = 1u;
 }
 
 static unsigned char link_walkable_at(short x, short y, link_dir_t dir);
@@ -2312,6 +2348,21 @@ static void edge_load_or_clamp(void)
     }
 }
 
+/* T-056: UpdateDock's GoToNextModeFromPlay (raft at Y $3D) sets mode 6 in
+ * the object phase. Start the OW scroll toward ObjDir in that same tick,
+ * as a walked screen edge starts it in UpdatePlayer's tick (CheckScreenEdge
+ * -> GoToNextModeFromPlay); the next tick is InitMode6. */
+void roomrom_main_ow_scroll_from_object(void)
+{
+    const u8 d = nes_ram[0x0098u];
+    if (s_scene != SCENE_OW || !ow_nes_scroll_enabled() ||
+        s_scroll_state != SCROLL_NONE)
+        return;
+    s_ow_edge = (d & 0x01u) ? 1u : (d & 0x02u) ? 2u :
+                (d & 0x04u) ? 3u : (d & 0x08u) ? 4u : 0u;
+    edge_load_or_clamp();
+}
+
 /* T-171: UpdateWhirlwind_Full's GoToNextModeFromPlay starts the teleport
  * scroll in the same tick, as CheckScreenEdge does for a walk. */
 void roomrom_main_begin_whirlwind_scroll(void)
@@ -3559,6 +3610,9 @@ static unsigned char play_update_objects(void)
      * halves bumped beyond SAT slot 79 by stale records).
      * Clear-before-draw mirrors the NES NMI sentinel pass. */
     enemy_render_reset_oam();
+    /* T-056: the ladder CheckLadder drew during UpdatePlayer (the cache
+     * clear above would have dropped it). */
+    link_ladder_draw();
     /* Plan v5c T6.5 â€” mini-map position marker flash + room
      * change refresh. Per NES Z_01.asm:4095-4146 the marker
      * flashes every 16 frames keyed on FrameCounter ($0015). */
@@ -4991,7 +5045,10 @@ void roomrom_debug_tick(void)
                     moving_dir = LINK_DIR_NONE;
 
                 s_ow_edge = 0u;
-                if (s_scene == SCENE_OW && moving_dir != LINK_DIR_NONE) {
+                /* GoWalkableDir returns before CheckScreenEdge while the
+                 * ladder is out (LadderSlot $64, T-056). */
+                if (s_scene == SCENE_OW && moving_dir != LINK_DIR_NONE &&
+                    nes_ram[0x0064u] == 0u) {
                     u8 d = moving_dir == LINK_DIR_RIGHT ? 1u :
                            moving_dir == LINK_DIR_LEFT ? 2u :
                            moving_dir == LINK_DIR_DOWN ? 4u : 8u;
@@ -5046,6 +5103,22 @@ void roomrom_debug_tick(void)
                         }
                         moving_dir = LINK_DIR_NONE;
                     }
+                }
+
+                /* T-056: Walker_Move runs CheckLadder for Link after
+                 * Walker_CheckTileCollision, before MoveObject (Z_07.asm).
+                 * Not while shoved (Walker_Move takes Obj_Shove instead) or
+                 * halted (UpdatePlayer returns first). [0F] in and out. */
+                if (nes_ram[0x0064u] != 0u && nes_ram[0x00C0u] == 0u &&
+                    (nes_ram[0x00ACu] & 0xC0u) != 0x40u) {
+                    nes_ram[0x0070u] = (unsigned char)players[0].x;
+                    nes_ram[0x0084u] = (unsigned char)players[0].y;
+                    nes_ram[0x0394u] = (unsigned char)s_link_grid_offset;
+                    if (s_link_dir != LINK_DIR_NONE)
+                        nes_ram[0x0098u] = link_nes_bit_of(s_link_dir);
+                    nes_ram[0x000Fu] = link_nes_bit_of(moving_dir);
+                    link_ladder_check();
+                    moving_dir = link_dir_of_lowest_bit(nes_ram[0x000Fu]);
                 }
 
                 /* Link knockback shove â€” NES Z1 Obj_Shove runs every frame
@@ -5127,6 +5200,10 @@ void roomrom_debug_tick(void)
             s_lvl_phase != LVL_CAVE_EXIT) {
             /* CheckCaveEdge -> GoToModeAFromCave leaves UpdatePlayer before
              * Link_EndMoveAndAnimate (T-171: t134 t443 ObjAnimCounter). */
+            /* T-056: Link_EndMoveAndAnimate's ladder setup runs after
+             * the move (grid truncated), before AnimateLinkBase. */
+            if (s_mode == MODE_WALK && s_move_style == MOVE_STYLE_NES)
+                link_ladder_end_move();
             roomrom_combat_end_move_and_animate();
             /* NES draws Link after AnimateLinkBase (SetUpWalkingSprites):
              * a frame toggled this tick shows now. */
