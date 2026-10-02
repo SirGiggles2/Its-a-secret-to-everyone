@@ -109,7 +109,7 @@ void enrt_pols_voice_move_x(unsigned int slot);
 void enrt_init_blue_keese(unsigned int slot);
 void enrt_init_red_or_black_keese(unsigned int slot);
 void enrt_destroy_monster_bank4(unsigned int slot);
-void enrt_shoot_fireball(unsigned int type, unsigned int source_slot);
+unsigned int enrt_shoot_fireball(unsigned int type, unsigned int source_slot);
 void enrt_wallmaster_prepare_to_draw(unsigned int slot);
 unsigned int enrt_wallmaster_calc_start_position(unsigned int instr_offset,
                                                  unsigned int init_major_min,
@@ -141,7 +141,7 @@ unsigned int enrt_is_quest_secret_mismatch(void);
 unsigned int enrt_pols_voice_get_colliding_tile(unsigned int slot);
 unsigned int enrt_wizzrobe_get_base_collidable_tile(unsigned int slot);
 unsigned int enrt_pols_voice_is_square_walkable(unsigned int slot);
-void enrt_shoot_fireball_55(unsigned int source_slot);
+unsigned int enrt_shoot_fireball_55(unsigned int source_slot);
 void enrt_animate_and_draw_common_object(unsigned int val, unsigned int slot);
 unsigned int enrt_walker_alt_dir_get_opposite(void);
 void enrt_walker_alt_dir_end_loop(void);

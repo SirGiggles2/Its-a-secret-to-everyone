@@ -48,7 +48,7 @@ extern unsigned int enrt_gel_move_splitting(unsigned int slot);
 extern void         enrt_update_common_wanderer(unsigned int turn_rate,
                                                 unsigned int slot);
 extern unsigned int enrt_shoot(void);
-extern void         enrt_shoot_fireball_55(unsigned int source_slot);
+extern unsigned int enrt_shoot_fireball_55(unsigned int source_slot);
 
 /* z07_set_type_and_clear_object — required by enrt_shoot
  * (enemy_boss_runtime.c:437). Drained native twin lives in
@@ -201,24 +201,15 @@ void c_aquamentus_shoot(unsigned int slot)
         const unsigned char rng = (unsigned char)ENEMY_RNG_A(slot);
         ENEMY_MOVE_TIMER(slot) = (unsigned char)(rng | 0x70u);
 
-        /* Middle fireball (vertical offset $00). After spawn,
-         * NES Y register holds the new slot (returned by FindEmptyMonsterSlot
-         * via ShootFireball). enrt_shoot_fireball_55 stashes the new slot
-         * in ENEMY_NEXT_SHOT_SLOT. */
-        enrt_shoot_fireball_55(slot);
-        if (ENEMY_NEXT_SHOT_SLOT != 0u) {
-            ENEMY_BOUNCE_FLAGS((unsigned int)ENEMY_NEXT_SHOT_SLOT) = 0x00u;
-        }
+        /* Middle fireball (vertical offset $00). */
+        /* STA Aquamentus_ObjFireballOffset, Y with ShootFireball's Y: the
+         * new slot, or 0 when none was free (the NES then writes slot 0's
+         * cell; the old EmptyMonsterSlot read reused a stale slot, T-171). */
+        ENEMY_BOUNCE_FLAGS(enrt_shoot_fireball_55(slot)) = 0x00u;
         /* Lower fireball (offset $01 = drift down). */
-        enrt_shoot_fireball_55(slot);
-        if (ENEMY_NEXT_SHOT_SLOT != 0u) {
-            ENEMY_BOUNCE_FLAGS((unsigned int)ENEMY_NEXT_SHOT_SLOT) = 0x01u;
-        }
+        ENEMY_BOUNCE_FLAGS(enrt_shoot_fireball_55(slot)) = 0x01u;
         /* Upper fireball (offset $FF = drift up). */
-        enrt_shoot_fireball_55(slot);
-        if (ENEMY_NEXT_SHOT_SLOT != 0u) {
-            ENEMY_BOUNCE_FLAGS((unsigned int)ENEMY_NEXT_SHOT_SLOT) = 0xFFu;
-        }
+        ENEMY_BOUNCE_FLAGS(enrt_shoot_fireball_55(slot)) = 0xFFu;
         return;
     }
 
@@ -254,6 +245,9 @@ void c_aquamentus_draw(unsigned int slot)
         ((unsigned char)ENEMY_HIT_REACTION(slot) & 0x03u) ^ 0x03u);
 
     /* Loop sprite_idx = 5..0 inclusive. */
+    /* NES scratch kept as on the NES (T-171): [0A] tile index, [0B]
+     * sprite index (both end one below their last value), [00]/[01]/[03]
+     * the last sprite's X/Y/attributes. */
     signed char sprite_idx;
     for (sprite_idx = 5; sprite_idx >= 0; sprite_idx--) {
         const unsigned char sx = (unsigned char)(
@@ -262,6 +256,9 @@ void c_aquamentus_draw(unsigned int slot)
         const unsigned char sy = (unsigned char)(
             (unsigned char)ENEMY_Y(slot)
             + k_aquamentus_sprite_offsets_y[(unsigned char)sprite_idx]);
+        RAM(0x0000u) = sx;
+        RAM(0x0001u) = sy;
+        RAM(0x0003u) = attr;
 
         unsigned char tile = k_aquamentus_tiles[tile_idx];
         if (tile == k_aquamentus_tiles[0]) {
@@ -272,6 +269,8 @@ void c_aquamentus_draw(unsigned int slot)
         }
         draw_write_boss_sprite(tile, sx, sy, attr);
         tile_idx = (unsigned char)(tile_idx - 1u);
+        RAM(0x000Au) = tile_idx;
+        RAM(0x000Bu) = (unsigned char)(sprite_idx - 1);
     }
 }
 
@@ -281,6 +280,6 @@ void c_aquamentus_draw(unsigned int slot)
  * enrt_shoot_fireball (enemy_projectile_runtime.c:67). */
 void c_shoot_fireball(unsigned int dir, unsigned int slot)
 {
-    extern void enrt_shoot_fireball(unsigned int type, unsigned int source_slot);
+    extern unsigned int enrt_shoot_fireball(unsigned int type, unsigned int source_slot);
     enrt_shoot_fireball(dir, slot);
 }

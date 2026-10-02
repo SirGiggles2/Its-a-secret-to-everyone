@@ -79,19 +79,22 @@ void enrt_destroy_monster_bank4(unsigned int slot) {
     ENEMY_METASTATE(slot) = 1;
 }
 
-void enrt_shoot_fireball(unsigned int type, unsigned int source_slot) {
+/* NES ShootFireball: returns Y, the new slot, or 0 when none was free
+ * (FindEmptyMonsterSlot ends with Y = 0); callers index with it. */
+unsigned int enrt_shoot_fireball(unsigned int type, unsigned int source_slot) {
     unsigned int new_slot;
     ENEMY_SHOT_TYPE_SCRATCH = (unsigned char)type;
     new_slot = z07_find_empty_monster_slot();
     if (new_slot == 0)
-        return;
+        return 0;
     z07_set_type_and_clear_object(ENEMY_SHOT_TYPE_SCRATCH, new_slot);
     ENEMY_X(new_slot) = (unsigned char)(ENEMY_X(source_slot) + 4);
     ENEMY_Y(new_slot) = ENEMY_Y(source_slot);
+    return new_slot;
 }
 
-void enrt_shoot_fireball_55(unsigned int source_slot) {
-    enrt_shoot_fireball(85, source_slot);
+unsigned int enrt_shoot_fireball_55(unsigned int source_slot) {
+    return enrt_shoot_fireball(85, source_slot);
 }
 
 void enrt_update_candle(void) {

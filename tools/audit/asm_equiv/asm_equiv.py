@@ -402,7 +402,45 @@ def run_spec(spec, cases: int, seed: int, verbose: bool) -> tuple[bool, str]:
         return True, head + "\nPASS"
 
 
-def debug_case(spec, k: int, seed: int, cells: list[int]) -> None:
+def watch_writes(rom: bytes, labels: dict[str, int], case, entry: str,
+                 cells: list[int]) -> list[str]:
+    """Replay case on the 6502 side, recording every write to cells as
+    'label+offset: $addr = value' (global labels only)."""
+    import bisect
+    from py65.devices.mpu6502 import MPU
+    names = sorted((v, k) for k, v in labels.items() if not k.startswith("@"))
+    addrs = [v for v, _ in names]
+    watched = set(cells)
+    out: list[str] = []
+
+    class Mem(bytearray):
+        pc = 0
+
+        def __setitem__(self, key, value):
+            if isinstance(key, int) and key in watched:
+                i = bisect.bisect_right(addrs, Mem.pc) - 1
+                where = f"{names[i][1]}+{Mem.pc - names[i][0]}" if i >= 0 else hex(Mem.pc)
+                out.append(f"{where}: ${key:04X} = {value:02X}")
+            bytearray.__setitem__(self, key, value)
+
+    m = Mem(0x10000)
+    m[0:MEM] = case["mem"]
+    m[0x8000:0x10000] = rom
+    mpu = MPU()
+    mpu.memory = m
+    trap = labels["Trap"]
+    m[0x1FF], m[0x1FE] = ((trap - 1) >> 8) & 0xFF, (trap - 1) & 0xFF
+    mpu.sp = 0xFD
+    mpu.pc, mpu.a, mpu.x, mpu.y = labels[entry], case.get("a", 0), case.get("x", 0), case.get("y", 0)
+    for _ in range(200000):
+        if mpu.pc == trap:
+            break
+        Mem.pc = mpu.pc
+        mpu.step()
+    return out
+
+
+def debug_case(spec, k: int, seed: int, cells: list[int], watch: list[int] = ()) -> None:
     """Rebuild case k of a spec and print the given cells before/after."""
     r = random.Random(f"{seed}:{spec['name']}")
     for _ in range(k + 1):
@@ -417,6 +455,8 @@ def debug_case(spec, k: int, seed: int, cells: list[int]) -> None:
                                               case.get("x", 0), case.get("y", 0),
                                               case.get("carry", 0), trace=tr)
         print("NES trace: " + " ".join(tr[:400]))
+        if watch:
+            print("NES writes: " + "; ".join(watch_writes(rom, labels, case, spec["entry"], watch)))
         gmem = (ctypes.c_ubyte * MEM).in_dll(lib, "g_mem")
         ctypes.memmove(gmem, bytes(mem), MEM)
         ret = spec["call"](lib, case)
@@ -438,6 +478,7 @@ def main() -> int:
     ap.add_argument("-v", "--verbose", action="store_true")
     ap.add_argument("--debug", type=int, help="case index to dump (one spec)")
     ap.add_argument("--cells", default="", help="hex addresses for --debug, comma-separated")
+    ap.add_argument("--watch", default="", help="hex addresses: list NES writes (with --debug)")
     a = ap.parse_args()
     if a.list:
         for s in specs.SPECS:
@@ -457,7 +498,8 @@ def main() -> int:
         print("FAIL: unknown spec name"); return 1
     if a.debug is not None:
         cells = [int(x, 16) for x in a.cells.split(",") if x]
-        debug_case(chosen[0], a.debug, a.seed, cells)
+        debug_case(chosen[0], a.debug, a.seed, cells,
+                   [int(x, 16) for x in a.watch.split(",") if x])
         return 0
     ok_all = True
     for s in chosen:

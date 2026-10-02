@@ -189,6 +189,8 @@ void enrt_manhandla_move(unsigned int slot) {
               + ((unsigned int)ENEMY_AIR_SPEED(slot) & 0xE0u);
     ENEMY_PUSH_TIMER(slot) = (unsigned char)speed_sum;
     step = (unsigned char)(ENEMY_TURN_TIMER(slot) + (unsigned char)(speed_sum >> 8));
+    RAM(0x0003u) = step;            /* NES [03] step, [02] mask $A1 << 3 (T-171) */
+    RAM(0x0002u) = 0x08u;
 
     if (dir & 0x01)
         ENEMY_X(slot) = (unsigned char)(ENEMY_X(slot) + step);

@@ -106,6 +106,21 @@ Anim_WriteSprite:
     JSR LogA
     PLA
     RTS
+WriteBossSprite:
+    PHA
+    LDA #'B'
+    JSR LogA
+    PLA
+    PHA
+    JSR LogA
+    LDA $00
+    JSR LogA
+    LDA $01
+    JSR LogA
+    LDA $03
+    JSR LogA
+    PLA
+    RTS
 CheckLinkCollision:
     STX H_TMPX
     LDA #'L'
@@ -431,6 +446,48 @@ def gen_lamnola(types, states):
 
 
 GENS["UpdateLamnola"] = gen_lamnola
+
+
+def gen_manhandla(types, states):
+    """Manhandla: hands in slots 1..4, base in 5; 8-way directions shared
+    by all segments, bounce direction 0 or 8-way, speed whole 0..1."""
+    base = gen_typed(types, states, range(1, 6))
+
+    def gen(r, m):
+        c = base(r, m)
+        d = r.choice(DIRS8)
+        for s_ in range(1, 6):
+            m[0x34F + s_] = m[0x34F + c["x"]]
+            m[0x98 + s_] = d
+            m[0x42C + s_] = r.choice([0, 0, 1])               # SpeedWhole
+            m[0x70 + s_] = r.randrange(0x20, 0xE0)
+            m[0x84 + s_] = r.randrange(0x50, 0xD0)
+        m[0x385] = r.choice([0, 0, r.choice(DIRS8)])          # Manhandla_BounceDir
+        m[0x383] = r.choice([0, 0, 1])                        # SegmentJustDied
+        m[0x384] = r.choice(DIRS8)
+        return c
+    return gen
+
+
+GENS["UpdateManhandla"] = gen_manhandla
+
+
+def gen_aquamentus(types, states):
+    """Aquamentus faces right or left and patrols X $88..$C7 (limits
+    included, plus one pixel outside each)."""
+    base = gen_typed(types, states)
+
+    def gen(r, m):
+        c = base(r, m)
+        x = c["x"]
+        m[0x98 + x] = r.choice([1, 2])
+        m[0x70 + x] = r.choice([0x87, 0x88, 0xA0, 0xC7, 0xC8, r.randrange(0x88, 0xC8)])
+        m[0x394 + x] = r.choice([0, 1, 7, 0x0F])              # distance remaining
+        return c
+    return gen
+
+
+GENS["UpdateAquamentus"] = gen_aquamentus
 SPECS += [monster_spec(e, f, GENS.get(e, gen_typed)(t, list(st)))
           for e, f, t, st in STATEFUL]
 for _s in SPECS:

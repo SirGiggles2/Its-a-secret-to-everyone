@@ -76,3 +76,10 @@ void c_anim_write_sprite(unsigned int tile, unsigned int slot)
     eq_log_byte('S'); eq_log_byte((unsigned char)tile); eq_log_byte((unsigned char)slot);
     eq_log_byte(g_mem[0x70u + slot]); eq_log_byte(g_mem[0x84u + slot]); eq_log_byte(g_mem[0x03]);
 }
+
+/* WriteBossSprite: one boss sprite record. Logs tile, X, Y, attributes. */
+void draw_write_boss_sprite(unsigned char tile, unsigned char x, unsigned char y,
+                            unsigned char attr)
+{
+    eq_log_byte('B'); eq_log_byte(tile); eq_log_byte(x); eq_log_byte(y); eq_log_byte(attr);
+}
