@@ -1,8 +1,8 @@
 parsing command-line flags: --config=C:\tmp\claude_probe\newgame_run_gen\config.ini --lua=C:\tmp\claude_probe\newgame_run_gen\capture.lua C:\tmp\claude_probe\newgame_run_gen\rom\game.md
 Using SDL2 for host input (keyboard + gamepads)
 Connected SDL gamepad, device index 0, instance ID 1, name Xbox 360 Controller
-Game was not in DB. CRC: 0121DD2C MD5: AA083EB678A5F95804B3E61780F8CC88
-MemoryBlock created for address 36f00000000:36f034ff000 with mirror 2bd7a5c0000:2bd7dabf000
+Game was not in DB. CRC: EFBD923B MD5: 5DB08DB519573B48D4DB6FD92570DD2F
+MemoryBlock created for address 36f00000000:36f034ff000 with mirror 2614edb0000:261522af000
 Mouting `gpgx.wbx` @36f00000000
   Sections:
     @0:0     `` 0 bytes
@@ -58,8 +58,8 @@ GPGX Controller report:
   D:DEVICE_NONE
   D:DEVICE_NONE
   D:DEVICE_NONE
-Game was not in DB. CRC: 0121DD2C MD5: AA083EB678A5F95804B3E61780F8CC88
-MemoryBlock created for address 36f00000000:36f034ff000 with mirror 2bcdf030000:2bce252f000
+Game was not in DB. CRC: EFBD923B MD5: 5DB08DB519573B48D4DB6FD92570DD2F
+MemoryBlock created for address 36f00000000:36f034ff000 with mirror 26152b90000:2615608f000
 Mouting `gpgx.wbx` @36f00000000
   Sections:
     @0:0     `` 0 bytes

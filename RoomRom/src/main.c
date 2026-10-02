@@ -190,6 +190,9 @@ void roomrom_set_b_item_from_inv_cursor(unsigned char cursor_slot)
 /* Phase 8 W0c (2026-05-20): per-frame HUD B-item icon update.
  * Uses SGDK VDP_setSpriteFull cached path (VBlank-safe DMA).
  * SGDK adds +128 to (x, y) internally, pass NES pixel coords directly. */
+static unsigned long s_hud_b_key;
+static unsigned char s_hud_b_key_valid;
+
 static void roomrom_hud_b_item_update(void)
 {
     /* T-092: NES DrawStatusBarItemsAndEnsureItemSelected (Z_07.asm). B box
@@ -201,7 +204,21 @@ static void roomrom_hud_b_item_update(void)
     s16 bx = (s16)-32, ax = (s16)-32;
     unsigned short battr = 0u, aattr = 0u;
     const s16 hud_y = (s16)(0x1Fu - 7u);   /* -8 top-crop + 1 user nudge = -7 */
-    if (hud_status_bar_b_item(&slot)) {
+    const unsigned char has_b = hud_status_bar_b_item(&slot);
+    {
+        /* T-172: the two sprites only change with the item, its value, the
+         * sword, the 8-frame flash phase or the pause edge; recomputing
+         * them every frame cost busy rooms ~100 instructions. */
+        const unsigned long key = ((unsigned long)(has_b ? slot : 0xFFu) << 24) |
+            ((unsigned long)(has_b ? nes_ram[0x0657u + slot] : 0u) << 16) |
+            ((unsigned long)nes_ram[0x0657u] << 8) |
+            (unsigned long)(((nes_ram[0x0015u] >> 3) & 1u) |
+                            (roomrom_pause_is_active() ? 2u : 0u));
+        if (s_hud_b_key_valid && key == s_hud_b_key) return;
+        s_hud_b_key = key;
+        s_hud_b_key_valid = 1u;
+    }
+    if (has_b) {
         tile = draw_item_icon(slot, nes_ram[0x0657u + slot], &attr);
         battr = enemy_render_item_sat(tile, attr);
         bx = (s16)(0x7Cu + ((tile == 0xF3u || (tile >= 0x20u && tile < 0x62u)) ? 4u : 0u));
@@ -2473,6 +2490,7 @@ static void curtain_reveal(u8 col)
 /* Mode 3 status bar before the curtain: static part only. */
 static void level_hud_static_only(void)
 {
+    s_hud_b_key_valid = 0u;                     /* B/A sprites hidden below */
     roomrom_hud_set_counts_hidden(1u);
     roomrom_sprites_hide_hud_marker(0u);
     roomrom_sprites_hide_hud_marker(1u);

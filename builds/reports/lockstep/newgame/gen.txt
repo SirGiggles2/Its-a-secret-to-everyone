@@ -1,7 +1,7 @@
 system=GEN ram=M68K BUS+FF8000 save=SRAM domains=CRAM,M68K BUS,MD CART,SRAM,VRAM,VSRAM,Waterbox PageData,Z80 RAM preset=newgame pre_script_frames=1
 preset_bytes_written=1328
 boot i=1 gm=05 sub=00 room=00
-sync_after_menu_frames=15 live_after=2 seeded=19
+sync_after_menu_frames=16 live_after=1 seeded=19
 t=0 f=0 in= gm=05 sub=00 fc=2C room=77
 t=1 f=2 in= gm=05 sub=00 fc=2D room=77
 t=2 f=3 in= gm=05 sub=00 fc=2E room=77

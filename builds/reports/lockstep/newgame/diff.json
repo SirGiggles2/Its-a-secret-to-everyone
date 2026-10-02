@@ -5,21 +5,7 @@
  "key_fails": [],
  "ratchet_new": [],
  "ratchet_earlier": [],
- "improved": [
-  "$0011",
-  "$002A",
-  "$002B",
-  "$002C",
-  "$002D",
-  "$002E",
-  "$002F",
-  "$0030",
-  "$0031",
-  "$0032",
-  "$0033",
-  "$04CE",
-  "$0526"
- ],
+ "improved": [],
  "allow_hits": {},
  "stopped_early": null,
  "frame0": [
@@ -84,12 +70,6 @@
    "gen": 0
   },
   {
-   "addr": "$0340",
-   "name": "CurObjIndex",
-   "nes": 11,
-   "gen": 0
-  },
-  {
    "addr": "$0343",
    "name": "LeftSpriteOffset",
    "nes": 72,
@@ -100,18 +80,6 @@
    "name": "RightSpriteOffset",
    "nes": 76,
    "gen": 0
-  },
-  {
-   "addr": "$034D",
-   "name": "RoomAllDead",
-   "nes": 0,
-   "gen": 1
-  },
-  {
-   "addr": "$049E",
-   "name": "ObjCollidedTile",
-   "nes": 0,
-   "gen": 38
   },
   {
    "addr": "$0528",
@@ -430,11 +398,6 @@
    "frame": 1,
    "addr": "$0342",
    "name": "FirstSpriteIndex"
-  },
-  {
-   "frame": 125,
-   "addr": "$0065",
-   "name": "UndergroundEntranceTile"
   }
  ]
 }

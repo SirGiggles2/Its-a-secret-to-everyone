@@ -2,22 +2,9 @@ ticks compared: 266  (nes 266, gen 266)  padded rows skipped: 0
 
 == KEY mismatches (first 0) ==
 
-== full-RAM ratchet vs baseline (82 cells): new 0, earlier 0, improved 13 ==
-  IMPROVED $0011 IsUpdatingMode (baseline t=0)
-  IMPROVED $002A ObjTimer+2 (baseline t=0)
-  IMPROVED $002B ObjTimer+3 (baseline t=0)
-  IMPROVED $002C ObjTimer+4 (baseline t=0)
-  IMPROVED $002D ObjTimer+5 (baseline t=0)
-  IMPROVED $002E ObjTimer+6 (baseline t=0)
-  IMPROVED $002F ObjTimer+7 (baseline t=0)
-  IMPROVED $0030 ObjTimer+8 (baseline t=0)
-  IMPROVED $0031 ObjTimer+9 (baseline t=0)
-  IMPROVED $0032 ObjTimer+10 (baseline t=0)
-  IMPROVED $0033 ObjTimer+11 (baseline t=0)
-  IMPROVED $04CE ShutterTrigger (baseline t=0)
-  IMPROVED $0526 CaveSourceRoomId (baseline t=0)
+== full-RAM ratchet vs baseline (65 cells): new 0, earlier 0, improved 0 ==
 
-== tick 0: 66 unmasked cells differ ==
+== tick 0: 63 unmasked cells differ ==
   $0014 TileBufSelector                  NES 7A  GEN 00
   $0028 ObjTimer                         NES 02  GEN 00
   $007D ObjX+13                          NES 21  GEN 00
@@ -28,11 +15,8 @@ ticks compared: 266  (nes 266, gen 266)  padded rows skipped: 0
   $00F6 TransferredDemoPatterns          NES 10  GEN 00
   $00FE CurPpuMask_2001                  NES 1E  GEN 00
   $00FF CurPpuControl_2000               NES B4  GEN 00
-  $0340 CurObjIndex                      NES 0B  GEN 00
   $0343 LeftSpriteOffset                 NES 48  GEN 00
   $0344 RightSpriteOffset                NES 4C  GEN 00
-  $034D RoomAllDead                      NES 00  GEN 01
-  $049E ObjCollidedTile                  NES 00  GEN 26
   $0528 SkippedDemo                      NES 5A  GEN 00
   $0530 PlayAreaAttrs                    NES AA  GEN 00
   $0531 PlayAreaAttrs+1                  NES AA  GEN 00
@@ -85,12 +69,11 @@ ticks compared: 266  (nes 266, gen 266)  padded rows skipped: 0
   $0636 IsRegisterSaveFileOptionEnabled  NES 01  GEN 00
   $0637 IsEliminateSaveFileOptionEnabled NES 01  GEN 00
 
-== cells equal at tick 0 that diverge later: 3 ==
+== cells equal at tick 0 that diverge later: 2 ==
   t=    1 $0341 RollingSpriteIndex               NES 01  GEN 00
   t=    1 $0342 FirstSpriteIndex                 NES 01  GEN 00
-  t=  125 $0065 UndergroundEntranceTile          NES 26  GEN 00
 
 masked cells differing at tick 0: 381 (not evaluated)
 
-GATE: PASS  key=266 fails=0  ratchet new=0 earlier=0 improved=13 baseline=82  allow=0
-VERDICT: MATCH (69 unmasked cells ever differ)
+GATE: PASS  key=266 fails=0  ratchet new=0 earlier=0 improved=0 baseline=65  allow=0
+VERDICT: MATCH (65 unmasked cells ever differ)
