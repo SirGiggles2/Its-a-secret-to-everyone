@@ -858,13 +858,16 @@ void inventory_subscreen_enter(void)
     {
         unsigned char i;
         unsigned short sat_addr = SAT_VRAM_BASE_GAMEPLAY;
+        /* T-172: the VDP draws the link chain from entry 0; entry 0 =
+         * Y 0 (above the screen), link 0 ends it, so no sprite shows.
+         * Zeroing all 80 entries (320 VRAM words during the display)
+         * stretched the pause-open tick past a frame (t013_continue t61). */
+        (void)i;
         render_vram_open_write(sat_addr);
-        for (i = 0; i < 80u; ++i) {
-            *((volatile unsigned short *)0xC00000) = 0x0000;
-            *((volatile unsigned short *)0xC00000) = 0x0000;
-            *((volatile unsigned short *)0xC00000) = 0x0000;
-            *((volatile unsigned short *)0xC00000) = 0x0000;
-        }
+        *((volatile unsigned short *)0xC00000) = 0x0000;
+        *((volatile unsigned short *)0xC00000) = 0x0000;
+        *((volatile unsigned short *)0xC00000) = 0x0000;
+        *((volatile unsigned short *)0xC00000) = 0x0000;
     }
 
     unsigned short blank_attr = RENDER_TILE_ATTR_FULL(SUBSCREEN_SUBPAL, 0, 0, 0,

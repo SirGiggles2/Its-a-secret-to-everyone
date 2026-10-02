@@ -40,6 +40,11 @@ void roomrom_ow_room_render_layout_drop(void);
 void roomrom_ow_room_render_prepare_layout(unsigned char room_id);
 void roomrom_ow_room_render_prepare(unsigned char room_id, unsigned char max_cols);
 void roomrom_ow_room_render_prepare_drop(void);
+/* T-172: fill the whole room from a complete precompute (plane metatile
+ * columns dst_col0..+15); 0 = not available, fill per column. */
+unsigned char roomrom_ow_room_render_fill_room_prepared(unsigned char room_id,
+                                                        unsigned char dst_col0,
+                                                        unsigned char dst_row_base);
 /* T-134: compute up to max_cols cave metatile columns ahead of the swap
  * (RAM only, nothing drawn). */
 void roomrom_cave_room_render_prepare(unsigned char cave_id,

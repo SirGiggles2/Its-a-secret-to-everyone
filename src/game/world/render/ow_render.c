@@ -801,6 +801,30 @@ void roomrom_ow_room_render_prepare_layout(unsigned char room_id)
     (void)ow_room_layout(room_id);
 }
 
+/* T-172: the whole room from a complete precompute (s_prep_rows is row
+ * major): the same caches as 16 fill_one_col_at calls for plane metatile
+ * columns dst_col0..+15, written a plane row at a time. 0 = not available. */
+unsigned char roomrom_ow_room_render_fill_room_prepared(unsigned char room_id,
+                                                        unsigned char dst_col0,
+                                                        unsigned char dst_row_base)
+{
+    unsigned char c, row;
+    unsigned short first;
+    if (s_target_plane || room_id != s_ow_prep_room || s_prep_cols < 16u ||
+        dst_col0 > 16u)
+        return 0u;
+    s_raw_tiles_stable = 0u;
+    for (c = 0u; c < 16u; ++c)
+        store_metatile_col(c, (unsigned char)((dst_col0 + c) & 0x1Fu), dst_row_base,
+                           s_prep_raw[c], s_prep_walk[c], s_prep_outer, s_prep_inner);
+    first = wrapped_plane_row((unsigned short)(dst_row_base + ROOMROM_ROOM_FIRST_ROW));
+    for (row = 0u; row < ROOMROM_ROOM_ROWS; ++row)
+        render_plane_a_write_run((unsigned short)(dst_col0 << 1),
+                                 wrapped_plane_row((unsigned short)(first + row)),
+                                 s_prep_rows[row], 32u);
+    return 1u;
+}
+
 void roomrom_ow_room_render_prepare_drop(void)
 {
     s_ow_prep_room = 0xFFu;

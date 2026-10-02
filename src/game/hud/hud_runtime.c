@@ -770,6 +770,21 @@ void roomrom_hud_invalidate(void)
 void roomrom_hud_set_bottom_mode(unsigned char bottom)
 {
     if ((s_hud_bottom != 0u) == (bottom != 0u)) return;  /* no-op */
+    /* T-172: the HUD is the same in both places; a complete one moves with
+     * one VRAM copy. The full rebuild (window clear + status-bar macro,
+     * ~6k instructions) cost the pause-open tick a frame (t013_continue
+     * t61). The rows it leaves behind are outside the moved window. */
+    if (s_hud_built && s_hud_id_cached != 0xFFu) {
+        const unsigned short from = (unsigned short)HUD_WIN_ROW_BASE;
+        s_hud_bottom = bottom ? 1u : 0u;
+        /* Copied in the next VBlank (render_plane_defer_flush): a VRAM copy
+         * during the display stalls the 68000 for its whole length. */
+        render_window_move_deferred(from, (unsigned short)HUD_WIN_ROW_BASE,
+                                    ROOMROM_HUD_ROWS, s_hud_bottom,
+                                    s_hud_bottom ? HUD_PAUSE_WINDOW_ROWS
+                                                 : ROOMROM_HUD_ROWS);
+        return;
+    }
     /* Clear old position first (HUD tiles at HUD_WIN_ROW_BASE) */
     clear_hud_window();
     /* Flip mode */

@@ -89,33 +89,89 @@ static void copy_to_nes_ram(unsigned short dst_nes_addr,
  * writes. Called after the OW LevelBlock copy whenever Q2 is active. */
 /* room_dispatch.c: LevelInfo $6B92 = Link's color (InitMode3_Sub1). */
 extern void room_patch_level_palette_link_color(void);
-/* OW layout summary cache: the level block changed (ow_render.c). */
+/* OW layout summary cache and column precompute: the level block changed
+ * (ow_render.c). */
 extern void roomrom_ow_room_render_layout_drop(void);
+extern void roomrom_ow_room_render_prepare_drop(void);
+
+static void lba_changed(void)
+{
+    roomrom_ow_room_render_layout_drop();
+    roomrom_ow_room_render_prepare_drop();
+}
+
+/* @PatchQ2Rooms cells (block offsets from $687E). */
+#define Q2_OW_FIXED_CELLS 7u
+static const unsigned short k_q2_ow_fixed_off[Q2_OW_FIXED_CELLS] = {
+    0x180u + 11u, 0x180u + 60u, 0x180u + 116u, 60u, 116u, 0x280u + 60u, 0x280u + 116u
+};
+static const unsigned char k_q2_ow_fixed_val[Q2_OW_FIXED_CELLS] = {
+    0x7Bu, 0x7Bu, 0x5Au, 0x72u, 0x72u, 0x01u, 0x00u
+};
+
+static unsigned char is_q2_ow_patch_cell(unsigned short k)
+{
+    const unsigned char *offs = &rooms_dungeons[ROOMROM_OW_Q2_ATTRB_REPL_OFFSETS_OFF];
+    unsigned char i;
+    for (i = 0u; i < 8u; ++i)
+        if (k == (unsigned short)(0x80u + offs[i])) return 1u;
+    for (i = 0u; i < Q2_OW_FIXED_CELLS; ++i)
+        if (k == k_q2_ow_fixed_off[i]) return 1u;
+    return 0u;
+}
+
+/* T-172: 1 when the level block in RAM differs from src (cells the Q2
+ * patch rewrites right after are left out when skip_q2_cells). Reinstalls
+ * of the same block (mode-3 continue, cave exits) kept dropping the OW
+ * room layout cache, ~5k instructions of InitMode3_Sub8 (t013_continue:
+ * 4 frames vs NES 3). */
+static unsigned char lba_differs(const unsigned char *src, unsigned char skip_q2_cells)
+{
+    const unsigned long *a = (const unsigned long *)(unsigned long)&nes_ram[NES_LBA_A_BASE];
+    const unsigned long *b = (const unsigned long *)(const void *)src;
+    const unsigned long *const end = a + NES_LBA_BLOCK_BYTES / 4u;
+    if ((unsigned long)src & 1u) return 1u;
+    do {
+        if (*a != *b) {
+            const unsigned short w = (unsigned short)(b - (const unsigned long *)(const void *)src);
+            unsigned short k;
+            if (!skip_q2_cells) return 1u;
+            for (k = (unsigned short)(w * 4u); k < (unsigned short)(w * 4u + 4u); ++k)
+                if (nes_ram[NES_LBA_A_BASE + k] != src[k] && !is_q2_ow_patch_cell(k))
+                    return 1u;
+        }
+        ++a;
+        ++b;
+    } while (a != end);
+    return 0u;
+}
 
 void level_info_apply_q2_ow_patch(void)
 {
-    roomrom_ow_room_render_layout_drop();
     const unsigned char *offs = &rooms_dungeons[ROOMROM_OW_Q2_ATTRB_REPL_OFFSETS_OFF];
     const unsigned char *vals = &rooms_dungeons[ROOMROM_OW_Q2_ATTRB_REPL_VALUES_OFF];
+    unsigned char changed = 0u;
     signed char i;
     for (i = 7; i >= 0; --i) {
-        nes_ram[NES_LBA_A_BASE + 0x80u + offs[i]] = vals[i];   /* AttrsB $68FE */
+        const unsigned short a = (unsigned short)(NES_LBA_A_BASE + 0x80u + offs[i]);
+        if (nes_ram[a] != vals[i]) changed = 1u;
+        nes_ram[a] = vals[i];                               /* AttrsB $68FE */
     }
-    nes_ram[NES_LBA_A_BASE + 0x180u + 11u]  = 0x7Bu;   /* AttrsD+11  */
-    nes_ram[NES_LBA_A_BASE + 0x180u + 60u]  = 0x7Bu;   /* AttrsD+60  */
-    nes_ram[NES_LBA_A_BASE + 0x180u + 116u] = 0x5Au;   /* AttrsD+116 */
-    nes_ram[NES_LBA_A_BASE + 60u]           = 0x72u;   /* AttrsA+60  */
-    nes_ram[NES_LBA_A_BASE + 116u]          = 0x72u;   /* AttrsA+116 */
-    nes_ram[NES_LBA_A_BASE + 0x280u + 60u]  = 0x01u;   /* AttrsF+60  */
-    nes_ram[NES_LBA_A_BASE + 0x280u + 116u] = 0x00u;   /* AttrsF+116 */
+    for (i = 0; i < (signed char)Q2_OW_FIXED_CELLS; ++i) {
+        const unsigned short a = (unsigned short)(NES_LBA_A_BASE + k_q2_ow_fixed_off[i]);
+        if (nes_ram[a] != k_q2_ow_fixed_val[i]) changed = 1u;
+        nes_ram[a] = k_q2_ow_fixed_val[i];   /* AttrsD+11/60/116, A+60/116, F+60/116 */
+    }
+    if (changed) lba_changed();
 }
 
 void level_info_install_ow(void)
 {
+    const unsigned char q2 = (unsigned char)(roomrom_main_current_quest() == 2u);
+    if (lba_differs(&rooms_overworld[BLOB_OW_LEVELBLOCK_OFF], q2)) lba_changed();
     copy_to_nes_ram(NES_LBA_A_BASE,
                     &rooms_overworld[BLOB_OW_LEVELBLOCK_OFF],
                     NES_LBA_BLOCK_BYTES);
-    roomrom_ow_room_render_layout_drop();
     copy_to_nes_ram(NES_LEVEL_INFO_BASE,
                     &rooms_overworld[BLOB_OW_LEVELINFO_OFF],
                     NES_LEVEL_INFO_BYTES);
@@ -199,8 +255,8 @@ void level_info_mode2_step(unsigned char step, unsigned char level,
         if (level != 0u && level <= 9u)
             src = &rooms_dungeons[(q2 ? 2u * BLOB_UW_BLOCK_BYTES : 0u) +
                                   (level <= 6u ? 0u : BLOB_UW_BLOCK_BYTES)];
+        if (lba_differs(src, (unsigned char)(q2 && level == 0u))) lba_changed();
         copy_to_nes_ram(NES_LBA_A_BASE, src, NES_LBA_BLOCK_BYTES);
-        roomrom_ow_room_render_layout_drop();
     } else if (step == 1u) {
         const unsigned char *src = &rooms_overworld[BLOB_OW_LEVELINFO_OFF];
         if (level != 0u && level <= 9u)

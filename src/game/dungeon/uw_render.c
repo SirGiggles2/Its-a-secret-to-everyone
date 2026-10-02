@@ -498,9 +498,10 @@ static void write_tile_raw(unsigned char col, unsigned char row,
     unsigned char dst = (unsigned char)((s_live_dst_col[(col >> 1) & 0x0Fu] << 1) |
                                         (col & 1u));
     s_target_plane = s_live_plane;
+    if (!s_uw_tables_built) uw_tables_build();   /* s_uw_word = tile_word */
     plane_write(dst, wrapped_plane_row((unsigned short)(s_live_row_base + row +
                                                         ROOMROM_ROOM_FIRST_ROW)),
-                (unsigned short)(tile_word(raw_tile, pal) | edge_priority(col)));
+                (unsigned short)(s_uw_word[pal & 0x03u][raw_tile] | edge_priority(col)));
     s_target_plane = saved;
 }
 
@@ -669,6 +670,50 @@ void roomrom_uw_room_render_prepare_drop(void)
     s_uwp_cols = 0u;
 }
 
+/* Tile classes of metatile column src_col: door priority cache (plane
+ * column dst_p0 / dst_p0 + 1), walkability (keyed by SOURCE col: Link's
+ * probe samples source-room space whatever the plane slot, Task 5.5),
+ * PlayAreaTiles (column-major, 22 rows), and the legacy 16x11 metatile
+ * summary (top-left tile = even rows of plane column src_p0). */
+static void uw_metacol_classes(const unsigned char *nt, unsigned char src_col,
+                               unsigned char dst_p0)
+{
+    const unsigned char src_p0 = (unsigned char)(src_col << 1);
+    const unsigned char src_p1 = (unsigned char)(src_p0 + 1u);
+    const unsigned char dst_p1 = (unsigned char)(dst_p0 + 1u);
+    const unsigned char *n = nt + src_p0;
+    unsigned char *w0 = s_uw_tile_walkable[src_p0];
+    unsigned char *w1 = s_uw_tile_walkable[src_p1];
+    unsigned char *pa0 = (unsigned char *)(unsigned long)
+        &nes_ram[NES_PLAY_AREA_BASE + (unsigned short)src_p0 * NES_TILE_COL_STRIDE];
+    unsigned char *pa1 = pa0 + NES_TILE_COL_STRIDE;
+    unsigned char *mt = s_uw_walkable[src_col & 0x0Fu];
+    unsigned char row;
+    for (row = 0; row < ROOMROM_UW_BLOB_ROWS; row = (unsigned char)(row + 2u)) {
+        const unsigned char a0 = n[0], a1 = n[1];
+        const unsigned char b0 = n[ROOMROM_UW_BLOB_COLS];
+        const unsigned char b1 = n[ROOMROM_UW_BLOB_COLS + 1u];
+        const unsigned char ca0 = s_uw_cls[a0], ca1 = s_uw_cls[a1];
+        const unsigned char cb0 = s_uw_cls[b0], cb1 = s_uw_cls[b1];
+        if ((ca0 | ca1 | cb0 | cb1) & UW_CLS_DOOR) {
+            if (ca0 & UW_CLS_DOOR) door_priority_cache_record(dst_p0, row);
+            if (ca1 & UW_CLS_DOOR) door_priority_cache_record(dst_p1, row);
+            if (cb0 & UW_CLS_DOOR) door_priority_cache_record(dst_p0, (unsigned char)(row + 1u));
+            if (cb1 & UW_CLS_DOOR) door_priority_cache_record(dst_p1, (unsigned char)(row + 1u));
+        }
+        w0[row] = (unsigned char)(ca0 >> 1);       /* UW_CLS_WALK */
+        w1[row] = (unsigned char)(ca1 >> 1);
+        w0[row + 1u] = (unsigned char)(cb0 >> 1);
+        w1[row + 1u] = (unsigned char)(cb1 >> 1);
+        mt[row >> 1] = (unsigned char)(ca0 >> 1);
+        pa0[row] = a0;
+        pa1[row] = a1;
+        pa0[row + 1u] = b0;
+        pa1[row + 1u] = b1;
+        n += 2u * ROOMROM_UW_BLOB_COLS;
+    }
+}
+
 /* S6.5 scroll: render two plane cols (one metatile col) of `room_id` from
  * blob src_col into plane dst_col. src_col / dst_col are metatile cols (0..15).
  * Falls back to no-op if room not found in blob (stays as previous content). */
@@ -701,43 +746,7 @@ static void blit_blob_one_metacol_at(int idx, unsigned char room_id,
     } else {
         uw_metacol_words(nt, attr, src_col, col0, col1, 1u);
     }
-    {
-        /* Tile classes: door priority cache, walkability (keyed by SOURCE
-         * col: Link's probe samples source-room space whatever the plane
-         * slot, Task 5.5), PlayAreaTiles (column-major, 22 rows), and the
-         * legacy 16x11 metatile summary (top-left tile = even rows of
-         * plane column src_p0). Two rows a step. */
-        const unsigned char *n = nt + src_p0;
-        unsigned char *w0 = s_uw_tile_walkable[src_p0];
-        unsigned char *w1 = s_uw_tile_walkable[src_p1];
-        unsigned char *pa0 = (unsigned char *)(unsigned long)
-            &nes_ram[NES_PLAY_AREA_BASE + (unsigned short)src_p0 * NES_TILE_COL_STRIDE];
-        unsigned char *pa1 = pa0 + NES_TILE_COL_STRIDE;
-        unsigned char *mt = s_uw_walkable[src_col & 0x0Fu];
-        for (row = 0; row < ROOMROM_UW_BLOB_ROWS; row = (unsigned char)(row + 2u)) {
-            const unsigned char a0 = n[0], a1 = n[1];
-            const unsigned char b0 = n[ROOMROM_UW_BLOB_COLS];
-            const unsigned char b1 = n[ROOMROM_UW_BLOB_COLS + 1u];
-            const unsigned char ca0 = s_uw_cls[a0], ca1 = s_uw_cls[a1];
-            const unsigned char cb0 = s_uw_cls[b0], cb1 = s_uw_cls[b1];
-            if ((ca0 | ca1 | cb0 | cb1) & UW_CLS_DOOR) {
-                if (ca0 & UW_CLS_DOOR) door_priority_cache_record(dst_p0, row);
-                if (ca1 & UW_CLS_DOOR) door_priority_cache_record(dst_p1, row);
-                if (cb0 & UW_CLS_DOOR) door_priority_cache_record(dst_p0, (unsigned char)(row + 1u));
-                if (cb1 & UW_CLS_DOOR) door_priority_cache_record(dst_p1, (unsigned char)(row + 1u));
-            }
-            w0[row] = (unsigned char)(ca0 >> 1);       /* UW_CLS_WALK */
-            w1[row] = (unsigned char)(ca1 >> 1);
-            w0[row + 1u] = (unsigned char)(cb0 >> 1);
-            w1[row + 1u] = (unsigned char)(cb1 >> 1);
-            mt[row >> 1] = (unsigned char)(ca0 >> 1);
-            pa0[row] = a0;
-            pa1[row] = a1;
-            pa0[row + 1u] = b0;
-            pa1[row + 1u] = b1;
-            n += 2u * ROOMROM_UW_BLOB_COLS;
-        }
-    }
+    uw_metacol_classes(nt, src_col, dst_p0);
     {
         unsigned short first = wrapped_plane_row(
             (unsigned short)(dst_row_base + ROOMROM_ROOM_FIRST_ROW));
@@ -867,6 +876,46 @@ void roomrom_uw_room_render_fill_one_col_at(unsigned char room_id,
     if (src == 15u) {
         s_door_priority_cache_build = UW_DOOR_PRIORITY_CACHE_NONE;
     }
+}
+
+/* T-172: the whole room from the mode-3 precompute (s_uwp_buf = the 22 x 32
+ * plane words in row order): the same plane cells, tile classes, live-slot
+ * and door-priority state as 16 fill_one_col_at calls for plane metatile
+ * columns dst_col0..dst_col0 + 15, written a plane row at a time. Returns
+ * 0 (nothing done) unless the precompute is complete and still valid. */
+unsigned char roomrom_uw_room_render_fill_room_prepared(unsigned char room_id,
+                                                        unsigned char dst_col0,
+                                                        unsigned char dst_row_base)
+{
+    int idx;
+    const unsigned char *nt;
+    unsigned char c, row;
+    unsigned short first;
+    room_id = (unsigned char)(room_id & 0x7Fu);
+    if (s_target_plane || !s_uwp_buf || s_uwp_cols < 16u || room_id != s_uwp_room ||
+        dst_col0 > 16u)
+        return 0u;
+    idx = find_blob_entry(s_uw_level, room_id);
+    if (idx < 0 || idx != s_uwp_idx || uw_attr_sel(room_id) != s_uwp_sel) return 0u;
+    if (!s_uw_tables_built) uw_tables_build();
+    nt = g_uw_room_nt[idx];
+    s_cur_attr = uw_room_attr(room_id);
+    s_live_row_base = dst_row_base;
+    s_live_plane = s_target_plane;
+    door_priority_cache_begin(dst_col0, dst_row_base);
+    for (c = 0u; c < 16u; ++c) {
+        const unsigned char dst = (unsigned char)((dst_col0 + c) & 0x1Fu);
+        s_live_dst_col[c] = dst;
+        uw_metacol_classes(nt, c, (unsigned char)(dst << 1));
+    }
+    s_door_priority_cache_build = UW_DOOR_PRIORITY_CACHE_NONE;
+    first = wrapped_plane_row((unsigned short)(dst_row_base + ROOMROM_ROOM_FIRST_ROW));
+    for (row = 0u; row < ROOMROM_UW_BLOB_ROWS; ++row)
+        render_plane_a_write_run((unsigned short)(dst_col0 << 1),
+                                 wrapped_plane_row((unsigned short)(first + row)),
+                                 s_uwp_buf + (unsigned short)row * ROOMROM_UW_BLOB_COLS,
+                                 ROOMROM_UW_BLOB_COLS);
+    return 1u;
 }
 
 void roomrom_uw_room_render_set_live_door_priority(unsigned char slot_x,

@@ -38,6 +38,11 @@ void roomrom_uw_room_render_fill_one_col(unsigned char room_id,
 void roomrom_uw_room_render_prepare(unsigned char room_id, unsigned short *buf,
                                     unsigned char max_cols);
 void roomrom_uw_room_render_prepare_drop(void);
+/* T-172: fill the whole room from a complete, valid precompute (plane
+ * metatile columns dst_col0..+15); 0 = not available, fill per column. */
+unsigned char roomrom_uw_room_render_fill_room_prepared(unsigned char room_id,
+                                                        unsigned char dst_col0,
+                                                        unsigned char dst_row_base);
 /* 1 when room_id has a blob layout (a fill writes every play-area cell). */
 unsigned char roomrom_uw_room_render_has_layout(unsigned char room_id);
 void roomrom_uw_room_render_fill_one_col_at(unsigned char room_id,

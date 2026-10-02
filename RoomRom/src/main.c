@@ -809,11 +809,17 @@ static void render_room_into_slot(u8 room_id, u8 slot_x, u8 row_base)
 {
     u8 c;
     if (s_scene == SCENE_UW) {
+        if (roomrom_uw_room_render_fill_room_prepared(room_id,
+                plane_col_for_slot(0u, slot_x), row_base))
+            return;
         for (c = 0; c < 16; c++) {
             roomrom_uw_room_render_fill_one_col_at(room_id, c,
                 plane_col_for_slot(c, slot_x), row_base);
         }
     } else {
+        if (roomrom_ow_room_render_fill_room_prepared(room_id,
+                plane_col_for_slot(0u, slot_x), row_base))
+            return;
         for (c = 0; c < 16; c++) {
             roomrom_ow_room_render_fill_one_col_at(room_id, c,
                 plane_col_for_slot(c, slot_x), row_base);

@@ -95,6 +95,13 @@ void render_clear_window_rect(unsigned short col, unsigned short row,
 /* V2.4k Window-plane position toggle. NES Z1 gameplay HUD top;
  * inventory subscreen HUD bottom. */
 void render_set_window_on_top(unsigned short rows);
+/* At the next render_plane_defer_flush (VBlank): copy `rows` whole
+ * Window-plane rows from src_row to dst_row (VDP DMA copy; rows must not
+ * overlap), then show the window on the top (bottom = 0) or bottom
+ * `win_rows` rows. */
+void render_window_move_deferred(unsigned short src_row, unsigned short dst_row,
+                                 unsigned short rows, unsigned char bottom,
+                                 unsigned short win_rows);
 void render_set_window_on_bottom(unsigned short rows);
 
 /* Phase 12.2 SGDK-1 cleanup: VRAM word read. Used by src/game/dungeon/
@@ -206,6 +213,10 @@ void render_plane_a_write_col(unsigned short col, unsigned short row,
  * row with col 0 and `width` cells (CPU rows unless width fills the row). */
 void render_plane_clear_full_rows(unsigned char plane_b, unsigned short row,
                                   unsigned short rows, unsigned short width);
+/* Write count (even) cells along Plane A row `row` from column col
+ * (no wrap), two cells per long write, interrupts masked. */
+void render_plane_a_write_run(unsigned short col, unsigned short row,
+                              const unsigned short *cells, unsigned short count);
 /* As above, cells read src_stride words apart. */
 void render_plane_a_write_col_strided(unsigned short col, unsigned short row,
                                       const unsigned short *cells,

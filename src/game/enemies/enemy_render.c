@@ -1291,24 +1291,24 @@ void enemy_render_sweep_oam_to_sat(void)
      * skipped. */
     xlat_refresh();   /* T-125: table lookups, as the native path */
     sat_slot = emit_native_entries(sat_slot, NATIVE_PASS_FIREBALLS, 0);
+    {
+    /* T-172: one long read per OAM record (Y, tile, attrs, X). */
+    const unsigned long *oam =
+        (const unsigned long *)(unsigned long)&nes_ram[NES_SPRITES_BASE];
     for (i = 0u; i < NES_OAM_SLOT_COUNT; ++i) {
-        unsigned short base = (unsigned short)(NES_SPRITES_BASE + i * 4u);
-        unsigned char y     = RAM(base + 0u);
+        const unsigned long rec = oam[i];
+        unsigned char y = (unsigned char)(rec >> 24);
 
-        /* Y == $F0 = NES hide-sprite convention. Skip. */
-        if (y == 0xF0u) {
+        /* Y == $F0 = NES hide-sprite convention. Skip. All-zero record =
+         * unused OAM slot (NES Z1 leaves untouched OAM bytes at 0). */
+        if (y == 0xF0u || rec == 0u) {
             continue;
         }
-        unsigned char tile  = RAM(base + 1u);
-        unsigned char attrs = RAM(base + 2u);
-        unsigned char x     = RAM(base + 3u);
+        unsigned char tile  = (unsigned char)(rec >> 16);
+        unsigned char attrs = (unsigned char)(rec >> 8);
+        unsigned char x     = (unsigned char)rec;
 
-        /* All-zero record = unused OAM slot. Skip without consuming a
-         * SAT slot. (NES Z1 leaves untouched OAM bytes at 0.) */
-        if (y == 0u && tile == 0u && attrs == 0u && x == 0u) {
-            continue;
-        }
-        if (tile == 0x1Cu && attrs == 0x20u && x == 0u) {
+        if ((rec & 0x00FFFFFFUL) == 0x001C2000UL) {
             continue;                    /* blank priority sprite */
         }
 
@@ -1334,6 +1334,7 @@ void enemy_render_sweep_oam_to_sat(void)
                                  size, sat_attrs, link);
         ++sat_slot;
         if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
+    }
     }
 
     sat_slot = emit_native_entries(sat_slot, NATIVE_PASS_OTHER, 0);

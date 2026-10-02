@@ -70,10 +70,29 @@ unsigned char inventory_hud_consume_dirty(void)
  * Native cells own gameplay inventory. This legacy struct is a readback
  * for existing UI/weapon consumers, never an independent award ledger.
  * Selection tokens and world_flags have different layouts and are not copied. */
+/* T-172: every field below lives in $0654..$067F; when those 44 bytes are
+ * unchanged since the last sync there is nothing to pull (this ran every
+ * frame, ~180 instructions). */
+#define INV_SHADOW_LONGS 11u
+static unsigned long s_inv_shadow[INV_SHADOW_LONGS];
+static unsigned char s_inv_shadow_valid;
+
 void inventory_sync_from_native(void)
 {
     unsigned char changed = 0u;
     unsigned char items = 0u;
+    {
+        const unsigned long *cells =
+            (const unsigned long *)(unsigned long)&nes_ram[0x0654u];
+        unsigned char i;
+        unsigned char same = s_inv_shadow_valid;
+        for (i = 0u; i < INV_SHADOW_LONGS; ++i) {
+            const unsigned long v = cells[i];
+            if (v != s_inv_shadow[i]) { same = 0u; s_inv_shadow[i] = v; }
+        }
+        if (same) return;
+        s_inv_shadow_valid = 1u;
+    }
 #define PULL_FIELD(field, address) do { \
     if (g_inventory.field != nes_ram[address]) changed = 1u; \
     g_inventory.field = nes_ram[address]; \

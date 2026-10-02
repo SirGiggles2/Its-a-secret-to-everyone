@@ -396,9 +396,13 @@ static void plane_word_now(unsigned short addr, unsigned short word)
     VDP_DATA_WORD = word;
 }
 
+static void window_move_flush(void);
+static unsigned char s_wm_pending;
+
 void render_plane_defer_flush(void)
 {
     unsigned char i;
+    if (s_wm_pending) window_move_flush();
     for (i = 0u; i < s_pd_count; ++i) plane_word_now(s_pd_addr[i], s_pd_word[i]);
     s_pd_count = 0u;
 }
@@ -583,6 +587,40 @@ void render_set_window_on_bottom(unsigned short rows)
     VDP_setWindowOnBottom(rows);
 }
 
+static unsigned char s_wm_pending;
+static unsigned short s_wm_src, s_wm_dst, s_wm_rows, s_wm_win_rows;
+static unsigned char s_wm_bottom;
+
+void render_window_move_deferred(unsigned short src_row, unsigned short dst_row,
+                                 unsigned short rows, unsigned char bottom,
+                                 unsigned short win_rows)
+{
+    s_wm_src = src_row;
+    s_wm_dst = dst_row;
+    s_wm_rows = rows;
+    s_wm_bottom = bottom;
+    s_wm_win_rows = win_rows;
+    s_wm_pending = 1u;
+}
+
+static void window_move_flush(void)
+{
+    const unsigned short row_bytes = (unsigned short)(windowWidth * 2u);
+    const unsigned short base = VDP_getWindowAddress();
+    s_wm_pending = 0u;
+    if (s_wm_rows) {
+        SYS_disableInts();
+        DMA_doVRamCopy((unsigned short)(base + s_wm_src * row_bytes),
+                       (unsigned short)(base + s_wm_dst * row_bytes),
+                       (unsigned short)(s_wm_rows * row_bytes), 1);
+        DMA_waitCompletion();
+        render_set_autoinc_word();
+        SYS_enableInts();
+    }
+    if (s_wm_bottom) VDP_setWindowOnBottom(s_wm_win_rows);
+    else             VDP_setWindowOnTop(s_wm_win_rows);
+}
+
 /* Open VSRAM write cursor at byte-offset slot*2.
  * Control word: 0x40000010 for slot 0; general form uses the same
  * slot*2 formula as CRAM but with VSRAM CD bits (0x40000010 base).
@@ -664,6 +702,31 @@ void render_plane_a_write_col(unsigned short col, unsigned short row,
         SYS_enableInts();
         row = 0u;
     }
+}
+
+void render_plane_a_write_run(unsigned short col, unsigned short row,
+                              const unsigned short *cells, unsigned short count)
+{
+    const unsigned short addr = (unsigned short)(PLANE_A_BASE +
+        row * s_plane_row_stride_bytes + col * 2u);
+    volatile unsigned long *const port = (volatile unsigned long *)0xC00000;
+    const unsigned long *src = (const unsigned long *)(const void *)cells;
+    SYS_disableInts();
+    render_set_autoinc_word();
+    VDP_CTRL_LONG = 0x40000000UL
+                  | ((unsigned long)(addr & 0x3FFFu) << 16)
+                  | ((addr >> 14) & 0x0003u);
+    while (count >= 8u) {
+        port[0] = src[0]; port[0] = src[1]; port[0] = src[2]; port[0] = src[3];
+        src += 4;
+        count = (unsigned short)(count - 8u);
+    }
+    while (count >= 2u) {
+        port[0] = *src++;
+        count = (unsigned short)(count - 2u);
+    }
+    if (count) VDP_DATA_WORD = *(const unsigned short *)(const void *)src;
+    SYS_enableInts();
 }
 
 void render_plane_a_write_col_strided(unsigned short col, unsigned short row,
