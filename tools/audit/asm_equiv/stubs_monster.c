@@ -68,3 +68,11 @@ void roomrom_main_link_end_move_from_object(void)
 {
     eq_log_byte('A'); eq_log_byte(g_mem[0x70]); eq_log_byte(g_mem[0x84]);
 }
+
+/* Anim_WriteSprite: single-sprite writer (OAM / native cache). Logs tile,
+ * slot, the object's X/Y and the caller's [03] attributes. */
+void c_anim_write_sprite(unsigned int tile, unsigned int slot)
+{
+    eq_log_byte('S'); eq_log_byte((unsigned char)tile); eq_log_byte((unsigned char)slot);
+    eq_log_byte(g_mem[0x70u + slot]); eq_log_byte(g_mem[0x84u + slot]); eq_log_byte(g_mem[0x03]);
+}

@@ -339,6 +339,7 @@ def run_spec(spec, cases: int, seed: int, verbose: bool) -> tuple[bool, str]:
         gmem = (ctypes.c_ubyte * MEM).in_dll(lib, "g_mem")
         errs: list[str] = []
         active = 0
+        skipped = 0
         # ignore_if_run: {label: cells} ignored only in cases where the NES
         # side executed that label (e.g. TableJump's pointer scratch).
         cond = spec.get("ignore_if_run", {})
@@ -352,6 +353,9 @@ def run_spec(spec, cases: int, seed: int, verbose: bool) -> tuple[bool, str]:
                                           case.get("x", 0), case.get("y", 0),
                                           case.get("carry", 0), watch=watch, hit=hit)
             except NoReturn:
+                if spec.get("skip_no_return"):
+                    skipped += 1        # documented NES hang, see the spec
+                    continue
                 tr: list[str] = []
                 try:
                     nes.run(mem, spec["entry"], case.get("a", 0), case.get("x", 0),
@@ -391,6 +395,7 @@ def run_spec(spec, cases: int, seed: int, verbose: bool) -> tuple[bool, str]:
             if len(errs) > 30:
                 break
         head = (f"{spec['name']}: {k + 1} cases, {active} active"
+                f"{f', {skipped} skipped (NES hangs: ' + spec['skip_no_return'] + ')' if skipped else ''}"
                 f"{'' if not auto6502 else ', 6502 auto-stubs ' + ','.join(auto6502)}")
         if errs:
             return False, head + "\n" + "\n".join(errs[:30]) + f"\nFAIL: {len(errs)} differences"

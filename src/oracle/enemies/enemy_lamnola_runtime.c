@@ -120,6 +120,7 @@ void enrt_lamnola_update_head(unsigned int slot) {
         chain_slot = 5;
     for (i = 0; i < 4; ++i, ++chain_slot)
         ENEMY_MANHANDLA_SEG_DIR(chain_slot) = OBJ(0x009A, chain_slot);
+    RAM(0x0000) = 0;        /* NES loop counter [00] ends at 0 (T-171) */
 
     if ((ENEMY_X(slot) & 0x0F) != 0)
         return;
@@ -127,6 +128,7 @@ void enrt_lamnola_update_head(unsigned int slot) {
         return;
 
     cur_dir = ENEMY_DIR(slot);
+    RAM(0x0000) = (unsigned char)((cur_dir >> 1) & 0x05u);   /* NES [00] */
     ENEMY_LAMNOLA_VIABLE_DIR_MASK = (unsigned char)(0x0Fu ^ c_get_opposite_dir(cur_dir));
 
     if (ENEMY_RNG_A(slot) < 0x80) {
@@ -136,9 +138,13 @@ void enrt_lamnola_update_head(unsigned int slot) {
         vert_dir = 4;
         if (ENEMY_PLAYER_OBJ_Y < ENEMY_Y(slot))
             vert_dir = 8;
+        RAM(0x0002) = horiz_dir;            /* NES [02]/[03] (T-171) */
+        RAM(0x0003) = vert_dir;
+        /* NES BIT ObjDir: the horizontal turn needs *Link* facing that
+         * way (slot 0), not the head (T-171). */
         chosen_dir = horiz_dir;
         if ((ENEMY_LAMNOLA_VIABLE_DIR_MASK & horiz_dir) == 0
-         || (ENEMY_DIR(slot) & horiz_dir) == 0)
+         || (ENEMY_DIR(0) & horiz_dir) == 0)
             chosen_dir = vert_dir;
     } else {
         chosen_dir = cur_dir;
@@ -182,4 +188,5 @@ void enrt_lamnola_move(unsigned int slot) {
         ENEMY_Y(slot) = (unsigned char)(ENEMY_Y(slot) + step);
     if (dir & 0x08)
         ENEMY_Y(slot) = (unsigned char)(ENEMY_Y(slot) - step);
+    RAM(0x0002) = 0x08;     /* NES mask $A1 << 3 left in [02] (T-171) */
 }

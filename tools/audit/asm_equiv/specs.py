@@ -17,6 +17,9 @@ Spec keys:
                  "C": compare carry_of(returned value) with the NES carry
   post(case, nes, c)       adjust the C image for a documented divergence
   ignore         addresses never compared (documented per spec)
+  skip_no_return reason string: cases where the NES side never returns are
+                 skipped and counted (only for hangs the disassembly
+                 documents as unreachable in the game)
   ignore_if_run  {label: addresses}: not compared in cases where the NES
                  side executed label (e.g. TableJump pointer scratch)
   active(case, nes)        counts cases that took the interesting path

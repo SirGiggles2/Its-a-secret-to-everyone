@@ -88,6 +88,24 @@ Anim_WriteItemSprites:
     PLA
     LDX H_TMPX
     RTS
+Anim_WriteSprite:
+    STX H_TMPX
+    PHA
+    LDA #'S'
+    JSR LogA
+    PLA
+    PHA
+    JSR LogA
+    LDA H_TMPX
+    JSR LogA
+    LDA ObjX, X
+    JSR LogA
+    LDA ObjY, X
+    JSR LogA
+    LDA $03
+    JSR LogA
+    PLA
+    RTS
 CheckLinkCollision:
     STX H_TMPX
     LDA #'L'
@@ -388,5 +406,36 @@ def gen_dodongo(types, states):
 
 
 GENS["UpdateDodongo"] = gen_dodongo
+
+
+def gen_lamnola(types, states):
+    """Two lanmolas: segments in slots 1..5 and 6..10 (heads 5 and 10),
+    Lamnola_Type/Speed set, single-bit directions; some segments already
+    replaced by the dead dummy ($5D)."""
+    base = gen_typed(types, states, range(1, 11))
+
+    def gen(r, m):
+        c = base(r, m)
+        x = c["x"]
+        t = m[0x34F + x]
+        m[0x4E7] = t                                          # Lamnola_Type
+        m[0x4E6] = r.choice([1, 2])                           # Lamnola_Speed
+        for s_ in range(1, 11):
+            if s_ != x:
+                m[0x34F + s_] = t if r.random() < 0.8 else 0x5D
+            m[0x98 + s_] = r.choice([1, 2, 4, 8])
+        m[0x34F + 5] = m[0x34F + 10] = t                      # heads present
+        m[0x405 + x] = 0 if r.random() < 0.7 else 0x10        # ObjMetastate
+        return c
+    return gen
+
+
+GENS["UpdateLamnola"] = gen_lamnola
 SPECS += [monster_spec(e, f, GENS.get(e, gen_typed)(t, list(st)))
           for e, f, t, st in STATEFUL]
+for _s in SPECS:
+    if _s["name"] == "UpdateLamnola":
+        # Z_04 Lamnola_UpdateHead @Exit comment: a head blocked on three
+        # sides loops forever; the only such room keeps it walled off until
+        # all monsters die. Random tile maps can box it in.
+        _s["skip_no_return"] = "head boxed in on 3 sides, Z_04 Lamnola_UpdateHead"
