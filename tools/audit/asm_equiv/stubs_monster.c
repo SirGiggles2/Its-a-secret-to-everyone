@@ -61,3 +61,10 @@ void anim_write_item_sprites(unsigned int slot, unsigned int item_slot)
     eq_log_byte(g_mem[0x00]); eq_log_byte(g_mem[0x01]); eq_log_byte(g_mem[0x04]);
     eq_log_byte(g_mem[0x05]); eq_log_byte(g_mem[0x0C]); eq_log_byte(g_mem[0x0F]);
 }
+
+/* Link_EndMoveAndAnimate_Bank4 as called from object updates (UpdateDock,
+ * Pond Fairy): same 'A' record as the 6502 stub. */
+void roomrom_main_link_end_move_from_object(void)
+{
+    eq_log_byte('A'); eq_log_byte(g_mem[0x70]); eq_log_byte(g_mem[0x84]);
+}

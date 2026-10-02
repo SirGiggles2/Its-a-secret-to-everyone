@@ -108,8 +108,8 @@ static void boss_dodongo_state1_bloated_sub_wait(unsigned int slot)
         enrt_dodongo_dec_bloated_timer(slot);
         return;
     }
-    /* DEY then BPL DecBloated: was timer >= 2 ? */
-    if (timer >= 2u) {
+    /* DEY then BPL DecBloated: timer 2..$80 (0 or >= $81 reloads, T-171). */
+    if (timer >= 2u && timer <= 0x80u) {
         enrt_dodongo_dec_bloated_timer(slot);
         return;
     }

@@ -14,8 +14,9 @@ void enrt_update_dodongo_state2_stunned(unsigned int slot) {
         z04_update_dodongo_bloated_sub_end(slot);
         return;
     }
-    if (timer == 0)
-    ENEMY_STUN_TIMER(slot) = 32;
+    /* LDY / DEY / BPL: 0 (or >= $81) reloads $20 (T-171). */
+    if ((unsigned char)(timer - 1u) & 0x80u)
+        ENEMY_STUN_TIMER(slot) = 32;
 }
 
 void enrt_init_dodongo(unsigned int slot) {
@@ -367,8 +368,10 @@ prepare_to_draw:
 
     /* Right half: shift X by $10 and draw with the frame-XOR-1 image.
      * The H-flip already applied on the left half carries over. */
+    /* NES: Y stays in [01], [00] = ObjX + $10 (the draw reads [00]; the
+     * old ObjX shift left [00] as the left-half draw had it, T-171). */
     saved_x = ENEMY_X(slot);
-    ENEMY_X(slot) = (unsigned char)(saved_x + 0x10);
+    RAM(0x0000u) = (unsigned char)(saved_x + 0x10u);
     enrt_anim_set_sprite_desc_level_palette_row();
     if (saved_frame_index >= 0x14)
         frame_img = DodongoFrameImagesBloated[saved_frame_index - 0x14];
@@ -376,5 +379,4 @@ prepare_to_draw:
         frame_img = DodongoFrameImages[saved_frame_index];
     c_draw_object_not_mirrored_with_frame(
         (unsigned int)(frame_img ^ 0x01u), slot);
-    ENEMY_X(slot) = saved_x;
 }

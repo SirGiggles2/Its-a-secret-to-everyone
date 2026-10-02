@@ -312,7 +312,7 @@ STATEFUL = [
     ("UpdateDigdogger", "enrt_update_digdogger", [0x18, 0x38], range(4)),
     ("UpdatePatraChild", "enrt_update_patra_child", [0x25, 0x26], range(4)),
     ("UpdatePondFairy", "enrt_update_pond_fairy", [0x2F], range(4)),
-    ("UpdateDodongo", "boss_dodongo_update", [0x31, 0x32], range(4)),
+    ("UpdateDodongo", "boss_dodongo_update", [0x31, 0x32], range(3)),
     ("UpdateGohma", "enrt_update_gohma", [0x33, 0x34], range(4)),
     ("UpdateZelda", "enrt_update_zelda", [0x37], range(4)),
     ("UpdateLamnola", "enrt_update_lamnola", [0x3A, 0x3B], range(4)),
@@ -367,5 +367,23 @@ def gen_patra(types, states):
 
 
 GENS["UpdatePatra"] = gen_patra
+
+
+def gen_dodongo(types, states):
+    """State 0..2; bloated substate 0..4, bomb hits 0..2, single-bit dir."""
+    base = gen_typed(types, states)
+
+    def gen(r, m):
+        c = base(r, m)
+        x = c["x"]
+        m[0x42C + x] = r.randrange(5)                         # Dodongo_ObjBloatedSubstate
+        m[0x437 + x] = r.choice([0, 1, 2])                    # Dodongo_ObjBombHits
+        m[0x45E + x] = pick(r, [0, 1, 0x20, 0x40])            # Dodongo_ObjBloatedTimer
+        m[0x98 + x] = r.choice([1, 2, 4, 8])
+        return c
+    return gen
+
+
+GENS["UpdateDodongo"] = gen_dodongo
 SPECS += [monster_spec(e, f, GENS.get(e, gen_typed)(t, list(st)))
           for e, f, t, st in STATEFUL]

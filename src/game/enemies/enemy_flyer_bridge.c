@@ -529,6 +529,7 @@ extern unsigned char enrt_rotate_object_location(unsigned char cosine_bits,
                                                  unsigned int slot);
 
 #define PF_WORLD_IS_FILLING_HEARTS RAM(0x0063u)
+extern void roomrom_main_link_end_move_from_object(void);   /* RoomRom main.c */
 #define PF_LINK_STATE              RAM(0x00ACu)
 #define PF_LINK_X                  RAM(0x0070u)
 #define PF_LINK_Y                  RAM(0x0084u)
@@ -613,7 +614,14 @@ void enrt_update_pond_fairy(unsigned int slot)
     } else {
         return;
     }
-    /* @DrawLinkAndHearts. */
+    /* @DrawLinkAndHearts: input dir 0, Link_EndMoveAndAnimate_Bank4 with
+     * ObjState 0 (restored after), then the hearts (Z_04.asm:3431, T-171). */
     PF_INPUT_DIR = 0u;
+    {
+        const unsigned char link_state = (unsigned char)PF_LINK_STATE;
+        PF_LINK_STATE = 0u;
+        roomrom_main_link_end_move_from_object();
+        PF_LINK_STATE = link_state;
+    }
     pond_fairy_move_hearts(slot);
 }

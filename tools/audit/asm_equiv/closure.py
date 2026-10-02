@@ -6,6 +6,8 @@ Starting at the roots, every global label referenced by an included block
     the block after it;
   - branch span: a conditional branch to another global label of the same
     file pulls in every block in between (keeps branches in range);
+  - data runs: a data block pulls in the data blocks after it (tables
+    are indexed past their end);
   - anonymous labels: a block using ":-" / ":+" pulls in the block
     before / after (the ":" it binds to may sit across a global label);
   - cross-bank trampolines (*_Bank<n>) always stop;
@@ -59,6 +61,10 @@ class Bank:
         start = self.labels[n][0]
         end = self.labels[n + 1][0] if n + 1 < len(self.labels) else len(self.lines)
         return start, end
+
+    def is_data(self, n: int) -> bool:
+        ops = [op for op, _ in self.statements(n) if not op.startswith(SKIP_DIRECTIVES)]
+        return bool(ops) and all(op.startswith(".") for op in ops)
 
     def statements(self, n: int):
         """(mnemonic or directive, operand text) per statement of block n."""
@@ -136,6 +142,11 @@ def closure(ref: Path, files: list[str], roots: list[str], stop: set[str]):
                     for k in range(min(n, m), max(n, m) + 1):
                         add(f, k)
         if code and last not in ENDS and n + 1 < len(bank.labels):
+            add(f, n + 1)
+        # Tables are indexed past their end into the next table (Dodongo
+        # frame images, shot bounce widths): a data block keeps the data
+        # blocks that follow it.
+        if not code and n + 1 < len(bank.labels) and bank.is_data(n + 1):
             add(f, n + 1)
         # Anonymous labels can cross a global label: ":-" may bind to a ":"
         # in the block before, ":+" to one in the block after.
