@@ -109,26 +109,27 @@ void enrt_update_rope(unsigned int slot) {
 
         if (ENEMY_WALK_SPEED(slot) != 0x60 && ENEMY_MOVE_TIMER(slot) == 0) {
             ENEMY_MOVE_TIMER(slot) = ENEMY_RNG_A(slot) & 0x3F;
-            if (OBJ(NES_OBJ_GRID_OFFSET, slot) == 0)
-                ENEMY_BLOCKED_FLAG = 0;
+            c_face_unblocked_dir(slot);
         }
     }
 
     if (ENEMY_DIR(slot) != old_dir)
         ENEMY_WALK_SPEED(slot) = 0x20;
 
+    /* NES UpdateRope lines up on Link's own position (ObjX/ObjY slot 0),
+     * not the chase target (T-171). */
     if (ENEMY_WALK_SPEED(slot) == 0x20 && OBJ(NES_OBJ_GRID_OFFSET, slot) == 0) {
-        unsigned char x_dist = z01_abs((unsigned char)(CHASE_TARGET_X - ENEMY_X(slot)));
+        unsigned char x_dist = z01_abs((unsigned char)(ENEMY_X(0) - ENEMY_X(slot)));
         if (x_dist < 8) {
             ENEMY_DIR(slot) = 8;
-            if (CHASE_TARGET_Y >= ENEMY_Y(slot))
+            if (ENEMY_Y(0) >= ENEMY_Y(slot))
                 ENEMY_DIR(slot) >>= 1;
             ENEMY_WALK_SPEED(slot) = 0x60;
         } else {
-            unsigned char y_dist = z01_abs((unsigned char)(CHASE_TARGET_Y - ENEMY_Y(slot)));
+            unsigned char y_dist = z01_abs((unsigned char)(ENEMY_Y(0) - ENEMY_Y(slot)));
             if (y_dist < 8) {
                 ENEMY_DIR(slot) = 2;
-                if (CHASE_TARGET_X >= ENEMY_X(slot))
+                if (ENEMY_X(0) >= ENEMY_X(slot))
                     ENEMY_DIR(slot) >>= 1;
                 ENEMY_WALK_SPEED(slot) = 0x60;
             }

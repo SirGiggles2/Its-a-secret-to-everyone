@@ -154,3 +154,43 @@ SPECS += [
                   [("Z_04.asm", "UpdateDarknut:", "PolsVoiceWalkSpeedsX:")],
                   "Z_04 UpdateDarknut (common wanderer, frame select) vs enrt_update_darknut"),
 ]
+
+
+# ------------------------------------------------ rope, zol, gel
+
+COMMON_C = WANDERER_C + ["src/game/enemies/enemy_common_bridge.c",
+                         "src/game/enemies/enemy_projectile_bridge.c",
+                         "src/game/enemies/enemy_flyer_bridge.c",
+                         "src/oracle/enemies/enemy_common_runtime.c"]
+ZOL_ASM = WANDERER_ASM + [
+    ("Z_04.asm", "UpdateZol:", "StatueRoomLayouts:"),     # incl. ZolGelDelays
+    ("Z_07.asm", "DestroyMonster:", "InitTileObjOrItem:"),
+    ("Z_01.asm", "Anim_SetSpriteDescriptorAttributes:", "Anim_WriteLevelPaletteSprite:"),
+]
+
+
+def gen_zol(types):
+    base = gen_typed(types)
+
+    def gen(r, m):
+        c = base(r, m)
+        x = c["x"]
+        m[0xAC + x] = r.choice([0, 0, 1, 2, 0, 1])          # Zol state 0..2
+        m[0x3D0 + x] = r.choice([1, 2, 0x10, r.randrange(1, 256)])
+        return c
+    return gen
+
+
+SPECS += [
+    dict(name="UpdateRope", doc="Z_04 UpdateRope (walk, charge at $60, Q2 palette) vs enrt_update_rope",
+         asm=ZOL_ASM + [("Z_04.asm", "UpdateRope:", "UpdateStalfos:")],
+         c_sources=COMMON_C, entry="UpdateRope", gen=gen_typed([0x28]),
+         call=lambda lib, c: lib.enrt_update_rope(U(c["x"])), **MONSTER_COMMON),
+    dict(name="UpdateZol", doc="Z_04 UpdateZol (state machine, split into gels) vs enrt_update_zol",
+         asm=ZOL_ASM, c_sources=COMMON_C, entry="UpdateZol", gen=gen_zol([0x13]),
+         call=lambda lib, c: lib.enrt_update_zol(U(c["x"])),
+         active=lambda c, n: n[0x34F + c["x"]] != c["mem"][0x34F + c["x"]], **MONSTER_COMMON),
+    dict(name="UpdateGel", doc="Z_04 UpdateGel (Gel_Move, draw at X+4) vs enrt_update_gel",
+         asm=ZOL_ASM, c_sources=COMMON_C, entry="UpdateGel", gen=gen_zol([0x14, 0x15]),
+         call=lambda lib, c: lib.enrt_update_gel(U(c["x"])), **MONSTER_COMMON),
+]

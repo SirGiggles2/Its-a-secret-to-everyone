@@ -209,7 +209,7 @@ def gen_walker(r, m):
     m[0x4BF + x] = r.choice(OBJ_ATTRS)
     if r.random() < 0.15:
         m[0x350] = r.choice([0x36, 0x4B, 0x4E, 0x52])                    # person in slot 1
-    m[0x34A] = pick(r, [0x78, 0x84, 0x26, 0x8D, 0xF4, 0x89])
+    m[0x34A] = pick(r, [0x78, 0x84, 0x26, 0x8D, 0xF4, 0x89, 0x00])
     for a in (0x346, 0x347, 0x348, 0x349):
         m[a] = [0x10, 0xE0, 0x40, 0xD0][a - 0x346] if r.random() < 0.7 else r.randrange(256)
     m[0x70 + x] = pick(r, [0x10, 0x20, 0x30, 0x80, 0xD0, 0xE0, 0xE8])
@@ -431,6 +431,9 @@ SPECS += [
          # Genesis HUD presentation hook (heart-container fill animation);
          # no NES RAM effect.
          c_stubs="void hud_heart_container_anim_start(void) { }\n",
+         # Ring palette path only (ring ids $12/$13 are not generated).
+         data_unreached={"LinkColors_CommonCode", "MenuPalettesTransferBuf",
+                         "SaveSlotToPaletteRowOffset"},
          entry="TakeItem", gen=gen_take_item,
          call=lambda lib, c: lib.item_take_item(ctypes.c_ubyte(c["a"]))),
 ]

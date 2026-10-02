@@ -469,6 +469,27 @@ static unsigned char walker_get_next_alt_dir(unsigned int slot)
     }
 }
 
+/* _FaceUnblockedDir (Z_07.asm:3088). Aligned objects only: walk the
+ * alt-dir sequence (perpendicular, opposite of [0F], reverse) and face the
+ * first direction that is walkable and inside the room. [0E] = step,
+ * [0F] = candidate, as on the NES. Used by UpdateRope's turn timer. */
+void c_face_unblocked_dir(unsigned int slot)
+{
+    if (OBJ(NES_OBJ_GRID_OFFSET, slot) != 0u) return;
+    RAM(NES_SHOT_COLLISION_FLAG) = 0u;
+    for (;;) {
+        unsigned char alt = walker_get_next_alt_dir(slot);
+        RAM(NES_LINK_MOVING_DIR) = alt;
+        if (alt == 0u) return;
+        if (collision_get_colliding_tile_moving(slot) >= (unsigned char)RAM(0x034Au))
+            continue;
+        alt = object_bound_by_room_with_dir(alt, slot);
+        if (alt == 0u) continue;
+        ENEMY_DIR(slot) = alt;
+        return;
+    }
+}
+
 void c_walker_check_tile_collision(unsigned int slot)
 {
     /* NES Walker_CheckTileCollision (Z_07.asm:2815). Phase 7 Task 7.2
@@ -490,19 +511,9 @@ void c_walker_check_tile_collision(unsigned int slot)
      * NES $0F = LINK_MOVING_DIR    ($000F) = moving direction scratch.
      */
 
-    /* Room-tile-registry guard. NES sets ObjectFirstUnwalkableTile
-     * ($034A) during room init (Z_04.asm RoomInit_LoadObjectAttrs).
-     * Phase 7 Task 7.2 has not wired room init yet, so $034A reads
-     * as 0. Without it the unwalkable test (tile < 0 = false) tags
-     * every tile as blocked, the alt-dir loop runs to step 2
-     * (ReverseObjDir) which overwrites ENEMY_DIR(slot), and movement
-     * collapses (probe G6/G12 regress on (192,160) etc).
-     *
-     * Skip the body when the registry isn't live. This is forward-
-     * compatible: when room init lands and writes $034A, the gate
-     * auto-clears and the drained body activates without any further
-     * wiring. */
-    if ((unsigned char)RAM(0x034Au) == 0u) return;
+    /* No ObjectFirstUnwalkableTile guard: room load writes $034A
+     * (enemy_loop.c, $89 OW / $78 UW) before any walker updates, as on
+     * the NES (T-171; the earlier `== 0 -> return` skip predated that). */
 
     /* @CheckGridOffset (X != 0 path): grid offset != 0 -> return. */
     if (OBJ(NES_OBJ_GRID_OFFSET, slot) != 0u) return;

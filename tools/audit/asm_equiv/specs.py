@@ -18,6 +18,9 @@ Spec keys:
   post(case, nes, c)       adjust the C image for a documented divergence
   ignore         addresses never compared (documented per spec)
   active(case, nes)        counts cases that took the interesting path
+  data_unreached           data labels deliberately left out of the cut
+                           (path not generated; reason documented per spec).
+                           Any other data label left out fails the build
 """
 from __future__ import annotations
 

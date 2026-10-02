@@ -72,11 +72,61 @@ SEGMENTS { CODE: load = ROM, type = ro; }
 """
 
 
-def cut(fname: str, start: str, end: str) -> str:
-    lines = (REF / fname).read_text(encoding="latin-1").splitlines()
+def ref_lines(fname: str) -> list[str]:
+    return (REF / fname).read_text(encoding="latin-1").splitlines()
+
+
+def cut_range(fname: str, start: str, end: str) -> tuple[int, int]:
+    lines = ref_lines(fname)
     i = next(k for k, l in enumerate(lines) if l.startswith(start))
     j = next(k for k in range(i + 1, len(lines)) if lines[k].startswith(end))
-    return "\n".join(lines[i:j]) + "\n"
+    return i, j
+
+
+def merged_cuts(asm) -> list[tuple[str, str]]:
+    """(header, text) per cut. Plain cuts (no prefix/suffix) of one file that
+    overlap are merged into their union, so specs can compose shared cut
+    lists without duplicate labels."""
+    plain: list[list] = []          # [fname, i, j]
+    out: list = []                  # (header, text) or a plain-cut ref
+    for f, a, b, *extra in asm:
+        pre, post = (extra + ["", ""])[:2] if extra else ("", "")
+        i, j = cut_range(f, a, b)
+        if pre or post:
+            text = "\n".join(ref_lines(f)[i:j]) + "\n"
+            out.append((f"; ---- {f} {a} .. {b}", pre + text + post))
+            continue
+        for c in plain:
+            if c[0] == f and i < c[2] and c[1] < j:
+                c[1], c[2] = min(c[1], i), max(c[2], j)
+                break
+        else:
+            c = [f, i, j]
+            plain.append(c)
+            out.append(c)
+    # A merge can make two earlier plain cuts overlap; fold until stable.
+    changed = True
+    while changed:
+        changed = False
+        for x in plain:
+            for y in plain:
+                if x is not y and x[0] == y[0] and x[1] < y[2] and y[1] < x[2] and x[1] <= y[1]:
+                    x[2] = max(x[2], y[2])
+                    plain.remove(y)
+                    out.remove(y)
+                    changed = True
+                    break
+            if changed:
+                break
+    res = []
+    for c in out:
+        if isinstance(c, list):
+            lines = ref_lines(c[0])
+            res.append((f"; ---- {c[0]} lines {c[1] + 1}..{c[2]}",
+                        "\n".join(lines[c[1]:c[2]]) + "\n"))
+        else:
+            res.append(c)
+    return res
 
 
 def asm_source(spec, auto: list[str]) -> str:
@@ -85,10 +135,36 @@ def asm_source(spec, auto: list[str]) -> str:
     src += ['.SEGMENT "CODE"', CORE_ASM, spec.get("asm_stubs", "")]
     for k, name in enumerate(auto, start=1):
         src.append(f"{name}:\n    LDA #${k:02X}\n    JMP Unexpected")
-    for f, a, b, *extra in spec["asm"]:
-        pre, post = (extra + ["", ""])[:2] if extra else ("", "")
-        src.append(f"; ---- {f} {a} .. {b}\n{pre}{cut(f, a, b)}{post}")
+    for header, text in merged_cuts(spec["asm"]):
+        src.append(f"{header}\n{text}")
     return "\n".join(src)
+
+
+_DATA_LABELS: set[str] | None = None
+
+
+def data_labels() -> set[str]:
+    """Labels in reference/aldonunez whose first statement is data."""
+    global _DATA_LABELS
+    if _DATA_LABELS is None:
+        _DATA_LABELS = set()
+        for f in REF.glob("*.asm"):
+            pending = []
+            for line in f.read_text(encoding="latin-1").splitlines():
+                t = line.split(";", 1)[0].strip()
+                if not t:
+                    continue
+                m = re.match(r"^([A-Za-z_]\w*):\s*(.*)$", t)
+                if m:
+                    pending.append(m.group(1))
+                    t = m.group(2)
+                    if not t:
+                        continue
+                if pending:
+                    if re.match(r"\.(BYTE|WORD|ADDR|DBYT|RES)\b", t, re.I):
+                        _DATA_LABELS.update(pending)
+                    pending = []
+    return _DATA_LABELS
 
 
 def build_6502(spec, td: Path) -> tuple[bytes, dict[str, int], list[str]]:
@@ -107,6 +183,11 @@ def build_6502(spec, td: Path) -> tuple[bytes, dict[str, int], list[str]]:
         if not missing:
             raise RuntimeError(r.stderr)
         auto += [m for m in missing if m not in auto]
+    data = [n for n in auto if n in data_labels() and n not in spec.get("data_unreached", ())]
+    if data:
+        # A data table auto-stubbed as code feeds the NES side garbage;
+        # the spec must cut the table in.
+        raise RuntimeError(f"{spec['name']}: data labels not in the cut: {','.join(data)}")
     labels = {}
     for line in (td / "eq.lbl").read_text().splitlines():
         p = line.split()
