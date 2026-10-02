@@ -88,24 +88,6 @@ Anim_WriteItemSprites:
     PLA
     LDX H_TMPX
     RTS
-Anim_WriteSprite:
-    STX H_TMPX
-    PHA
-    LDA #'S'
-    JSR LogA
-    PLA
-    PHA
-    JSR LogA
-    LDA H_TMPX
-    JSR LogA
-    LDA ObjX, X
-    JSR LogA
-    LDA ObjY, X
-    JSR LogA
-    LDA $03
-    JSR LogA
-    PLA
-    RTS
 WriteBossSprite:
     PHA
     LDA #'B'
@@ -139,7 +121,31 @@ CheckMonsterCollisions:
     RTS
 """
 
-MONSTER_COMMON = dict(asm_stubs=STUBS_MONSTER_ASM, incs=["ObjVars.inc"],
+# Anim_WriteSprite boundary: the C single-sprite writer fills the native
+# sprite cache, not OAM. Gleeok writes OAM itself on both machines and
+# runs without it.
+STUB_ANIM_WRITE_SPRITE = r"""
+Anim_WriteSprite:
+    STX H_TMPX
+    PHA
+    LDA #'S'
+    JSR LogA
+    PLA
+    PHA
+    JSR LogA
+    LDA H_TMPX
+    JSR LogA
+    LDA ObjX, X
+    JSR LogA
+    LDA ObjY, X
+    JSR LogA
+    LDA $03
+    JSR LogA
+    PLA
+    RTS
+"""
+
+MONSTER_COMMON = dict(asm_stubs=STUBS_MONSTER_ASM + STUB_ANIM_WRITE_SPRITE, incs=["ObjVars.inc"],
                       c_stub_files=["stubs_monster.c"],
                       # Genesis options pinned to their NES (vanilla) setting.
                       c_stubs="unsigned char options_consumer_get_like_like_behavior(void) "
@@ -539,8 +545,46 @@ def gen_ganon(types, states):
 
 
 GENS["UpdateGanon"] = gen_ganon
+
+
+def gen_gleeok(types, states):
+    """Gleeok body in slot 1 (type $42..$45 = 1..4 heads); dead-neck mask
+    over the existing necks; writhing/animation counters small."""
+    base = gen_typed(types, states, [1])
+
+    def gen(r, m):
+        c = base(r, m)
+        heads = m[0x34F + 1] - 0x41
+        m[0x511] = r.randrange(1 << heads) & ~(1 << r.randrange(heads))   # GleeokDeadNeckMask
+        m[0x510] = r.choice([0, 0, 1, 4])                     # Gleeok_WrithingCounter
+        m[0x4E6] = r.choice([0, 1, 6, 0x10])                  # GleeokAnimationTimer
+        m[0x4E7] = r.randrange(4)                             # GleeokBodyAnimationFrame
+        return c
+    return gen
+
+
+GENS["UpdateGleeok"] = gen_gleeok
+OWN_OAM = {"UpdateGleeok", "UpdateGleeokHead"}
+
+
+def gen_gleeok_head(types, states):
+    """Flying head: flyer state 0..3 (ControlGleeokHeadFlight), 8-way dir."""
+    base = gen_flyer(types)
+
+    def gen(r, m):
+        c = base(r, m)
+        m[0x444 + c["x"]] = r.randrange(4)
+        m[0x98 + c["x"]] = r.choice(DIRS8)
+        return c
+    return gen
+
+
+GENS["UpdateGleeokHead"] = gen_gleeok_head
 SPECS += [monster_spec(e, f, GENS.get(e, gen_typed)(t, list(st)))
           for e, f, t, st in STATEFUL]
+for _s in SPECS:
+    if _s["name"] in OWN_OAM:
+        _s["asm_stubs"] = STUBS_MONSTER_ASM          # OAM compared directly
 for _s in SPECS:
     if _s["name"] == "UpdateLamnola":
         # Z_04 Lamnola_UpdateHead @Exit comment: a head blocked on three

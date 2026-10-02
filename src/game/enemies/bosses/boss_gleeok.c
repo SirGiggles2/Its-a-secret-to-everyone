@@ -428,6 +428,7 @@ static void gleeok_anim_write_specific_sprite(unsigned char tile,
 {
     unsigned char gx = (unsigned char)OBJ(NES_OBJ_X, slot);
     unsigned char gy = (unsigned char)OBJ(NES_OBJ_Y, slot);
+    RAM(0x0003u) = attrs;               /* NES passes the attributes in [03] */
     OAM_BYTE((unsigned int)(sprite_off + 1u)) = tile;
     OAM_BYTE((unsigned int)(sprite_off + 3u)) = gx;
     OAM_BYTE((unsigned int)sprite_off) = gy;
@@ -522,9 +523,12 @@ void c_gleeok_draw_body(void)
         const unsigned char frame = (unsigned char)ENEMY_GLEEOK_BODY_FRAME & 0x03u;
         unsigned char tile_idx = k_body_base_tile_offsets[frame];
         unsigned char row;
+        /* [06] row and [07] column counters live in NES RAM (T-171). */
         for (row = 0u; row < 2u; row++) {
             unsigned char col;
+            RAM(0x0006u) = row;
             for (col = 0u; col < 3u; col++) {
+                RAM(0x0007u) = col;
                 const unsigned char rsi = (unsigned char)RAM(0x0341u);
                 const unsigned char off = k_sprite_offsets[rsi & 0x3Fu];
 
@@ -550,7 +554,9 @@ void c_gleeok_draw_body(void)
                 tile_idx = (unsigned char)(tile_idx + 1u);
                 sprite_cycle_cur_sprite_index();
             }
+            RAM(0x0007u) = 3u;
         }
+        RAM(0x0006u) = 2u;
     }
 }
 
