@@ -4,6 +4,8 @@ Current ownership and queue: `docs/TRACKER.md` row T-171 (Claude + Codex). This 
 
 ## Latest reviewed work (2026-10-01)
 
+T-178 drop-color repair follows NES item descriptor/flash index $0F, avoiding stale monster hit timers. Manhandla1155/1155 + four screens exact; bomb401/401, both ring192/192 + sprites4/4. Latest frozen ROM2ED27FFB; `T-178_drop_heart_palette.md`. Six Manhandla early extra-frame ticks unchanged before/after, tracked T-172. Next Codex T-177 harness completion/immutable identity; Claude retains broader T-172.
+
 Latest review now through `a5d6190d`: Claude flute/whirlwind/pond and bait/potion changes landed; Codex Patra optimization committed by Claude as `71fc7a50`, then Claude finished palette-3 item-copy and UW load budgets. Independent final Patra 1533/1533 and OW 2187/2187 GATE plus LAG PASS; eight Patra screens exact on frozen ROM DDA0092E. See `T-172_patra_budget.md`. T-176 filled seven missing Patra room inputs (Original 349/349); Patra timer repair `93bc570c` is accepted at staged red-fight scope, not blue variant/re-entry/SRAM/connected L9. The previous performance failures below are historical. T-172 stays open for broader headroom/pause/continue; T-177 harness completion/identity and T-178 drop-heart colors are in the sole live tracker.
 
 Claude commits `3b2416f2..4e287baa` add staged L1–L4 boss fights and repair Link shove-facing, Manhandla survival/count/timer, and Gleeok death/head animation/invincibility. Claude reports 73/73 before the following focused Windows changes; do not apply that full-suite claim to a later ROM.

@@ -677,6 +677,15 @@ unsigned char draw_item_icon(unsigned char item_slot, unsigned char item_value,
 void draw_item_by_slot(unsigned int item_slot, unsigned int slot)
 {
     /* drain Z_07.asm:2023-2090. */
+    /* NES DrawItemBySlot:@WriteSprites loads X=$0F before the item
+     * writer. The dropped item's former monster slot can still have a
+     * hit timer; using it here flashes the item with that stale timer.
+     * CurObjIndex remains the native publication owner, independently
+     * of this descriptor/flash index. Live Manhandla drop t1059:
+     * NES tile $F3 attr 2, Genesis incorrectly attr 0 (timer & 3).
+     * Stance: EXTEND the existing draw; room/inventory items share it. */
+    const unsigned int draw_slot = 0x0Fu;
+    (void)slot;
     const unsigned char idx = (unsigned char)(item_slot & 0x1Fu);
     unsigned char attrs = k_item_slot_to_palette_offsets_or_values[idx];
 
@@ -699,7 +708,7 @@ void draw_item_by_slot(unsigned int item_slot, unsigned int slot)
             attrs = (unsigned char)(attrs + 1u);
         }
         anim_write_static_item_sprites_with_attributes(
-            attrs, slot, item_slot);
+            attrs, draw_slot, item_slot);
         return;
     }
 
@@ -716,13 +725,13 @@ void draw_item_by_slot(unsigned int item_slot, unsigned int slot)
          * lookup uses item_slot=32 (red sword frame). */
         if (item_slot == 0u && attrs == 0x02u) {
             anim_write_static_item_sprites_with_attributes(
-                attrs, slot, 32u);
+                attrs, draw_slot, 32u);
             return;
         }
     }
 
     anim_write_static_item_sprites_with_attributes(
-        attrs, slot, item_slot);
+        attrs, draw_slot, item_slot);
 }
 
 void draw_item_in_inventory(unsigned int item_slot, unsigned int slot)
