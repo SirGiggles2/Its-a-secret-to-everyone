@@ -138,10 +138,11 @@ def gen_monster_slots(r, m, x):
         (m[0x84 + x] + r.randrange(-12, 13)) & 0xFF        # ChaseTarget near
 
 
-def gen_typed(types, states=None):
-    """Walker context for one of types; ObjState from states when given."""
+def gen_typed(types, states=None, slots=range(1, 12)):
+    """Walker context for one of types in one of slots; ObjState from
+    states when given."""
     def gen(r, m):
-        c = gen_walker(r, m)
+        c = gen_walker(r, m, slots)
         x = c["x"]
         m[0x34F + x] = r.choice(types)
         gen_monster_slots(r, m, x)
@@ -259,6 +260,29 @@ SPECS = [
     monster_spec("UpdateKeese", "enrt_update_keese", gen_flyer([0x1B, 0x1C, 0x1D])),
 ]
 
+DIRS8 = [1, 2, 4, 5, 6, 8, 9, 0x0A]                       # Directions8
+
+
+def gen_digdogger(types, states):
+    base = gen_typed(types, states)
+
+    def gen(r, m):
+        c = base(r, m)
+        x = c["x"]
+        m[0x98 + x] = r.choice(DIRS8)
+        m[0x45E + x] = r.choice([0, 1])                       # SpeedFlag
+        m[0x46B + x] = r.choice([0, 0, 1])                    # IsChild
+        child = m[0x46B + x]
+        m[0x42C + x] = r.choice([0, child])                   # SpeedWhole
+        m[0x444 + x] = r.choice([0, child])                   # TargetSpeedWhole
+        m[0x437 + x] = r.choice([0x40, 0x80, m[0x41F + x]])   # TargetSpeedFrac
+        m[0x51B] = r.choice([0, 0, 1])                        # UsedFlute
+        m[0x507] = r.choice([0, 1, 2, 3])                     # ChildDigdoggerCount
+        m[0x478 + x] = r.randrange(4)                         # CurPart
+        return c
+    return gen
+
+
 # entry, C function, types, ObjState values (the routine's real range)
 STATEFUL = [
     ("UpdateTektiteOrBoulder", "enrt_update_tektite_or_boulder", [0x0D, 0x0E, 0x20], range(4)),
@@ -283,7 +307,65 @@ STATEFUL = [
     ("UpdateArrowOrBoomerang", "enrt_update_arrow_or_boomerang", [0x5C],
      [0x10, 0x10, 0x11, 0x20, 0x30, 0]),
     ("UpdateDeadDummy", "z07_update_dead_dummy", [0x5D], range(4)),
+    # bosses and specials
+    ("UpdateVire", "enrt_update_vire", [0x12], [0, 0, 1]),
+    ("UpdateDigdogger", "enrt_update_digdogger", [0x18, 0x38], range(4)),
+    ("UpdatePatraChild", "enrt_update_patra_child", [0x25, 0x26], range(4)),
+    ("UpdatePondFairy", "enrt_update_pond_fairy", [0x2F], range(4)),
+    ("UpdateDodongo", "boss_dodongo_update", [0x31, 0x32], range(4)),
+    ("UpdateGohma", "enrt_update_gohma", [0x33, 0x34], range(4)),
+    ("UpdateZelda", "enrt_update_zelda", [0x37], range(4)),
+    ("UpdateLamnola", "enrt_update_lamnola", [0x3A, 0x3B], range(4)),
+    ("UpdateManhandla", "enrt_update_manhandla", [0x3C], range(4)),
+    ("UpdateAquamentus", "enrt_update_aquamentus", [0x3D], range(4)),
+    ("UpdateGanon", "enrt_update_ganon", [0x3E], range(4)),
+    ("UpdateMoldorm", "enrt_update_moldorm", [0x41], range(4)),
+    ("UpdateGleeok", "enrt_update_gleeok", [0x42, 0x43, 0x44, 0x45], range(4)),
+    ("UpdateGleeokHead", "boss_gleeok_update_head", [0x46], range(4)),
+    ("UpdatePatra", "boss_patra_update", [0x47, 0x48], range(4)),
 ]
 SHOTS = {"UpdateMonsterShot", "UpdateFireball", "UpdateMonsterArrow", "UpdateArrowOrBoomerang"}
-SPECS += [monster_spec(e, f, (gen_shot if e in SHOTS else gen_typed)(t, list(st)))
+GENS = {e: gen_shot for e in SHOTS}
+GENS["UpdateDigdogger"] = gen_digdogger
+
+
+def gen_patra_child(types, states):
+    """Children live in slots 2..9 (Patra in slot 1, maneuver index 0..1)."""
+    base = gen_typed(types, states, range(2, 10))
+
+    def gen(r, m):
+        c = base(r, m)
+        m[0x45E + 1] = r.choice([0, 1])                       # Patra_ObjManeuverIndex+1
+        return c
+    return gen
+
+
+GENS["UpdatePatraChild"] = gen_patra_child
+
+
+def gen_patra(types, states):
+    """Patra in slot 1: flying state 0..3, 8-way direction, maneuver index
+    0..1; children ($25/$26) in slots 2..9, all, some or none."""
+    base = gen_typed(types, states, [1])
+
+    def gen(r, m):
+        c = base(r, m)
+        m[0x444 + 1] = r.randrange(4)                         # Flyer_ObjFlyingState
+        m[0x98 + 1] = r.choice(DIRS8)
+        m[0x45E + 1] = r.choice([0, 1])                       # Patra_ObjManeuverIndex
+        m[0x42C + 1] = pick(r, [0, 1, 2, 8])                  # Flyer_ObjTurns
+        child = 0x25 if m[0x34F + 1] == 0x47 else 0x26
+        mode = r.choice(["all", "some", "none"])
+        for s_ in range(2, 10):
+            if mode == "all" or (mode == "some" and r.random() < 0.5):
+                m[0x34F + s_] = child
+            elif m[0x34F + s_] in (0x25, 0x26):
+                m[0x34F + s_] = 0
+        m[0x70 + 1], m[0x84 + 1] = r.randrange(0x20, 0xE0), r.randrange(0x50, 0xD0)
+        return c
+    return gen
+
+
+GENS["UpdatePatra"] = gen_patra
+SPECS += [monster_spec(e, f, GENS.get(e, gen_typed)(t, list(st)))
           for e, f, t, st in STATEFUL]

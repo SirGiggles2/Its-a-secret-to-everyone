@@ -179,8 +179,8 @@ WALKER_C = ["src/game/enemies/enemy_walker_bridge.c", "src/game/world/object_dis
             "src/game/combat/collision_dispatch.c", "src/game/core/core_dispatch.c"]
 
 
-def gen_walker(r, m):
-    x = r.randrange(1, 12)
+def gen_walker(r, m, slots=range(1, 12)):
+    x = r.choice(slots)
     m[0x12] = r.choice([5, 5, 5, 9, 0x0B])
     m[0x10] = 0 if r.random() < 0.5 else r.randrange(1, 10)
     m[0x66C] = 0 if r.random() < 0.9 else r.randrange(1, 256)          # InvClock
@@ -193,7 +193,8 @@ def gen_walker(r, m):
     # whose ROM byte this harness layout cannot reproduce (never set so).
     m[0x3F8 + x] = r.choice([0, 1, 2, 4, 8, 3, 0x0C, 0x09])
     m[0x98 + x] = r.choice([1, 2, 4, 8])                                 # ObjDir: one bit
-    m[0x394 + x] = pick(r, [0, 0, 0, 1, 7, 8, 0x0F, 0x10, 0xF0, 0xF8, 0xF1])
+    # ObjGridOffset: -$F..$F (MoveObject/Obj_Shove reset it at multiples of $10).
+    m[0x394 + x] = r.choice([0, 0, 0, 1, 7, 8, 0x0F, 0xF8, 0xF1, 0xF9, r.randrange(-15, 16) & 0xFF])
     m[0x3BC + x] = pick(r, [0x20, 0x40, 0x60, 0x80])
     # ObjAttr: values of ObjectTypeToAttributes / InitTileObjOrItem only
     # ($10 "reverse when blocked" never occurs in the ROM tables).

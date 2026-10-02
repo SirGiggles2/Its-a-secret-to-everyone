@@ -66,16 +66,18 @@ static unsigned short patra_shift_multiply(unsigned char a_in,
                                            unsigned char y_bits,
                                            unsigned char mult_in)
 {
-    /* NES source: Z_04.asm:ShiftMultiply, 0..8 high multiplier bits.
-     * Drained C: this helper's ASL/ROL/ADC loop (preserved algebra).
-     * Coverage: exhaustive byte products; Patra + pond-fairy consumers.
-     * Stance: EXTEND with the equivalent 68000 word multiply. */
-    return (unsigned short)((unsigned short)a_in *
-                            ((unsigned short)mult_in >> (8u - y_bits)));
+    /* NES Z_04.asm ShiftMultiply: A * (the high y_bits of [00]). Leaves
+     * [00] = multiplier shifted left y_bits, [01] = A, [02:03] = product
+     * as the NES does (T-171). */
+    const unsigned short product = (unsigned short)((unsigned short)a_in *
+                                   ((unsigned short)mult_in >> (8u - y_bits)));
+    RAM(0x0000u) = (unsigned char)(mult_in << y_bits);
+    RAM(0x0001u) = a_in;
+    RAM(0x0002u) = (unsigned char)product;
+    RAM(0x0003u) = (unsigned char)(product >> 8);
+    return product;
 }
 
-/* DecreaseObjectAngle (NES Z_04.asm:12055). Subtracts (high<<8|low)
- * from the slot's angle, capping the whole byte at $1F. */
 static void patra_decrease_object_angle(unsigned char low,
                                         unsigned char high,
                                         unsigned int slot)
@@ -83,6 +85,8 @@ static void patra_decrease_object_angle(unsigned char low,
     unsigned short angle = (unsigned short)
         (((unsigned short)ENEMY_OBJ_ANGLE_WHOLE(slot) << 8) |
          ENEMY_OBJ_ANGLE_FRAC(slot));
+    RAM(0x000Au) = low;                 /* NES [0A]/[0B] amount */
+    RAM(0x000Bu) = high;
     angle -= (unsigned short)(((unsigned short)high << 8) | low);
     ENEMY_OBJ_ANGLE_FRAC(slot) = (unsigned char)angle;
     ENEMY_OBJ_ANGLE_WHOLE(slot) = (unsigned char)((angle >> 8) & 0x1Fu);
@@ -99,6 +103,9 @@ __attribute__((always_inline)) static inline unsigned char patra_rotate_object_l
     unsigned char speed = ENEMY_OBJ_QSPEED_FRAC(slot);
     unsigned short product;
     unsigned short position;
+
+    RAM(0x0006u) = cosine_bits;         /* NES STA $06 / STY $05 */
+    RAM(0x0005u) = sine_bits;
 
     /* NES ASL/ROL product + ADC/SBC fractions are 16-bit wrap arithmetic.
      * Pack each axis once; a native word add preserves carry/borrow. */
@@ -239,6 +246,7 @@ void enrt_update_patra_child(unsigned int slot)
     ENEMY_X(slot) = ENEMY_X(1);
     {
         unsigned char radius = (ENEMY_TYPE(slot) == 0x25u) ? 0x2Cu : 0x18u;
+        RAM(0x0000u) = radius;          /* NES STA $00 (T-171) */
         ENEMY_Y(slot) = (unsigned char)(ENEMY_Y(1) - radius);
     }
 }

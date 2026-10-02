@@ -456,6 +456,18 @@ def main() -> int:
         return 0
     ok_all = True
     for s in chosen:
+        if len(chosen) > 1:
+            # One process per spec: a crash in drained C (segfault on a
+            # generated input) is reported for that spec, the sweep goes on.
+            argv = [sys.executable, __file__, s["name"], "--cases", str(a.cases),
+                    "--seed", str(a.seed)] + (["-v"] if a.verbose else [])
+            r = subprocess.run(argv, capture_output=True, text=True)
+            out = "\n".join(l for l in r.stdout.splitlines() if l not in ("ALL PASS", "FAILURES"))
+            if r.returncode < 0:
+                out += f"\n{s['name']}: ERROR crashed (signal {-r.returncode})"
+            print(out, flush=True)
+            ok_all &= r.returncode == 0
+            continue
         try:
             ok, text = run_spec(s, a.cases, a.seed, a.verbose)
         except Exception as e:      # build failure: report, keep sweeping

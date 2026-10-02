@@ -316,8 +316,9 @@ void enrt_check_vire_collisions(unsigned int slot) {
 }
 
 void enrt_draw_vire(unsigned int slot) {
-    unsigned char frame = ENEMY_DRAW_FRAME(slot);
+    unsigned char frame;
     c_anim_advance_and_fetch(10, slot);
+    frame = ENEMY_DRAW_FRAME(slot);       /* after the advance, as NES (T-171) */
     if (ENEMY_DIR(slot) & 0x08)
         frame = (unsigned char)(frame + 2);
     c_draw_object_mirrored_with_frame(frame, slot);
@@ -387,15 +388,15 @@ void enrt_update_vire(unsigned int slot) {
         return;
     }
 
-    ENEMY_SHOT_COUNT++;
+    /* NES @SplitUp: INC RoomObjCount ($34E, was ActiveMonsterShots), then
+     * LDY #1 ... DEY / BPL: two keeses, not three (T-171). */
+    ENEMY_ROOM_OBJ_COUNT++;
     z07_destroy_monster(slot);
-    for (tries = 1; ; --tries) {
+    for (tries = 0; tries < 2u; tries++) {
         if (c_find_empty_monster_slot() != 0) {
             ENEMY_VIRE_SPLIT_TYPE = 28;
             c_shoot(ENEMY_VIRE_SPLIT_TYPE);
         }
-        if ((signed char)tries < 0)
-            break;
     }
 }
 
