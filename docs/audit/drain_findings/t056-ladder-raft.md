@@ -20,7 +20,7 @@ session (no SGDK toolchain, BizHawk or NES ROM there). Not built with
 |---|---|
 | `src/game/world/link_ladder.c` | Ladder setup (Link_EndMoveAndAnimate), CheckLadder, deferred ladder draw |
 | `src/game/world/dock.c` | UpdateDock (raft), registered as object `$61` in `enemy_loop.c` |
-| `src/game/combat/collision_dispatch.c` | `collision_get_colliding_tile_moving_nes`: same tile, plus the NES `[00:01]` column address (CheckLadder reads `[00]` after case E). Plain entry points unchanged (no extra stores in busy rooms) |
+| `src/game/combat/collision_dispatch.c` | GetCollidableTile leaves the NES `[00:01]` column address (CheckLadder reads `[00]` after case E). Added as a separate `_nes` entry in T-056; since T-171 every entry stores it and the `_nes` entry is gone |
 | `src/game/world/draw_dispatch.c` | `draw_static_item_sprites` (Anim_WriteStaticItemSpritesWithAttributes entry) |
 | `src/game/enemies/enemy_render.c` | Item tiles `$6C` (raft) and `$76` (ladder) use the live-extracted pause tiles (`inventory_sprite_chr` 4/5, 6/7). The item atlas has no `$6C`; its `$76` entry is other art (bytes compared: not the ladder) |
 | `src/game/world/render/sprite_render.c` | All 16 pause tiles (VRAM 1280..1295, the pause inventory's own reservation) uploaded at gameplay boot instead of only the compass pair |
