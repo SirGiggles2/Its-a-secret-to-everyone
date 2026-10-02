@@ -214,7 +214,8 @@ void enrt_update_moldorm(unsigned int slot)
 
     /* Arm a forced-death timer + copy invincibility/X/Y onto tail. */
     ENEMY_MOVE_TIMER(y) = 0x11u;
-    ENEMY_INVINCIBILITY(y) = ENEMY_INVINCIBILITY(slot);
+    /* NES ObjInvincibilityTimer ($4F0), not the mask at $4B2 (T-171). */
+    ENEMY_HIT_REACTION(y) = ENEMY_HIT_REACTION(slot);
     ENEMY_X(y) = ENEMY_X(slot);
     ENEMY_Y(y) = ENEMY_Y(slot);
 

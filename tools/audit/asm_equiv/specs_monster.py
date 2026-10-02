@@ -488,6 +488,32 @@ def gen_aquamentus(types, states):
 
 
 GENS["UpdateAquamentus"] = gen_aquamentus
+
+
+def gen_moldorm(types, states):
+    """Two moldorms ($41): segments in slots 1..10 (heads 5 and 10), some
+    already dead dummies; 8-way directions, flying state 0..3, bounce and
+    old directions 8-way."""
+    base = gen_typed(types, states, range(1, 11))
+
+    def gen(r, m):
+        c = base(r, m)
+        x = c["x"]
+        for s_ in range(1, 11):
+            if s_ != x:
+                m[0x34F + s_] = 0x41 if r.random() < 0.8 else 0x5D
+            m[0x98 + s_] = r.choice(DIRS8)
+            m[0x444 + s_] = r.randrange(4)                    # Flyer_ObjFlyingState
+            m[0x3BC + s_] = r.choice([0, r.choice(DIRS8)])    # Moldorm_ObjBounceDir
+            m[0x380 + s_] = r.choice(DIRS8)                   # Moldorm_ObjOldDir
+            m[0x41F + s_] = pick(r, [0x20, 0x40, 0x80])       # Flyer speed
+        m[0x34F + 5] = m[0x34F + 10] = 0x41
+        m[0x405 + x] = 0 if r.random() < 0.7 else 0x10        # ObjMetastate
+        return c
+    return gen
+
+
+GENS["UpdateMoldorm"] = gen_moldorm
 SPECS += [monster_spec(e, f, GENS.get(e, gen_typed)(t, list(st)))
           for e, f, t, st in STATEFUL]
 for _s in SPECS:
