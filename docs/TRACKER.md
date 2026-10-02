@@ -196,9 +196,11 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 
 | T-177 | Probe completion and immutable build identity | P0.17 | TODO | | `lag_scan.py`, `run_probe.py`, screen sweep: missing/empty traces or zero executed cases must fail; hash the staged ROM, not mutable shared build output. Codex isolated frozen ROM + unique reports for T-172; general harness still needs repair. |
 
-| T-178 | Manhandla dropped-heart palette mismatch | P3 / P6.2 | TODO | | Reproduce reported non-overlap heart color difference in `t171_manhandla_sword`; live OAM/CRAM/CHR, owning draw/palette source, focused repair and affected item consumer only. |
+| T-178 | Manhandla dropped-heart palette mismatch | P3 / P6.2 | ACTIVE | Codex | Reproduce reported non-overlap heart color difference in `t171_manhandla_sword`; live OAM/CRAM/CHR, owning draw/palette source, focused repair and affected item consumer only. |
 
 ## Handoff log (newest first)
+
+- 2026-10-01 Codex: T-178 claimed after T-172 merged verification e9d0027e. Scope: live Manhandla drop OAM/palette comparison, existing item/enemy render owner if contradicted, focused item consumer. Reuse frozen DDA0092E ROM for reproduction.
 
 - 2026-10-01 Codex: Reviewed Claude through a5d6190d (flute/pond/bait/potion + T-172 shared repairs). Independent frozen-ROM verification: Patra 1533/1533, OW route 2187/2187 GATE, both LAG PASS; eight Patra screens MATCH. Redundant fragment-bank WIP discarded in favor of Claude's general queued item-copy fix; existing-cache VRAM guard extended. `docs/audit/T-172_patra_budget.md`. T-172 broader work remains Claude; next T-178 drop-heart reproduction; T-177 records harness failures.
 
