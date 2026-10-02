@@ -4,6 +4,8 @@ Current ownership and queue: `docs/TRACKER.md` row T-171 (Claude + Codex). This 
 
 ## Latest reviewed work (2026-10-01)
 
+Blue Patra Q1 L9$16 mechanics/presentation now1408/1408 GATE and eight screens exact. Type$26 children use the slower $60 angle and both circular orbits; contact, child clears and parent death/drop agree. See `T-171_patra_blue.md`. One extra staged reload frame remains T-172; pickup/re-entry/SRAM and connected L9 remain separate. Debug rerun game hash unchanged2ED27FFB.
+
 T-177 evidence tools now reject missing/zero/partial execution and hash the launched private ROM. 11/11 focused tests and live bomb401/401/LAG + ring192/192; game ROM unchanged. Use `run_lockstep --rom builds/playtests/Debug-T178.md --report-suffix _claude_CASE --full` for concurrent captures. See `T-177_probe_evidence.md`; remaining legacy launcher inventory is separate.
 
 T-178 drop-color repair follows NES item descriptor/flash index $0F, avoiding stale monster hit timers. Manhandla1155/1155 + four screens exact; bomb401/401, both ring192/192 + sprites4/4. Latest frozen ROM2ED27FFB; `T-178_drop_heart_palette.md`. Six Manhandla early extra-frame ticks unchanged before/after, tracked T-172. Next Codex T-177 harness completion/immutable identity; Claude retains broader T-172.

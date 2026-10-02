@@ -8,8 +8,9 @@
  *                                  Z_01.asm:5337  Anim_SetSpriteDescriptorRedPaletteRow).
  *
  * Drained C:  original InitPatra/UpdatePatraChild/math bodies here.
- * Coverage:   PARTIAL — Q1 red-Patra route and shared pond-fairy math;
- *             blue-Patra fight remains unverified. UpdatePatra parent
+ * Coverage:   PARTIAL — Q1 red/blue fights and shared pond-fairy math;
+ *             blue orbit/angle/maneuver changes byte-verified through
+ *             death/drop. Re-entry/SRAM remain open. UpdatePatra parent
  *             orchestration lives in boss_patra.c.
  * Stance:     EXTEND — native word math preserves the drained byte
  *             products and carry/borrow. Pond-fairy wrappers below

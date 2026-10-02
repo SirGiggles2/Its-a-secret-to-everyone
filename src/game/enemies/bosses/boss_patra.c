@@ -7,8 +7,9 @@
  *             enrt_flyer_patra_decide_state, c_move_flyer,
  *             enrt_animate_and_draw_common_object) plus the keese-flight
  *             bridge for states 2/3 (matches Z_04.asm:10130 / 10131).
- *             Red Patra child/parent fight; blue variant and death
- *             coinciding with timer reload remain unverified.
+ *             Q1 red/blue Patra child/parent fights; blue orbit changes
+ *             match through death/drop (T-171_patra_blue.md). Re-entry,
+ *             SRAM and death coinciding with timer reload remain open.
  *             Collision resets Y before the maneuver-table read;
  *             the child-search index is not the returned Y.
  * Stance:     ADOPT — orchestrator only.
