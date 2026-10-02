@@ -4,7 +4,8 @@
  * Memory map (6502 side and g_mem alike): $0000-$07FF NES RAM, $6000-$7FFF
  * NES WRAM, $5000-$5FFF harness only:
  *   $5000 log index, $5001 per-case call index, $5002/$5003 scratch,
- *   $5004 first unexpected callee id (0 = none), $5100.. log bytes,
+ *   $5004 first unexpected callee id (0 = none), $5005 monster draw-stub
+ *   frame, $5100.. log bytes,
  *   $5200/$5300/$5400 per-call preset results (spec stubs). */
 unsigned char g_mem[0x8000];
 volatile unsigned char *nes_ram = g_mem;

@@ -209,6 +209,7 @@ void enrt_update_goriya(unsigned int slot) {
             a = obj_y;  b = link_y;
             vdir <<= 1;  /* 4 -> 8 (UP) */
         }
+        RAM(0x000E) = b;     /* NES STY $0E (subtrahend), T-171 */
         WALLMASTER_INSTR_AXIS = vdir;
         WALLMASTER_MINOR_MAJOR_MIN = (unsigned char)(a - b);  /* |dy| */
     }
@@ -223,6 +224,7 @@ void enrt_update_goriya(unsigned int slot) {
             a = obj_x;  b = link_x;
             hdir <<= 1;  /* 1 -> 2 (LEFT) */
         }
+        RAM(0x000E) = b;
         WALLMASTER_INSTR_MINOR_MIN = hdir;
         WALLMASTER_MAJOR_MINOR_MIN = (unsigned char)(a - b);  /* |dx| */
     }

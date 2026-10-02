@@ -212,3 +212,5 @@ SPECS = [
 
 from specs_core import SPECS as _CORE  # noqa: E402
 SPECS += _CORE
+from specs_monster import SPECS as _MONSTER  # noqa: E402
+SPECS += _MONSTER
