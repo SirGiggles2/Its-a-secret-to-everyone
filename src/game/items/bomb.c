@@ -95,6 +95,15 @@ void bomb_fire_place_weapon(unsigned char slot, unsigned char link_dir,
     nes_ram[NES_OBJ_DIR_BASE + slot] = link_dir;
     OBJ(NES_OBJ_X, slot) = (unsigned char)(link_x + dx);
     OBJ(NES_OBJ_Y, slot) = (unsigned char)(link_y + dy);
+    /* NES PlaceWeapon leaves its offset choices in [01] ($10) / [02] ($F0)
+     * and ChooseOffsetForDirectionH's [00] = 0. A magic shot that becomes
+     * a fire inside CheckMonsterCollisions (HandleShotBlocked -> WieldCandle)
+     * leaves [02] = $F0 as the monster's middle X for the bomb/fire checks
+     * that follow in the same frame (T-171 asm_equiv: those checks hit and
+     * killed the monster again on the Genesis). */
+    nes_ram[0x0000u] = 0x00u;
+    nes_ram[0x0001u] = 0x10u;
+    nes_ram[0x0002u] = 0xF0u;
 }
 
 /* Anim_WriteSpritePair palette patch: ObjInvincibilityTimer low bits. */

@@ -11,7 +11,7 @@
 #include "combat_state.h"      /* LINK_HEARTS, LINK_PARTIAL_HEART */
 #include "item_state.h"        /* LINK_BOMB_COUNT, INVENTORY_VALUE */
 #include "cave_state.h"        /* LINK_RUPEES, CAVE_DOOR_REPAIR_RUPEE_DELTA */
-#include "room_state.h"        /* ROOM_HISTORY_IDX, ROOM_TRANSFER_BUF_SELECT */
+#include "room_state.h"        /* ROOM_TRANSFER_BUF_SELECT */
 #include "cave/cave_dispatch.h"   /* cave_format_decimal_byte */
 #include "core/core_dispatch.h"   /* core_format_char_doublet */
 
@@ -56,7 +56,10 @@ void hud_format_hearts_in_text_buf(unsigned char start_off)
         }
         tile = hud_heart_tile(hearts, (unsigned char)RAM(0x000Fu),
                               (unsigned char)(15u - slot));
-        if (tile == 0x65u) ROOM_HISTORY_IDX = 0u;
+        /* NES @CheckPartial: a half heart clears $0529 (the sword-shot
+         * allowance MakeSwordShot reads). T-171 asm_equiv: the drain
+         * cleared CurRoomHistoryIndex $0620 instead. */
+        if (tile == 0x65u) RAM(0x0529u) = 0u;
         RAM(0x000Cu) = row_pos;
         TRANSFER_BUF_BYTE(RAM(0x000Bu)) = tile;
         RAM(0x000Bu) = (uint8_t)(RAM(0x000Bu) - 1u);

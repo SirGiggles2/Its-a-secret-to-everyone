@@ -195,8 +195,9 @@ unsigned int object_add_q_speed_to_position_fraction(unsigned int slot)
 unsigned int object_sub_q_speed_from_position_fraction(unsigned int slot)
 {
     /* NES SubQSpeedFromPositionFraction. drain at object_runtime.c:126.
-     * Returns CARRY_SET when no borrow occurred AND grid offset
-     * wasn't at limit (drain inverts the carry sense vs add). */
+     * Returns the NES carry: CARRY_SET when no pixel step (no borrow, or
+     * grid offset at a limit: the NES forces C=1 there), 0 on a step.
+     * T-171 asm_equiv: the drain returned 0 at the limit (a step). */
     const unsigned int frac    = (unsigned int)RAM(NES_OBJ_POS_FRAC + slot);
     const unsigned int sub_val = (unsigned int)RAM(NES_OBJ_QSPD_FRAC + slot);
     const unsigned int borrow  = (frac < sub_val) ? 1u : 0u;
@@ -204,7 +205,7 @@ unsigned int object_sub_q_speed_from_position_fraction(unsigned int slot)
     const unsigned char grid = (unsigned char)RAM(NES_OBJ_GRID_OFFSET + slot);
     if (grid == RAM(NES_POS_GRID_LIMIT) ||
         grid == RAM(NES_NEG_GRID_LIMIT)) {
-        return 0u;
+        return CARRY_SET;
     }
     RAM(NES_OBJ_GRID_OFFSET + slot) =
         (unsigned char)(grid - (unsigned char)borrow);

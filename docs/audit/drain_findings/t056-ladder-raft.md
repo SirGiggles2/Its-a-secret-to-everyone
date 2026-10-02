@@ -29,7 +29,7 @@ session (no SGDK toolchain, BizHawk or NES ROM there). Not built with
 
 ## Gate 1 — per-function equivalence vs the NES asm
 
-`python tools/audit/asm_equiv/asm_equiv.py --cases 2500` cuts the routines out
+`python tools/audit/asm_equiv/asm_equiv.py CheckLadder LadderSetup UpdateDock --cases 2500` cuts the routines out
 of `reference/aldonunez/*.asm` verbatim, assembles them (ca65/ld65) and runs
 them in py65 against the host-compiled C from the same random NES RAM, with
 identical callee stubs (GetCollidingTileMoving with logged inputs and preset
