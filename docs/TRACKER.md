@@ -194,11 +194,13 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 
 | T-176 | Missing Original Patra encounter-room render/collision inputs | P0.14 / P6.2 | DONE | Codex | `inject_boss_rooms.py`, generated UW/BG data, Patra route | L9 $52 generator matches live NES 704/704 but blob/fallback absent; seven Patra rooms uncovered across quests. Seven entries added from ROM-derived encounter types; Original 349/349 consistency, blob 667, BG remains 677. Live $52 screen t350 exact and spawn coordinates/SpawnCycle 301–366 exact. `docs/audit/T-176_patra_room_coverage.md`. Fight still FAIL from t365; T-171 owns timer repair. No baseline blessed. |
 
-| T-177 | Probe completion and immutable build identity | P0.17 | TODO | | `lag_scan.py`, `run_probe.py`, screen sweep: missing/empty traces or zero executed cases must fail; hash the staged ROM, not mutable shared build output. Codex isolated frozen ROM + unique reports for T-172; general harness still needs repair. |
+| T-177 | Probe completion and immutable build identity | P0.17 | ACTIVE | Codex | `lag_scan.py`, `run_probe.py`, screen sweep: missing/empty traces or zero executed cases must fail; hash the staged ROM, not mutable shared build output. Codex isolated frozen ROM + unique reports for T-172; general harness still needs repair. |
 
 | T-178 | Manhandla dropped-heart palette mismatch | P3 / P6.2 | DONE | Codex | `draw_dispatch.c:draw_item_by_slot` now uses NES descriptor/flash index $0F, preserving CurObjIndex publication owner. Former monster hit timer incorrectly turned heart green; no timer/asset workaround. Manhandla 1155/1155 + four screens MATCH, bomb401/401, ring192/192 + sprites4/4 each. `docs/audit/T-178_drop_heart_palette.md`. Six pre-existing early scene stalls unchanged and remain T-172; no connected L3 acceptance. |
 
 ## Handoff log (newest first)
+
+- 2026-10-01 Codex: T-177 claimed. Scope: lag/screen completion checks and run_probe immutable ROM identity; focused missing/empty/malformed/completed fixtures, one live probe consumer. Preserve owned-process cleanup. T-178 committed75f7b9ae, playable frozen2ED27FFB.
 
 - 2026-10-01 Codex: T-178 DONE at drop-color scope: item writer now uses NES X=$0F rather than former enemy timer. Manhandla1155/1155, four screens exact; bomb401/401, both ring192/192/sprites4/4. Frozen ROM2ED27FFB; `docs/audit/T-178_drop_heart_palette.md`. Six Manhandla early stalls identical before/after logged T-172. Next T-177: missing traces/zero cases must fail, staged ROM must own build identity.
 
