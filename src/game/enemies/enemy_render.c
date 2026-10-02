@@ -1165,14 +1165,19 @@ static void xlat_refresh(void)
 {
     unsigned char key = (unsigned char)((s_boss_bank_active ? 1u : 0u) |
                                         (nes_ram[0x0010u] ? 2u : 0u));
-    unsigned int t;
+    unsigned int t, first = 0u;
     if (key == s_xlat_key) return;
     if (s_xlat_key == 0xFFu) {
         for (t = 0u; t < 256u; ++t)
             s_xlat_attr[t] = translate_attrs((unsigned char)t, 0u);
+    } else if ((unsigned char)(key ^ s_xlat_key) == 1u) {
+        /* T-172: the boss bank only remaps tiles $C0..$FF (translate_tile);
+         * the full rebuild on a boss room's first ready tick cost a lag
+         * frame (t013_route t7728, Aquamentus room entry). */
+        first = 0xC0u;
     }
     s_xlat_key = key;
-    for (t = 0u; t < 256u; ++t) {
+    for (t = first; t < 256u; ++t) {
         if (t == 0x44u || t == 0x45u ||
             ((t & 1u) && t != 0xF3u && !(t >= NES_FIRE_TILE_FIRST && t <= NES_FIRE_TILE_LAST))) {
             s_xlat_tile[t] = XLAT_SLOW;          /* attrs-dependent / lazy CHR */
@@ -1186,7 +1191,7 @@ static void xlat_refresh(void)
 }
 
 /* == translate_attrs(attrs, translate_tile(tile, attrs)). */
-static inline unsigned short xlat_sat(unsigned char tile, unsigned char attrs)
+static inline __attribute__((always_inline)) unsigned short xlat_sat(unsigned char tile, unsigned char attrs)
 {
     unsigned short e = s_xlat_tile[tile];
     unsigned short tid;
