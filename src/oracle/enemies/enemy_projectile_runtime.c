@@ -7,8 +7,10 @@
  * Width table only carries the +1/-1 pair because Y dominates the
  * horizontal-bounce case in the original game; counter starts at 2.
  */
+/* NES ShotBounceWidths is two bytes followed by ShotBounceHeights; the
+ * bounce indexes it with Y = 0..3, so Y = 2/3 read $FE/$02 (T-171). */
 static const unsigned char enrt_shot_bounce_widths[] = {
-    0x01, 0xFF
+    0x01, 0xFF, 0xFE, 0x02
 };
 
 static const unsigned char enrt_shot_bounce_heights[] = {
@@ -201,7 +203,7 @@ void enrt_bounce_shot(unsigned int slot) {
     }
     {
         unsigned char x = ENEMY_X(slot);
-        ENEMY_X(slot) = (unsigned char)(x + enrt_shot_bounce_widths[dir_idx & 1]);
+        ENEMY_X(slot) = (unsigned char)(x + enrt_shot_bounce_widths[dir_idx & 3]);
     }
 
     /* Tick bounce counter; destroy when it crosses $20. */
@@ -258,29 +260,31 @@ void enrt_update_monster_arrow(unsigned int slot) {
         return;
     }
 
-    /* NES Z_04.asm:2112-2143 sends both flying and sparking arrows through
-     * UpdateArrowOrBoomerang. The generic shot mover misses MoveShot's wall
-     * response and treats every non-$10 state as a shield bounce. */
+    /* NES Z_04.asm:2112-2143: sparking ($2x) and flying ($1x) arrows run
+     * UpdateArrowOrBoomerang (flying sets [0F] = ObjDir first); a still-
+     * flying arrow then checks Link; $30 bounces; any other state returns. */
     {
         unsigned char state_hi = (unsigned char)ENEMY_STATE_TIMER(slot) & 0xF0u;
-        if (state_hi == 0x10u || state_hi == 0x20u) {
+        if (state_hi == 0x10u)
+            RAM(0x000Fu) = (unsigned char)ENEMY_DIR(slot);
+        else if (state_hi != 0x20u) {
+            if (state_hi == 0x30u)
+                enrt_bounce_shot(slot);
+            return;
+        }
         enrt_update_arrow_or_boomerang(slot);
-        if (state_hi == 0x10u &&
-            (((unsigned char)ENEMY_STATE_TIMER(slot) & 0xF0u) == 0x10u)) {
-            /* NES CheckShotLinkCollision runs only while still flying.
-             * A shield collision enters $30; a harmful hit sets $06 and
-             * destroys the counted arrow. */
-            enrt_check_shot_link_collision(slot);
-            if (COMBAT_HARM_FLAG != 0u) {
-                ENEMY_STATE_TIMER(slot) = 0u;
-                enrt_destroy_counted_monster_shot(slot);
-            }
+        if (((unsigned char)ENEMY_STATE_TIMER(slot) & 0xF0u) != 0x10u) {
+            /* @CheckBounce on the state UpdateArrowOrBoomerang left. */
+            if (((unsigned char)ENEMY_STATE_TIMER(slot) & 0xF0u) == 0x30u)
+                enrt_bounce_shot(slot);
+            return;
         }
-        return;
-        }
+        enrt_check_shot_link_collision(slot);
+        /* NES LDA $06: harmful hit only. [0C] is also set by a shield
+         * parry, which must leave the arrow bouncing ($30) (T-171). */
+        if (ENEMY_COLLISION_FLAG != 0u)
+            enrt_destroy_counted_monster_shot(slot);
     }
-
-    enrt_update_monster_shot(slot);
 }
 
 /* BoomerangQSpeedFracsX (NES Z_07.asm:3791). */
@@ -341,6 +345,18 @@ static void set_boomerang_speed(unsigned int slot, unsigned char q)
 }
 
 /* NES AnimateBoomerangAndCheckCollision (Z_07.asm:4209). */
+/* NES DrawArrowOrBoomerangAndCheckCollisions (Z_07.asm:4020): arrows
+ * (monster $5B or Link's slot $12) draw the spark frame; boomerangs go to
+ * DrawBoomerangAndCheckCollision. */
+static void enrt_draw_arrow_or_boomerang_and_check_collisions(unsigned int slot)
+{
+    if ((slot < 0x0Du && (unsigned char)ENEMY_TYPE(slot) == 0x5Bu) || slot == 0x12u) {
+        draw_arrow_spark(slot);
+        return;
+    }
+    enrt_boomerang_draw_check(slot);
+}
+
 static void enrt_boomerang_animate_draw(unsigned int slot)
 {
     /* T-147: when the spin advances, a monster boomerang (slot < $D)
@@ -420,10 +436,13 @@ void enrt_update_arrow_or_boomerang(unsigned int slot) {
             /* NES HandleArrowOrBoomerangBlocked gives monster arrows a
              * three-frame spark ($20). Arrows do not use boomerang range. */
             if (blocked != 0u) {
+                /* HandleArrowOrBoomerangBlocked: counter 3, state + $10. */
                 ENEMY_ANIM_TIMER(slot) = 3u;
-                ENEMY_STATE_TIMER(slot) = 0x20u;
+                ENEMY_STATE_TIMER(slot) = (unsigned char)(ENEMY_STATE_TIMER(slot) + 0x10u);
+                enrt_draw_arrow_or_boomerang_and_check_collisions(slot);
+            } else {
+                c_draw_arrow(slot);                 /* BEQ DrawArrow */
             }
-            enrt_draw_shot(slot);
             return;
         }
         /* NES HandleArrowOrBoomerangBlocked (Z_07.asm:4009): anim
@@ -445,7 +464,7 @@ void enrt_update_arrow_or_boomerang(unsigned int slot) {
         if (blocked != 0u) {
             ENEMY_ANIM_TIMER(slot) = 3u;
             ENEMY_STATE_TIMER(slot) = (unsigned char)(ENEMY_STATE_TIMER(slot) + 0x10u);
-            enrt_boomerang_draw_check(slot);
+            enrt_draw_arrow_or_boomerang_and_check_collisions(slot);
         } else {
             /* NES continues to animate and test Link while flying out. */
             enrt_boomerang_animate_draw(slot);
@@ -474,7 +493,7 @@ void enrt_update_arrow_or_boomerang(unsigned int slot) {
             ENEMY_ANIM_TIMER(slot) = 3u;
             ENEMY_STATE_TIMER(slot) = 0x50u;
         }
-        enrt_draw_shot(slot);
+        enrt_draw_arrow_or_boomerang_and_check_collisions(slot);
         return;
     }
 

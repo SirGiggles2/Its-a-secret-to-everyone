@@ -611,8 +611,11 @@ static void anim_write_specific_item_sprites(unsigned int slot,
  * with enemy CHR data → user saw rocks instead of arrows). */
 unsigned char g_draw_in_item_context = 0u;
 
-static void anim_write_item_sprites(unsigned int slot,
-                                    unsigned int item_slot)
+/* NES Anim_WriteItemSprites. External linkage: the asm_equiv harness
+ * replaces it with a logged stub to compare the callers' draw setup. */
+void anim_write_item_sprites(unsigned int slot, unsigned int item_slot);
+void anim_write_item_sprites(unsigned int slot,
+                             unsigned int item_slot)
 {
     DRAW_PROCESSED_NARROW_OBJ = 0u;
     const unsigned char cur_idx = (unsigned char)DRAW_CUR_SPRITE_INDEX;
@@ -861,8 +864,7 @@ void draw_boomerang(unsigned int slot)
      * is OAM attr $00/$40 (T-057 t057_food_bait t605); the old +2 drew
      * it with the red sub-palette 2. */
     attr = (unsigned char)(attr + (unsigned char)RAM(0x0675u));
-    DRAW_LEFT_ATTR = attr;
-    DRAW_RIGHT_ATTR = attr;
+    DRAW_LEFT_ATTR = attr;      /* NES writes [04] only; [05] stays (T-171) */
     if ((state & 0xF0u) == 0x20u) {
         (void)core_anim_set_sprite_desc_attrs(1u);
     }
@@ -921,27 +923,12 @@ void draw_sword_shot_or_magic_shot(unsigned int slot)
     anim_write_item_sprites(slot, item_slot);
 }
 
-void draw_arrow(unsigned int slot)
+/* SetAttrAndDrawArrow + OffsetAndDrawArrow + L_DrawArrowOrBoomerang
+ * (Z_07.asm:3928..). [0C]/[0F] are set by the caller; y_idx is the
+ * reverse direction index, base_attr the attribute before the arrow kind. */
+static void set_attr_and_draw_arrow(unsigned int slot, unsigned char y_idx,
+                                    unsigned char attr)
 {
-    /* drain Z_07.asm:3908 + OffsetAndDrawArrow + L_DrawArrowOrBoomerang. */
-    DRAW_FLIP_H = 0u;
-    if ((unsigned char)OBJ_DIR(slot) == 0x02u) {
-        DRAW_FLIP_H = (uint8_t)((unsigned char)DRAW_FLIP_H + 1u);
-    }
-
-    const unsigned int opp =
-        core_get_opposite_dir((unsigned int)OBJ_DIR(slot));
-    const unsigned char y_idx = (unsigned char)((opp >> 8) & 0xFFu);
-
-    /* 2026-05-22 — NES DrawArrow (Z_07.asm:3924) stores frame in $0C
-     * (which our naming calls DRAW_MIRRORED — same cell re-used in
-     * the Anim_WriteSpecificItemSprites context per Z_01.asm:5272
-     * `ADC $0C`). DRAW_FRAME = $0D = wrong cell; writing there left
-     * $0C uninitialized → garbage tile lookup → arrow shows wrong
-     * sprite (often "doubled" by drifting into adjacent tile pair). */
-    DRAW_MIRRORED = k_r_dir_to_weapon_frame[y_idx & 0x03u];
-    unsigned char attr = k_r_dir_to_weapon_base_attr[y_idx & 0x03u];
-
     if (slot < 0x0Du && (unsigned char)OBJ_TYPE(slot) == 0x5Bu) {
         attr = (unsigned char)(attr + 2u);
     } else {
@@ -951,23 +938,43 @@ void draw_arrow(unsigned int slot)
     DRAW_LEFT_ATTR = attr;
     DRAW_RIGHT_ATTR = attr;
 
-    /* OffsetAndDrawArrow + L_DrawArrowOrBoomerang inlined.
-     * X = ObjX + RDirectionToOffsetsX[Y]; Y = ObjY + RDirectionToOffsetsY[Y]. */
     DRAW_X = (uint8_t)((unsigned char)OBJ_X(slot) +
                        k_r_dir_to_offsets_x[y_idx & 0x03u]);
     DRAW_Y = (uint8_t)((unsigned char)OBJ_Y(slot) +
                        k_r_dir_to_offsets_y[y_idx & 0x03u]);
 
-    /* If state high nibble == $20 (spark), use palette row 1. */
-    const unsigned char state_hi =
-        (unsigned char)((unsigned char)OBJ_STATE(slot) & 0xF0u);
-    if (state_hi == 0x20u) {
-        /* NES DrawArrowOrBoomerangAndCheckCollisions sets frame $02
-         * and clears $0F horizontal flip before SetAttrAndDrawArrow. */
-        DRAW_MIRRORED = 0x02u;
-        DRAW_FLIP_H = 0u;
+    /* L_DrawArrowOrBoomerang: state $2x (spark) draws with palette row 1. */
+    if (((unsigned char)OBJ_STATE(slot) & 0xF0u) == 0x20u)
         (void)core_anim_set_sprite_desc_attrs(1u);
-    }
 
     anim_write_item_sprites(slot, 0x02u);  /* arrow item slot */
+}
+
+void draw_arrow(unsigned int slot)
+{
+    /* NES DrawArrow (Z_07.asm:3913): flip when facing left, weapon frame
+     * and base attribute by reverse direction index. [0C] is the frame
+     * image Anim_WriteSpecificItemSprites reads (DRAW_MIRRORED here). A
+     * sparking arrow drawn through this entry (Z_04 UpdateMonsterArrow
+     * @CheckShooter) keeps the arrow frame, as on the NES. */
+    DRAW_FLIP_H = 0u;
+    if ((unsigned char)OBJ_DIR(slot) == 0x02u) {
+        DRAW_FLIP_H = (uint8_t)((unsigned char)DRAW_FLIP_H + 1u);
+    }
+    const unsigned int opp =
+        core_get_opposite_dir((unsigned int)OBJ_DIR(slot));
+    const unsigned char y_idx = (unsigned char)((opp >> 8) & 0xFFu);
+    DRAW_MIRRORED = k_r_dir_to_weapon_frame[y_idx & 0x03u];
+    set_attr_and_draw_arrow(slot, y_idx, k_r_dir_to_weapon_base_attr[y_idx & 0x03u]);
+}
+
+void draw_arrow_spark(unsigned int slot)
+{
+    /* NES DrawArrowOrBoomerangAndCheckCollisions @PrepareArrow
+     * (Z_07.asm:4033): frame 2 (spark), no flip, base attribute 0. */
+    DRAW_MIRRORED = 0x02u;
+    DRAW_FLIP_H = 0u;
+    const unsigned int opp =
+        core_get_opposite_dir((unsigned int)OBJ_DIR(slot));
+    set_attr_and_draw_arrow(slot, (unsigned char)((opp >> 8) & 0xFFu), 0u);
 }

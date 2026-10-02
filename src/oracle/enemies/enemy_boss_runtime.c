@@ -43,6 +43,8 @@ static void enrt_jumper_move_y(unsigned char accel, signed char max_speed_hi,
     unsigned int sum;
     signed char speed_hi;
 
+    RAM(0x0000) = accel;                        /* NES STA $00 */
+    RAM(0x0002) = (unsigned char)max_speed_hi;  /* NES STY $02 (T-171) */
     ENEMY_Y(slot) = (unsigned char)(ENEMY_Y(slot) + ENEMY_JUMPER_VSPEED_HI(slot));
 
     sum = (unsigned int)ENEMY_JUMPER_VSPEED_LO(slot) + (unsigned int)accel;

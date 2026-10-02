@@ -30,3 +30,34 @@ void link_collision_check_link_collision(unsigned int slot)
  * sprite bytes are the screen sweep's job. Logged like the other draws. */
 void draw_object_mirrored_over_link(unsigned char frame, unsigned int slot) { log_draw('O', frame, slot); }
 void draw_object_not_mirrored_over_link(unsigned char frame, unsigned int slot) { log_draw('P', frame, slot); }
+
+/* Link_EndMoveAndAnimate_Bank4 boundary (Wallmaster carrying Link): the
+ * NES stub logs 'A' + ObjX/ObjY of Link; the Genesis mirror runs the
+ * RoomRom Link owner, whose first call is the face query. Link's own
+ * movement/animation is a separate subsystem. */
+unsigned char roomrom_main_current_link_face(void)
+{
+    eq_log_byte('A'); eq_log_byte(g_mem[0x70]); eq_log_byte(g_mem[0x84]);
+    return 0;
+}
+void roomrom_main_set_link_story_pose(unsigned char x, unsigned char y, unsigned char face)
+{ (void)x; (void)y; (void)face; }
+void roomrom_combat_animate_link_base(void) { }
+void roomrom_sprites_set_link_hurt_pose(short x, short y, int face, unsigned char f, unsigned char t)
+{ (void)x; (void)y; (void)face; (void)f; (void)t; }
+void roomrom_sprites_set_link_pose(short x, short y, int face, unsigned char f)
+{ (void)x; (void)y; (void)face; (void)f; }
+/* Genesis render-cache patch for the Wallmaster's closed hand: no NES RAM
+ * effect (the NES OAM patch that follows it runs on both sides). */
+void enemy_render_wallmaster_patch(unsigned char slot, unsigned char closed_hand)
+{ (void)slot; (void)closed_hand; }
+
+/* Anim_WriteItemSprites: the sprite writer (OAM on the NES, the native
+ * sprite cache on the Genesis). Logs Y (item), X (slot) and the caller's
+ * draw setup: [00] X, [01] Y, [04]/[05] attributes, [0C] frame, [0F] flip. */
+void anim_write_item_sprites(unsigned int slot, unsigned int item_slot)
+{
+    eq_log_byte('I'); eq_log_byte((unsigned char)item_slot); eq_log_byte((unsigned char)slot);
+    eq_log_byte(g_mem[0x00]); eq_log_byte(g_mem[0x01]); eq_log_byte(g_mem[0x04]);
+    eq_log_byte(g_mem[0x05]); eq_log_byte(g_mem[0x0C]); eq_log_byte(g_mem[0x0F]);
+}

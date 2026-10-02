@@ -34,6 +34,7 @@ void enrt_update_fireball(unsigned int slot);
 /* --- ASM shim functions used by enemy_projectile_runtime.c --- */
 extern void c_move_object(unsigned short slot);
 extern void c_draw_arrow(unsigned int slot);
+extern void draw_arrow_spark(unsigned int slot);   /* world/draw_dispatch.c */
 extern void c_draw_sword_shot_or_magic_shot(unsigned int slot);
 
 #endif

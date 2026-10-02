@@ -54,6 +54,37 @@ DrawObjectNotMirroredOverLink:
     JSR EqLogDraw
     LDA $5005
     RTS
+Link_EndMoveAndAnimate_Bank4:
+    LDA #'A'
+    JSR LogA
+    LDA ObjX
+    JSR LogA
+    LDA ObjY
+    JMP LogA
+Anim_WriteItemSprites:
+    STX H_TMPX
+    PHA
+    LDA #'I'
+    JSR LogA
+    TYA
+    JSR LogA
+    LDA H_TMPX
+    JSR LogA
+    LDA $00
+    JSR LogA
+    LDA $01
+    JSR LogA
+    LDA $04
+    JSR LogA
+    LDA $05
+    JSR LogA
+    LDA $0C
+    JSR LogA
+    LDA $0F
+    JSR LogA
+    PLA
+    LDX H_TMPX
+    RTS
 CheckLinkCollision:
     STX H_TMPX
     LDA #'L'
@@ -90,6 +121,7 @@ def pick(r, common, p=0.85):
 def gen_monster_slots(r, m, x):
     """Shared walker/shooter context: other slots, shots, AI cells."""
     m[0x340] = x                                           # CurObjIndex
+    m[0x341] = r.randrange(0x28)                           # RollingSpriteIndex 0..$27
     for s in range(1, 12):
         if s != x:
             m[0x34F + s] = 0 if r.random() < 0.25 else r.randrange(1, 0x80)
@@ -123,6 +155,21 @@ def gen_typed(types, states=None):
         m[0x62D + m[0x16]] = r.choice([0, 1])             # QuestNumbers
         if states is not None:
             m[0xAC + x] = r.choice(states)
+        return c
+    return gen
+
+
+def gen_shot(types, states):
+    """Projectile context: bounce direction is one of the four directions
+    (Link's facing when the shield bounced it), bounce distance even < $20."""
+    base = gen_typed(types, states)
+
+    def gen(r, m):
+        c = base(r, m)
+        x = c["x"]
+        m[0x380 + x] = r.choice([1, 2, 4, 8])                 # Shot_ObjBounceDir
+        m[0x394 + x] = r.choice([0, 2, 0x10, 0x1C, 0x1E])     # Shot_ObjBounceDist
+        m[0x98 + x] = r.choice([1, 2, 4, 8])
         return c
     return gen
 
@@ -170,7 +217,8 @@ def _enemy_c_all() -> list[str]:
              "src/game/world/world_dispatch.c", "src/game/combat/combat_dispatch.c",
              # owners of the logged stubs: those functions are weakened
              "src/game/combat/link_collision_dispatch.c", "src/game/world/draw_dispatch.c",
-             "src/game/items/candle_fire.c", "src/game/items/bomb.c"}
+             "src/game/items/candle_fire.c", "src/game/items/bomb.c",
+             "src/game/combat/targeting_dispatch.c"}
     drop = ("enemy_render.c", "/probes/")
     out = []
     for src, _ in b.ROOMROM_C_SOURCES:
@@ -236,4 +284,6 @@ STATEFUL = [
      [0x10, 0x10, 0x11, 0x20, 0x30, 0]),
     ("UpdateDeadDummy", "z07_update_dead_dummy", [0x5D], range(4)),
 ]
-SPECS += [monster_spec(e, f, gen_typed(t, list(st))) for e, f, t, st in STATEFUL]
+SHOTS = {"UpdateMonsterShot", "UpdateFireball", "UpdateMonsterArrow", "UpdateArrowOrBoomerang"}
+SPECS += [monster_spec(e, f, (gen_shot if e in SHOTS else gen_typed)(t, list(st)))
+          for e, f, t, st in STATEFUL]

@@ -72,6 +72,8 @@ unsigned char draw_item_icon(unsigned char item_slot, unsigned char item_value,
 /* DrawArrow (Z_07.asm:3908) + OffsetAndDrawArrow + L_DrawArrowOrBoomerang.
  * Used by enrt_draw_shot dispatch when OBJ_TYPE == $5B. */
 void draw_arrow(unsigned int slot);
+/* DrawArrowOrBoomerangAndCheckCollisions @PrepareArrow: spark frame. */
+void draw_arrow_spark(unsigned int slot);
 
 /* DrawBoomerangAndCheckCollision/CalcBoomerangFrame tail. NES Z_07.asm:
  * 4202-4305. Update code owns timing and collision; this writes item
