@@ -57,10 +57,32 @@ def per_tick(d: Path, plat: str) -> tuple[dict[int, int], dict[int, int]]:
     return frames, mode
 
 
+def budget_worst(d: Path) -> tuple[int, int]:
+    """Latest VDP line ($01FF, written at the next tick's start) at which a
+    Genesis play tick finished inside its own frame ($01FE = 0)."""
+    ram = (d / "gen.fram").read_bytes()
+    ticks = (d / "gen.frtick").read_bytes()
+    worst, worst_t = 0, -1
+    for i in range(1, len(ram) // 2048):
+        r = ram[i * 2048:(i + 1) * 2048]
+        p = ram[(i - 1) * 2048:i * 2048]
+        t = struct.unpack(">H", ticks[2 * i:2 * i + 2])[0]
+        # The tick that just ended was a play tick; values below $80 are
+        # line numbers after the VBlank wrap (an overrun, caught as a stall).
+        if p[0x12] == 5 and r[0x01FE] == 0 and 0x80 <= r[0x01FF] < 0xE0:
+            if r[0x01FF] > worst:
+                worst, worst_t = r[0x01FF], t - 1
+    return worst, worst_t
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("presets", nargs="*")
     ap.add_argument("--md", type=Path)
+    ap.add_argument("--budget", type=lambda v: int(v, 0), metavar="LINE",
+                    help="T-172 margin gate: fail when a Genesis play tick that "
+                         "fit its frame ended at or after this VDP line "
+                         "($01FF; VBlank starts at $E0)")
     a = ap.parse_args()
     dirs = ([REPORTS / p for p in a.presets] if a.presets else
             sorted(d for d in REPORTS.iterdir() if (d / "gen.frtick").exists()))
@@ -83,6 +105,13 @@ def main() -> int:
             rows.append(f"| {d.name} | ERROR | 0 | - | - | no comparable ticks |")
             continue
         checked += 1
+        if a.budget is not None:
+            worst, worst_t = budget_worst(d)
+            if worst >= a.budget:
+                fail += 1
+                rows.append(f"| {d.name} | budget | 1 | - | line ${worst:02X} **OVER ${a.budget:02X}** | tick {worst_t} |")
+            else:
+                rows.append(f"| {d.name} | budget | - | - | worst line ${worst:02X} | tick {worst_t} |")
         # Play stalls: both consoles in mode 5 on the tick.
         stalls = [t for t in common
                   if nm.get(t) == 5 and gm.get(t) == 5 and gf[t] > nf[t]]
