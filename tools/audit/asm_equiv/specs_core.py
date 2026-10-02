@@ -398,3 +398,104 @@ SPECS += [
          gen=gen_monster_collisions,
          call=lambda lib, c: lib.link_collision_check_monster_collisions(U(c["x"]))),
 ]
+
+
+# ------------------------------------------------------------ batch 4: items
+
+def gen_take_item(r, m):
+    # Excluded: rings $12/$13 (the NES patches MenuPalettesTransferBuf in
+    # WRAM; the Genesis keeps that buffer outside NES RAM, its own palette
+    # path, T-175) and the Triforce of Power $0E (TakePowerTriforce
+    # fanfare, separate spec).
+    item = r.choice([i for i in range(0x24) if i not in (0x0E, 0x12, 0x13)])
+    m[0x12] = r.choice([5, 5, 5, 0x0B, 9])
+    for a in range(0x657, 0x680):           # inventory: small realistic values
+        m[a] = r.choice([0, 0, 1, 2, 3, r.randrange(256)])
+    m[0x66F] = r.choice([0x22, 0x55, 0xFF, 0x20, 0xEE])
+    m[0x670] = pick(r, [0x00, 0x80, 0xFF])
+    m[0x66E] = pick(r, [0, 1, 9, 0xFF])     # keys
+    m[0x658] = pick(r, [0, 1, 8, 0x10])     # bombs
+    m[0x67C] = pick(r, [8, 0x0C, 0x10])     # max bombs
+    return {"mem": m, "a": item}
+
+
+SPECS += [
+    dict(name="TakeItem", doc="Z_01 TakeItem (classes, complex items, hearts) vs item_take_item",
+         asm=[("Z_01.asm", "ItemIdToSlot:", "SetRoomFlagUWItemState:"),
+              ("Z_07.asm", "LevelMasks:", "AnimateRoomItemOnMonster:"),
+              ("Z_07.asm", "EndGameMode:", "UpdateMode3Unfurl:"),
+              ("Z_01.asm", "TakeItem:", "AnimateWorldFading:")],
+         c_sources=["src/game/items/item_dispatch.c", "src/game/items/item_tables.c",
+                    "src/game/core/core_dispatch.c", "src/game/enemies/bosses/boss_gleeok.c",
+                    "src/state/inventory.c", "src/game/room/room_dispatch.c"],
+         # Genesis HUD presentation hook (heart-container fill animation);
+         # no NES RAM effect.
+         c_stubs="void hud_heart_container_anim_start(void) { }\n",
+         entry="TakeItem", gen=gen_take_item,
+         call=lambda lib, c: lib.item_take_item(ctypes.c_ubyte(c["a"]))),
+]
+
+
+# ------------------------------------------------------------ batch 5: monsters
+
+def gen_fill_hearts(r, m):
+    m[0x63] = pick(r, [0, 1, 1, 1])                       # World_IsFillingHearts
+    m[0x670] = pick(r, [0x00, 0x06, 0xF2, 0xF7, 0xF8, 0xFE, 0xFF])
+    hv = r.randrange(16) << 4
+    m[0x66F] = hv | r.choice([hv >> 4, max(0, (hv >> 4) - 1), r.randrange(16)])
+    return {"mem": m}
+
+
+def gen_distance(r, m):
+    x = r.randrange(1, 12)
+    m[0x70 + x] = near(r, m[0x70], 0x30)
+    m[0x84 + x] = near(r, m[0x84], 0x30)
+    return {"mem": m, "x": x}
+
+
+def gen_keese(r, m):
+    x = r.randrange(1, 12)
+    m[0x34F + x] = r.choice([0x1B, 0x1C, 0x1D])
+    m[0x444 + x] = r.randrange(6)                         # Flyer_ObjFlyingState 0..5
+    m[0x42C + x] = pick(r, [0, 1, 2, 6])                  # Flyer_ObjTurns
+    m[0x41F + x] = pick(r, [0x00, 0x20, 0x40, 0x80, 0xA0, 0xC0])   # Flyer_ObjSpeed
+    m[0x98 + x] = r.choice([8, 9, 1, 5, 4, 6, 2, 0x0A])   # Directions8 values
+    m[0x70 + x], m[0x84 + x] = r.randrange(0x10, 0xF0), r.randrange(0x40, 0xE0)
+    for a in (0x346, 0x347, 0x348, 0x349):
+        m[a] = [0x10, 0xE0, 0x40, 0xD0][a - 0x346]
+    m[0x66C] = 0
+    return {"mem": m, "x": x}
+
+
+SPECS += [
+    dict(name="IsDistanceSafeToSpawn", doc="Z_05 IsDistanceSafeToSpawn vs enemy_edge_distance_safe",
+         asm=[("Z_05.asm", "IsDistanceSafeToSpawn:", "InitMode11:"),
+              ("Z_01.asm", "Abs:", "MoveShot:")],
+         c_sources=["src/game/enemies/obj_lists.c"], entry="IsDistanceSafeToSpawn",
+         gen=gen_distance, call=lambda lib, c: lib.enemy_edge_distance_safe(U(c["x"])),
+         ret="C", carry_of=lambda v: 0 if (v & 0xFF) else 1),
+]
+
+SPECS += [
+    dict(name="World_FillHearts", doc="Z_05 World_FillHearts vs hud_world_fill_hearts",
+         asm=[("Z_05.asm", "World_FillHearts:", "SubmenuTransferBufSelectorsUW:"),
+              ("Z_01.asm", "CompareHeartsToContainers:", "L_TakePowerTriforce:")],
+         c_sources=["src/game/hud/hud_dispatch.c"], entry="World_FillHearts",
+         gen=gen_fill_hearts, call=lambda lib, c: lib.hud_world_fill_hearts()),
+    dict(name="KeeseFlight", doc="Z_04 ControlKeeseFlight + MoveFlyer (flyer state machine) vs "
+         "c_control_keese_flight + c_move_flyer",
+         asm=[("Z_04.asm", "UpdateKeese:", "UpdateZol:"),
+              ("Z_04.asm", "Directions8:", "PatraSines:"),
+              ("Z_07.asm", "TableJump:", "HideAllSprites:"),
+              ("Z_01.asm", "BoundDirectionHorizontally:", "MoveShot:"),
+              ("Z_07.asm", "ResetMovingDir:", "GoWalkableDir:")],
+         asm_stubs="EqKeese:\n    JSR ControlKeeseFlight\n    JMP MoveFlyer\n",
+         incs=["ObjVars.inc"],
+         c_sources=["src/game/enemies/enemy_flyer_bridge.c",
+                    "src/oracle/enemies/enemy_flyer_runtime.c",
+                    "src/game/core/core_dispatch.c", "src/game/world/object_dispatch.c",
+                    "src/game/enemies/enemy_dispatch.c", "src/game/enemies/enemy_jumper_bridge.c"],
+         entry="EqKeese", gen=gen_keese,
+         call=lambda lib, c: (lib.c_control_keese_flight(U(c["x"])), lib.c_move_flyer(U(c["x"])))[1],
+         ignore={0x00, 0x01, 0x02, 0x03}),   # TableJump pointer scratch
+]

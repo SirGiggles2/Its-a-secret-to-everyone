@@ -4,7 +4,9 @@
 static void enrt_flyer_adjust_speed_threshold(unsigned int slot) {
     unsigned char speed = ENEMY_AIR_SPEED(slot);
     if (speed & 0xE0) {
-        z04_flyer_compare_max_speed(speed, slot);
+        /* NES Flyer_CompareMaxSpeed compares (speed & $E0). Same result for
+         * the ROM's maxima ($40/$80/$A0/$C0/$E0), exact for any (T-171). */
+        z04_flyer_compare_max_speed((unsigned char)(speed & 0xE0), slot);
         return;
     }
     {
