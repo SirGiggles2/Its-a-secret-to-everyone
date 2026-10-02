@@ -2,6 +2,7 @@
 
     python tools/lockstep/run_lockstep.py <preset.json> [--frames N] [--full]
            [--no-cache] [--nes-only] [--frame-dump] [--snap T1,T2] [--bless]
+           [--rom PATH] [--report-suffix SUFFIX]
 
 Output: builds/reports/lockstep/<preset name>/{nes,gen}.{ram,txt,png},
 diff.txt, diff.json, and each run's launch.json (ROM + script hashes).
@@ -30,6 +31,8 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+from capture_evidence import completed_ticks
 
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
@@ -95,11 +98,11 @@ def nes_cached(p: dict, out: Path, prefix_name: str, maxf: int, timeout: int,
         rc = capture("nes", NES_ROM, out, prefix_name, preset_lua, maxf, "", "", timeout)
         # Complete = runner exit 0 (no timeout kill), no .err, and the
         # capture's own end line ("frames=N") written after the last row.
-        meta = out / f"{prefix_name}.txt"
-        ok = (rc == 0 and (out / f"{prefix_name}.ram").exists()
-              and not (out / f"{prefix_name}.err").exists()
-              and meta.exists() and re.search(r"^frames=\d+", meta.read_text(
-                  encoding="utf-8", errors="replace"), re.M) is not None)
+        try:
+            completed_ticks(out, prefix_name)
+            ok = rc == 0
+        except (OSError, ValueError):
+            ok = False
         state = "miss" if ok else "fail"
         if ok and use_cache:
             tmp = CACHE / (key + ".tmp")
@@ -110,6 +113,11 @@ def nes_cached(p: dict, out: Path, prefix_name: str, maxf: int, timeout: int,
                     shutil.copy2(f, tmp / ("nes" + f.name[len(prefix_name):]))
             shutil.rmtree(cdir, ignore_errors=True)
             tmp.rename(cdir)
+    if state == "hit":
+        try:
+            completed_ticks(out, prefix_name)
+        except (OSError, ValueError):
+            state = "fail"
     (out / f"{prefix_name}.cache").write_text(f"{state} {key}\n", encoding="utf-8")
     print(f"nes cache {state} {key[:16]}")
     return state
@@ -129,6 +137,10 @@ def seed_of(out: Path) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("preset", type=Path)
+    ap.add_argument("--rom", type=Path, default=GEN_ROM,
+                    help="Genesis payload (use a frozen copy for concurrent work)")
+    ap.add_argument("--report-suffix", default="",
+                    help="append a safe suffix to Lua/report names; baseline name stays unchanged")
     ap.add_argument("--frames", type=int, default=100000)
     ap.add_argument("--pc-profile", metavar="FIRST:LAST",
                     help="Genesis 68K PC histogram over VIDEO frames FIRST..LAST "
@@ -155,9 +167,12 @@ def main() -> int:
     ap.add_argument("--bless", action="store_true",
                     help="write the full-RAM ratchet baseline from this run (needs --full)")
     a = ap.parse_args()
+    if a.report_suffix and not re.fullmatch(r"[A-Za-z0-9_-]+", a.report_suffix):
+        ap.error("--report-suffix permits only letters, digits, underscores and hyphens")
 
     spec = json.loads(a.preset.read_text(encoding="utf-8-sig"))
     p = presets.build(spec)
+    p["name"] += a.report_suffix
     if a.pc_profile:
         p["pc_profile"] = [int(x) for x in a.pc_profile.split(":")]
     if a.frame_dump:
@@ -192,7 +207,15 @@ def main() -> int:
         return 0
 
     gold = "" if a.full else (out / "nes.ram").as_posix()
-    capture("gen", GEN_ROM, out, "gen", preset_lua, a.frames, seed_of(out), gold, timeout)
+    rc = capture("gen", a.rom, out, "gen", preset_lua, a.frames, seed_of(out), gold, timeout)
+    try:
+        completed_ticks(out, "gen")
+    except (OSError, ValueError) as e:
+        print(f"ERROR gen: {e}")
+        return 1
+    if rc != 0:
+        print(f"ERROR gen: runner failed ({rc}); capture cannot establish acceptance")
+        return 1
 
     ff = diff.failfast(out)
     if ff is not None and ff[1] >= 0:

@@ -25,6 +25,8 @@ import struct
 from collections import defaultdict
 from pathlib import Path
 
+from capture_evidence import completed_ticks
+
 ROOT = Path(__file__).resolve().parents[2]
 REPORTS = ROOT / "builds" / "reports" / "lockstep"
 
@@ -33,12 +35,25 @@ def per_tick(d: Path, plat: str) -> tuple[dict[int, int], dict[int, int]]:
     """tick -> video frames spent on it, tick -> GameMode at its last frame."""
     ram = (d / f"{plat}.fram").read_bytes()
     ticks = (d / f"{plat}.frtick").read_bytes()
+    count = completed_ticks(d, plat)
+    if not ram or len(ram) % 2048 or len(ticks) != 2 * (len(ram) // 2048):
+        raise ValueError(f"{plat}: empty, truncated or mismatched video records")
     frames: dict[int, int] = defaultdict(int)
     mode: dict[int, int] = {}
-    for i in range(min(len(ram) // 2048, len(ticks) // 2)):
+    previous = -1
+    for i in range(len(ticks) // 2):
         t = struct.unpack(">H", ticks[2 * i:2 * i + 2])[0]
+        if not previous <= t < count:
+            raise ValueError(f"{plat}: invalid video tick {t}")
+        previous = t
         frames[t] += 1
         mode[t] = ram[i * 2048 + 0x12]
+    # Faster transitions may jump FrameCounter; the capture explicitly
+    # records those synthetic RAM ticks in .pad. All others need video.
+    pad_file = d / f"{plat}.pad"
+    pad = {int(t) for t in pad_file.read_text(encoding="utf-8").split()} if pad_file.exists() else set()
+    if set(range(count)) - frames.keys() - pad:
+        raise ValueError(f"{plat}: video trace does not cover completed ticks")
     return frames, mode
 
 
@@ -51,13 +66,23 @@ def main() -> int:
             sorted(d for d in REPORTS.iterdir() if (d / "gen.frtick").exists()))
     rows = ["| Preset | Kind | Ticks | NES frames | Genesis frames | Where |",
             "|---|---|---|---|---|---|"]
-    fail = 0
+    fail = checked = 0
     for d in dirs:
-        if not all((d / f).exists() for f in ("nes.fram", "nes.frtick", "gen.fram", "gen.frtick")):
+        try:
+            nf, nm = per_tick(d, "nes")
+            gf, gm = per_tick(d, "gen")
+            if completed_ticks(d, "nes") != completed_ticks(d, "gen"):
+                raise ValueError("NES/Genesis completion counts differ")
+        except (OSError, ValueError) as e:
+            fail += 1
+            rows.append(f"| {d.name} | ERROR | - | - | - | {e} |")
             continue
-        nf, nm = per_tick(d, "nes")
-        gf, gm = per_tick(d, "gen")
         common = sorted(t for t in set(nf) & set(gf) if t >= 2)
+        if not common:
+            fail += 1
+            rows.append(f"| {d.name} | ERROR | 0 | - | - | no comparable ticks |")
+            continue
+        checked += 1
         # Play stalls: both consoles in mode 5 on the tick.
         stalls = [t for t in common
                   if nm.get(t) == 5 and gm.get(t) == 5 and gf[t] > nf[t]]
@@ -81,11 +106,14 @@ def main() -> int:
                                 f"{'/'.join(sorted({'%02X' % nm[x] for x in ep}))} | {len(ep)} | "
                                 f"{n_sum} | {g_sum} **WORSE** | ticks {ep[0]}-{ep[-1]} |")
                 ep = []
+    if not checked:
+        fail += 1
+        rows.append("| - | ERROR | 0 | - | - | no completed cases checked |")
     text = "\n".join(rows)
     if a.md:
         a.md.write_text(text + "\n", encoding="utf-8")
     print(text)
-    print(f"LAG: {'FAIL' if fail else 'PASS'} ({fail} slower-than-NES rows)")
+    print(f"LAG: {'FAIL' if fail else 'PASS'} ({checked} completed cases, {fail} errors/slower-than-NES rows)")
     return 1 if fail else 0
 
 

@@ -31,6 +31,7 @@ EMU = Path(r"C:\Users\Jake Diggity\Documents\GitHub\VDP rebirth tools and asms"
 NM = ROOT / "build" / "toolchain" / "sgdk_bin" / "bin" / "nm.exe"
 ELF = ROOT / "build" / "debug_project" / "out" / "Debug.out"
 SYM_RE = re.compile(r"@SYM:([A-Za-z_][A-Za-z0-9_]*)@")
+STAGE_ROOT = Path(r"C:\tmp\claude_probe")
 
 
 def short(path: Path) -> str:
@@ -161,7 +162,7 @@ def main() -> int:
 
     # Unique per output folder (e.g. <preset>_run_nes) so parallel runs of
     # different presets never share a stage directory.
-    stage = Path(r"C:\tmp\claude_probe") / f"{out.parent.name}_{out.name}"
+    stage = STAGE_ROOT / f"{out.parent.name}_{out.name}"
     if stage.exists():
         shutil.rmtree(stage)
     stage.mkdir(parents=True)
@@ -208,6 +209,11 @@ def main() -> int:
     rom_dir.mkdir()
     rom_copy = rom_dir / ("game" + a.rom.suffix)  # space/comma-free name for EmuHawk argv
     shutil.copy2(a.rom, rom_copy)
+    # The shared build can be replaced while this probe is running.
+    # Identify the exact private payload launched, before the process starts.
+    rom_sha256 = sha(rom_copy)
+    script_sha256 = sha(probe)
+    seed_sha256 = sha(stage / "GEN" / "SaveRAM" / "game.SaveRAM") if seed_save else None
     # The --gdi display cost ~3x the frame time on the hidden desktop
     # (NES 47 fps vs 145 fps, T-013 benchmark); the config's own display
     # method renders fine there. CLAUDE_PROBE_GDI=1 restores --gdi.
@@ -233,10 +239,11 @@ def main() -> int:
             collected.append(src.name)
     (out / "launch.json").write_text(json.dumps({
         "rom": str(a.rom),
-        "rom_sha256": sha(a.rom),
+        "staged_rom": str(rom_copy),
+        "rom_sha256": rom_sha256,
         "script": str(a.lua),
-        "script_sha256": sha(out / a.lua.name),
-        "seed_gen_save_sha256": sha(seed_save) if seed_save else None,
+        "script_sha256": script_sha256,
+        "seed_gen_save_sha256": seed_sha256,
         "symbols": {k: f"0x{v:06X}" for k, v in syms.items()},
         "exit_code": code,
         "collected": collected,

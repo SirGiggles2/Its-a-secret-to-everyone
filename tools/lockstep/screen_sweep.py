@@ -23,6 +23,8 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+from capture_evidence import completed_ticks
+
 ROOT = Path(__file__).resolve().parents[2]
 REPORTS = ROOT / "builds" / "reports" / "lockstep"
 PRESETS = ROOT / "tools" / "lockstep" / "presets"
@@ -30,6 +32,7 @@ BASE = ROOT / "tools" / "lockstep" / "baselines"
 
 
 def pick_ticks(name: str, per: int) -> list[int]:
+    completed_ticks(REPORTS / name, "nes")
     ram = (REPORTS / name / "nes.ram").read_bytes()
     n = len(ram) // 2048
     ok = []
@@ -47,15 +50,23 @@ def pick_ticks(name: str, per: int) -> list[int]:
 
 
 def run_preset(name: str, per: int) -> list[str]:
-    if not (REPORTS / name / "nes.ram").exists():
-        return [f"| {name} | - | no report |"]
-    ticks = pick_ticks(name, per)
+    try:
+        ticks = pick_ticks(name, per)
+    except (OSError, ValueError) as e:
+        return [f"| {name} | - | ERROR: {e} |"]
     if not ticks:
         return [f"| {name} | - | no settled play tick |"]
-    subprocess.run([sys.executable, str(ROOT / "tools/lockstep/run_lockstep.py"),
+    run = subprocess.run([sys.executable, str(ROOT / "tools/lockstep/run_lockstep.py"),
                     str(PRESETS / f"{name}.json"), "--full",
                     "--snap", ",".join(str(t) for t in ticks)],
                    capture_output=True, text=True)
+    if run.returncode:
+        return [f"| {name} | - | ERROR: capture failed ({run.returncode}) |"]
+    try:
+        for platform in ("nes", "gen"):
+            completed_ticks(REPORTS / name, platform)
+    except (OSError, ValueError) as e:
+        return [f"| {name} | - | ERROR: {e} |"]
     rows = []
     for t in ticks:
         out = subprocess.run([sys.executable, str(ROOT / "tools/lockstep/screen_diff.py"),
@@ -77,18 +88,26 @@ def main() -> int:
     ap.add_argument("--jobs", type=int, default=6)
     ap.add_argument("--md", type=Path)
     a = ap.parse_args()
+    if a.per <= 0 or a.jobs <= 0:
+        ap.error("--per and --jobs must be positive")
     names = a.presets or sorted(p.stem for p in BASE.glob("*.json"))
     with ThreadPoolExecutor(a.jobs) as ex:
         results = list(ex.map(lambda nm: run_preset(nm, a.per), names))
     rows = ["| Preset | Tick | Result |", "|---|---|---|"] + [r for rs in results for r in rs]
     diffs = sum(1 for r in rows if "DIFF" in r)
     checked = sum(1 for r in rows if "MATCH" in r or "DIFF" in r)
+    errors = sum(1 for r in rows if "ERROR:" in r)
+    if not checked:
+        errors += 1
+        rows.append("| - | - | ERROR: no screens checked |")
     text = "\n".join(rows)
     if a.md:
         a.md.write_text(text + "\n", encoding="utf-8")
     print(text)
-    print(f"SCREENS: {diffs} diff / {checked} checked")
-    return 0
+    print(f"SCREENS: {diffs} diff / {checked} checked / {errors} errors")
+    # Pixel differences are triage candidates (including accepted OAM
+    # overlap), not automatic game failures. Missing evidence is an error.
+    return 1 if errors else 0
 
 
 if __name__ == "__main__":

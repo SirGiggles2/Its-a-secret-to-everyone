@@ -36,6 +36,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gate  # noqa: E402
+from capture_evidence import completed_ticks
 
 ROOT = Path(__file__).resolve().parents[2]
 INC = ROOT / "reference" / "aldonunez"
@@ -68,6 +69,10 @@ def name(a: int) -> str:
 
 
 def load(prefix: Path) -> list[bytes]:
+    try:
+        completed_ticks(prefix.parent, prefix.name)
+    except (OSError, ValueError) as e:
+        raise SystemExit(f"ERROR {prefix.name}: {e}") from e
     err = prefix.with_suffix(".err")
     if err.exists():
         raise SystemExit(f"ERROR {prefix.name}: {err.read_text().strip()}")
@@ -117,6 +122,8 @@ def main(out_dir: Path, spec: dict | None = None, bless: bool = False) -> int:
     allow = spec.get("allow", [])
     pname = spec.get("name") or out_dir.name
     early = stopped_early(out_dir)
+    script_ticks = sum(int(k) for k, _ in spec.get("script", [])) or n
+    incomplete = len(nes_b) != len(gen_b) or n < script_ticks or early is not None
 
     lines: list[str] = []
     lines.append(f"ticks compared: {n}  (nes {len(nes_b)}, gen {len(gen_b)})  padded rows skipped: {len(pad)}")
@@ -165,7 +172,9 @@ def main(out_dir: Path, spec: dict | None = None, bless: bool = False) -> int:
     lines.append(f"\nmasked cells differing at tick 0: {masked_diff} (not evaluated)")
 
     no_base = base is None
-    ok = not fails and not new and not earlier and not no_base
+    ok = not fails and not new and not earlier and not no_base and not incomplete
+    if incomplete:
+        lines.append(f"INCOMPLETE: compared {n} of {script_ticks} required script ticks")
     early_s = f"  [gen stopped early at tick {early}]" if early is not None else ""
     verdict = (f"GATE: {'PASS' if ok else 'FAIL'}  key={n} fails={len(fails)}  "
                f"ratchet new={len(new)} earlier={len(earlier)} improved={len(improved)} "
@@ -175,8 +184,7 @@ def main(out_dir: Path, spec: dict | None = None, bless: bool = False) -> int:
     lines.append(f"VERDICT: {'MATCH' if ok else 'DIVERGE'} ({len(first)} unmasked cells ever differ)")
 
     if bless:
-        script_ticks = sum(int(k) for k, _ in spec.get("script", [])) or n
-        if early is not None or n < min(len(nes_b), script_ticks):
+        if incomplete:
             lines.append("bless REFUSED: run did not compare every tick (use --full)")
         else:
             p = gate.save_baseline(pname, cells, n)
