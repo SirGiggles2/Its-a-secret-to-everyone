@@ -98,7 +98,9 @@ def parse_constants():
                  "ROOMROM_LINK_LIFT_TILE_BASE", "ROOMROM_LINK_LIFT_TILE_COUNT",
                  "ROOMROM_LINK_FLASH3_TILE_BASE", "ROOMROM_LINK_FLASH3_TILE_COUNT",
                  "ROOMROM_LINK_ATTACK_FLASH3_TILE_BASE",
-                 "ROOMROM_LINK_ATTACK_FLASH3_TILE_COUNT"):
+                 "ROOMROM_LINK_ATTACK_FLASH3_TILE_COUNT",
+                 "ROOMROM_PT1_PAIR_TILE_BASE", "ROOMROM_PT1_PAIR_TILE_COUNT",
+                 "ROOMROM_SUBPAL3_PAIR_TILE_COUNT"):
         m = re.search(rf"#define\s+{name}\s+(\d+)u?", text_map)
         if not m:
             fail(f"missing {name} in {VRAM_MAP_H}")
@@ -144,6 +146,10 @@ def parse_constants():
     # level via #define ROOMROM_BOSS_TILE_BASE = (SPR_TILE_BASE + 44u);
     # no independent VRAM range to check here. ---
 
+    consts["ROOMROM_SUBPAL3_PAIR_TILE_BASE"] = (
+        consts["ROOMROM_ITEM_TILE_BASE"] +
+        consts["ROOMROM_ITEM_TILE_COUNT_PER_PAL"] * consts["ROOMROM_ITEM_SUBPAL_COUNT"] +
+        consts["ROOMROM_BOSS_SUBPAL3_TILE_COUNT"])
     return consts
 
 
@@ -235,7 +241,8 @@ def main():
     banks = {"BG": bg_range, "SPR": spr_range, "ITEM": item_range,
              "BOSS_PAL3": tile_range_bytes(item_end_tile, c["ROOMROM_BOSS_SUBPAL3_TILE_COUNT"])}
     for name in ("SUBSCREEN_SPRITE", "CLOUD", "FIREBALL", "FIREBALL_SUBPAL3", "SPARK", "SPARK_SUBPAL3",
-                 "HUD_MARKER", "LINK_LIFT", "LINK_FLASH3", "LINK_ATTACK_FLASH3"):
+                 "HUD_MARKER", "LINK_LIFT", "LINK_FLASH3", "LINK_ATTACK_FLASH3",
+                 "PT1_PAIR", "SUBPAL3_PAIR"):
         region = tile_range_bytes(c[f"ROOMROM_{name}_TILE_BASE"], c[f"ROOMROM_{name}_TILE_COUNT"])
         if region[1] > TILE_DATA_LIMIT_BYTES:
             fail(f"{name} extends into VDP tables: {region}")
