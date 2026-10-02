@@ -5,7 +5,7 @@ void eq_log_byte(unsigned char v);
 
 /* GetCollidingTileMoving: logs X, [0F], ObjX,X, ObjY,X; returns the call's
  * preset tile into ObjCollidedTile,X and the preset [00]/[01]. */
-unsigned char collision_get_colliding_tile_moving_nes(unsigned int slot)
+unsigned char collision_get_colliding_tile_moving(unsigned int slot)
 {
     unsigned char k = g_mem[0x5001];
     unsigned char t = g_mem[0x5200u + k];

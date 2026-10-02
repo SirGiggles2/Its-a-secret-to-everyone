@@ -192,38 +192,23 @@ void enrt_update_zora(unsigned int slot) {
     }
 }
 
-static void enrt_try_shooting(unsigned char qspeed_fail, unsigned char shot_type, unsigned int slot) {
+/* NES Z_04.asm @TryShootingNow body, shared by _TryShooting and
+ * UpdateStalfos @PrepareToShoot. qspeed: the speed to keep when not in
+ * shooting time ([01] on the NES). */
+void enrt_try_shooting_body(unsigned char qspeed, unsigned char shot_type, unsigned int slot)
+{
     unsigned char new_timer;
 
-    /* NES Z_04.asm:1975 _TryShooting prelude — color/type-keyed rng gate
-     * for non-blue walkers. Blue Lynel ($01), Blue Moblin ($03), Blue Slow
-     * Octorock ($09), Blue Fast Octorock ($0A) skip the gate and always
-     * enter the shoot-decision body. Red types ($02/$04/$07/$08) only
-     * enter when ShootTimer != 0 (mid-cycle) OR Random+slot >= $F8.
-     * Without this gate red walkers attempt to start a shoot cycle on
-     * every wants-to-shoot frame, ~32x more often than NES. */
-    {
-        unsigned char type      = (unsigned char)ENEMY_TYPE(slot);
-        unsigned char cur_timer = OBJ(0x0451, slot);
-        unsigned char is_blue   = (type == 0x01u || type == 0x03u
-                                || type == 0x09u || type == 0x0Au);
-        if (!is_blue && cur_timer == 0u) {
-            if (ENEMY_RNG_A(slot) < 0xF8u) {
-                return;   /* NES @Exit: ObjQSpeedFrac unchanged */
-            }
-        }
-    }
-
     if (ENEMY_HIT_REACTION(slot) != 0) {
-        new_timer = 0;
+        new_timer = 0;                          /* temporarily invincible */
     } else {
-        unsigned char cur = OBJ(0x0451, slot);
-        if (cur != 0) {
-            new_timer = (unsigned char)(cur - 1);
-        } else if (OBJ(0x0412, slot) == 0) {
-            ENEMY_WALK_SPEED(slot) = qspeed_fail;
-            return;
-        } else {
+        /* LDY ObjShootTimer / DEY / BPL: 0 (or >= $81) reads as expired. */
+        new_timer = (unsigned char)(OBJ(0x0451, slot) - 1u);
+        if (new_timer & 0x80u) {
+            if (OBJ(0x0412, slot) == 0) {       /* ObjWantsToShoot */
+                ENEMY_WALK_SPEED(slot) = qspeed;
+                return;
+            }
             new_timer = 0x30;
         }
     }
@@ -231,30 +216,40 @@ static void enrt_try_shooting(unsigned char qspeed_fail, unsigned char shot_type
     OBJ(0x0451, slot) = new_timer;
 
     if (new_timer == 0) {
-        ENEMY_WALK_SPEED(slot) = qspeed_fail;
+        ENEMY_WALK_SPEED(slot) = qspeed;
         return;
     }
-
-    if (new_timer != 0x10) {
-        ENEMY_WALK_SPEED(slot) = 0;
-        return;
-    }
-
-    if ((ENEMY_PAUSE_FLAG | ENEMY_STUN_TIMER(slot)) != 0) {
+    if (new_timer != 0x10 || (ENEMY_PAUSE_FLAG | ENEMY_STUN_TIMER(slot)) != 0) {
         ENEMY_WALK_SPEED(slot) = 0;
         return;
     }
 
     unsigned int result = c_shoot_if_wanted(shot_type, slot);
     if ((result & CARRY_SET) == 0) {
-        ENEMY_WALK_SPEED(slot) = qspeed_fail;
+        ENEMY_WALK_SPEED(slot) = qspeed;
         return;
     }
 
+    /* _ShootIfWanted2 tail, then the success path. */
     ENEMY_MOVE_TIMER(slot) = 0x80;
     OBJ(0x0437, slot) = (unsigned char)(OBJ(0x0437, slot) - 1);
     OBJ(0x0412, slot) = 0;
     ENEMY_WALK_SPEED(slot) = 0;
+}
+
+/* NES Z_04.asm:1975 _TryShooting. [01] = qspeed on entry; blue walkers
+ * ($01/$03/$09/$0A) skip the gate, others need ShootTimer != 0 or
+ * Random,X >= $F8; then [00] = shot type and the shared body. */
+void enrt_try_shooting(unsigned char qspeed, unsigned char shot_type, unsigned int slot)
+{
+    unsigned char type = (unsigned char)ENEMY_TYPE(slot);
+
+    RAM(0x0001) = qspeed;
+    if (!(type == 0x01u || type == 0x03u || type == 0x09u || type == 0x0Au)
+        && OBJ(0x0451, slot) == 0u && ENEMY_RNG_A(slot) < 0xF8u)
+        return;                                 /* @Exit: speed unchanged */
+    RAM(0x0000) = shot_type;
+    enrt_try_shooting_body(qspeed, shot_type, slot);
 }
 
 void enrt_update_moblin(unsigned int slot) {
@@ -284,7 +279,9 @@ void enrt_update_stalfos(unsigned int slot) {
     if (OBJ(0x0451, slot) == 0 && ENEMY_RNG_A(slot) < 0xF8)
         return;
 
-    enrt_try_shooting(0x20, 0x57u, slot);
+    /* @PrepareToShoot: the _TryShooting body without its [00] store; the
+     * sword-shot type reaches [00] only through _ShootIfWanted. */
+    enrt_try_shooting_body(0x20, 0x57u, slot);
 }
 
 /* Phase 7 Task 7.2 step 11 — drain NES UpdateDarknut (Z_04.asm:6474).

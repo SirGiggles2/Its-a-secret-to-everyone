@@ -50,7 +50,7 @@
 #define POLS_INV_CLOCK                  RAM(0x066Cu)          /* InvClock */
 #define POLS_INVINCIBILITY_MASK(slot)   OBJ(0x04B2u, (slot))  /* ObjInvincibilityMask */
 #define POLS_FRAME_COUNTER              RAM(0x0015u)          /* FrameCounter */
-#define POLS_RANDOM(slot)               OBJ(0x0019u, (slot))  /* Random */
+#define POLS_RANDOM(slot)               OBJ(0x0018u, (slot))  /* Random,X ($18; was $19, T-171) */
 
 /* PolsVoice tables (verbatim from NES Z_04.asm:6516-6531).
  *

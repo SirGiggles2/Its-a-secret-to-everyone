@@ -25,3 +25,8 @@ void link_collision_check_link_collision(unsigned int slot)
 {
     eq_log_byte('L'); eq_log_byte((unsigned char)slot);
 }
+
+/* Over-Link draws write fixed OAM slots ($40/$44) on both machines; the
+ * sprite bytes are the screen sweep's job. Logged like the other draws. */
+void draw_object_mirrored_over_link(unsigned char frame, unsigned int slot) { log_draw('O', frame, slot); }
+void draw_object_not_mirrored_over_link(unsigned char frame, unsigned int slot) { log_draw('P', frame, slot); }

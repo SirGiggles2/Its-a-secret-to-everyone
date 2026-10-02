@@ -8,6 +8,8 @@ extern void wanderer_update_common(unsigned int turn_rate, unsigned int slot);
 extern void c_walker_move(unsigned int slot);
 extern void c_face_unblocked_dir(unsigned int slot);
 extern void c_obj_shove(unsigned int slot);
+extern void enrt_try_shooting(unsigned char qspeed, unsigned char shot_type, unsigned int slot);
+extern void enrt_try_shooting_body(unsigned char qspeed, unsigned char shot_type, unsigned int slot);
 extern void c_move_flyer(unsigned int slot);
 extern void c_control_keese_flight(unsigned int slot);
 extern void c_check_monster_collisions(unsigned int slot);

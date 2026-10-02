@@ -66,6 +66,8 @@ extern void enrt_update_goriya(unsigned int slot);     /* 7.4 step 6b ($1E armos
 extern void enrt_draw_ghini_and_check_collisions(unsigned int slot); /* 7.4 step 6c ($22 ghini fade) */
 extern void enrt_end_init_flyer(unsigned int slot);    /* 7.4 step 6c (ghini terminal init) */
 extern void c_obj_shove(unsigned int slot);            /* knockback applier */
+extern void enrt_try_shooting(unsigned char qspeed, unsigned char shot_type,
+                              unsigned int slot);   /* enemy_walker_runtime.c */
 
 /* Forward decl — defined after c_obj_shove block in this file (step 18). */
 void c_walker_check_tile_collision(unsigned int slot);
@@ -319,8 +321,10 @@ void c_obj_shove(unsigned int slot)
         return;
     }
 
-    /* ShoveMoveMin: 4-pixel move loop. */
-    for (unsigned int counter = 0u; counter < 4u; counter++) {
+    /* ShoveMoveMin: 4-pixel move loop. [03] is the NES pixel counter and
+     * [02] the +1/-1 step; both stay in NES RAM as on the NES (T-171). */
+    RAM(0x0003u) = 4u;
+    do {
         /* @LoopShovePixel */
         unsigned char grid_off = (unsigned char)OBJ(NES_OBJ_GRID_OFFSET, slot);
         if (grid_off == 0u) {
@@ -370,6 +374,7 @@ void c_obj_shove(unsigned int slot)
             unsigned char dir = (unsigned char)OBJ(NES_OBJ_SHOVE_DIR, slot);
             delta = ((dir & 0x05u) != 0u) ? 0x01u : 0xFFu;
         }
+        RAM(0x0002u) = delta;
 
         /* Decrement remaining distance. */
         OBJ(NES_OBJ_SHOVE_DIST_BASE, slot) =
@@ -402,7 +407,8 @@ void c_obj_shove(unsigned int slot)
                     (unsigned char)(OBJ(NES_OBJ_Y, slot) + delta);
             }
         }
-    }
+        RAM(0x0003u) = (unsigned char)(RAM(0x0003u) - 1u);
+    } while (RAM(0x0003u) != 0u);
 }
 
 /* -------- Step 18: native c_walker_check_tile_collision -------- */
@@ -586,6 +592,7 @@ unsigned int c_shoot_if_wanted(unsigned int shot_type, unsigned int slot)
      *     until then it'll spawn but stand still — visible regression
      *     surface for the next step. */
 
+    RAM(0x0000u) = (unsigned char)shot_type;   /* _ShootIfWanted: STA $00 */
     if (ENEMY_PUSH_TIMER(slot) == 0u) return 0u;
 
     unsigned int empty = 0u;
@@ -648,11 +655,8 @@ void enrt_update_octorock(unsigned int slot)
      *   1. Turn rate (ENEMY_AIR_SPEED): blue ($09+) = $A0, red = $70.
      *   2. enrt_wanderer_target_player — runs c_walker_move + targeting.
      *   3. qspeed: $20 if slow ($07/$09), else $40 (fast $08/$0A).
-     *   4. _TryShooting flying rock $53. Inlined from enrt_try_shooting
-     *      (which is `static` in enemy_walker_runtime.c). The native
-     *      c_shoot_if_wanted allocates a live projectile when the NES
-     *      timer/wants gates permit; failed allocation keeps qspeed,
-     *      while a successful shot pauses the Octorok.
+     *   4. _TryShooting flying rock $53 (enrt_try_shooting). A failed
+     *      allocation keeps qspeed; a successful shot pauses the Octorok.
      *   5. sprite_anim_fetch_obj_pos — primes draw scratch + clears
      *      ENEMY_FRAME_FLAGS (ZP_TMPF / $000F).
      *   6. dir-based frame_offset: UP=1, DOWN=2, LEFT=0, RIGHT=0+hflip.
@@ -676,69 +680,9 @@ void enrt_update_octorock(unsigned int slot)
         qspeed = (t == 0x07u || t == 0x09u) ? 0x20u : 0x40u;
     }
 
-    /* Step 4 — Inlined _TryShooting flying rock $53. Mirror of static
-     * enrt_try_shooting in src/oracle/enemies/enemy_walker_runtime.c.
-     *
-     * 2026-05-18 — port NES _TryShooting (Z_04.asm:1975-1994) rng gate.
-     * Blue Lynel ($01), Blue Moblin ($03), Blue Slow Octorock ($09),
-     * Blue Fast Octorock ($0A) skip the gate. Red types ($02/$04/$07/$08)
-     * gate on ShootTimer != 0 OR Random+slot >= $F8. Matches the
-     * enrt_try_shooting fix landed for Moblin/Lynel/Stalfos in commit
-     * 52f4f03c — extended here to Red Slow Octorock ($07) and Red Fast
-     * Octorock ($08) which use this inline body. */
-    {
-        unsigned char new_timer;
-        {
-            unsigned char type      = (unsigned char)ENEMY_TYPE(slot);
-            unsigned char cur_timer = OBJ(0x0451u, slot);
-            unsigned char is_blue   = (type == 0x01u || type == 0x03u
-                                    || type == 0x09u || type == 0x0Au);
-            if (!is_blue && cur_timer == 0u) {
-                if ((unsigned char)ENEMY_RNG_A(slot) < 0xF8u) {
-                    /* NES @Exit: ObjQSpeedFrac unchanged (T-012: a red
-                     * fast octorok keeps InitFastOctorock's $30). */
-                    goto draw_octorock;
-                }
-            }
-        }
-        if (ENEMY_HIT_REACTION(slot) != 0u) {
-            new_timer = 0u;
-        } else {
-            unsigned char cur = OBJ(0x0451u, slot);     /* ObjShootTimer */
-            if (cur != 0u) {
-                new_timer = (unsigned char)(cur - 1u);
-            } else if (OBJ(0x0412u, slot) == 0u) {      /* ObjWantsToShoot */
-                ENEMY_WALK_SPEED(slot) = qspeed;
-                goto draw_octorock;
-            } else {
-                new_timer = 0x30u;
-            }
-        }
-        OBJ(0x0451u, slot) = new_timer;
-        if (new_timer == 0u) {
-            ENEMY_WALK_SPEED(slot) = qspeed;
-            goto draw_octorock;
-        }
-        if (new_timer != 0x10u) {
-            ENEMY_WALK_SPEED(slot) = 0u;
-            goto draw_octorock;
-        }
-        if ((ENEMY_PAUSE_FLAG | ENEMY_STUN_TIMER(slot)) != 0u) {
-            ENEMY_WALK_SPEED(slot) = 0u;
-            goto draw_octorock;
-        }
-        unsigned int result = c_shoot_if_wanted(0x53u, slot);
-        if ((result & CARRY_SET) == 0u) {
-            ENEMY_WALK_SPEED(slot) = qspeed;
-            goto draw_octorock;
-        }
-        ENEMY_MOVE_TIMER(slot) = 0x80u;
-        OBJ(0x0437u, slot) = (unsigned char)(OBJ(0x0437u, slot) - 1u);
-        OBJ(0x0412u, slot) = 0u;
-        ENEMY_WALK_SPEED(slot) = 0u;
-    }
+    /* Step 4 — _TryShooting flying rock $53 (shared NES helper). */
+    enrt_try_shooting(qspeed, 0x53u, slot);
 
-draw_octorock:
     /* Step 5 — Anim_FetchObjPosForSpriteDescriptor. */
     (void)sprite_anim_fetch_obj_pos(slot);
 

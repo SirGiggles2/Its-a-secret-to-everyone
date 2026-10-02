@@ -1,7 +1,7 @@
 #include "link_ladder.h"
 #include "platform_abi.h"
 #include "draw_dispatch.h"                  /* draw_static_item_sprites */
-#include "../combat/collision_dispatch.h"   /* collision_get_colliding_tile_moving_nes */
+#include "../combat/collision_dispatch.h"   /* collision_get_colliding_tile_moving */
 #include "../core/core_dispatch.h"          /* core_destroy_monster, core_abs,
                                              * core_get_opposite_dir */
 #include "../../state/nes_ram_sync.h"        /* nes_ram_sync_link_face */
@@ -73,7 +73,7 @@ void link_ladder_end_move(void)
      * mirrors it into $98 in the object phase, so take it now. */
     nes_ram_sync_link_face();
     nes_ram[TMP_0F] = nes_ram[OBJ_DIR];
-    tile = collision_get_colliding_tile_moving_nes(0u);
+    tile = collision_get_colliding_tile_moving(0u);
     if (nes_ram[CUR_LEVEL] != 0u) {
         if (tile != 0xF4u) return;
     } else {
@@ -160,7 +160,7 @@ handle_input:
         {
             const unsigned char saved_y = nes_ram[OBJ_Y];
             nes_ram[OBJ_Y] = (unsigned char)(saved_y - 8u);
-            (void)collision_get_colliding_tile_moving_nes(0u);
+            (void)collision_get_colliding_tile_moving(0u);
             nes_ram[OBJ_Y] = saved_y;
         }
         a = nes_ram[TMP_0F];

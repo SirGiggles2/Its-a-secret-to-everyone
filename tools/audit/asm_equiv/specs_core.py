@@ -17,10 +17,6 @@ COLLIDE_ASM = [
     ("Z_07.asm", "GetCollidableTileStill:", "Obj_Shove:"),
 ]
 COLLIDE_C = ["src/game/combat/collision_dispatch.c"]
-# Plain entry points skip the NES column-address scratch [00:01] (T-172
-# busy-room budget; documented in collision_dispatch.c). The _nes entry
-# writes them and is compared in full.
-SCRATCH_00_01 = {0x0000, 0x0001}
 
 
 def pick(r, common, p=0.85):
@@ -109,21 +105,16 @@ SPECS = [
          asm=COLLIDE_ASM, c_sources=COLLIDE_C, entry="GetCollidableTile",
          gen=lambda r, m: gen_tile(r, m),
          call=lambda lib, c: lib.collision_get_collidable_tile(U(c["y"]), U(c["x"])),
-         ret="A", ignore=SCRATCH_00_01),
+         ret="A"),
     dict(name="GetCollidableTileStill", doc="Z_07 GetCollidableTileStill",
          asm=COLLIDE_ASM, c_sources=COLLIDE_C, entry="GetCollidableTileStill",
          gen=lambda r, m: gen_tile(r, m, moving=True),
          call=lambda lib, c: lib.collision_get_collidable_tile_still(U(c["x"])),
-         ret="A", ignore=SCRATCH_00_01),
-    dict(name="GetCollidingTileMoving", doc="Z_07 GetCollidingTileMoving (plain entry)",
+         ret="A"),
+    dict(name="GetCollidingTileMoving", doc="Z_07 GetCollidingTileMoving incl. [00:01]",
          asm=COLLIDE_ASM, c_sources=COLLIDE_C, entry="GetCollidingTileMoving",
          gen=lambda r, m: gen_tile(r, m, moving=True),
          call=lambda lib, c: lib.collision_get_colliding_tile_moving(U(c["x"])),
-         ret="A", ignore=SCRATCH_00_01),
-    dict(name="GetCollidingTileMovingNes", doc="Z_07 GetCollidingTileMoving incl. [00:01]",
-         asm=COLLIDE_ASM, c_sources=COLLIDE_C, entry="GetCollidingTileMoving",
-         gen=lambda r, m: gen_tile(r, m, moving=True),
-         call=lambda lib, c: lib.collision_get_colliding_tile_moving_nes(U(c["x"])),
          ret="A"),
     dict(name="BoundByRoom", doc="Z_01 BoundByRoom vs object_bound_by_room",
          asm=[("Z_01.asm", "BoundDirectionHorizontally:", "AddQSpeedToPositionFraction:"),
@@ -284,9 +275,9 @@ SPECS += [
          "stun, input pick, BoundByRoom, Walker_CheckTileCollision, MoveObject",
          asm=WALKER_ASM, c_sources=WALKER_C, entry="Walker_Move", gen=gen_walker,
          call=lambda lib, c: lib.c_walker_move(U(c["x"])),
-         # [00]-[03]: TableJump's pointer scratch (harness-layout code
-         # addresses on the NES side) and the plain collision entry.
-         ignore={0x00, 0x01, 0x02, 0x03}),
+         # [00]-[03]: TableJump's pointer scratch (ROM addresses on the
+         # NES side), only in cases that ran TableJump.
+         ignore_if_run={"TableJump": {0x00, 0x01, 0x02, 0x03}}),
     dict(name="DoObjectsCollideWithThresholds", doc="Z_01 DoObjectsCollideWithThresholds",
          asm=[("Z_01.asm", "DoObjectsCollideWithThresholds:", "BeginShove:"),
               ("Z_01.asm", "Abs:", "MoveShot:")],
@@ -500,5 +491,5 @@ SPECS += [
                     "src/game/enemies/enemy_dispatch.c", "src/game/enemies/enemy_jumper_bridge.c"],
          entry="EqKeese", gen=gen_keese,
          call=lambda lib, c: (lib.c_control_keese_flight(U(c["x"])), lib.c_move_flyer(U(c["x"])))[1],
-         ignore={0x00, 0x01, 0x02, 0x03}),   # TableJump pointer scratch
+         ignore_if_run={"TableJump": {0x00, 0x01, 0x02, 0x03}}),
 ]

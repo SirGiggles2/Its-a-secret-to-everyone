@@ -344,7 +344,7 @@ static void blue_wizzrobe_walk_or_teleport(unsigned int slot)
 static void shoot_magic_shot(unsigned int slot, unsigned char shot_type)
 {
     if ((unsigned char)WIZ_INV_CLOCK != 0u) return;
-    RAM(0x0608u) = 0x04u;  /* Tune0Request = sound 4 */
+    RAM(0x0604u) = 0x04u;  /* Tune0Request ($0604; was $0608, T-171) = magic sound */
     /* Store shot type at [00] per NES STA $00 prologue. */
     RAM(0x0000u) = shot_type;
     (void)c_shoot_limited(slot);
@@ -386,11 +386,14 @@ static void wizzrobe_draw_and_check_collisions(unsigned int slot)
     WIZ_INV_MASK(slot) = 0xF6u;  /* Sword/bomb-only. */
     c_get_object_middle(slot);
     if (WIZ_INV_TIMER(slot) == 0u) {
-        /* NES Wizzrobe_DrawAndCheckCollisions Z_04.asm:7601-7613 runs
-         * 4 weapon checks; c_check_monster_collisions runs the same
-         * battery (sword/sword-shot/magic/bomb/fire) via NES
-         * CheckMonsterCollisions umbrella. */
-        c_check_monster_collisions(slot);
+        /* NES Z_04.asm:7605-7612: exactly these four checks, in this
+         * order (no boomerang/arrow check, Link collision once below).
+         * The CheckMonsterCollisions umbrella added both and a second
+         * Link check (T-171). */
+        collision_check_monster_sword_shot_or_magic_shot_collision(slot, 0x0Eu);
+        collision_check_monster_bomb_or_fire_collision(slot, 0x10u);
+        collision_check_monster_bomb_or_fire_collision(slot, 0x11u);
+        collision_check_monster_sword_collision(slot, 0x0Du);
     }
     c_check_link_collision(slot);
 
@@ -405,8 +408,8 @@ static void wizzrobe_draw_and_check_collisions(unsigned int slot)
         /* Facing up: frames 2-3, mirrored. */
         c_draw_object_mirrored_with_frame((unsigned int)(frame + 2u), slot);
     } else {
-        /* Horizontal: flip via dir bit 0. */
-        RAM(0x000Fu) = (unsigned char)((dir & 0x01u) ? 1u : 0u);
+        /* Horizontal: NES LSR / AND #$01 flips when facing left ($02). */
+        RAM(0x000Fu) = (unsigned char)((dir >> 1) & 0x01u);
         c_draw_object_not_mirrored_with_frame((unsigned int)frame, slot);
     }
 }

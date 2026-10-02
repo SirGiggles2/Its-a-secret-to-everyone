@@ -17,6 +17,8 @@ Spec keys:
                  "C": compare carry_of(returned value) with the NES carry
   post(case, nes, c)       adjust the C image for a documented divergence
   ignore         addresses never compared (documented per spec)
+  ignore_if_run  {label: addresses}: not compared in cases where the NES
+                 side executed label (e.g. TableJump pointer scratch)
   active(case, nes)        counts cases that took the interesting path
   data_unreached           data labels deliberately left out of the cut
                            (path not generated; reason documented per spec).

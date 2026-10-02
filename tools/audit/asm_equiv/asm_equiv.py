@@ -231,11 +231,26 @@ def build_c(spec, td: Path) -> tuple[ctypes.CDLL, list[str]]:
         o = td / f"c{k}.o"
         subprocess.run(["gcc", "-c"] + flags + incs + [s, "-o", str(o)], cwd=ROOT, check=True)
         objs.append(o)
+    # Stub files win over the game TU that owns the same function: those
+    # definitions are weakened (the TU's other functions stay real).
+    n_game = len(spec["c_sources"])
+    stub_defs = set()
+    for o in objs[n_game:]:
+        stub_defs |= {p[2] for p in (l.split() for l in subprocess.run(
+            ["nm", str(o)], capture_output=True, text=True).stdout.splitlines())
+            if len(p) == 3 and p[1] == "T"}
+    for o in objs[:n_game]:
+        own = {p[2] for p in (l.split() for l in subprocess.run(
+            ["nm", str(o)], capture_output=True, text=True).stdout.splitlines())
+            if len(p) == 3 and p[1] == "T"}
+        shadow = sorted(own & stub_defs)
+        if shadow:
+            subprocess.run(["objcopy"] + [f"-W{x}" for x in shadow] + [str(o)], check=True)
     defined, undef = set(), set()
     for o in objs:
         for line in subprocess.run(["nm", str(o)], capture_output=True, text=True).stdout.splitlines():
             p = line.split()
-            if len(p) == 3 and p[1] in "TDRBCV":
+            if len(p) == 3 and p[1] in "TDRBCVW":
                 defined.add(p[2])
             elif len(p) == 2 and p[0] == "U":
                 undef.add(p[1])
@@ -258,7 +273,9 @@ class Nes:
         self.MPU, self.rom, self.labels = MPU, rom, labels
 
     def run(self, mem: bytearray, entry: str, a: int, x: int, y: int,
-            carry: int = 0, trace: list | None = None) -> tuple[bytearray, int, int]:
+            carry: int = 0, trace: list | None = None,
+            watch: dict[int, str] | None = None, hit: set | None = None
+            ) -> tuple[bytearray, int, int]:
         mpu = self.MPU()
         m = bytearray(0x10000)
         m[0:MEM] = mem
@@ -278,6 +295,8 @@ class Nes:
                 trace.append(f"{names[mpu.pc]}(x={mpu.x:02X},y={mpu.y:02X},a={mpu.a:02X})")
             if mpu.pc == trap:
                 return bytearray(m[0:MEM]), mpu.a, mpu.p & mpu.CARRY
+            if watch and mpu.pc in watch:
+                hit.add(watch[mpu.pc])
             mpu.step()
         raise NoReturn(trace[-16:] if trace else [])
 
@@ -320,13 +339,18 @@ def run_spec(spec, cases: int, seed: int, verbose: bool) -> tuple[bool, str]:
         gmem = (ctypes.c_ubyte * MEM).in_dll(lib, "g_mem")
         errs: list[str] = []
         active = 0
+        # ignore_if_run: {label: cells} ignored only in cases where the NES
+        # side executed that label (e.g. TableJump's pointer scratch).
+        cond = spec.get("ignore_if_run", {})
+        watch = {labels[l]: l for l in cond if l in labels}
         for k in range(cases):
             case = spec["gen"](r, base_mem(r))
             mem = case["mem"]
+            hit: set = set()
             try:
                 n, a_out, c_out = nes.run(mem, spec["entry"], case.get("a", 0),
                                           case.get("x", 0), case.get("y", 0),
-                                          case.get("carry", 0))
+                                          case.get("carry", 0), watch=watch, hit=hit)
             except NoReturn:
                 tr: list[str] = []
                 try:
@@ -345,6 +369,8 @@ def run_spec(spec, cases: int, seed: int, verbose: bool) -> tuple[bool, str]:
             if "post" in spec:
                 spec["post"](case, n, c)
             ignore = set(spec.get("ignore", ())) | set(case.get("ignore", ()))
+            for l in hit:
+                ignore |= set(cond[l])
             e = diff(spec, k, n, c, ignore)
             if n[H_UNEXP]:
                 e.append(f"{spec['name']} case {k}: NES called unexpected "

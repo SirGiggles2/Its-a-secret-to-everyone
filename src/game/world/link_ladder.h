@@ -10,7 +10,7 @@
  *             SetMovingDirAndSwitchToPlayerSlot), Z_01.asm GetOppositeDir
  *             / Abs.
  * Drained C:  none (no _runtime.c candidate for these routines).
- *             Callees: collision_get_colliding_tile_moving_nes
+ *             Callees: collision_get_colliding_tile_moving
  *             (collision_dispatch.c), core_destroy_monster
  *             (core_dispatch.c), draw_static_item_sprites
  *             (draw_dispatch.c).
