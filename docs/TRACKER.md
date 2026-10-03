@@ -198,7 +198,11 @@ Each failure inside a segment = new `T-1xx` bug row (owner fixes at the owning f
 
 | T-178 | Manhandla dropped-heart palette mismatch | P3 / P6.2 | DONE | Codex | `draw_dispatch.c:draw_item_by_slot` now uses NES descriptor/flash index $0F, preserving CurObjIndex publication owner. Former monster hit timer incorrectly turned heart green; no timer/asset workaround. Manhandla 1155/1155 + four screens MATCH, bomb401/401, ring192/192 + sprites4/4 each. `docs/audit/T-178_drop_heart_palette.md`. Six pre-existing early scene stalls unchanged and remain T-172; no connected L3 acceptance. |
 
+| T-181 | Synchronize GitHub source with local recovery fixes | P0.11 / P0.17 | ACTIVE | Codex | GitHub f89ef86b as base; local source/docs from 1609ea88; preserve WIP and local assets | Resolve source/board overlap, Debug.bat, focused integration checks, fast-forward GitHub main; no ROM/generated assets uploaded. Backups: local branch codex/local-before-sync-20261002 and .pre-merge-backup/T181-20261002. |
+
 ## Handoff log (newest first)
+
+- 2026-10-02 Codex: T-181 claimed for user-requested GitHub sync. Remote f89ef86b is source base; local 1609ea88 and all working files backed up. Source/docs only will be published to public repo; generated data/ROMs remain local. Review T-056/T-171 cloud integration without losing T-003/T-179/T-180 fixes.
 
 - 2026-10-02 Claude: T-171 asm_equiv 76/76 PASS — every monster and boss update routine vs NES Z_04. Boss fixes need Windows proof: Vire splits into 2 keeses (was 3), Dodongo right half X, Lanmola turn test uses Link's dir, Moldorm tail invincibility timer, Aquamentus fireball offsets, Ganon brown parity/burst/roar via SampleRequest, Zelda FillTileMap + Link end-move, Pond Fairy Link end-move. Astra: `Debug.bat`, suite + `lag_gate.py`, boss routes + screens listed in `docs/audit/T-171_asm_equiv_sweep.md` (Windows checks). Next: remaining object types + InitObject routines.
 
