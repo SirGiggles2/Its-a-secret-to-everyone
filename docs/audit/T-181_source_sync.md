@@ -34,3 +34,7 @@ Final payload SHA-256: `EE5979A0F351D9519B9EEB176A050B5C98FE5E04A6B15A878C3CE199
 Source synchronization does not pass T-056, T-171, T-172, or connected quests. Next: diagnose raft tick468 from the source and captured state, repair the UW test route, and profile only the named ladder scene. Keep music deferred. GitHub routine-equivalence claims remain attributed to Claude's cloud run; Windows integration is limited to the rows above.
 
 The local generated-input overlay is intentionally excluded from publication. It is retained on disk and backed up with SHA-256 manifest under `.pre-merge-backup/T181-20261002/synced-local-inputs`. A new machine must generate game-derived inputs from the user's supplied ROM; this sync does not claim the incomplete T-080 builder release is finished.
+
+## Publication result
+
+GitHub main accepted fast-forward `f856d3be..3f96f0f7`; local/public main reported0/0 afterward. This final tracker record is published in a following documentation commit. All authored source work is committed. The six intentional local input overlays are also committed privately at `ad87b882d8f1c86fb38ca671f81b53a10ba1247a` on `codex/local-inputs-20261002`; that branch must never be pushed. Local main remains the public source history plus those private generated files on disk.
