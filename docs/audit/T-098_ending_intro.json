@@ -1,0 +1,89 @@
+{
+  "task": "T-098",
+  "build_sha256": "2664E2A56DA08964739C043CC9FB3F611AE67E1245612D151548F067BE5AF0F5",
+  "build": "builds\\playtests\\Debug-T098-ending-init.md",
+  "elf": "build/scratch/Debug-T098-ending-init.out",
+  "ending_case": {
+    "report": "builds\\reports\\lockstep\\t098_ending_init_final",
+    "completed_ticks": 2100,
+    "scope_start": 600,
+    "scope_end_exclusive": 1811,
+    "scoped_ticks": 1211,
+    "scoped_cells": [
+      "0x11",
+      "0x12",
+      "0x13",
+      "0x28",
+      "0x29",
+      "0x4d",
+      "0x70",
+      "0x71",
+      "0x72",
+      "0x7c",
+      "0x7d",
+      "0x83",
+      "0x84",
+      "0x85",
+      "0x86",
+      "0x97",
+      "0xac",
+      "0xad",
+      "0x3d0",
+      "0x3e4",
+      "0x412",
+      "0x413",
+      "0x416",
+      "0x45f",
+      "0x506"
+    ],
+    "differences": 0,
+    "screens": {
+      "680": "compared 256x224 px (NES lines 8-231 vs Genesis 0-223)\nSCREEN: MATCH",
+      "800": "compared 256x224 px (NES lines 8-231 vs Genesis 0-223)\nSCREEN: MATCH",
+      "1000": "compared 256x224 px (NES lines 8-231 vs Genesis 0-223)\nSCREEN: MATCH",
+      "1200": "compared 256x224 px (NES lines 8-231 vs Genesis 0-223)\nSCREEN: MATCH",
+      "1500": "compared 256x224 px (NES lines 8-231 vs Genesis 0-223)\nSCREEN: MATCH"
+    },
+    "raw_gate": "FAIL",
+    "raw_key_fail_ticks": [
+      51,
+      56
+    ],
+    "raw_key_scope_note": "Before ending setup; staged tick-clock load speed difference. Not blessed or relabeled.",
+    "lag_scan": "FAIL: ending episode1500NES/1501GEN; one extra init video frame at677, within user one-frame allowance. No margin acceptance."
+  },
+  "extraction": {
+    "input": "data/text/nes_frontend_text.c",
+    "reproduced": "build/scratch/t098_extract/nes_frontend_text.c",
+    "file_sha256": "c387c0a3a4f13c3cea90983f57e60a655c472afafa0a10ba23e668ccbd8aaa34",
+    "byte_equal": true
+  },
+  "consumers": [
+    {
+      "case": "newgame_t098_final",
+      "ticks": 266,
+      "gate": "PASS",
+      "build_sha256": "2664E2A56DA08964739C043CC9FB3F611AE67E1245612D151548F067BE5AF0F5"
+    },
+    {
+      "case": "t097_death_t098_final",
+      "ticks": 760,
+      "gate": "PASS",
+      "build_sha256": "2664E2A56DA08964739C043CC9FB3F611AE67E1245612D151548F067BE5AF0F5"
+    },
+    {
+      "case": "t013_route_t098_consumer",
+      "ticks": 9065,
+      "gate": "PASS",
+      "build_sha256": "587B13C2D44AD86B86D769F19BDC317EFB9C38255D0E4AF08630F561002599AF",
+      "scope": "Same palette repair before normal-Link/death-helper factoring; L1 evidence carried for unchanged behavior."
+    }
+  ],
+  "remaining": [
+    "Credits DrawCredits stub, nametable scrolling, ending palette selector $6A",
+    "Final ashes/triforce sprites; Quest1 -> Quest2 profile conversion and actual SRAM save/reopen",
+    "Unassisted Ganon fight -> controller rescue; both connected quests",
+    "Audible ending music/fanfare integration (music last)",
+    "Q2 ending variant"
+  ]
+}

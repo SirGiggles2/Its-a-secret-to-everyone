@@ -656,6 +656,19 @@ void draw_anim_write_item_sprites(unsigned int slot, unsigned int item_slot)
     anim_write_item_sprites(slot, item_slot);
 }
 
+/* NES source: Z_02 DrawLinkZeldaTriforces; Z_01 Anim_WriteSpecificItemSprites.
+ * Drained C: existing sprite descriptor and specific-item writer above.
+ * Coverage: ending Link's fixed OAM slots and two-handed lift pose.
+ * Stance: EXTEND; retain the writer's shared tile/attribute rules. */
+void draw_link_ending_pose(void)
+{
+    (void)sprite_anim_fetch_obj_pos(0u);
+    DRAW_MIRRORED = core_anim_set_sprite_desc_attrs(0u);
+    DRAW_LEFT_SPRITE_OFFSET = 0x48u;
+    DRAW_RIGHT_SPRITE_OFFSET = 0x4Cu;
+    anim_write_specific_item_sprites(0u, 0x21u);
+}
+
 /* T-116: Anim_WriteSpecificItemSprites left tile for an item slot and
  * frame image ([0C]). */
 unsigned char draw_item_frame_tile(unsigned char item_slot, unsigned char frame)

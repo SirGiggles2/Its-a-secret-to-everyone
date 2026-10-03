@@ -57,6 +57,8 @@ void draw_animate_item_object(unsigned char item_id, unsigned int slot);
 void draw_item_by_slot(unsigned int item_slot, unsigned int slot);
 /* Anim_WriteItemSprites with caller-staged [00]/[01]/[04]/[05]/[0C]/[0F]. */
 void draw_anim_write_item_sprites(unsigned int slot, unsigned int item_slot);
+/* Ending Link: fixed $48/$4C OAM offsets, specific item slot $21. */
+void draw_link_ending_pose(void);
 /* T-056: Anim_WriteStaticItemSpritesWithAttributes (Z_01.asm): attributes,
  * object slot, item slot; [00]/[01] already hold the position. */
 void draw_static_item_sprites(unsigned char attrs, unsigned int slot,

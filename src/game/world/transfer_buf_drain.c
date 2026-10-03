@@ -191,6 +191,12 @@ static void emit_palette_record(unsigned char lo,
             cram_buf[i] = roomrom_bg_palette_nes_to_cram(src[src_off + i]);
         }
         render_cram_subrange_upload((unsigned short)slot_base, cram_buf, count);
+        /* NES source: Z_02 Sub0_Flash writes palette $3F10, which aliases
+         * universal backdrop $3F00 on the PPU. Drained C: this record
+         * decoder. Coverage: records spanning that alias. Stance: EXTEND.
+         * Preserve the final write's order in a full $3F00/$20 record. */
+        if (slot_base <= 0x10u && (unsigned short)slot_base + count > 0x10u)
+            render_cram_write_color(0u, cram_buf[0x10u - slot_base]);
         return;
     }
 

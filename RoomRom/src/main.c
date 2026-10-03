@@ -71,6 +71,7 @@
 #include "hud_format_probe.h"             /* Phase 9 Task 9.5 HUD format tests */
 #include "save_serializer_probe.h"        /* Phase 9 Task 9.7 save serializer tests */
 #include "../../src/game/world/mode_dispatch.h"  /* Phase 9.7 gameplay-mode dispatcher */
+#include "../../src/game/world/mode_wingame.h"
 #include "../../src/game/world/level_info_install.h"  /* substrate: install $687E..$6C7D LBA + LevelInfo */
 #include "../../src/game/enemies/enemy_render.h"      /* Phase 7: NES OAM -> Genesis SAT bridge */
 #include "../../src/game/world/mode_death.h"         /* T-097: GameMode $11 */
@@ -2644,10 +2645,8 @@ void roomrom_mode11_hide_sprites(void)
 /* Mode 11 sprites from the NES cells: Link (ObjDir, ObjAnimFrame, the
  * ObjInvincibilityTimer flash) until the spark replaces his two OAM slots
  * (Sprites+72..79, tiles $62/$64, attrs 1 / $41), then nothing. */
-static void roomrom_mode11_draw(void)
+static void roomrom_draw_link_from_nes(void)
 {
-    const u8 spark = mode11_spark_state();
-    if (spark == 0u) {
         const u8 d = nes_ram[0x0098u];
         const link_face_t face = (d & 0x01u) ? LINK_FACE_RIGHT :
                                  (d & 0x02u) ? LINK_FACE_LEFT :
@@ -2661,6 +2660,13 @@ static void roomrom_mode11_draw(void)
         else
             roomrom_sprites_set_link_pose((short)nes_ram[0x0070u], (short)nes_ram[0x0084u],
                                           face, frame);
+}
+
+static void roomrom_mode11_draw(void)
+{
+    const u8 spark = mode11_spark_state();
+    if (spark == 0u) {
+        roomrom_draw_link_from_nes();
     } else if (spark == 1u) {
         const u8 y = nes_ram[0x0248u], x = nes_ram[0x024Bu];
         VDPSprite *s0 = &vdpSpriteCache[ROOMROM_SPRITE_SLOT_LINK];
@@ -4116,6 +4122,37 @@ void roomrom_debug_tick(void)
         if (nes_ram[0x0012u] == 0x12u) {
             nes_pad_read_between_modes();
             mode12_endlevel_update();
+            transfer_buf_drain();
+            return;
+        }
+
+        /* NES source: Z_07 UpdateMode dispatch -> Z_02 UpdateMode13WinGame.
+         * Drained C: mode_wingame + existing sprite publishers.
+         * Coverage: init, curtain, thanks, flash/peace text; credits/reset open.
+         * Stance: EXTEND the exclusive mode branches, like modes $11/$12.
+         * Ending never runs player movement, weapons, AI or HUD refresh. */
+        if (nes_ram[0x0012u] == 0x13u) {
+            u8 slot;
+            u8 pose;
+            nes_pad_read_between_modes();
+            mode13_wingame_update();
+            pose = mode13_wingame_draws_link();
+            if (pose == 3u) { transfer_buf_drain(); return; }
+            for (slot = ROOMROM_SPRITE_SLOT_LINK_FIRST;
+                 slot <= ROOMROM_SPRITE_SLOT_GAMEPLAY_LAST; ++slot) {
+                if (slot != ROOMROM_SPRITE_SLOT_LINK &&
+                    slot != ROOMROM_SPRITE_SLOT_LINK_R)
+                    VDP_setSpritePosition(slot, -32, -32);
+            }
+            if (pose == 1u)
+                roomrom_sprites_set_link_lift((short)nes_ram[0x0070u],
+                                             (short)nes_ram[0x0084u], 0u);
+            else if (pose == 2u)
+                roomrom_draw_link_from_nes(); /* Independent of prior death FX. */
+            else
+                roomrom_sprites_set_link_pose(-32, -32, players[0].face, 0u);
+            enemy_render_native_sweep();
+            VDP_updateSprites(80u, DMA_QUEUE);
             transfer_buf_drain();
             return;
         }

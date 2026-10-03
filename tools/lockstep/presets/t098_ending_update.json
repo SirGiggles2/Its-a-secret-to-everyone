@@ -1,0 +1,28 @@
+{
+  "name": "t098_ending_update",
+  "file_name": "LINK",
+  "quest": 0,
+  "items": {},
+  "clock": "tick",
+  "script": [
+    [
+      1500,
+      ""
+    ]
+  ],
+  "stages": [
+    [
+      50,
+      "wr(0x10,9)\nwr(0x11,0)\nwr(0x12,2)\nwr(0x13,0)"
+    ],
+    [
+      300,
+      "wr(0x6BAD,0x32)\nwr(0x11,0)\nwr(0x12,3)\nwr(0x13,0)"
+    ],
+    [
+      600,
+      "wr(0x70,0x88)\nwr(0x84,0x88)\nwr(0x98,2)\nwr(0x394,0)\ngen_link_pos(0x88,0x88,2)\nwr(0x71,0x78)\nwr(0x85,0x88)\nwr(0x28,0)\nwr(0x29,0)\nwr(0x4D,0)\nwr(0x412,0)\nwr(0x413,0)\nwr(0x506,0)\nwr(0x50A,0)\nwr(0x50B,8)\nwr(0x50C,0)\nwr(0x50D,0)\nwr(0x50E,0)\nwr(0x58,0)\nwr(0xE2,0)\nwr(0x11,1)\nwr(0x12,0x13)\nwr(0x13,0)\nlog(\"staged update-ending entry; not Ganon/rescue route acceptance\")"
+    ]
+  ],
+  "_note": "T-098 staged update-mode ending in loaded Q1 Zelda room $32. One setup at600; subsequent flash/text/credits state runs without corrections. This does not prove natural InitMode13 or Ganon/rescue/connected progression."
+}
