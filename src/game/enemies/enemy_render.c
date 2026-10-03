@@ -1201,10 +1201,14 @@ static void xlat_refresh(void)
 /* == translate_attrs(attrs, translate_tile(tile, attrs)). */
 static inline __attribute__((always_inline)) unsigned short xlat_sat(unsigned char tile, unsigned char attrs)
 {
-    unsigned short e = s_xlat_tile[tile];
+    const unsigned short e = s_xlat_tile[tile];
     unsigned short tid;
     unsigned char force;
     unsigned short sat;
+    /* T-172: ordinary translated tiles need no lazy CHR/palette path. */
+    if (e < 0x0800u && !(attrs & (META_ATTR_MARKER | ITEM_ATTR_MARKER)) &&
+        (attrs & 3u) != 3u)
+        return (unsigned short)(s_xlat_attr[attrs] | e);
     if ((attrs & (META_ATTR_MARKER | ITEM_ATTR_MARKER)) || e == XLAT_SLOW) {
         tid = translate_tile(tile, attrs);
         force = xlat_force_pal1(tid);
@@ -1278,6 +1282,9 @@ static unsigned short emit_native_entries(unsigned short sat_slot, unsigned char
          * NES Digdogger @MakeChildren does exactly that. */
         if (n == 0u) continue;
         if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
+        const unsigned char capture_hand = (unsigned char)(
+            captured_hand_sat && *captured_hand_sat == 0u && n >= 2u &&
+            ENEMY_TYPE(slot) == 0x27u && RAM(0x042Cu + slot) != 0u);
 
         /* Anim_WriteSprite flashes with FrameCounter bits (single-sprite
          * entries, ANIM_WRITE_SPRITE_MARKER, and meta clouds). The pair
@@ -1292,9 +1299,7 @@ static unsigned short emit_native_entries(unsigned short sat_slot, unsigned char
             if ((pass == NATIVE_PASS_FIREBALLS && !fireball) ||
                 (pass == NATIVE_PASS_OTHER && fireball)) continue;
             if (sat_slot > ENEMY_RENDER_SLOT_LAST) break;
-            if (captured_hand_sat && *captured_hand_sat == 0u && ei == 0u &&
-                n >= 2u && ENEMY_TYPE(slot) == 0x27u &&
-                RAM(0x042Cu + slot) != 0u)
+            if (capture_hand && ei == 0u)
                 *captured_hand_sat = (unsigned char)sat_slot;
 
             unsigned char render_attrs = (unsigned char)(e->attrs & ~ANIM_WRITE_SPRITE_MARKER);

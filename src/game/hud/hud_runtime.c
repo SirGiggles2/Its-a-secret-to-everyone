@@ -364,6 +364,9 @@ static unsigned short s_count_drawn[4];   /* HUD rows 2..5 at col 12 */
  * (UpdateHeartsAndRupees); level entry (modes 3/4) shows them blank. */
 static unsigned char s_hud_counts_hidden;
 static unsigned char s_heart_drawn[16];
+static unsigned char s_heart_row_valid;
+static unsigned char s_heart_row_values, s_heart_row_partial;
+static unsigned char s_heart_row_hidden, s_heart_row_col, s_heart_row_row;
 
 static void draw_count_cell(unsigned short value, unsigned char col,
                             unsigned char row, unsigned char pal)
@@ -409,13 +412,34 @@ static void draw_hearts_row(unsigned char col, unsigned char row,
                             unsigned char hud_id)
 {
     unsigned char i;
+    const unsigned char hearts = RAM(0x066Fu);
+    const unsigned char partial = RAM(0x0670u);
+    /* NES source: Z_01 FormatHeartsInTextBuf; drain: hud_heart_tile.
+     * Coverage: FULL Original row inputs; Stance: EXTEND draw cache.
+     * T-172 busy ladder profile: 338 instructions for an unchanged row.
+     * Keep transfer cadence, force redraws and Redux's frame animation;
+     * only avoid recalculating the same sixteen Original tile choices. */
+    if (hud_id != ROOMROM_MAP_REDUX) {
+        if (!s_hud_force && s_heart_row_valid &&
+            s_heart_row_values == hearts && s_heart_row_partial == partial &&
+            s_heart_row_hidden == s_hud_counts_hidden &&
+            s_heart_row_col == col && s_heart_row_row == row) return;
+        s_heart_row_valid = 1u;
+        s_heart_row_values = hearts;
+        s_heart_row_partial = partial;
+        s_heart_row_hidden = s_hud_counts_hidden;
+        s_heart_row_col = col;
+        s_heart_row_row = row;
+    } else {
+        s_heart_row_valid = 0u;
+    }
     /* Shared native tile choice; no transfer-buffer or scratch writes. */
     for (i = 0u; i < 16u; ++i) {
         unsigned char top = (i >= 8u);
         unsigned char x = (unsigned char)(col + (i & 7u));
         unsigned char y = (unsigned char)(row - top);
         unsigned char tile = s_hud_counts_hidden ? HUD_TILE_SPACE :
-                             hud_heart_tile(RAM(0x066Fu), RAM(0x0670u), i);
+                             hud_heart_tile(hearts, partial, i);
         if (hud_id == ROOMROM_MAP_REDUX)
             tile = hud_heart_container_anim_override_tile(i, tile);
         if (!s_hud_force && s_heart_drawn[i] == tile) continue;
@@ -620,6 +644,9 @@ static void draw_hud_dynamic_parts(unsigned char hud_id)
         draw_hearts_row(4u, 5u, hud_id);
     } else {
         if (s_last_is_uw_cached) draw_original_dungeon_map();
+        else s_map_cue = 0u; /* No dungeon map in this HUD. T-172: a mode-3
+                             * $44 cue otherwise stays set throughout OW
+                             * play and defeats hud_refresh_impl's gate. */
         draw_status_counts_original();
         /* Original NES paints hearts at NT row 6 cols 22..24 = HUD row 5. */
         draw_hearts_row(22u, 5u, hud_id);

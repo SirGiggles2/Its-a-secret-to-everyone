@@ -1,0 +1,82 @@
+{
+  "build_sha256": "595AD94CAA6DE309A5C31D67BC07521B1DDB945EB7106BB4834EC960151F500E",
+  "build": "builds/playtests/Debug-T172-water-vblank.md",
+  "cases": [
+    {
+      "case": "t056_ladder_ow",
+      "ticks": 610,
+      "key_differences": 0,
+      "raw_gate": "FAIL",
+      "raw_new_cells": 68,
+      "extra_play_ticks": 0,
+      "worst_on_time_line": "0xdf",
+      "report": "builds\\reports\\lockstep\\t056_ladder_ow_t172_vblank"
+    },
+    {
+      "case": "t056_raft",
+      "ticks": 800,
+      "key_differences": 0,
+      "raw_gate": "FAIL",
+      "raw_new_cells": 68,
+      "extra_play_ticks": 0,
+      "worst_on_time_line": "0xbd",
+      "report": "builds\\reports\\lockstep\\t056_raft_t172_vblank"
+    },
+    {
+      "case": "newgame",
+      "ticks": 266,
+      "key_differences": 0,
+      "raw_gate": "PASS",
+      "raw_new_cells": 0,
+      "extra_play_ticks": 0,
+      "worst_on_time_line": "0x8e",
+      "report": "builds\\reports\\lockstep\\newgame_t172_vblank"
+    },
+    {
+      "case": "t057_potion",
+      "ticks": 664,
+      "key_differences": 0,
+      "raw_gate": "PASS",
+      "raw_new_cells": 0,
+      "extra_play_ticks": 0,
+      "worst_on_time_line": "0xab",
+      "report": "builds\\reports\\lockstep\\t057_potion_t172_vblank"
+    },
+    {
+      "case": "t171_patra_sword",
+      "ticks": 1533,
+      "key_differences": 0,
+      "raw_gate": "PASS",
+      "raw_new_cells": 0,
+      "extra_play_ticks": 0,
+      "worst_on_time_line": "0xdf",
+      "report": "builds\\reports\\lockstep\\t171_patra_sword_t172_vblank"
+    },
+    {
+      "case": "t171_wallmaster_grab",
+      "ticks": 8156,
+      "key_differences": 0,
+      "raw_gate": "PASS",
+      "raw_new_cells": 0,
+      "extra_play_ticks": 0,
+      "worst_on_time_line": "0xd7",
+      "report": "builds\\reports\\lockstep\\t171_wallmaster_grab_t172_vblank"
+    },
+    {
+      "case": "t002_q2_l1",
+      "ticks": 2313,
+      "key_differences": 0,
+      "raw_gate": "FAIL",
+      "raw_new_cells": 74,
+      "extra_play_ticks": 0,
+      "worst_on_time_line": "0xd7",
+      "report": "builds\\reports\\lockstep\\t002_q2_l1_t172_vblank"
+    }
+  ],
+  "math_cases": {
+    "fraction_carry": 131072,
+    "circular_grid_clamp": 5120
+  },
+  "complete_before_after_mirror_differences_excluding_01FE_01FF": 0,
+  "remaining": "T-172 broader headroom/other busy scenes; T-056 raw-baseline classification, connected acquisition/save/Q2 locations"
+}

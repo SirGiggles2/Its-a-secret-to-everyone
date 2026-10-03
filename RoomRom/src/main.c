@@ -4019,7 +4019,13 @@ void roomrom_debug_tick(void)
          * it finished. */
         nes_ram[0x01FFu] = (u8)(*(volatile u16 *)0xC00008u >> 8);
         nes_ram[0x01FEu] = (u8)(vtimer - s_tick_vtimer);
-        SYS_doVBlankProcess();
+        /* NES frame work follows a new NMI. Wait for one hardware frame,
+         * then service its current blank rather than forcing another
+         * edge if SGDK's wait setup crossed it (T-172 ladder near $DF).
+         * The vtimer guard prevents two game ticks in one blank; late CPU
+         * work still costs hardware frames and remains visible to probes. */
+        while (vtimer == s_tick_vtimer) { /* SGDK volatile V-Int counter. */ }
+        SYS_doVBlankProcessEx(ON_VBLANK);
         render_plane_defer_flush();   /* T-172: last tick's transfer cells (NMI) */
         roomrom_hud_play_flush();     /* T-172: last play tick's status bar */
         s_tick_vtimer = vtimer;

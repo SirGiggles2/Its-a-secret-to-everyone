@@ -22,22 +22,27 @@ static inline void object_reset_moving_dir_if_mask(unsigned char dir_bit)
     }
 }
 
-void object_bound_direction_horizontally(unsigned int slot)
+/* T-172: both bounds run for each moving object. Preserve the scratch
+ * writes while avoiding two call/save/restore sequences in this hot path. */
+__attribute__((always_inline)) void object_bound_direction_horizontally(unsigned int slot)
 {
     /* NES BoundDirectionHorizontally (Z_01.asm:3312). drain at
      * src/oracle/world/object_runtime.c:74-87. */
     const unsigned char x = (unsigned char)RAM(NES_OBJ_X + slot);
-    RAM(NES_TMP0) = x;
+    unsigned char sample = x;
+    const unsigned char shifted = (unsigned char)(slot != 0u &&
+        (slot >= 0x0Du || RAM(NES_OBJ_TYPE + slot) == 0x5Cu));
+    RAM(NES_TMP0) = sample;
 
     /* For non-Link objects in slot >= $0D or type == $5C (boomerang),
      * shift collision-test X by +$0B for the left-bound test. */
-    if (slot != 0u &&
-        (slot >= 0x0Du || RAM(NES_OBJ_TYPE + slot) == 0x5Cu)) {
-        RAM(NES_TMP0) = (unsigned char)(x + 0x0Bu);
+    if (shifted) {
+        sample = (unsigned char)(sample + 0x0Bu);
+        RAM(NES_TMP0) = sample;
     }
 
     /* Left bound. */
-    if (RAM(NES_TMP0) < RAM(NES_BOUND_LEFT)) {
+    if (sample < RAM(NES_BOUND_LEFT)) {
         object_reset_moving_dir_if_mask(2u);  /* $02 = left direction */
         return;
     }
@@ -45,42 +50,45 @@ void object_bound_direction_horizontally(unsigned int slot)
     /* For non-Link objects in slot >= $0D or type == $5C, shift back
      * by -$17 to test the right side. (NES does +$0B then -$17 = net
      * -$0C from original x.) */
-    if (slot != 0u &&
-        (slot >= 0x0Du || RAM(NES_OBJ_TYPE + slot) == 0x5Cu)) {
-        RAM(NES_TMP0) = (unsigned char)(RAM(NES_TMP0) - 0x17u);
+    if (shifted) {
+        sample = (unsigned char)(sample - 0x17u);
+        RAM(NES_TMP0) = sample;
     }
 
     /* Right bound. */
-    if (RAM(NES_TMP0) >= RAM(NES_BOUND_RIGHT)) {
+    if (sample >= RAM(NES_BOUND_RIGHT)) {
         object_reset_moving_dir_if_mask(1u);  /* $01 = right direction */
     }
 }
 
-void object_bound_direction_vertically(unsigned int slot)
+__attribute__((always_inline)) void object_bound_direction_vertically(unsigned int slot)
 {
     /* NES BoundDirectionVertically (Z_01.asm:3382). drain at
      * object_runtime.c:89-102. Same shape as horizontal but on Y axis
      * with $0F (top) / $21 (bottom) shifts and $08 (up) / $04 (down)
      * direction bits. */
     const unsigned char y = (unsigned char)RAM(NES_OBJ_Y + slot);
-    RAM(NES_TMP0) = y;
+    unsigned char sample = y;
+    const unsigned char shifted = (unsigned char)(slot != 0u &&
+        (slot >= 0x0Du || RAM(NES_OBJ_TYPE + slot) == 0x5Cu));
+    RAM(NES_TMP0) = sample;
 
-    if (slot != 0u &&
-        (slot >= 0x0Du || RAM(NES_OBJ_TYPE + slot) == 0x5Cu)) {
-        RAM(NES_TMP0) = (unsigned char)(y + 0x0Fu);
+    if (shifted) {
+        sample = (unsigned char)(sample + 0x0Fu);
+        RAM(NES_TMP0) = sample;
     }
 
-    if (RAM(NES_TMP0) < RAM(NES_BOUND_TOP)) {
+    if (sample < RAM(NES_BOUND_TOP)) {
         object_reset_moving_dir_if_mask(8u);  /* $08 = up direction */
         return;
     }
 
-    if (slot != 0u &&
-        (slot >= 0x0Du || RAM(NES_OBJ_TYPE + slot) == 0x5Cu)) {
-        RAM(NES_TMP0) = (unsigned char)(RAM(NES_TMP0) - 0x21u);
+    if (shifted) {
+        sample = (unsigned char)(sample - 0x21u);
+        RAM(NES_TMP0) = sample;
     }
 
-    if (RAM(NES_TMP0) >= RAM(NES_BOUND_BOTTOM)) {
+    if (sample >= RAM(NES_BOUND_BOTTOM)) {
         object_reset_moving_dir_if_mask(4u);  /* $04 = down direction */
     }
 }
@@ -110,8 +118,8 @@ void object_move_object(unsigned short slot)
 {
     /* NES source: reference/aldonunez/Z_07.asm:MoveObject.
      * Drained C: src/oracle/world/object_runtime.c:objrt_move_object.
-     * Coverage: FULL. Stance: EXTEND (cache intermediate quarter steps).
-     * No call or interrupt-visible publication occurs inside this loop. */
+     * Coverage: FULL. Stance: EXTEND (combine four quarter steps).
+     * No call or interrupt-visible publication occurs between steps. */
     /* NES MoveObject. Drain at object_runtime.c:8-72.
      *
      * Sets per-frame grid limits (slot 0 = Link uses tighter $08/$F8;
@@ -141,31 +149,44 @@ void object_move_object(unsigned short slot)
         return;
     }
 
-    /* MoveObject applies quarter speed four times. Keep each intermediate
-     * fraction/grid/position in registers; no other routine can observe it
-     * until this call returns. Preserve direction priority and 8-bit wrap. */
+    /* MoveObject applies quarter speed four times. Fraction carries can
+     * be summed before clamping integer motion at the first grid limit;
+     * no routine observes intermediate steps. Preserve priority/wrap.
+     * T-172 profile: the loop costs 95 instructions per moving object. */
     const unsigned char positive = (unsigned char)((dir & 0x01u) ||
         (!(dir & 0x03u) && (dir & 0x04u)));
     const unsigned short axis = (dir & 0x03u) ? NES_OBJ_X : NES_OBJ_Y;
     const unsigned char speed = (unsigned char)OBJ(NES_OBJ_QSPD_FRAC, slot);
     unsigned char frac = (unsigned char)OBJ(NES_OBJ_POS_FRAC, slot);
-    unsigned char grid = (unsigned char)OBJ(NES_OBJ_GRID_OFFSET, slot);
-    unsigned char pos = (unsigned char)OBJ(axis, slot);
-    for (unsigned int i = 0u; i < 4u; ++i) {
-        const unsigned char old_frac = frac;
-        unsigned char step;
-        if (positive) {
-            frac = (unsigned char)(frac + speed);
-            step = (unsigned char)(frac < old_frac);
-        } else {
-            step = (unsigned char)(old_frac < speed);
-            frac = (unsigned char)(frac - speed);
-        }
-        if (grid == pos_limit || grid == neg_limit) step = 0u;
-        grid = (unsigned char)(positive ? grid + step : grid - step);
-        pos = (unsigned char)(positive ? pos + step : pos - step);
+    const unsigned short full_speed = (unsigned short)((unsigned short)speed << 2);
+    unsigned char steps, to_pos_limit, to_neg_limit;
+    if (positive) {
+        const unsigned short sum = (unsigned short)(frac + full_speed);
+        steps = (unsigned char)(sum >> 8);
+        frac = (unsigned char)sum;
+    } else {
+        /* ceil((full_speed - frac) / 256), including zero/negative
+         * differences: numerator is nonnegative for all byte inputs. */
+        const unsigned short borrow_sum = (unsigned short)(full_speed + 255u - frac);
+        steps = (unsigned char)(borrow_sum >> 8);
+        frac = (unsigned char)(frac - full_speed);
     }
     OBJ(NES_OBJ_POS_FRAC, slot) = frac;
+    if (!steps) return; /* No integer motion: grid and position stay intact. */
+    unsigned char grid = (unsigned char)OBJ(NES_OBJ_GRID_OFFSET, slot);
+    unsigned char pos = (unsigned char)OBJ(axis, slot);
+    if (positive) {
+        to_pos_limit = (unsigned char)(pos_limit - grid);
+        to_neg_limit = (unsigned char)(neg_limit - grid);
+    } else {
+        to_pos_limit = (unsigned char)(grid - pos_limit);
+        to_neg_limit = (unsigned char)(grid - neg_limit);
+    }
+    if (steps > to_pos_limit) steps = to_pos_limit;
+    if (steps > to_neg_limit) steps = to_neg_limit;
+    if (!positive) steps = (unsigned char)(0u - steps);
+    grid = (unsigned char)(grid + steps);
+    pos = (unsigned char)(pos + steps);
     OBJ(NES_OBJ_GRID_OFFSET, slot) = grid;
     OBJ(axis, slot) = pos;
 }
