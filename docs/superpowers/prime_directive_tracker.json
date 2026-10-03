@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-03T04:08:06.199643+00:00",
+  "generated_at": "2026-10-03T04:14:37.208265+00:00",
   "generated_by": "tools/audit/primedirective/prime_refresh.py",
   "plan": {
     "path": "docs/superpowers/plans/2026-05-02-title-roomrom-full-port-master-plan.md",
@@ -1733,32 +1733,17 @@
       "sha256": "f66409c1ab54ac9dd8133bfed1b8ea652ca4871894b9255bf9757ec2eed73d33",
       "ok": true
     },
-    "git_head": "c8d47da17a848467e2ea384431556d2035d1433b",
+    "git_head": "7d66870ed87a500451bdbd664826b2b07a4f70a2",
     "dirty_paths_relevant": [
-      "RoomRom/data/item_chr_manifest.json",
       "RoomRom/data/regen_sentinels.json",
       "RoomRom/data/sprite_catalog.json",
       "RoomRom/src/atlas/items_chr.c",
       "RoomRom/src/atlas/items_chr_x4.c",
-      "RoomRom/src/main.c",
-      "RoomRom/src/uw_room_blob.c",
-      "src/game/world/link_ladder.c",
-      "src/game/world/link_ladder.h",
-      "tools/builder/inject_boss_rooms.py",
-      "tools/lockstep/lag_gate.py",
-      "tools/debug/probes/t003_reopen_regions.lua",
-      "tools/lockstep/baselines/t003_digdogger_revisit.json",
-      "tools/lockstep/baselines/t003_patra_revisit.json",
-      "tools/lockstep/baselines/t179_gel_dungeon_turn.json",
-      "tools/lockstep/presets/t003_digdogger_revisit.json",
-      "tools/lockstep/presets/t003_ow_secret_regions.json",
-      "tools/lockstep/presets/t003_patra_revisit.json",
-      "tools/lockstep/presets/t179_gel_dungeon_turn.json",
-      "tools/lockstep/test_lag_gate.py"
+      "RoomRom/src/uw_room_blob.c"
     ],
     "evidence_paths_present": true,
     "complete_phase_invariant_ok": true,
-    "last_refresh_at": "2026-10-03T04:08:06.297740+00:00",
+    "last_refresh_at": "2026-10-03T04:14:37.298992+00:00",
     "stale_reasons": []
   },
   "blockers": []

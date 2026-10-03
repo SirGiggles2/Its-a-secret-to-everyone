@@ -1,0 +1,84 @@
+{
+  "build_sha256": "2307636AAF6E783270581269EF7D7CA1D1195E4C13C8792CE2BD589F793890BE",
+  "cases": [
+    {
+      "case": "t056_raft",
+      "ticks": 800,
+      "compared_action_ticks": 720,
+      "fields": "Link movement, shove, animation, HP, item ownership; active ladder or dock slot",
+      "differences": 0,
+      "ladder_active_ticks": 0,
+      "observed_dock_states": [
+        0,
+        1,
+        2
+      ],
+      "rooms": [
+        69,
+        85
+      ],
+      "result": "PASS"
+    },
+    {
+      "case": "t056_raft_3f",
+      "ticks": 800,
+      "compared_action_ticks": 720,
+      "fields": "Link movement, shove, animation, HP, item ownership; active ladder or dock slot",
+      "differences": 0,
+      "ladder_active_ticks": 0,
+      "observed_dock_states": [
+        0,
+        1,
+        2
+      ],
+      "rooms": [
+        47,
+        63
+      ],
+      "result": "PASS"
+    },
+    {
+      "case": "t056_ladder_uw",
+      "ticks": 900,
+      "compared_action_ticks": 400,
+      "fields": "Link movement, shove, animation, HP, item ownership; active ladder or dock slot",
+      "differences": 0,
+      "ladder_active_ticks": 183,
+      "observed_dock_states": null,
+      "rooms": [
+        35
+      ],
+      "result": "PASS"
+    },
+    {
+      "case": "t056_raft_unowned",
+      "ticks": 180,
+      "compared_action_ticks": 100,
+      "fields": "Link movement, shove, animation, HP, item ownership; active ladder or dock slot",
+      "differences": 0,
+      "ladder_active_ticks": 0,
+      "observed_dock_states": [
+        0
+      ],
+      "rooms": [
+        85
+      ],
+      "result": "PASS"
+    },
+    {
+      "case": "t056_ladder_unowned",
+      "ticks": 180,
+      "compared_action_ticks": 100,
+      "fields": "Link movement, shove, animation, HP, item ownership; active ladder or dock slot",
+      "differences": 0,
+      "ladder_active_ticks": 0,
+      "observed_dock_states": null,
+      "rooms": [
+        95
+      ],
+      "result": "PASS"
+    }
+  ],
+  "scope": "RAM behavior/integration; presentation and timing separate",
+  "remaining": "OW ladder timing, baseline classification, Q2 locations/connected progression"
+}

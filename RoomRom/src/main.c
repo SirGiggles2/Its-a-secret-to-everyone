@@ -4841,6 +4841,8 @@ void roomrom_debug_tick(void)
          * Reach a different level via teleport (X mode + DPAD) which warps
          * across the 16x8 room grid. */
 
+        const u8 link_halted = (u8)((nes_ram[0x00ACu] & 0xC0u) == 0x40u);
+
         /* S7: while sword is mid-swing, swallow D-pad so Link freezes on
          * his swing pose. Combat module ticks below + clears sword on
          * retract, returning control. */
@@ -4848,7 +4850,7 @@ void roomrom_debug_tick(void)
          * sword/item states ($1x/$2x) Link_HandleInput still turns him and
          * Walker_Move only drops the move (below). */
         if ((roomrom_main_current_redux_flag() && roomrom_combat_link_locked()) ||
-            (nes_ram[0x00ACu] & 0xC0u) == 0x40u) {
+            link_halted) {
             joy = (u16)(joy & ~(BUTTON_LEFT|BUTTON_RIGHT|BUTTON_UP|BUTTON_DOWN));
         }
 
@@ -4963,7 +4965,11 @@ void roomrom_debug_tick(void)
                     }
                 }
             }
-        } else {
+        } else if (!link_halted) {
+            /* NES Z_07 UpdatePlayer returns after the invincibility timer
+             * when halted. Skip the whole Walker_Move path, including shove;
+             * UpdateDock/Wallmaster own the carried position. T-056 raft
+             * tick468: input masking alone kept applying 4px knockback. */
             /* NES-faithful Link movement, ported from
              *   Z_05.asm Link_HandleInput / Link_ModifyDirAtGridPoint
              *   Z_07.asm Walker_Move / MoveObject / AddQSpeedToPositionFraction

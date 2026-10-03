@@ -62,10 +62,10 @@
    "U"
   ],
   [
-   200,
+   50,
    ""
   ]
  ],
  "clock": "play",
- "_note": "T-056 Q1 L1 room $23 (moat, $F4 tiles, uw_room_blob entry 1): GameMode-2 warp to L1, mode-3 reload via StartRoomId $6BAD. Link at ($20,$8D) facing right: tile at X+$10 row Y98 is $F4 -> ladder at ($30,$90); crosses cols 6-7 onto floor col 8, ladder put away at distance $10; back west over the ladder, then up. NOT yet captured (Windows)."
+ "_note": "T-056 Q1 L1 room $23 (moat, $F4 tiles, uw_room_blob entry 1): GameMode-2 warp to L1, mode-3 reload via StartRoomId $6BAD. Link at ($20,$8D) facing right: tile at X+$10 row Y98 is $F4 -> ladder at ($30,$90); crosses cols 6-7 onto floor col 8, ladder put away at distance $10; back west over the ladder, then up. Windows NES capture confirms the approach; end after crossing/return/up plus 50 settled ticks (900 total). The old 200-tick idle tail let Vires kill Link at tick1045 and prevented Genesis capture; no state/HP correction during the actions."
 }

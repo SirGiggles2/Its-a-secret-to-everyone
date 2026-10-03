@@ -1,0 +1,35 @@
+{
+ "name": "t056_raft_unowned",
+ "file_name": "LINK",
+ "quest": 0,
+ "items": {
+  "0x657": 1,
+  "0x660": 0
+ },
+ "stages": [
+  [
+   30,
+   "wr(0x526, 0x55)\nwr(0x11, 0)\nwr(0x12, 3)\nwr(0x13, 0)"
+  ],
+  [
+   80,
+   "wr(0x70, 128)\nwr(0x84, 157)\nwr(0x98, 8)\nwr(0x394, 0)\ngen_link_pos(128, 157, 8)"
+  ]
+ ],
+ "script": [
+  [
+   90,
+   ""
+  ],
+  [
+   60,
+   "U"
+  ],
+  [
+   30,
+   ""
+  ]
+ ],
+ "clock": "play",
+ "_note": "T-056 raft not owned: approach actual water from ROM-derived fixture. Must stay blocked with no ladder/dock activation; no state corrections during action."
+}
