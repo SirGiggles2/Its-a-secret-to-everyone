@@ -1,0 +1,64 @@
+{
+  "rom": "builds/playtests/Debug-T003.md",
+  "sha256": "2b0094d5bd6ff7bc5217f377ab20c7fae3c905b7a77e3c160f31c024a789e156",
+  "scope": "World flags / boss revisit / save and fresh-process restore; not connected quest acceptance",
+  "cases": [
+    {
+      "name": "t003_patra_revisit_codex_final",
+      "completed_ticks": 1766,
+      "world_flag_tick_bytes_compared": 678144,
+      "world_mismatches": 0,
+      "final_marker": "$795=F0",
+      "save_compared_bytes": 1328,
+      "save_mismatches": 0,
+      "fresh_process_restore_bytes": 384,
+      "restore": "PASS",
+      "disk_save_sha256": "4305c3d9d0e21a951dd4b1aeca25316481cfde5f68cedc6944e013ffcfd4d646",
+      "gate": "PASS",
+      "report_sha256": {
+        "nes.ram": "737f7baf592deb2c38e4b4a33e64848ddb692f6454c8181af71e55192490f4b8",
+        "gen.ram": "2d504111c631f1945e76a529d4346efc95de77780c07725f27c7e2dc2d4c51d9",
+        "nes.wram": "8907bbb8195ecca0647de1042791c91a67e787e917fd5293b8146b8af7d6711b",
+        "gen.sram": "4305c3d9d0e21a951dd4b1aeca25316481cfde5f68cedc6944e013ffcfd4d646"
+      }
+    },
+    {
+      "name": "t003_digdogger_revisit_codex_saved",
+      "completed_ticks": 1904,
+      "world_flag_tick_bytes_compared": 731136,
+      "world_mismatches": 0,
+      "final_marker": "$723=F0",
+      "save_compared_bytes": 1328,
+      "save_mismatches": 0,
+      "fresh_process_restore_bytes": 384,
+      "restore": "PASS",
+      "disk_save_sha256": "af7fb1acff9d913e257aab63864db59e5b958b427abd087b9457c1f40d90862e",
+      "gate": "PASS",
+      "report_sha256": {
+        "nes.ram": "3b79e6c49defead6106c48cdc783e0ca4ee931f559f34c49189c7bf5b144f104",
+        "gen.ram": "fb6353c9f5ca645b0a6e2ae73529521c74ef8ae962946af08850ca0b32dc9dc7",
+        "nes.wram": "1e4f7886442b4bb957658d733cc91266cac9009c72db6f7e693fcd86c2df5908",
+        "gen.sram": "af7fb1acff9d913e257aab63864db59e5b958b427abd087b9457c1f40d90862e"
+      }
+    },
+    {
+      "name": "t003_ow_secret_regions_codex_final",
+      "completed_ticks": 2282,
+      "world_flag_tick_bytes_compared": 876288,
+      "world_mismatches": 0,
+      "final_marker": "$6F5=82",
+      "save_compared_bytes": 1328,
+      "save_mismatches": 0,
+      "fresh_process_restore_bytes": 384,
+      "restore": "PASS",
+      "disk_save_sha256": "985d47c1670805d57aaafbe5197b4323ec2b311ef4d5c53378b07698741fc2d9",
+      "gate": "FAIL",
+      "report_sha256": {
+        "nes.ram": "c0a346a431014250927cf2f1b0421f981a7507bdc7e25b0a1d186cb76af47260",
+        "gen.ram": "f40a2581604c2a2d79fdd6424b89ad174ebd971145e4d82d3cf471873dd65b95",
+        "nes.wram": "9a0370e8566c016c88439663055bcb34fddfec84932b4d7d174abc2dcf7b62db",
+        "gen.sram": "985d47c1670805d57aaafbe5197b4323ec2b311ef4d5c53378b07698741fc2d9"
+      }
+    }
+  ]
+}

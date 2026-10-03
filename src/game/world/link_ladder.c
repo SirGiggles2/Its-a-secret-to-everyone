@@ -101,13 +101,13 @@ void link_ladder_end_move(void)
     nes_ram[OBJ_STATE + x] = 1u;
 }
 
-void link_ladder_check(void)
+unsigned char link_ladder_check(void)
 {
     unsigned char x = nes_ram[LADDER_SLOT];
     unsigned char a, d;
 
     s_draw_pending = 0u;
-    if (x == 0u) return;
+    if (x == 0u) return 0u;
     if (nes_ram[OBJ_STATE + x] == 0u) goto stash;
 
     if (nes_ram[OBJ_DIR + x] & 0x0Cu) {
@@ -131,7 +131,9 @@ void link_ladder_check(void)
 stash:
     nes_ram[LADDER_SLOT] = 0u;
     core_destroy_monster(x);
-    return;
+    /* CheckLadder returns with NES X still selecting the destroyed ladder.
+     * Walker_Move falls through to MoveObject with that slot, not Link. */
+    return x;
 
 handle_input:
     /* X is the ladder slot, or 0 after case E (the NES switches X to
@@ -176,6 +178,7 @@ handle_input:
     s_draw_pending = 1u;
     s_draw_frame = nes_ram[FRAME_COUNTER];
     nes_ram[TMP_0F] = a;
+    return 0u;
 }
 
 void link_ladder_draw(void)

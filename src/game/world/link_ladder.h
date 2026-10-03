@@ -35,7 +35,8 @@ void link_ladder_end_move(void);
  * before MoveObject. [0F] is the moving direction in and out. Puts the
  * ladder away when Link left it; on the ladder it overrides [0F] and
  * queues the ladder draw (link_ladder_draw). No-op without a ladder. */
-void link_ladder_check(void);
+/* Returns the NES MoveObject slot: 0 for Link, ladder slot when stashed. */
+unsigned char link_ladder_check(void);
 
 /* @DrawLadder's Anim_FetchObjPosForSpriteDescriptor +
  * Anim_WriteStaticItemSpritesWithAttributes (item slot $0C, attr 0),

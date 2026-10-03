@@ -107,3 +107,7 @@ docs/bug_reports/*.mov
 builds/play/
 # Completion-tracker evidence signing key (per-repo, never committed)
 tools/audit/completion/.evidence_key
+
+builds/playtests/
+
+build/scratch/

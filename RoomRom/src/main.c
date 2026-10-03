@@ -50,6 +50,8 @@
 #include "../../src/game/dungeon/uw_dark.h"
 #include "../../src/game/dungeon/link_doorway.h"  /* T-131 */
 #include "../../src/game/world/link_ladder.h"     /* T-056 */
+#include "../../src/game/world/object_dispatch.h"  /* NES MoveObject slot */
+#include "../../src/game/enemies/bosses/boss_framework.h"  /* CreateRoomObjects */
 #include "../../src/game/audio/audio_requests.h"         /* T-127: NES sound request cells */              /* T-111: dark rooms by palette */
 #include "../../src/game/cave/uw_person_dispatch.h"    /* T-120: CheckPersonBlocking */
 #include "probes/metadata_probe.h"     /* Task 5.4: Gate D in-ROM probe */
@@ -1377,6 +1379,15 @@ static void roomrom_state_reset_for_scene_switch(void)
  * entry, InitMode3 Sub8). NES runs InitMode_EnterRoom (objects, room
  * history) in mode 4 only; the walk-in calls enemy_loop_room_reenter. */
 static u8 s_warp_defer_enter_room;
+
+/* InitMode5Play -> RunCrossRoomTasksAndBeginUpdateMode_PlayModesNoCellar
+ * runs CreateRoomObjects again, now in mode 5 (Z_07.asm:1559): only then
+ * does the OW room $5F heart container get its slot $13 position (the
+ * mode-4 call deactivates it). T-056 t056_ladder_ow: never drawn. */
+static void init_mode5_play_create_room_objects(void)
+{
+    boss_framework_room_init(s_room_id);
+}
 
 void roomrom_main_apply_warp_outcome(const rr_warp_outcome_t *out)
 {
@@ -3127,6 +3138,7 @@ static void level_entry_tick(void)
          * UpdatePlayer); t012_route NES t807 Link still, Genesis moved. */
         nes_ram[0x0011u] = 1u;                    /* IsUpdatingMode */
         room_init_mode5_play_palette_row7();
+        init_mode5_play_create_room_objects();
         level_entry_draw_link();
         VDP_updateSprites(ROOMROM_SPRITE_SLOT_ENEMY_FIRST, DMA_QUEUE);
         s_lvl_phase = LVL_NONE;
@@ -3820,17 +3832,23 @@ static unsigned char play_update_objects(void)
                 s_room_id, (unsigned char)players[0].x,
                 (unsigned char)players[0].y);
     }
-    /* NES MoveAndDrawRoomItem / TryTakeRoomItem also run on the OW. The
-     * room-$24 Armos activates slot 19 with item $14 (bracelet); keeping
-     * this behind the UW-only native item path made the reward invisible
-     * and impossible to take even though the statue awakened correctly. */
-    if (s_scene == SCENE_OW && s_room_id == 0x24u &&
-        nes_ram[0x00ABu] == 0x14u &&
-        (nes_ram[0x00BFu] & 0x80u) == 0u &&
+    /* NES MoveAndDrawRoomItem / TryTakeRoomItem also run on the OW: the
+     * room-$24 Armos activates slot 19 with item $14 (bracelet), and
+     * CreateRoomObjects in mode 5 activates the room-$5F heart container
+     * (T-056 t056_ladder_ow; this was special-cased to room $24). */
+    if (s_scene == SCENE_OW &&
+        (nes_ram[0x00BFu] & 0x80u) == 0u && nes_ram[0x00ABu] != 0x3Fu &&
         progress_get_room_flag_uw_item_state() == 0u) {
         unsigned char saved_cur = nes_ram[0x0340u];
-        nes_ram[0x0340u] = 0x13u;
-        draw_animate_item_object(0x14u, 0x13u);
+        unsigned char t1 = nes_ram[0x0350u];     /* ObjType+1 */
+        unsigned char obj = 0x13u;
+        if (t1 == 0x17u || t1 == 0x2Au || t1 == 0x30u) {
+            nes_ram[0x0083u] = nes_ram[0x0071u];
+            nes_ram[0x0097u] = nes_ram[0x0085u];
+            obj = 0x01u;
+        }
+        nes_ram[0x0340u] = obj;
+        draw_animate_item_object(nes_ram[0x00ABu], obj);
         nes_ram[0x0340u] = saved_cur;
         cave_try_take_room_item();
         if (progress_get_room_flag_uw_item_state() != 0u)
@@ -4273,6 +4291,7 @@ void roomrom_debug_tick(void)
                  * 5 -> 4 at FC $C4, t131_uw_doors t788). */
                 roomrom_combat_end_move_and_animate();
                 room_init_mode5_play_palette_row7();
+                init_mode5_play_create_room_objects();
                 /* RunCrossRoomTasks -> CheckInitWhirlwindAndBeginUpdate:
                  * a whirlwind teleport drops Link off here (T-171). */
                 (void)trap_init_whirlwind_at_destination();
@@ -5117,8 +5136,15 @@ void roomrom_debug_tick(void)
                     if (s_link_dir != LINK_DIR_NONE)
                         nes_ram[0x0098u] = link_nes_bit_of(s_link_dir);
                     nes_ram[0x000Fu] = link_nes_bit_of(moving_dir);
-                    link_ladder_check();
-                    moving_dir = link_dir_of_lowest_bit(nes_ram[0x000Fu]);
+                    {
+                        const unsigned char moved_slot = link_ladder_check();
+                        if (moved_slot != 0u) {
+                            object_move_object(moved_slot);
+                            moving_dir = LINK_DIR_NONE;
+                        } else {
+                            moving_dir = link_dir_of_lowest_bit(nes_ram[0x000Fu]);
+                        }
+                    }
                 }
 
                 /* Link knockback shove â€” NES Z1 Obj_Shove runs every frame
@@ -5202,6 +5228,8 @@ void roomrom_debug_tick(void)
              * Link_EndMoveAndAnimate (T-171: t134 t443 ObjAnimCounter). */
             /* T-056: Link_EndMoveAndAnimate's ladder setup runs after
              * the move (grid truncated), before AnimateLinkBase. */
+            if (s_link_dir != LINK_DIR_NONE)
+                nes_ram[0x0098u] = link_nes_bit_of(s_link_dir);
             if (s_mode == MODE_WALK && s_move_style == MOVE_STYLE_NES)
                 link_ladder_end_move();
             roomrom_combat_end_move_and_animate();
